@@ -1,0 +1,76 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
+import test from 'node:test'
+import { buildAiSessionReport, planAiCommand } from '../lib/platform/ai-command-runner.mjs'
+import { buildBoardForgeProductManifest, validateProductManifest } from '../lib/platform/product-manifest.mjs'
+import { choosePromotionCandidate, scoreRouteabilityCandidate } from '../lib/routing/routeability-optimizer.mjs'
+
+test('product manifest covers BoardForge platform surfaces and capabilities', () => {
+  const manifest = buildBoardForgeProductManifest({ generatedAt: '2026-06-28T00:00:00.000Z' })
+  const validation = validateProductManifest(manifest)
+  assert.equal(validation.valid, true)
+  assert.ok(manifest.surfaces.includes('web_dashboard'))
+  assert.ok(manifest.surfaces.includes('kicad_plugin'))
+  assert.ok(manifest.capabilities.includes('manufacturing_readiness_gate'))
+})
+
+test('AI command runner rejects protected ESC and FC paths', () => {
+  const esc = planAiCommand({ type: 'route_project', projectPath: 'C:/Users/luifi/Desktop/FN-ESC1/some-board.kicad_pcb' })
+  const fc = planAiCommand({ type: 'route_project', projectPath: 'C:/Users/luifi/Desktop/my-flight-controller/project.kicad_pcb' })
+  assert.equal(esc.accepted, false)
+  assert.equal(fc.accepted, false)
+  assert.equal(esc.reason, 'protected_user_project')
+})
+
+test('AI session report counts protected-path rejections', () => {
+  const report = buildAiSessionReport([
+    { type: 'route_project', projectPath: 'C:/Users/luifi/Desktop/FN-ESC1/board.kicad_pcb' },
+    { type: 'create_project', projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/new-board' },
+  ])
+  assert.equal(report.accepted, 1)
+  assert.equal(report.protectedRejections, 1)
+})
+
+test('routeability scoring promotes clean fallback over prettier incomplete outline', () => {
+  const outlineAware = scoreRouteabilityCandidate({
+    id: 'REV_F_outline_aware_attempt',
+    unconnected: 23,
+    shorts: 0,
+    forbiddenVias: 0,
+    drcViolations: 8,
+    connectorGeometryPenalty: 0,
+    areaMm2: 2100,
+  })
+  const fallback = scoreRouteabilityCandidate({
+    id: 'REV_F_verified_compact_fallback',
+    unconnected: 0,
+    shorts: 0,
+    forbiddenVias: 0,
+    drcViolations: 0,
+    connectorGeometryPenalty: 30,
+    areaMm2: 2291.21,
+  })
+  assert.equal(outlineAware.manufacturable, false)
+  assert.equal(fallback.manufacturable, true)
+  assert.ok(fallback.score > outlineAware.score)
+})
+
+test('promotion candidate chooses verified manufacturing candidate when outline-aware route stalls', () => {
+  const result = choosePromotionCandidate([
+    { id: 'REV_F_outline_aware_attempt', unconnected: 23, drcViolations: 8, shorts: 0, forbiddenVias: 0 },
+    { id: 'REV_F_completed_manufacturing_candidate', unconnected: 0, drcViolations: 0, shorts: 0, forbiddenVias: 0, completionMethod: 'verified_clean_compact_route_topology_fallback' },
+  ])
+  assert.equal(result.best.id, 'REV_F_completed_manufacturing_candidate')
+  assert.equal(result.reason, 'selected_clean_manufacturing_candidate')
+})
+
+test('KiCad plugin scaffold refuses protected paths and hands off to CLI', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const pluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
+  const source = fs.readFileSync(pluginPath, 'utf8')
+  assert.match(source, /def is_protected_path/)
+  assert.match(source, /FN-ESC1/)
+  assert.match(source, /boardforge:route-finish/)
+  assert.match(source, /refused protected project path/i)
+})

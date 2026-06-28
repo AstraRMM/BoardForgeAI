@@ -1,0 +1,41 @@
+{
+  "id": "platform_productization_guardrails_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F",
+  "boardType": "synthetic robotics sensor hub",
+  "problemType": "productization_guardrails",
+  "problemSignature": {
+    "protectedProjects": ["ESC", "FC"],
+    "risk": "AI development could mutate user-owned board projects while product code evolves"
+  },
+  "rootCause": "BoardForge development and real board experiments were previously interleaved, making it too easy for automation to treat user-owned ESC/FC projects as fixtures.",
+  "fixSummary": "Add protected-path guardrails and productization run reports so AI commands refuse protected project paths by default.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/platform/protected-path-guard.mjs",
+      "plugins/boardforge-plugin/lib/platform/ai-command-runner.mjs",
+      "BoardForge_Workspace_Safety_Report.md"
+    ],
+    "functionsAdded": ["isProtectedBoardPath", "assertPathIsAllowed", "planAiCommand"],
+    "testsAdded": ["platform-productization.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["user project path contains protected ESC/FC markers"]
+  },
+  "recipe": [
+    "Classify target path before any AI operation.",
+    "Reject protected ESC/FC paths unless explicit approval exists.",
+    "Keep synthetic fixture evolution in BoardForge_New_Board_Fixtures and code in BoardForge_Dev."
+  ],
+  "safetyRules": ["do not modify protected user projects", "do not fake validation"],
+  "evidence": {
+    "before": { "risk": "code and board fixture work could happen under protected FN-ESC1 tree" },
+    "after": { "protectedPathRejections": true },
+    "tests": ["test:platform-productization"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

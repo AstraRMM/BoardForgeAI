@@ -1,0 +1,37 @@
+{
+  "id": "revf_routeability_promotion_gate_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F",
+  "boardType": "synthetic robotics sensor hub",
+  "problemType": "routeability_promotion_gate",
+  "problemSignature": {
+    "outlineAwareAttempt": { "unconnected": 23, "drc": 8 },
+    "verifiedFallback": { "unconnected": 0, "drc": 0, "erc": 0 }
+  },
+  "rootCause": "A mechanically nicer outline-aware placement can be less routeable than a verified compact topology.",
+  "fixSummary": "Score routeability and manufacturability before promotion. Promote clean verified fallback over prettier incomplete layouts.",
+  "implementation": {
+    "filesChanged": ["plugins/boardforge-plugin/lib/routing/routeability-optimizer.mjs"],
+    "functionsAdded": ["scoreRouteabilityCandidate", "choosePromotionCandidate"],
+    "testsAdded": ["platform-productization.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["sensor hub", "custom outline", "compact electronics"],
+    "netRoles": ["USB", "CAN", "I2C", "SWD", "UART", "power"],
+    "conditions": ["multiple layout candidates exist", "one candidate is cleaner by validation"]
+  },
+  "recipe": [
+    "Score each candidate by shorts, forbidden vias, unconnected count, DRC, connector geometry, and area.",
+    "Reject manufacturing promotion if unconnected or DRC remains.",
+    "Use verified fallback topology when custom outline routeability stalls."
+  ],
+  "safetyRules": ["do not export manufacturing package unless DRC/ERC/connectivity are clean"],
+  "evidence": {
+    "before": { "revFOutlineAware": "feature proof but not manufacturing-ready" },
+    "after": { "revFCompletedCandidate": "0 shorts, 0 unconnected, 0 DRC, 0 ERC" },
+    "tests": ["test:routeability-promotion-gate"]
+  },
+  "status": "active",
+  "confidence": "high"
+}
