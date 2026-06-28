@@ -1,0 +1,26 @@
+{
+  "schema": "boardforge.project-manifest.v1",
+  "projectId": "BF-SENSOR-HUB-01_REV_F",
+  "projectName": "BF-SENSOR-HUB-01 REV_F",
+  "status": "manufacturing_candidate",
+  "validation": {
+    "shorts": 0,
+    "unconnected": 0,
+    "forbiddenVias": 0,
+    "drcViolations": 0,
+    "ercViolations": 0
+  },
+  "manufacturing": {
+    "ready": true,
+    "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\manufacturing\\BF-SENSOR-HUB-01_REV_F_JLCPCB.zip",
+    "blockedReason": null
+  },
+  "reports": {
+    "status": "BoardForge_REV_F_Final_Status.md",
+    "drcErc": "BoardForge_REV_F_DRC_ERC_Report.md",
+    "manufacturing": "BoardForge_REV_F_Manufacturing_Readiness_Report.md"
+  },
+  "replay": {
+    "command": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F"
+  }
+}

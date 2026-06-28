@@ -1,0 +1,39 @@
+{
+  "id": "odd-shape-robot",
+  "name": "BF-ODD-SHAPE-ROBOT-01",
+  "revision": "REV_A",
+  "type": "robotics_sensor_hub",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "brief": "A non-rectangular robotics sensor hub with mounting ears, a cable notch, USB-C, CAN, I2C, UART/GPS, SWD, IMU, barometer, and 3V3/5V rails.",
+  "layers": 4,
+  "outline": {
+    "shape": "rounded odd shield with two mounting ears and connector notch",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["left mounting ear", "right mounting ear", "front connector notch", "rounded corners"]
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid PCB outline",
+    "routeability score",
+    "FreeRouting DSN/SES attempt",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean"
+  ],
+  "knownRisks": [
+    "connector edge placement can block routes",
+    "mounting ears can create narrow corridors",
+    "notch can create copper-edge clearance pressure"
+  ]
+}

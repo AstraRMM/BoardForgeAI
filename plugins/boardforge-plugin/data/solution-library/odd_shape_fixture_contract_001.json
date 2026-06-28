@@ -1,0 +1,37 @@
+{
+  "id": "odd_shape_fixture_contract_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "synthetic robotics odd-shape fixture",
+  "problemType": "fixture_contract",
+  "problemSignature": {
+    "features": ["non-rectangular outline", "mounting ears", "connector notch", "routeability scoring"]
+  },
+  "rootCause": "BoardForge needs a controlled odd-shape fixture before returning to harder real boards.",
+  "fixSummary": "Add fixture contract for a non-rectangular robotics board with routeability risks, expected outputs, hard manufacturing gates, and fixture runner report support.",
+  "implementation": {
+    "filesChanged": [
+      "fixtures/boards/odd-shape-robot/fixture.json",
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": ["product-platform-manifest.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["custom outline", "robotics", "sensor hub"],
+    "netRoles": ["USB", "CAN", "I2C", "UART", "SWD", "power"],
+    "conditions": ["new custom odd-shape fixture is needed"]
+  },
+  "recipe": [
+    "Define mechanical odd shape before copper.",
+    "Score routeability before committing placement.",
+    "Export manufacturing only after clean DRC/ERC/connectivity."
+  ],
+  "safetyRules": ["do not fake fixture routing result", "do not export manufacturing ZIP unless clean"],
+  "evidence": {
+    "tests": ["fixtures:list", "fixtures:report"]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

@@ -1,0 +1,41 @@
+{
+  "id": "boardforge_platform_not_codex_plugin_only_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F",
+  "boardType": "platform",
+  "problemType": "product_positioning",
+  "problemSignature": {
+    "badPositioning": ["Codex plugin only", "script", "FreeRouting wrapper only"],
+    "requiredPositioning": "AI PCB engineering platform for KiCad"
+  },
+  "rootCause": "BoardForge product work was too easy to describe as one AI plugin instead of a multi-surface PCB platform.",
+  "fixSummary": "Define architecture, positioning, engine API, web dashboard manifests, KiCad plugin scaffold, CLI hooks, and model-agnostic AI command layer.",
+  "implementation": {
+    "filesChanged": [
+      "docs/BOARD_FORGE_PRODUCT_ARCHITECTURE.md",
+      "docs/BOARD_FORGE_POSITIONING.md",
+      "docs/BOARD_FORGE_ENGINE_API.md",
+      "plugins/boardforge-plugin/lib/engine/boardforge-engine.mjs",
+      "plugins/boardforge-plugin/lib/platform/project-manifest.mjs"
+    ],
+    "functionsAdded": ["createEnginePlan", "buildProjectManifest"],
+    "testsAdded": ["product-platform-manifest.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["product surface or platform messaging is being generated"]
+  },
+  "recipe": [
+    "Position BoardForge as the product.",
+    "Treat Codex/ChatGPT/Claude as adapters.",
+    "Route all surfaces through local engine APIs and project manifests."
+  ],
+  "safetyRules": ["do not overpromise manufacturing readiness", "do not bypass protected project guards"],
+  "evidence": {
+    "tests": ["test:product-platform-manifest"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

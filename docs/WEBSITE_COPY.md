@@ -1,0 +1,41 @@
+# BoardForge AI Website Copy
+
+## Hero
+
+BoardForge AI
+
+From PCB idea to manufacturable KiCad project.
+
+Generate schematics, create board outlines, place components, route with FreeRouting, repair DRC/ERC, verify parts, and export manufacturing packages.
+
+## How It Works
+
+1. Describe the board you want.
+2. BoardForge creates a KiCad project, schematic, PCB, constraints, and reports.
+3. External routers handle bulk copper.
+4. BoardForge validates, repairs, finishes exact routes, and packages manufacturing files.
+5. You review the evidence and send clean outputs to fabrication.
+
+## Product Surfaces
+
+- Web app for project intake, dashboards, reports, and downloads.
+- Local engine for real KiCad file generation and validation.
+- KiCad plugin for in-editor actions and status.
+- CLI for deterministic workflows and replay.
+- AI control layer for Codex, ChatGPT, Claude, or future BoardForge agents.
+
+## Feature Grid
+
+- Real KiCad schematic and PCB generation
+- Custom outline engine
+- Outline-aware placement and routeability scoring
+- FreeRouting bulk routing
+- SES import and validation
+- DRC/ERC repair
+- Exact ratsnest finishing
+- BOM/CPL/Gerber/Drill/JLCPCB export
+- Solution-library learning
+
+## Honesty Line
+
+BoardForge does not fake routing, validation, sourcing, or manufacturing readiness. Advanced dense boards may require supervised workflows or exact design relaxations.

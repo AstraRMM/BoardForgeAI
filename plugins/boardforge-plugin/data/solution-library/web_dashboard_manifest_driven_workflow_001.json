@@ -1,0 +1,38 @@
+{
+  "id": "web_dashboard_manifest_driven_workflow_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F",
+  "boardType": "platform",
+  "problemType": "dashboard_data_contract",
+  "problemSignature": {
+    "risk": "web UI disconnected from actual engine validation evidence"
+  },
+  "rootCause": "A product dashboard needs a stable manifest, not ad hoc console output.",
+  "fixSummary": "Add BoardForge project manifest builder and REV_F sample dashboard manifest that includes validation counts, manufacturing ZIP, reports, and replay command.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/platform/project-manifest.mjs",
+      "apps/web/src/lib/boardforge-manifest.ts",
+      "apps/web/src/sample-manifests/rev-f.json"
+    ],
+    "functionsAdded": ["buildProjectManifest", "isManufacturingReadyManifest", "readinessLabel"],
+    "testsAdded": ["product-platform-manifest.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["dashboard or report data is shown to users"]
+  },
+  "recipe": [
+    "Write project manifest after each validated workflow.",
+    "Drive dashboard cards from manifest validation fields.",
+    "Expose replay command for deterministic local reruns."
+  ],
+  "safetyRules": ["dashboard must not show manufacturing ready unless manifest evidence is clean"],
+  "evidence": {
+    "tests": ["test:web-dashboard-project-data"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

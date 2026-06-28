@@ -33,7 +33,15 @@
     "sync:libraries": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/library-sync-job.json --workspace ./boardforge-workspace",
     "resolve:components": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/resolve-components-job.json --workspace ./boardforge-workspace",
     "test:platform-productization": "node --test --test-name-pattern \"product manifest|AI command runner|AI session report|routeability scoring|promotion candidate|KiCad plugin scaffold\" ./plugins/boardforge-plugin/tests/*.test.mjs",
-    "test:routeability-promotion-gate": "node --test --test-name-pattern \"routeability scoring|promotion candidate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    "test:routeability-promotion-gate": "node --test --test-name-pattern \"routeability scoring|promotion candidate\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:product-platform-manifest": "node --test --test-name-pattern \"local engine exposes|required workflow|project manifest|dashboard sample manifest|AI session report|engine candidate selector|odd-shape robot fixture\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-dashboard-project-data": "node --test --test-name-pattern \"dashboard sample manifest|project manifest\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:kicad-plugin-action-log": "node --test --test-name-pattern \"KiCad plugin scaffold\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:cli-replay-command": "node --test --test-name-pattern \"dashboard sample manifest\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "fixtures:list": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --list",
+    "fixtures:run": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --run",
+    "fixtures:golden": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --golden",
+    "fixtures:report": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --report"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
