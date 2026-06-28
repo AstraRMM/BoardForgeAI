@@ -452,7 +452,7 @@
     "test:rev-f-outline-aware-manufacturing-candidate": "node --test --test-name-pattern \"REV_F outline-aware manufacturing candidate\" ./tests/*.test.mjs",
     "test:platform-productization": "node --test --test-name-pattern \"product manifest|AI command runner|AI session report|routeability scoring|promotion candidate|KiCad plugin scaffold\" ./tests/*.test.mjs",
     "test:routeability-promotion-gate": "node --test --test-name-pattern \"routeability scoring|promotion candidate\" ./tests/*.test.mjs",
-    "test:product-platform-manifest": "node --test --test-name-pattern \"local engine exposes|required workflow|project manifest|dashboard sample manifest|AI session report|engine candidate selector|odd-shape robot fixture\" ./tests/*.test.mjs",
+    "test:product-platform-manifest": "node --test --test-name-pattern \"local engine exposes|required workflow|project manifest|dashboard sample manifest|AI session report|engine candidate selector|odd-shape robot fixture|fixture runner creates\" ./tests/*.test.mjs",
     "test:web-dashboard-project-data": "node --test --test-name-pattern \"dashboard sample manifest|project manifest\" ./tests/*.test.mjs",
     "test:kicad-plugin-action-log": "node --test --test-name-pattern \"KiCad plugin scaffold\" ./tests/*.test.mjs",
     "test:cli-replay-command": "node --test --test-name-pattern \"dashboard sample manifest\" ./tests/*.test.mjs",

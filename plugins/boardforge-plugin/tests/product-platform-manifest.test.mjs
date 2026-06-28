@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import test from 'node:test'
 import { createDashboardManifest, createEnginePlan, ENGINE_WORKFLOW_STEPS, selectBestBoardCandidate } from '../lib/engine/boardforge-engine.mjs'
 import { isManufacturingReadyManifest } from '../lib/platform/project-manifest.mjs'
@@ -56,4 +57,25 @@ test('odd-shape robot fixture declares non-rectangular routeability risks', () =
   assert.equal(fixture.id, 'odd-shape-robot')
   assert.match(fixture.outline.shape, /odd/)
   assert.ok(fixture.knownRisks.some((risk) => /narrow corridors/.test(risk)))
+})
+
+test('fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  execFileSync(process.execPath, [
+    path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-fixture-runner.mjs'),
+    '--run',
+    '--fixture',
+    'odd-shape-robot',
+  ], { cwd: repoRoot, stdio: 'pipe' })
+
+  const projectRoot = 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A'
+  const manifest = JSON.parse(fs.readFileSync(path.join(projectRoot, 'boardforge-project-manifest.json'), 'utf8'))
+  const routeability = JSON.parse(fs.readFileSync(path.join(projectRoot, 'BoardForge_Odd_Shape_Routeability_Report.json'), 'utf8'))
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_pcb')), true)
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch')), true)
+  assert.equal(manifest.status, 'preroute_fixture_created')
+  assert.equal(manifest.manufacturing.ready, false)
+  assert.equal(manifest.manufacturing.blockedReason, 'preroute_validation_and_routing_not_run')
+  assert.equal(routeability.schema, 'boardforge.routeability-report.v1')
+  assert.equal(routeability.nextStage, 'generate_real_symbol_graph_then_run_preroute_validation')
 })

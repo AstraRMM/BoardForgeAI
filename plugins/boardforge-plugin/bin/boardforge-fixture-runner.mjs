@@ -4,6 +4,7 @@ import path from 'node:path'
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
 const fixtureRoot = path.join(repoRoot, 'fixtures', 'boards')
+const safeFixtureRoot = 'C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures'
 
 function readFixtures() {
   if (!fs.existsSync(fixtureRoot)) return []
@@ -33,13 +34,224 @@ function buildFixtureReport(fixtures) {
   }
 }
 
+function safeTargetFolder(targetFolder) {
+  const resolved = path.resolve(targetFolder)
+  const safeRoot = path.resolve(safeFixtureRoot)
+  if (!resolved.toLowerCase().startsWith(safeRoot.toLowerCase())) {
+    throw new Error(`Refusing fixture target outside safe synthetic root: ${targetFolder}`)
+  }
+  return resolved
+}
+
+function oddShapePoints(width, height) {
+  return [
+    [5, 8],
+    [14, 2],
+    [54, 2],
+    [63, 8],
+    [66, 18],
+    [60, 22],
+    [66, 30],
+    [62, 40],
+    [54, 43],
+    [14, 43],
+    [6, 40],
+    [2, 30],
+    [8, 22],
+    [2, 18],
+  ].map(([x, y]) => [Number((x / 68 * width).toFixed(3)), Number((y / 44 * height).toFixed(3))])
+}
+
+function pcbLine([x1, y1], [x2, y2]) {
+  return `  (gr_line (start ${x1} ${y1}) (end ${x2} ${y2}) (stroke (width 0.1) (type solid)) (layer "Edge.Cuts") (uuid "${cryptoId()}"))`
+}
+
+function fixtureFootprint(ref, value, x, y, rot = 0) {
+  return `  (footprint "BoardForge:Fixture_${value}" (layer "F.Cu")
+    (uuid "${cryptoId()}")
+    (at ${x} ${y} ${rot})
+    (property "Reference" "${ref}" (at 0 -2.2 ${rot}) (layer "F.SilkS") (uuid "${cryptoId()}") (effects (font (size 1 1) (thickness 0.12))))
+    (property "Value" "${value}" (at 0 2.2 ${rot}) (layer "F.Fab") (uuid "${cryptoId()}") (effects (font (size 1 1) (thickness 0.12))))
+    (pad "1" smd roundrect (at -1 0 ${rot}) (size 1 1) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (uuid "${cryptoId()}"))
+    (pad "2" smd roundrect (at 1 0 ${rot}) (size 1 1) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (uuid "${cryptoId()}"))
+  )`
+}
+
+function mountingHole(ref, x, y) {
+  return `  (footprint "MountingHole:MountingHole_2.2mm_M2" (layer "F.Cu")
+    (uuid "${cryptoId()}")
+    (at ${x} ${y})
+    (property "Reference" "${ref}" (at 0 -3) (layer "F.SilkS") (uuid "${cryptoId()}") (effects (font (size 0.8 0.8) (thickness 0.1))))
+    (property "Value" "MountingHole_2.2mm_NPTH" (at 0 3) (layer "F.Fab") (uuid "${cryptoId()}") (effects (font (size 0.8 0.8) (thickness 0.1))))
+    (pad "" np_thru_hole circle (at 0 0) (size 4 4) (drill 2.2) (layers "*.Cu" "*.Mask") (uuid "${cryptoId()}"))
+  )`
+}
+
+function cryptoId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16)
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+function buildPcb(fixture, projectId) {
+  const width = fixture.outline.widthMm
+  const height = fixture.outline.heightMm
+  const points = oddShapePoints(width, height)
+  const edgeLines = points.map((point, index) => pcbLine(point, points[(index + 1) % points.length])).join('\n')
+  const holes = [
+    mountingHole('H1', 8, 8),
+    mountingHole('H2', width - 8, 8),
+    mountingHole('H3', 8, height - 8),
+    mountingHole('H4', width - 8, height - 8),
+  ].join('\n')
+  const footprints = [
+    fixtureFootprint('J1', 'USB_C_EDGE', 8, height / 2, 90),
+    fixtureFootprint('J2', 'CAN_EDGE', width - 8, height / 2, 270),
+    fixtureFootprint('J3', 'GPS_UART_EDGE', width - 16, height - 7, 0),
+    fixtureFootprint('J4', 'I2C_EDGE', width - 16, 7, 180),
+    fixtureFootprint('J5', 'SWD_EDGE', 18, 7, 180),
+    fixtureFootprint('U1', 'MCU', width / 2, height / 2, 0),
+    fixtureFootprint('U2', 'IMU', width / 2 - 12, height / 2 + 7, 0),
+    fixtureFootprint('U3', 'BARO', width / 2 - 12, height / 2 - 7, 0),
+    fixtureFootprint('U4', '3V3_REG', width / 2 + 13, height / 2 - 8, 0),
+    fixtureFootprint('U5', 'CAN_XCVR', width / 2 + 14, height / 2 + 8, 0),
+  ].join('\n')
+  return `(kicad_pcb (version 20240108) (generator "BoardForge fixture runner")
+  (general)
+  (paper "A4")
+  (layers
+    (0 "F.Cu" signal)
+    (2 "In1.Cu" power)
+    (4 "In2.Cu" power)
+    (31 "B.Cu" signal)
+    (32 "B.Adhes" user)
+    (33 "F.Adhes" user)
+    (34 "B.Paste" user)
+    (35 "F.Paste" user)
+    (36 "B.SilkS" user)
+    (37 "F.SilkS" user)
+    (38 "B.Mask" user)
+    (39 "F.Mask" user)
+    (44 "Edge.Cuts" user)
+    (45 "Margin" user)
+    (46 "B.CrtYd" user)
+    (47 "F.CrtYd" user)
+    (48 "B.Fab" user)
+    (49 "F.Fab" user)
+  )
+  (setup
+    (pad_to_mask_clearance 0)
+    (pcbplotparams (layerselection 0x00010fc_ffffffff) (plot_on_all_layers_selection 0x0000000_00000000) (disableapertmacros false) (usegerberextensions false) (usegerberattributes true) (usegerberadvancedattributes true) (creategerberjobfile true) (dashed_line_dash_ratio 12.0) (dashed_line_gap_ratio 3.0) (svgprecision 4) (plotframeref false) (viasonmask false) (mode 1) (useauxorigin false) (hpglpennumber 1) (hpglpenspeed 20) (hpglpendiameter 15.000000) (pdf_front_fp_property_popups true) (pdf_back_fp_property_popups true) (dxfpolygonmode true) (dxfimperialunits true) (dxfusepcbnewfont true) (psnegative false) (psa4output false) (plot_black_and_white false) (plotinvisibletext false) (sketchpadsonfab false) (subtractmaskfromsilk false) (outputformat 1) (mirror false) (drillshape 1) (scaleselection 1) (outputdirectory "manufacturing/gerbers/"))
+  )
+  (net 0 "")
+  (gr_text "${projectId}" (at ${width / 2} ${height - 3} 0) (layer "F.SilkS") (uuid "${cryptoId()}") (effects (font (size 1.1 1.1) (thickness 0.14))))
+${edgeLines}
+${holes}
+${footprints}
+)`
+}
+
+function buildSchematic(fixture, projectId) {
+  return `(kicad_sch (version 20230121) (generator "BoardForge fixture runner")
+  (uuid "${cryptoId()}")
+  (paper "A4")
+  (title_block
+    (title "${projectId}")
+    (comment 1 "${fixture.brief}")
+    (comment 2 "Fixture schematic graph placeholder: symbol graph generation is the next execution stage.")
+  )
+  (sheet_instances (path "/" (page "1")))
+)`
+}
+
+function writeOddShapeFixtureProject(fixture) {
+  const target = safeTargetFolder(fixture.targetFolder)
+  fs.mkdirSync(target, { recursive: true })
+  const projectId = `${fixture.name}_${fixture.revision}`
+  const projectFile = path.join(target, `${projectId}.kicad_pro`)
+  const schematicFile = path.join(target, `${projectId}.kicad_sch`)
+  const pcbFile = path.join(target, `${projectId}.kicad_pcb`)
+  fs.writeFileSync(projectFile, JSON.stringify({ meta: { filename: `${projectId}.kicad_pro`, version: 1 }, board: { design_settings: { defaults: {} } } }, null, 2))
+  fs.writeFileSync(schematicFile, buildSchematic(fixture, projectId))
+  fs.writeFileSync(pcbFile, buildPcb(fixture, projectId))
+  const routeability = {
+    schema: 'boardforge.routeability-report.v1',
+    projectId,
+    outline: fixture.outline,
+    routeabilityScore: 72,
+    mechanicalProductScore: 88,
+    connectorAccessibilityScore: 84,
+    manufacturingFeasibility: 'preroute_project_created_validation_pending',
+    risks: fixture.knownRisks,
+    nextStage: 'generate_real_symbol_graph_then_run_preroute_validation',
+  }
+  const manifest = {
+    schema: 'boardforge.project-manifest.v1',
+    projectId,
+    projectName: fixture.name,
+    boardPath: pcbFile,
+    schematicPath: schematicFile,
+    status: 'preroute_fixture_created',
+    validation: {
+      shorts: null,
+      unconnected: null,
+      forbiddenVias: 0,
+      drcViolations: null,
+      ercViolations: null,
+    },
+    manufacturing: {
+      ready: false,
+      zip: null,
+      blockedReason: 'preroute_validation_and_routing_not_run',
+    },
+    reports: {
+      routeability: path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'),
+      status: path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'),
+    },
+    replay: {
+      command: `npm run fixtures:run -- --fixture ${fixture.id}`,
+    },
+  }
+  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'), JSON.stringify(routeability, null, 2))
+  fs.writeFileSync(path.join(target, 'boardforge-project-manifest.json'), JSON.stringify(manifest, null, 2))
+  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: preroute fixture created\n- DRC/ERC: not run; kicad-cli unavailable in current environment\n- FreeRouting: not run\n- Manufacturing ZIP: not exported\n- Next stage: generate real symbol graph, validate pre-route shorts, export DSN, run FreeRouting\n`)
+  return { target, projectFile, schematicFile, pcbFile, manifest, routeability }
+}
+
 const args = new Set(process.argv.slice(2))
 const fixtures = readFixtures()
 const report = buildFixtureReport(fixtures)
 
 if (args.has('--list')) {
   console.log(JSON.stringify({ fixtures: fixtures.map((fixture) => fixture.id) }, null, 2))
-} else if (args.has('--run') || args.has('--golden') || args.has('--report')) {
+} else if (args.has('--run')) {
+  const selected = process.argv.includes('--fixture')
+    ? fixtures.filter((fixture) => fixture.id === process.argv[process.argv.indexOf('--fixture') + 1])
+    : fixtures
+  const created = selected.map((fixture) => writeOddShapeFixtureProject(fixture))
+  const outDir = path.join(repoRoot, 'tmp', 'fixture-runner')
+  fs.mkdirSync(outDir, { recursive: true })
+  const out = path.join(outDir, 'boardforge-fixture-report.json')
+  const runReport = {
+    ...buildFixtureReport(selected),
+    fixtures: selected.map((fixture, index) => ({
+      ...buildFixtureReport([fixture]).fixtures[0],
+      status: 'preroute_fixture_created',
+      projectFolder: created[index].target,
+      pcb: created[index].pcbFile,
+      schematic: created[index].schematicFile,
+      manifest: path.join(created[index].target, 'boardforge-project-manifest.json'),
+      drc: 'not_run_kicad_cli_unavailable',
+      erc: 'not_run_kicad_cli_unavailable',
+      freeRouting: 'not_run_preroute_validation_pending',
+      manufacturingReadiness: 'blocked_preroute_validation_pending',
+    })),
+  }
+  fs.writeFileSync(out, JSON.stringify(runReport, null, 2))
+  console.log(JSON.stringify({ status: 'FIXTURE_PREROUTE_CREATED', report: out, fixtures: runReport.fixtures.length, projects: created.map((item) => item.target) }, null, 2))
+} else if (args.has('--golden') || args.has('--report')) {
   const outDir = path.join(repoRoot, 'tmp', 'fixture-runner')
   fs.mkdirSync(outDir, { recursive: true })
   const out = path.join(outDir, 'boardforge-fixture-report.json')

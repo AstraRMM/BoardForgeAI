@@ -1,0 +1,55 @@
+{
+  "id": "fixture_runner_must_create_real_artifacts_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "synthetic odd-shape robotics fixture",
+  "problemType": "fixture_runner_report_only",
+  "problemSignature": {
+    "badState": "fixture runner only wrote a report",
+    "requiredState": "fixture runner creates concrete KiCad project artifacts and honest validation status"
+  },
+  "rootCause": "A report-only fixture runner looked like progress but did not create a board that BoardForge could route, validate, or learn from.",
+  "fixSummary": "Upgrade fixtures:run to create the odd-shape project folder, .kicad_pro, .kicad_sch, .kicad_pcb, routeability report, project manifest, and final status file while blocking manufacturing until real validation/routing runs.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": [
+      "writeOddShapeFixtureProject",
+      "buildPcb",
+      "buildSchematic",
+      "safeTargetFolder"
+    ],
+    "testsAdded": [
+      "fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing"
+    ]
+  },
+  "applicability": {
+    "boardTypes": ["synthetic fixture", "custom outline", "odd shape"],
+    "netRoles": [],
+    "conditions": ["a fixture run is requested"]
+  },
+  "recipe": [
+    "Create fixture files in safe synthetic root only.",
+    "Write KiCad project, schematic, PCB, routeability report, and manifest.",
+    "Set validation to pending/null when KiCad CLI is unavailable.",
+    "Block manufacturing ZIP until DRC/ERC/routing evidence is clean."
+  ],
+  "safetyRules": [
+    "do not touch protected ESC/FC paths",
+    "do not fake DRC/ERC",
+    "do not export manufacturing if validation has not run"
+  ],
+  "evidence": {
+    "after": {
+      "projectFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A",
+      "status": "preroute_fixture_created",
+      "manufacturingReady": false
+    },
+    "tests": ["test:product-platform-manifest", "fixtures:run"]
+  },
+  "status": "active",
+  "confidence": "high"
+}
