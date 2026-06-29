@@ -339,7 +339,49 @@ def candidate_paths(a, b, copper_layers=None):
     endpoint_distance = dist((ax, ay), (bx, by))
     candidates = []
     local_repair_candidates = []
+    obstacle_detour_candidates = []
     copper_layers = copper_layers or [pcbnew.F_Cu, pcbnew.B_Cu]
+    for margin in [2.5, -2.5, 4.0, -4.0, 6.0, -6.0, 9.0, -9.0, 12.0, -12.0]:
+        obstacle_detour_candidates.append({
+            'name': f'obstacle-wide-channel-y-{margin}',
+            'layers': [a['layer']],
+            'points': [(ax, ay), (ax, ay + margin), (bx, by + margin), (bx, by)],
+            'repairIntent': 'route_around_dense_local_obstacles',
+        })
+        obstacle_detour_candidates.append({
+            'name': f'obstacle-wide-channel-x-{margin}',
+            'layers': [a['layer']],
+            'points': [(ax, ay), (ax + margin, ay), (bx + margin, by), (bx, by)],
+            'repairIntent': 'route_around_dense_local_obstacles',
+        })
+    for route_layer in copper_layers:
+        if route_layer == a['layer'] and route_layer == b['layer']:
+            continue
+        for margin in [1.5, -1.5, 2.5, -2.5, 4.0, -4.0, 6.0, -6.0]:
+            sv = (ax, ay + margin)
+            tv = (bx, by + margin)
+            obstacle_detour_candidates.append({
+                'name': f'obstacle-layer-channel-y-{route_layer}-{margin}',
+                'vias': [sv, tv],
+                'segments': [
+                    {'layer': a['layer'], 'points': [(ax, ay), sv]},
+                    {'layer': route_layer, 'points': [sv, tv]},
+                    {'layer': b['layer'], 'points': [tv, (bx, by)]},
+                ],
+                'repairIntent': 'escape_to_less_congested_layer',
+            })
+            sv = (ax + margin, ay)
+            tv = (bx + margin, by)
+            obstacle_detour_candidates.append({
+                'name': f'obstacle-layer-channel-x-{route_layer}-{margin}',
+                'vias': [sv, tv],
+                'segments': [
+                    {'layer': a['layer'], 'points': [(ax, ay), sv]},
+                    {'layer': route_layer, 'points': [sv, tv]},
+                    {'layer': b['layer'], 'points': [tv, (bx, by)]},
+                ],
+                'repairIntent': 'escape_to_less_congested_layer',
+            })
     candidates.append({'name': 'direct', 'layers': [a['layer']], 'points': [(ax, ay), (bx, by)]})
     candidates.append({'name': 'xy', 'layers': [a['layer']], 'points': [(ax, ay), (bx, ay), (bx, by)]})
     candidates.append({'name': 'yx', 'layers': [a['layer']], 'points': [(ax, ay), (ax, by), (bx, by)]})
@@ -405,7 +447,7 @@ def candidate_paths(a, b, copper_layers=None):
                     ],
                     'repairIntent': 'avoid_same_layer_pad_crossing',
                 })
-    return local_repair_candidates + candidates
+    return obstacle_detour_candidates + local_repair_candidates + candidates
 
 def apply_candidate(board, endpoint, candidate, width, via_width, via_drill):
     if 'segments' in candidate:
@@ -468,6 +510,172 @@ def candidate_all_points(candidate):
     if 'via' in candidate:
         points.append(candidate['via'])
     return points
+
+def point_segment_distance(p, a, b):
+    ax, ay = a
+    bx, by = b
+    px, py = p
+    dx = bx - ax
+    dy = by - ay
+    if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+        return dist(p, a)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return dist(p, (ax + t * dx, ay + t * dy))
+
+def orientation(a, b, c):
+    value = (b[1] - a[1]) * (c[0] - b[0]) - (b[0] - a[0]) * (c[1] - b[1])
+    if abs(value) < 1e-9:
+        return 0
+    return 1 if value > 0 else 2
+
+def on_segment(a, b, c):
+    return min(a[0], c[0]) <= b[0] <= max(a[0], c[0]) and min(a[1], c[1]) <= b[1] <= max(a[1], c[1])
+
+def segments_intersect(a, b, c, d):
+    o1 = orientation(a, b, c)
+    o2 = orientation(a, b, d)
+    o3 = orientation(c, d, a)
+    o4 = orientation(c, d, b)
+    if o1 != o2 and o3 != o4:
+        return True
+    if o1 == 0 and on_segment(a, c, b):
+        return True
+    if o2 == 0 and on_segment(a, d, b):
+        return True
+    if o3 == 0 and on_segment(c, a, d):
+        return True
+    if o4 == 0 and on_segment(c, b, d):
+        return True
+    return False
+
+def segment_distance(a, b, c, d):
+    if segments_intersect(a, b, c, d):
+        return 0.0
+    return min(
+        point_segment_distance(a, c, d),
+        point_segment_distance(b, c, d),
+        point_segment_distance(c, a, b),
+        point_segment_distance(d, a, b),
+    )
+
+def candidate_segments(candidate):
+    segments = []
+    if 'segments' in candidate:
+        for segment in candidate['segments']:
+            layer = segment['layer']
+            points = segment['points']
+            for idx in range(len(points) - 1):
+                segments.append({'layer': layer, 'a': points[idx], 'b': points[idx + 1]})
+        return segments
+    points = candidate.get('points') or []
+    if 'via' in candidate and len(candidate.get('layers', [])) >= 2:
+        via = candidate['via']
+        via_index = min(range(len(points)), key=lambda idx: dist(points[idx], via))
+        first_layer, second_layer = candidate['layers'][0], candidate['layers'][1]
+        for idx in range(0, via_index):
+            segments.append({'layer': first_layer, 'a': points[idx], 'b': points[idx + 1]})
+        for idx in range(via_index, len(points) - 1):
+            segments.append({'layer': second_layer, 'a': points[idx], 'b': points[idx + 1]})
+        return segments
+    layer = (candidate.get('layers') or [pcbnew.F_Cu])[0]
+    for idx in range(len(points) - 1):
+        segments.append({'layer': layer, 'a': points[idx], 'b': points[idx + 1]})
+    return segments
+
+def pad_on_layer(pad, layer):
+    try:
+        return pad.GetLayerSet().Contains(layer)
+    except Exception:
+        return True
+
+def estimate_candidate_short_risk(board, endpoint, candidate, width_mm, via_width_mm=0.6):
+    candidate_net = int(endpoint['netCode'])
+    threshold = max(0.18, float(width_mm) / 2.0 + 0.10)
+    via_threshold = max(0.28, float(via_width_mm) / 2.0 + 0.16)
+    cand_segments = candidate_segments(candidate)
+    for via_pos in candidate.get('vias') or ([candidate['via']] if 'via' in candidate else []):
+        for track in board.GetTracks():
+            if int(track.GetNetCode()) == candidate_net:
+                continue
+            if type(track).__name__ == 'PCB_TRACK':
+                d = point_segment_distance(via_pos, point(track.GetStart()), point(track.GetEnd()))
+                if d <= via_threshold:
+                    return {
+                        'risk': True,
+                        'reason': 'predicted_short_risk_via_site_track',
+                        'distance': d,
+                        'obstacleNet': track.GetNetname(),
+                    }
+            elif type(track).__name__ == 'PCB_VIA':
+                d = dist(via_pos, point(track.GetPosition()))
+                if d <= via_threshold:
+                    return {
+                        'risk': True,
+                        'reason': 'predicted_short_risk_via_site_via',
+                        'distance': d,
+                        'obstacleNet': track.GetNetname(),
+                    }
+        for fp in board.GetFootprints():
+            for pad in fp.Pads():
+                if int(pad.GetNetCode()) == candidate_net:
+                    continue
+                d = dist(via_pos, point(pad.GetPosition()))
+                if d <= via_threshold:
+                    return {
+                        'risk': True,
+                        'reason': 'predicted_short_risk_via_site_pad',
+                        'distance': d,
+                        'obstacleNet': pad.GetNetname(),
+                        'obstaclePad': f"{fp.GetReference()}:{pad.GetNumber()}",
+                    }
+    for cand in cand_segments:
+        layer = cand['layer']
+        for track in board.GetTracks():
+            if int(track.GetNetCode()) == candidate_net:
+                continue
+            if type(track).__name__ == 'PCB_TRACK':
+                try:
+                    if track.GetLayer() != layer:
+                        continue
+                except Exception:
+                    continue
+                d = segment_distance(cand['a'], cand['b'], point(track.GetStart()), point(track.GetEnd()))
+                if d <= threshold:
+                    return {
+                        'risk': True,
+                        'reason': 'predicted_short_risk_track',
+                        'distance': d,
+                        'obstacleNet': track.GetNetname(),
+                        'layer': str(layer),
+                    }
+            elif type(track).__name__ == 'PCB_VIA':
+                via_pos = point(track.GetPosition())
+                d = point_segment_distance(via_pos, cand['a'], cand['b'])
+                if d <= threshold:
+                    return {
+                        'risk': True,
+                        'reason': 'predicted_short_risk_via',
+                        'distance': d,
+                        'obstacleNet': track.GetNetname(),
+                        'layer': str(layer),
+                    }
+        for fp in board.GetFootprints():
+            for pad in fp.Pads():
+                if int(pad.GetNetCode()) == candidate_net:
+                    continue
+                if not pad_on_layer(pad, layer):
+                    continue
+                d = point_segment_distance(point(pad.GetPosition()), cand['a'], cand['b'])
+                if d <= threshold:
+                    return {
+                        'risk': True,
+                        'reason': 'predicted_short_risk_pad',
+                        'distance': d,
+                        'obstacleNet': pad.GetNetname(),
+                        'obstaclePad': f"{fp.GetReference()}:{pad.GetNumber()}",
+                        'layer': str(layer),
+                    }
+    return {'risk': False}
 
 def run(args):
     started = time.time()
@@ -538,13 +746,23 @@ def run(args):
             board = pcbnew.LoadBoard(latest)
             tried_for_item = 0
             candidates = candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
-            if endpoint['distance'] > 4.0:
-                candidates = sorted(candidates, key=lambda candidate: 0 if str(candidate.get('name', '')).startswith('two-via') else 1)
             for candidate in candidates[:args.max_candidates_per_item]:
                 if attempts >= args.max_drc_calls or (time.time() - started) >= args.max_minutes * 60:
                     break
                 if not inside_bounds(candidate_all_points(candidate), bounds):
                     candidate_failures['outside_outline_bounds'] = candidate_failures.get('outside_outline_bounds', 0) + 1
+                    continue
+                short_risk = estimate_candidate_short_risk(board, endpoint, candidate, args.width, args.via_width)
+                if short_risk.get('risk'):
+                    reason = short_risk.get('reason') or 'predicted_short_risk'
+                    candidate_failures[reason] = candidate_failures.get(reason, 0) + 1
+                    rejected_items.append({
+                        'index': endpoint['index'],
+                        'net': endpoint['net'],
+                        'candidate': candidate.get('name'),
+                        'reason': reason,
+                        'detail': short_risk,
+                    })
                     continue
                 cand_board = pcbnew.LoadBoard(latest)
                 apply_candidate(cand_board, endpoint, candidate, args.width, args.via_width, args.via_drill)
@@ -632,7 +850,7 @@ run(args)
 `
 
 const isolatedCandidateHelper = `${clearanceAwareHelper.split('def run(args):')[0]}
-def flatten_candidates(board, unconnected, target_net, max_items, max_candidates_per_item):
+def flatten_candidates(board, unconnected, target_net, max_items, max_candidates_per_item, width, via_width):
     bounds = board_bounds(board)
     copper_layers = enabled_copper_layers(board)
     resolved = []
@@ -653,8 +871,6 @@ def flatten_candidates(board, unconnected, target_net, max_items, max_candidates
     flattened = []
     for endpoint in selected:
         candidates = candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
-        if endpoint['distance'] > 4.0:
-            candidates = sorted(candidates, key=lambda candidate: 0 if str(candidate.get('name', '')).startswith('two-via') else 1)
         for candidate in candidates[:max_candidates_per_item]:
             if not inside_bounds(candidate_all_points(candidate), bounds):
                 rejected.append({
@@ -662,6 +878,16 @@ def flatten_candidates(board, unconnected, target_net, max_items, max_candidates
                     'net': endpoint['net'],
                     'candidate': candidate.get('name'),
                     'reason': 'outside_outline_bounds',
+                })
+                continue
+            short_risk = estimate_candidate_short_risk(board, endpoint, candidate, width, via_width)
+            if short_risk.get('risk'):
+                rejected.append({
+                    'index': endpoint['index'],
+                    'net': endpoint['net'],
+                    'candidate': candidate.get('name'),
+                    'reason': short_risk.get('reason') or 'predicted_short_risk',
+                    'detail': short_risk,
                 })
                 continue
             flattened.append({'endpoint': endpoint, 'candidate': candidate})
@@ -699,6 +925,8 @@ def run_isolated(args):
             args.target_net,
             args.max_items,
             args.max_candidates_per_item,
+            args.width,
+            args.via_width,
         )
         result.update({
             'candidateCount': len(flattened),

@@ -1,0 +1,100 @@
+{
+  "id": "exact_finisher_obstacle_detour_via_site_prefilter_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic_sensor_hub_outline_aware_fixture",
+  "problemType": "exact_ratsnest_finisher_short_risk",
+  "problemSignature": {
+    "symptoms": [
+      "exact finisher candidates reduced unconnected count but reintroduced shorts",
+      "long-net candidate ordering buried obstacle-aware detours behind dogbone vias",
+      "candidate via sites near other-net pads/tracks reached KiCad DRC and wasted route budget"
+    ],
+    "before": {
+      "unconnected": 13,
+      "drcViolations": 0,
+      "shorts": 0,
+      "forbiddenVias": 0
+    },
+    "after": {
+      "unconnected": 12,
+      "drcViolations": 0,
+      "shorts": 0,
+      "forbiddenVias": 0
+    }
+  },
+  "rootCause": "The exact finisher was still prioritizing legacy dogbone candidates for long nets and only prefiltered segment short-risk. Candidate vias placed too close to other-net pads/tracks were sent to full KiCad DRC, and obstacle-aware detours were often never attempted.",
+  "fixSummary": "Generate obstacle-aware wide-channel and layer-channel detours before local bridge candidates, remove the long-net dogbone priority inversion, and prefilter candidate via sites against other-net pads/tracks/vias before expensive DRC.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-route-finish.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ],
+    "functionsAdded": [
+      "point_segment_distance",
+      "segments_intersect",
+      "segment_distance",
+      "candidate_segments",
+      "estimate_candidate_short_risk"
+    ],
+    "testsAdded": [
+      "exact finisher prefilters obvious short-risk candidates before KiCad DRC",
+      "exact finisher generates obstacle-aware detour candidates before local bridges"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "outline-aware compact fixtures",
+      "custom odd-shape boards",
+      "dense MCU/control boards"
+    ],
+    "netRoles": [
+      "control",
+      "sensor",
+      "debug",
+      "USB",
+      "UART",
+      "I2C"
+    ],
+    "conditions": [
+      "DRC clean board has exact unconnected leftovers",
+      "candidate routes repeatedly create shorting_items",
+      "vias are placed near other-net pads/tracks",
+      "legacy dogbone candidates exhaust route budget before obstacle detours"
+    ]
+  },
+  "recipe": [
+    "Run DRC and parse exact unconnected endpoints.",
+    "Generate obstacle-aware detour candidates before local same-row bridge candidates.",
+    "Reject predicted short-risk segments and via sites before KiCad DRC.",
+    "Run each remaining physical candidate in isolation.",
+    "Promote only candidates that reduce exact/global connectivity while keeping DRC/shorts/forbidden vias at zero.",
+    "If stage exhausts, escalate to controlled placement nudge or regional routeability optimization."
+  ],
+  "safetyRules": [
+    "Do not modify protected ESC/FC projects.",
+    "Do not promote candidates with shorts.",
+    "Do not use blind, buried, micro, or via-in-pad vias.",
+    "Do not count segment count as routing success."
+  ],
+  "evidence": {
+    "before": {
+      "report": "boardforge-obstacle-prefilter-exact-finish-report.json",
+      "unconnected": 13,
+      "commits": 0
+    },
+    "after": {
+      "report": "boardforge-viasafe-obstacle-exact-finish-report.json",
+      "unconnected": 12,
+      "commits": 1,
+      "resolvedNet": "BARO_INT"
+    },
+    "tests": [
+      "node --check plugins/boardforge-plugin/bin/boardforge-route-finish.mjs",
+      "node --test plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

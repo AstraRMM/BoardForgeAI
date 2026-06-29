@@ -170,7 +170,7 @@ test('exact finisher generates local DRC-repair bridge candidates for short left
   assert.match(source, /local-drc-repair-bridge-y/)
   assert.match(source, /local-drc-repair-bridge-x/)
   assert.match(source, /avoid_same_layer_pad_crossing/)
-  assert.match(source, /return local_repair_candidates \+ candidates/)
+  assert.match(source, /return obstacle_detour_candidates \+ local_repair_candidates \+ candidates/)
   assert.match(source, /--target-net/)
   assert.match(source, /--skip-zone-fill/)
   assert.match(source, /targetNet/)
@@ -190,6 +190,32 @@ test('exact finisher isolates each physical candidate in parent-supervised subpr
   assert.match(source, /candidate_index_exhausted/)
   assert.match(source, /runParentDrc/)
   assert.match(source, /fs\.copyFileSync\(candidateBoard, out\)/)
+})
+
+test('exact finisher prefilters obvious short-risk candidates before KiCad DRC', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /estimate_candidate_short_risk/)
+  assert.match(source, /segment_distance/)
+  assert.match(source, /point_segment_distance/)
+  assert.match(source, /predicted_short_risk_track/)
+  assert.match(source, /predicted_short_risk_pad/)
+  assert.match(source, /predicted_short_risk_via/)
+  assert.match(source, /predicted_short_risk_via_site_pad/)
+  assert.match(source, /predicted_short_risk_via_site_track/)
+  assert.match(source, /via_threshold/)
+  assert.match(source, /short_risk\.get\('risk'\)/)
+  assert.match(source, /candidateFailures\[reason\]/)
+})
+
+test('exact finisher generates obstacle-aware detour candidates before local bridges', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /obstacle_detour_candidates/)
+  assert.match(source, /route_around_dense_local_obstacles/)
+  assert.match(source, /escape_to_less_congested_layer/)
+  assert.match(source, /obstacle-wide-channel-y/)
+  assert.match(source, /obstacle-layer-channel-x/)
+  assert.match(source, /return obstacle_detour_candidates \+ local_repair_candidates \+ candidates/)
+  assert.doesNotMatch(source, /startswith\('two-via'\)/)
 })
 
 test('controlled placement nudge CLI physically executes candidates with exact-route promotion gate', () => {
