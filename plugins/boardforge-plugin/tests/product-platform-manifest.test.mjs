@@ -28,17 +28,20 @@ test('project manifest gates manufacturing readiness from validation evidence', 
   assert.equal(isManufacturingReadyManifest(manifest), true)
 })
 
-test('dashboard sample manifest is product-readable and clean', () => {
+test('dashboard sample manifest is product-readable and honest about blocked fixtures', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'rev-f.json'), 'utf8'))
   assert.equal(manifest.schema, 'boardforge.project-manifest.v1')
-  assert.equal(manifest.validation.unconnected, 0)
-  assert.equal(manifest.manufacturing.ready, true)
+  assert.equal(manifest.validation.shorts, 0)
+  assert.ok(manifest.validation.unconnected > 0)
+  assert.equal(manifest.manufacturing.ready, false)
   const dashboard = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'project-dashboard.json'), 'utf8'))
   assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
   assert.equal(dashboard.summary.totalProjects, 2)
-  assert.equal(dashboard.summary.manufacturingReady, 2)
+  assert.equal(dashboard.summary.manufacturingReady, 1)
+  assert.equal(dashboard.summary.blocked, 1)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ODD-SHAPE-ROBOT-01_REV_A' && project.readiness === 'ready'), true)
+  assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_F' && project.readiness === 'blocked'), true)
 })
 
 test('manifest-driven dashboard data normalizes real fixture evidence', () => {
@@ -56,9 +59,10 @@ test('manifest-driven dashboard data normalizes real fixture evidence', () => {
   const dashboard = buildProjectDashboardData([revF, oddShape], { generatedAt: '2026-06-28T00:00:00.000Z' })
   assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
   assert.equal(dashboard.summary.totalProjects, 2)
-  assert.equal(dashboard.summary.manufacturingReady, 2)
-  assert.equal(dashboard.summary.blocked, 0)
-  assert.equal(dashboard.projects.every((project) => project.readiness === 'ready'), true)
+  assert.equal(dashboard.summary.manufacturingReady, 1)
+  assert.equal(dashboard.summary.blocked, 1)
+  assert.equal(dashboard.projects.some((project) => project.readiness === 'ready'), true)
+  assert.equal(dashboard.projects.some((project) => project.readiness === 'blocked'), true)
 })
 
 test('AI session report is model-agnostic and preserves protected rejections', () => {

@@ -1,0 +1,84 @@
+{
+  "id": "rev_f_outline_aware_exact_finisher_checkpoint_001",
+  "createdAt": "2026-06-28T22:15:00-04:00",
+  "updatedAt": "2026-06-28T22:15:00-04:00",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic sensor hub fixture",
+  "problemType": "outline-aware post-route exact finishing",
+  "problemSignature": {
+    "shorts": 0,
+    "forbiddenVias": 0,
+    "drcViolations": 0,
+    "unconnectedStarted": 20,
+    "unconnectedAfterSafeCommits": 18,
+    "failureMode": "candidate search used KiCad DRC as the only prefilter and hit runtime limits"
+  },
+  "rootCause": "BoardForge treated a clean compact fallback as REV_F completion while the true outline-aware placement board still had exact KiCad unconnected items. The first exact finishers also used representative DRC positions instead of resolving KiCad pad/track UUIDs to actual endpoints, and they lacked commit checkpointing.",
+  "fixSummary": "Separate fallback manufacturing candidates from unfinished outline-aware boards. Add clearance-aware exact finisher planning that resolves DRC UUID endpoints, prefilters candidates with an obstacle map, commits only when KiCad connectivity improves with zero DRC, and checkpoints after every safe route.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/routing/exact-ratsnest-finisher.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs",
+      "plugins/boardforge-plugin/tests/rev-f-outline-aware-placement.test.mjs",
+      "apps/web/src/sample-manifests/rev-f.json",
+      "apps/web/src/sample-manifests/project-dashboard.json"
+    ],
+    "functionsAdded": [
+      "buildClearanceAwareExactFinisherPlan",
+      "shouldCheckpointExactFinisher",
+      "classifyExactFinisherRun"
+    ],
+    "testsAdded": [
+      "clearance-aware exact finisher resolves KiCad UUID endpoints and checkpoints productive runs",
+      "REV_F true outline-aware board requires exact finisher until connectivity is clean"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "custom-outline sensor hub",
+      "medium-density mixed-signal",
+      "outline-aware placement fixture"
+    ],
+    "netRoles": [
+      "signal",
+      "control",
+      "power",
+      "ground"
+    ],
+    "conditions": [
+      "FreeRouting leaves a small exact ratsnest tail",
+      "DRC is clean but unconnected items remain",
+      "fallback route exists but product-shape route is not complete"
+    ]
+  },
+  "recipe": [
+    "Run KiCad DRC and parse unconnected_items.",
+    "Resolve each DRC item UUID to its actual pad or track endpoint.",
+    "Build a local obstacle map before generating route candidates.",
+    "Spend KiCad DRC only on candidates that pass geometric prefiltering.",
+    "Commit only when global unconnected decreases and DRC remains zero.",
+    "Checkpoint after every safe commit so long exact finishing can resume."
+  ],
+  "safetyRules": [
+    "Do not call a fallback board the same as the unfinished outline-aware board.",
+    "Do not export manufacturing for a board with unconnected items.",
+    "Do not count added segments as success.",
+    "Do not route with blind, buried, micro, or via-in-pad vias."
+  ],
+  "evidence": {
+    "before": {
+      "unconnected": 20,
+      "drcViolations": 0
+    },
+    "after": {
+      "unconnected": 18,
+      "drcViolations": 0
+    },
+    "tests": [
+      "test:exact-ratsnest-finisher",
+      "test:rev-f-outline-aware-manufacturing-candidate"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

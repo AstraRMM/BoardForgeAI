@@ -4,7 +4,7 @@
 
 - REV_D: completed manufacturing candidate.
 - REV_E: completed manufacturing candidate with compact shrink-wrap outline.
-- REV_F: outline-aware placement proof plus completed manufacturing candidate through verified clean compact-route fallback.
+- REV_F: outline-aware placement proof; true product-shape board still needs clearance-aware exact finishing. The compact-route fallback remains a separate clean manufacturing candidate and must not be presented as the true outline-aware board.
 - BF-ODD-SHAPE-ROBOT-01_REV_A: non-rectangular outline fixture with real schematic graph, routed PCB, DRC 0, ERC 0, unconnected 0, and JLCPCB package exported.
 
 ## Primary Demo Fixture
@@ -62,6 +62,8 @@ Generate dashboard data from validated manifests:
 ```bash
 npm run boardforge:dashboard-data -- --manifest ".\apps\web\src\sample-manifests\rev-f.json" --manifest "C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-ODD-SHAPE-ROBOT-01_REV_A\boardforge-project-manifest.json" --output ".\apps\web\src\sample-manifests\project-dashboard.json"
 ```
+
+The REV_F dashboard card is intentionally blocked until the true outline-aware board reaches zero unconnected and clean DRC/ERC. Use BF-ODD-SHAPE-ROBOT-01_REV_A as the clean odd-shape golden proof.
 
 Run the bounded product health check:
 

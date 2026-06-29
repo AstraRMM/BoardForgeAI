@@ -19,7 +19,7 @@ Do not open or mutate protected ESC/FC projects during the demo.
 5. Run preflight: zero pre-route shorts, valid outline, valid footprints.
 6. Export DSN and run FreeRouting.
 7. Import SES and show DRC/ERC/connectivity evidence.
-8. Show routeability fallback if a prettier outline cannot route cleanly.
+8. Show routeability fallback if a prettier outline cannot route cleanly, and call out that fallback boards are separate candidates.
 9. Export Gerbers, drill, BOM, CPL, JLCPCB ZIP, and manifest.
 10. Open KiCad plugin panel and show the same project manifest.
 11. Replay the CLI command from the manifest.
@@ -36,7 +36,8 @@ npm run report:90:quick -- --fresh
 ## Proof Points
 
 - Real KiCad schematic graph exists.
-- Routed PCB has zero unconnected items.
+- Clean golden fixture PCB has zero unconnected items.
+- REV_F outline-aware status remains blocked until its own exact finisher clears remaining unconnected/ERC/DRC issues.
 - KiCad DRC and ERC are honestly clean.
 - Manufacturing ZIP is gated by validation evidence.
 - Dashboard status is generated from the same manifest evidence.

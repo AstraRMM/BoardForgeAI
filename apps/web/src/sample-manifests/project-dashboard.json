@@ -3,8 +3,8 @@
   "generatedAt": "2026-06-29T00:53:58.939Z",
   "summary": {
     "totalProjects": 2,
-    "manufacturingReady": 2,
-    "blocked": 0,
+    "manufacturingReady": 1,
+    "blocked": 1,
     "review": 0,
     "needsRouting": 0,
     "cleanDrcErc": 2
@@ -26,8 +26,8 @@
         "drcViolations": 0,
         "drcErrors": 0,
         "drcWarnings": 0,
-        "ercViolations": 0,
-        "ercErrors": 0,
+        "ercViolations": 182,
+        "ercErrors": 182,
         "ercWarnings": 0,
         "namedNets": 5,
         "routedSegments": 10,
@@ -51,15 +51,15 @@
     {
       "schema": "boardforge.project-dashboard-card.v1",
       "projectId": "BF-SENSOR-HUB-01_REV_F",
-      "projectName": "BF-SENSOR-HUB-01 REV_F",
-      "status": "manufacturing_candidate",
+      "projectName": "BF-SENSOR-HUB-01 REV_F outline-aware proof",
+      "status": "outline_aware_exact_finish_required",
       "boardPath": null,
       "schematicPath": null,
-      "readiness": "ready",
-      "routingCompletionPercent": 100,
+      "readiness": "blocked",
+      "routingCompletionPercent": 77,
       "validation": {
         "shorts": 0,
-        "unconnected": 0,
+        "unconnected": 18,
         "forbiddenVias": 0,
         "drcViolations": 0,
         "drcErrors": 0,
@@ -73,18 +73,21 @@
         "schematicGraphStatus": "unknown"
       },
       "manufacturing": {
-        "ready": true,
-        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\manufacturing\\BF-SENSOR-HUB-01_REV_F_JLCPCB.zip",
-        "blockedReason": null
+        "ready": false,
+        "zip": null,
+        "blockedReason": "true_outline_aware_board_has_remaining_unconnected_items"
       },
       "reports": {
         "status": "BoardForge_REV_F_Final_Status.md",
         "drcErc": "BoardForge_REV_F_DRC_ERC_Report.md",
         "manufacturing": "BoardForge_REV_F_Manufacturing_Readiness_Report.md"
       },
-      "replayCommand": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F",
-      "criticalBlockers": [],
-      "nextAction": "human_manufacturing_review",
+      "replayCommand": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F --mode clearance-aware-exact-finish",
+      "criticalBlockers": [
+        "18 exact KiCad unconnected items remain on true outline-aware board",
+        "182 schematic ERC issues remain on true outline-aware board"
+      ],
+      "nextAction": "run_clearance_aware_exact_finisher",
       "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\apps\\web\\src\\sample-manifests\\rev-f.json"
     }
   ]
