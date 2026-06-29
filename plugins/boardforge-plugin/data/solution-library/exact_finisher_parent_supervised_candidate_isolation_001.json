@@ -1,0 +1,82 @@
+{
+  "id": "exact_finisher_parent_supervised_candidate_isolation_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic_sensor_hub_outline_aware_fixture",
+  "problemType": "postroute_exact_finisher_stall",
+  "problemSignature": {
+    "symptom": "KiCad Python exact-finisher helper can hang while evaluating local DRC-repair candidates",
+    "remainingUnconnected": 13,
+    "drcViolations": 0,
+    "shorts": 0,
+    "forbiddenVias": 0
+  },
+  "rootCause": "The exact ratsnest finisher evaluated many physical route candidates inside one KiCad Python process, so a single pathological candidate or DRC call could stall the entire finishing pass.",
+  "fixSummary": "Run each exact-finisher candidate in its own KiCad Python subprocess with parent-side timeouts and parent-side promotion DRC. Timed-out or unsafe candidates are rolled back individually while the parent continues to the next candidate.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-route-finish.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs",
+      "plugins/boardforge-plugin/data/solution-library/exact_finisher_parent_supervised_candidate_isolation_001.json"
+    ],
+    "functionsAdded": [
+      "runIsolatedExactFinish",
+      "runParentDrc",
+      "countsFromDrc",
+      "isolatedCandidateHelper"
+    ],
+    "testsAdded": [
+      "exact finisher isolates each physical candidate in parent-supervised subprocesses"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "outline-aware synthetic fixtures",
+      "dense control boards",
+      "post-FreeRouting cleanup boards"
+    ],
+    "netRoles": [
+      "signal",
+      "control",
+      "local rail",
+      "LED return"
+    ],
+    "conditions": [
+      "baseline DRC is clean",
+      "unconnected items remain",
+      "candidate DRC can hang or time out",
+      "per-candidate rollback is required"
+    ]
+  },
+  "recipe": [
+    "Start from a clean DRC board with remaining KiCad unconnected items.",
+    "Enumerate exact route candidates in a child KiCad Python process.",
+    "Apply only one candidate per child process.",
+    "Terminate the child if it exceeds candidate-timeout-ms.",
+    "Run promotion DRC from the parent process.",
+    "Commit only when shorts and forbidden vias remain zero, DRC remains clean, and unconnected count decreases.",
+    "Rollback timed-out, unsafe, or non-improving candidates and continue."
+  ],
+  "safetyRules": [
+    "Do not change board outline.",
+    "Do not move mounting holes.",
+    "Do not change footprints, packages, parts, pads, or nets.",
+    "Do not use blind, buried, micro, or via-in-pad vias.",
+    "Do not promote candidates that introduce shorts, forbidden vias, or non-connectivity DRC."
+  ],
+  "evidence": {
+    "before": {
+      "behavior": "monolithic helper could stall during targeted exact-finisher local repair attempts"
+    },
+    "after": {
+      "behavior": "each candidate is bounded by a parent-supervised subprocess timeout and promotion gate"
+    },
+    "tests": [
+      "node --test plugins/boardforge-plugin/tests/routing-upgrade.test.mjs",
+      "npm run test:solution-library"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

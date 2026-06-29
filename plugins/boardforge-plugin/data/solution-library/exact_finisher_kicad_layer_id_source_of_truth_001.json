@@ -1,0 +1,74 @@
+{
+  "id": "exact_finisher_kicad_layer_id_source_of_truth_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic_sensor_hub_outline_aware_fixture",
+  "problemType": "kicad_layer_mapping_error",
+  "problemSignature": {
+    "symptom": "Exact-finisher candidate helper attempted to add tracks on non-copper B.Mask/In1.Cu layer IDs",
+    "kicadError": "BOARD::Add() Cannot place Track on non-copper layer",
+    "candidateResult": "helper timeout or rollback instead of actionable candidate failure"
+  },
+  "rootCause": "The exact finisher used hardcoded numeric layer fallbacks and candidate layer lists. KiCad layer IDs are board/build dependent, so numeric assumptions such as B.Cu = 3 or enabled inner layers = 1/2 can target non-copper layers.",
+  "fixSummary": "Resolve layers through KiCad APIs, normalize mask/silkscreen endpoint descriptions to copper sides, derive enabled copper layers from the board, and generate route candidates only on those layers.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-route-finish.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs",
+      "plugins/boardforge-plugin/data/solution-library/exact_finisher_kicad_layer_id_source_of_truth_001.json"
+    ],
+    "functionsAdded": [
+      "enabled_copper_layers"
+    ],
+    "testsAdded": [
+      "exact finisher resolves PTH pad and via DRC endpoint descriptions"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "KiCad 9/10 boards",
+      "custom stackups",
+      "outline-aware fixtures",
+      "post-route exact finishing jobs"
+    ],
+    "netRoles": [
+      "signal",
+      "control",
+      "local rail"
+    ],
+    "conditions": [
+      "DRC endpoint descriptions reference mask or silkscreen layers",
+      "board stackup differs from hardcoded assumptions",
+      "candidate routing inserts tracks/vias programmatically"
+    ]
+  },
+  "recipe": [
+    "Never hardcode KiCad copper layer numeric IDs.",
+    "Map F.Cu and B.Cu through pcbnew constants.",
+    "Use board.GetLayerID for named layers when available.",
+    "Normalize B.Mask/F.Mask and silkscreen endpoint descriptions to B.Cu/F.Cu for route endpoint purposes.",
+    "Enumerate board-enabled copper layers before generating dogbone or layer-change candidates.",
+    "Reject or skip candidates that target non-copper layers before invoking DRC."
+  ],
+  "safetyRules": [
+    "Do not add tracks to non-copper layers.",
+    "Do not assume inner layers exist.",
+    "Do not promote candidate boards that trigger KiCad layer asserts.",
+    "Keep shorts, forbidden vias, outline, mounting holes, and footprints unchanged."
+  ],
+  "evidence": {
+    "before": {
+      "failure": "Candidates timed out with KiCad assert for B.Mask and In1.Cu non-copper track insertion"
+    },
+    "after": {
+      "failure": "Candidates execute and roll back for real DRC reasons such as shorts, not layer-ID asserts"
+    },
+    "tests": [
+      "node --check plugins/boardforge-plugin/bin/boardforge-route-finish.mjs",
+      "node --test plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

@@ -143,6 +143,16 @@ test('exact finisher resolves PTH pad and via DRC endpoint descriptions', () => 
   assert.match(source, /PTH.*pad/)
   assert.match(source, /parse_via_desc/)
   assert.match(source, /PCB_VIA/)
+  assert.match(source, /B\.Mask/)
+  assert.match(source, /B\.Cu/)
+  assert.match(source, /pcbnew\.B_Cu/)
+  assert.doesNotMatch(source, /if target == 'B\.Cu':\s*\n\s*return 3/)
+  assert.doesNotMatch(source, /for route_layer in \[1, 2, 3, 0\]/)
+  assert.doesNotMatch(source, /via_drill, 0, 3/)
+  assert.match(source, /enabled_copper_layers/)
+  assert.match(source, /board\.IsLayerEnabled/)
+  assert.match(source, /board\.IsCopperLayer/)
+  assert.match(source, /not layer\.endswith\('\.Cu'\)/)
 })
 
 test('route finisher can remove redundant generated ground stubs transactionally', () => {
@@ -167,6 +177,19 @@ test('exact finisher generates local DRC-repair bridge candidates for short left
   assert.match(source, /endpoint\['net'\] != args\.target_net/)
   assert.match(source, /TimeoutExpired/)
   assert.match(source, /drc_timeout/)
+})
+
+test('exact finisher isolates each physical candidate in parent-supervised subprocesses', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /isolated-exact-finish/)
+  assert.match(source, /runIsolatedExactFinish/)
+  assert.match(source, /isolatedCandidateHelper/)
+  assert.match(source, /candidate-timeout-ms/)
+  assert.match(source, /candidate_helper_timeout/)
+  assert.match(source, /candidate_drc_timeout/)
+  assert.match(source, /candidate_index_exhausted/)
+  assert.match(source, /runParentDrc/)
+  assert.match(source, /fs\.copyFileSync\(candidateBoard, out\)/)
 })
 
 test('controlled placement nudge CLI physically executes candidates with exact-route promotion gate', () => {

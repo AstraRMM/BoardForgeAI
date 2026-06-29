@@ -108,21 +108,43 @@ def drc_counts(data):
 
 def layer_id(board, name):
     target = name.strip()
+    if target == 'F.Cu':
+        return pcbnew.F_Cu
+    if target == 'B.Cu':
+        return pcbnew.B_Cu
+    try:
+        layer = board.GetLayerID(target)
+        if layer >= 0:
+            return layer
+    except Exception:
+        pass
     for idx in range(64):
         try:
             if board.GetLayerName(idx) == target:
                 return idx
         except Exception:
             pass
-    if target == 'F.Cu':
-        return 0
-    if target == 'In1.Cu':
-        return 1
-    if target == 'In2.Cu':
-        return 2
-    if target == 'B.Cu':
-        return 3
-    return 0
+    return pcbnew.F_Cu
+
+def enabled_copper_layers(board):
+    layers = []
+    for idx in range(64):
+        try:
+            if board.IsLayerEnabled(idx) and board.IsCopperLayer(idx):
+                layers.append(idx)
+                continue
+        except Exception:
+            pass
+        try:
+            if idx in (pcbnew.F_Cu, pcbnew.B_Cu) and board.GetLayerName(idx).endswith('.Cu'):
+                layers.append(idx)
+        except Exception:
+            pass
+    if pcbnew.F_Cu not in layers:
+        layers.insert(0, pcbnew.F_Cu)
+    if pcbnew.B_Cu not in layers:
+        layers.append(pcbnew.B_Cu)
+    return list(dict.fromkeys(layers))
 
 def uuid_string(item):
     try:
@@ -146,6 +168,12 @@ def parse_pad_desc(desc):
     layer = 'F.Cu'
     if ' on ' in desc:
         layer = desc.rsplit(' on ', 1)[1].strip()
+    if layer == 'B.Mask' or layer == 'B.Silkscreen':
+        layer = 'B.Cu'
+    elif layer == 'F.Mask' or layer == 'F.Silkscreen':
+        layer = 'F.Cu'
+    elif not layer.endswith('.Cu'):
+        layer = 'F.Cu'
     return {'ref': ref, 'pad': pad, 'layer': layer}
 
 def parse_via_desc(desc):
@@ -303,7 +331,7 @@ def add_via(board, net_code, at, width_mm, drill_mm, top_layer, bottom_layer):
     board.Add(via)
     return via
 
-def candidate_paths(a, b):
+def candidate_paths(a, b, copper_layers=None):
     ax, ay = a['pos']
     bx, by = b['pos']
     midx = (ax + bx) / 2
@@ -311,6 +339,7 @@ def candidate_paths(a, b):
     endpoint_distance = dist((ax, ay), (bx, by))
     candidates = []
     local_repair_candidates = []
+    copper_layers = copper_layers or [pcbnew.F_Cu, pcbnew.B_Cu]
     candidates.append({'name': 'direct', 'layers': [a['layer']], 'points': [(ax, ay), (bx, by)]})
     candidates.append({'name': 'xy', 'layers': [a['layer']], 'points': [(ax, ay), (bx, ay), (bx, by)]})
     candidates.append({'name': 'yx', 'layers': [a['layer']], 'points': [(ax, ay), (ax, by), (bx, by)]})
@@ -323,7 +352,7 @@ def candidate_paths(a, b):
             candidates.append({'name': f'via-near-target-x-{off}', 'via': via, 'layers': [a['layer'], b['layer']], 'points': [(ax, ay), (via[0], ay), via, (bx, by)]})
             via = (bx, by + off)
             candidates.append({'name': f'via-near-target-y-{off}', 'via': via, 'layers': [a['layer'], b['layer']], 'points': [(ax, ay), (ax, via[1]), via, (bx, by)]})
-    for route_layer in [1, 2, 3, 0]:
+    for route_layer in copper_layers:
         if route_layer in (a['layer'], b['layer']):
             continue
         for sx, sy, tx, ty, label in [
@@ -348,7 +377,7 @@ def candidate_paths(a, b):
     if endpoint_distance <= 6.0:
         # Short local leftovers often fail because a direct top-layer stitch crosses adjacent pads.
         # Escape both pads away from the local row, bridge on another copper layer, and return.
-        for route_layer in [3, 2, 1]:
+        for route_layer in copper_layers:
             if route_layer in (a['layer'], b['layer']):
                 continue
             for escape in [0.65, -0.65, 0.9, -0.9, 1.25, -1.25, 1.75, -1.75]:
@@ -391,7 +420,7 @@ def apply_candidate(board, endpoint, candidate, width, via_width, via_drill):
                     if dist(pt, via_pt) < 0.01:
                         via_layers.add((via_pt, layer))
         for via_pt in candidate.get('vias', []):
-            add_via(board, endpoint['netCode'], via_pt, via_width, via_drill, 0, 3)
+            add_via(board, endpoint['netCode'], via_pt, via_width, via_drill, pcbnew.F_Cu, pcbnew.B_Cu)
         return
     points = candidate['points']
     if 'via' in candidate and len(candidate.get('layers', [])) >= 2:
@@ -489,6 +518,7 @@ def run(args):
             break
         progress_this_scan = False
         bounds = board_bounds(board)
+        copper_layers = enabled_copper_layers(board)
         resolved = []
         for item_index, item in enumerate(unconnected):
             endpoint = resolve_unconnected(board, item)
@@ -507,7 +537,7 @@ def run(args):
                 break
             board = pcbnew.LoadBoard(latest)
             tried_for_item = 0
-            candidates = candidate_paths(endpoint['a'], endpoint['b'])
+            candidates = candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
             if endpoint['distance'] > 4.0:
                 candidates = sorted(candidates, key=lambda candidate: 0 if str(candidate.get('name', '')).startswith('two-via') else 1)
             for candidate in candidates[:args.max_candidates_per_item]:
@@ -599,6 +629,136 @@ parser.add_argument('--target-net', default='')
 parser.add_argument('--skip-zone-fill', action='store_true')
 args = parser.parse_args()
 run(args)
+`
+
+const isolatedCandidateHelper = `${clearanceAwareHelper.split('def run(args):')[0]}
+def flatten_candidates(board, unconnected, target_net, max_items, max_candidates_per_item):
+    bounds = board_bounds(board)
+    copper_layers = enabled_copper_layers(board)
+    resolved = []
+    target_skipped = 0
+    rejected = []
+    for item_index, item in enumerate(unconnected):
+        endpoint = resolve_unconnected(board, item)
+        if not endpoint:
+            rejected.append({'index': item_index, 'reason': 'endpoint_resolution_failed'})
+            continue
+        if target_net and endpoint['net'] != target_net:
+            target_skipped += 1
+            continue
+        endpoint['index'] = item_index
+        endpoint['distance'] = dist(endpoint['a']['pos'], endpoint['b']['pos'])
+        resolved.append(endpoint)
+    selected = sorted(resolved, key=lambda endpoint: endpoint['distance'])[:max_items]
+    flattened = []
+    for endpoint in selected:
+        candidates = candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
+        if endpoint['distance'] > 4.0:
+            candidates = sorted(candidates, key=lambda candidate: 0 if str(candidate.get('name', '')).startswith('two-via') else 1)
+        for candidate in candidates[:max_candidates_per_item]:
+            if not inside_bounds(candidate_all_points(candidate), bounds):
+                rejected.append({
+                    'index': endpoint['index'],
+                    'net': endpoint['net'],
+                    'candidate': candidate.get('name'),
+                    'reason': 'outside_outline_bounds',
+                })
+                continue
+            flattened.append({'endpoint': endpoint, 'candidate': candidate})
+    return flattened, selected, rejected, target_skipped
+
+def run_isolated(args):
+    os.makedirs(args.out_dir, exist_ok=True)
+    result = {
+        'written': False,
+        'reason': 'not_started',
+        'candidateIndex': args.candidate_index,
+        'candidateCount': 0,
+        'targetNet': args.target_net,
+    }
+    try:
+        print('isolated_stage:load_board', flush=True)
+        board = pcbnew.LoadBoard(args.board)
+        print('isolated_stage:load_current_drc', flush=True)
+        if os.path.exists(args.current_drc):
+            baseline = {'data': load_json(args.current_drc), 'reportPath': args.current_drc, 'exitCode': 0}
+        else:
+            baseline = run_drc(args.kicad_cli, args.board, args.current_drc)
+        baseline_counts = drc_counts(baseline['data'])
+        result['baseline'] = baseline_counts
+        if baseline_counts['violations'] != 0:
+            result.update({'reason': 'baseline_has_drc_violations'})
+            with open(args.result, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2)
+            return
+        unconnected = baseline['data'].get('unconnected_items') or []
+        print('isolated_stage:flatten_candidates', flush=True)
+        flattened, selected, rejected, target_skipped = flatten_candidates(
+            board,
+            unconnected,
+            args.target_net,
+            args.max_items,
+            args.max_candidates_per_item,
+        )
+        result.update({
+            'candidateCount': len(flattened),
+            'selectedItems': len(selected),
+            'rejectedItems': rejected[:25],
+            'targetSkipped': target_skipped,
+        })
+        if args.candidate_index >= len(flattened):
+            result.update({'reason': 'candidate_index_exhausted'})
+            with open(args.result, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2)
+            return
+        picked = flattened[args.candidate_index]
+        endpoint = picked['endpoint']
+        candidate = picked['candidate']
+        print('isolated_stage:load_candidate_board', flush=True)
+        cand_board = pcbnew.LoadBoard(args.board)
+        print('isolated_stage:apply_candidate', flush=True)
+        apply_candidate(cand_board, endpoint, candidate, args.width, args.via_width, args.via_drill)
+        if not args.skip_zone_fill:
+            try:
+                print('isolated_stage:zone_fill', flush=True)
+                pcbnew.ZONE_FILLER(cand_board).Fill(cand_board.Zones())
+            except Exception:
+                pass
+        print('isolated_stage:save_board', flush=True)
+        pcbnew.SaveBoard(args.out, cand_board)
+        print('isolated_stage:write_result', flush=True)
+        result.update({
+            'written': True,
+            'reason': 'candidate_written',
+            'outputBoard': args.out,
+            'net': endpoint['net'],
+            'itemIndex': endpoint['index'],
+            'distance': endpoint['distance'],
+            'candidate': candidate.get('name'),
+            'repairIntent': candidate.get('repairIntent', ''),
+        })
+    except Exception as exc:
+        result.update({'written': False, 'reason': 'candidate_helper_exception', 'error': str(exc)})
+    with open(args.result, 'w', encoding='utf-8') as f:
+        json.dump(result, f, indent=2)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--board', required=True)
+parser.add_argument('--out', required=True)
+parser.add_argument('--out-dir', required=True)
+parser.add_argument('--result', required=True)
+parser.add_argument('--current-drc', required=True)
+parser.add_argument('--kicad-cli', required=True)
+parser.add_argument('--candidate-index', type=int, required=True)
+parser.add_argument('--max-items', type=int, default=18)
+parser.add_argument('--max-candidates-per-item', type=int, default=24)
+parser.add_argument('--width', type=float, default=0.2)
+parser.add_argument('--via-width', type=float, default=0.6)
+parser.add_argument('--via-drill', type=float, default=0.3)
+parser.add_argument('--target-net', default='')
+parser.add_argument('--skip-zone-fill', action='store_true')
+args = parser.parse_args()
+run_isolated(args)
 `
 
 const groundZoneHelper = String.raw`
@@ -879,6 +1039,247 @@ function runClearanceAwareFinish(board, outDir) {
   return result
 }
 
+function countsFromDrc(data) {
+  const violations = data?.violations ?? []
+  const unconnected = data?.unconnected_items ?? []
+  const shorts = violations.filter((violation) => ['shorting_items', 'shorting'].includes(String(violation?.type ?? '').toLowerCase()))
+  const forbiddenVias = violations.filter((violation) => {
+    const type = String(violation?.type ?? '').toLowerCase()
+    return type.includes('forbidden') && JSON.stringify(violation).toLowerCase().includes('via')
+  })
+  return {
+    violations: violations.length,
+    unconnected: unconnected.length,
+    shorts: shorts.length,
+    forbiddenVias: forbiddenVias.length,
+  }
+}
+
+function runParentDrc(kicadCli, boardPath, reportPath, timeoutMs = numberArg('drc-timeout-ms', 90000)) {
+  const proc = spawnSync(kicadCli, ['pcb', 'drc', '--format', 'json', '--output', reportPath, boardPath], {
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    timeout: timeoutMs,
+  })
+  if (proc.error?.code === 'ETIMEDOUT') {
+    return {
+      timedOut: true,
+      exitCode: 124,
+      counts: { violations: 1, unconnected: Number.POSITIVE_INFINITY, shorts: 0, forbiddenVias: 0 },
+      stdout: proc.stdout ?? '',
+      stderr: proc.stderr ?? 'KiCad DRC timed out',
+      reportPath,
+    }
+  }
+  const data = fs.existsSync(reportPath) ? JSON.parse(fs.readFileSync(reportPath, 'utf8')) : {}
+  return {
+    timedOut: false,
+    exitCode: proc.status,
+    counts: countsFromDrc(data),
+    stdout: proc.stdout ?? '',
+    stderr: proc.stderr ?? '',
+    reportPath,
+    data,
+  }
+}
+
+function runIsolatedExactFinish(board, outDir) {
+  fs.mkdirSync(outDir, { recursive: true })
+  const started = Date.now()
+  const out = arg('out', path.join(outDir, `${path.basename(board, '.kicad_pcb')}_boardforge_isolated_exact_finished.kicad_pcb`))
+  const report = arg('report', path.join(outDir, 'boardforge-isolated-exact-finisher-report.json'))
+  const helperPath = path.join(os.tmpdir(), `boardforge-isolated-route-finish-${process.pid}.py`)
+  fs.writeFileSync(helperPath, isolatedCandidateHelper)
+  fs.copyFileSync(board, out)
+  const kicadPython = arg('kicad-python', findDefaultKicadPython())
+  const kicadCli = arg('kicad-cli', findDefaultKicadCli())
+  const maxMinutes = numberArg('max-minutes', 20)
+  const maxDrcCalls = numberArg('max-drc-calls', 64)
+  const candidateTimeoutMs = numberArg('candidate-timeout-ms', 45000)
+  const candidateFailures = {}
+  const attempts = []
+  const committedItems = []
+  const rejectedItems = []
+  let commits = 0
+  let rollbacks = 0
+  let candidateIndex = 0
+  let exhausted = false
+  let runtimeLimitReached = false
+
+  const baselineDrc = runParentDrc(kicadCli, out, path.join(outDir, 'boardforge-isolated-baseline-drc.json'))
+  const baseline = baselineDrc.counts
+  let currentCounts = baseline
+  let currentDrcReportPath = baselineDrc.reportPath
+  if (baselineDrc.timedOut || baseline.violations !== 0) {
+    const result = {
+      mode: 'isolated_exact_finish',
+      startingBoard: board,
+      latestBoard: out,
+      baseline,
+      final: currentCounts,
+      attempts: 0,
+      commits: 0,
+      rollbacks: 0,
+      candidateFailures: { baseline_not_clean: 1 },
+      rejectedItems: [],
+      targetNet: arg('target-net'),
+      isolatedCandidates: true,
+      runtimeLimitReached: false,
+    }
+    fs.writeFileSync(report, JSON.stringify(result, null, 2))
+    return result
+  }
+
+  while (attempts.length < maxDrcCalls && Date.now() - started < maxMinutes * 60 * 1000) {
+    const candidateBoard = path.join(outDir, `boardforge-isolated-candidate-${candidateIndex + 1}.kicad_pcb`)
+    const candidateResultPath = path.join(outDir, `boardforge-isolated-candidate-${candidateIndex + 1}.json`)
+    const helperArgs = [
+      helperPath,
+      '--board', out,
+      '--out', candidateBoard,
+      '--out-dir', outDir,
+      '--result', candidateResultPath,
+      '--current-drc', currentDrcReportPath,
+      '--kicad-cli', kicadCli,
+      '--candidate-index', String(candidateIndex),
+      '--max-items', String(numberArg('max-items', 18)),
+      '--max-candidates-per-item', String(numberArg('max-candidates-per-item', 24)),
+      '--width', String(numberArg('width', 0.2)),
+      '--via-width', String(numberArg('via-width', 0.6)),
+      '--via-drill', String(numberArg('via-drill', 0.3)),
+    ]
+    const targetNet = arg('target-net')
+    if (targetNet) helperArgs.push('--target-net', targetNet)
+    if (hasFlag('skip-zone-fill')) helperArgs.push('--skip-zone-fill')
+    const helper = spawnSync(kicadPython, helperArgs, {
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+      timeout: candidateTimeoutMs,
+    })
+    if (helper.error?.code === 'ETIMEDOUT') {
+      candidateFailures.candidate_helper_timeout = (candidateFailures.candidate_helper_timeout ?? 0) + 1
+      rollbacks += 1
+      attempts.push({
+        candidateIndex,
+        reason: 'candidate_helper_timeout',
+        stdout: helper.stdout,
+        stderr: helper.stderr,
+      })
+      candidateIndex += 1
+      continue
+    }
+    if (helper.status !== 0 || !fs.existsSync(candidateResultPath)) {
+      candidateFailures.candidate_helper_failed = (candidateFailures.candidate_helper_failed ?? 0) + 1
+      rollbacks += 1
+      attempts.push({
+        candidateIndex,
+        reason: 'candidate_helper_failed',
+        exitCode: helper.status,
+        stderr: helper.stderr,
+      })
+      candidateIndex += 1
+      continue
+    }
+    const candidateResult = JSON.parse(fs.readFileSync(candidateResultPath, 'utf8'))
+    if (candidateResult.reason === 'candidate_index_exhausted') {
+      exhausted = true
+      rejectedItems.push(candidateResult)
+      break
+    }
+    if (!candidateResult.written) {
+      const reason = candidateResult.reason || 'candidate_not_written'
+      candidateFailures[reason] = (candidateFailures[reason] ?? 0) + 1
+      rollbacks += 1
+      attempts.push({ candidateIndex, ...candidateResult })
+      candidateIndex += 1
+      continue
+    }
+    const candidateDrc = runParentDrc(
+      kicadCli,
+      candidateBoard,
+      path.join(outDir, `boardforge-isolated-candidate-${candidateIndex + 1}-promotion-drc.json`),
+    )
+    if (candidateDrc.timedOut) {
+      candidateFailures.candidate_drc_timeout = (candidateFailures.candidate_drc_timeout ?? 0) + 1
+      rollbacks += 1
+      attempts.push({ candidateIndex, ...candidateResult, reason: 'candidate_drc_timeout' })
+      candidateIndex += 1
+      continue
+    }
+    const candCounts = candidateDrc.counts
+    let reason = ''
+    if (candCounts.shorts > 0) reason = 'shorts'
+    else if (candCounts.forbiddenVias > 0) reason = 'forbidden_via'
+    else if (candCounts.violations > 0) reason = 'non_connectivity_drc'
+    else if (candCounts.unconnected >= currentCounts.unconnected) reason = 'connectivity_not_reduced'
+    if (!reason) {
+      fs.copyFileSync(candidateBoard, out)
+      commits += 1
+      currentCounts = candCounts
+      currentDrcReportPath = candidateDrc.reportPath
+      const commit = {
+        candidateIndex,
+        net: candidateResult.net,
+        candidate: candidateResult.candidate,
+        repairIntent: candidateResult.repairIntent,
+        unconnectedBefore: candidateResult.baseline?.unconnected ?? currentCounts.unconnected,
+        unconnectedAfter: candCounts.unconnected,
+        drcReport: candidateDrc.reportPath,
+      }
+      committedItems.push(commit)
+      attempts.push({ candidateIndex, ...candidateResult, promoted: true, final: candCounts })
+      fs.writeFileSync(report, JSON.stringify({
+        mode: 'isolated_exact_finish',
+        startingBoard: board,
+        latestBoard: out,
+        baseline,
+        final: currentCounts,
+        attempts: attempts.length,
+        commits,
+        rollbacks,
+        committedItems,
+        attemptLog: attempts.slice(-25),
+        candidateFailures,
+        rejectedItems: rejectedItems.slice(0, 25),
+        targetNet: arg('target-net'),
+        isolatedCandidates: true,
+        runtimeLimitReached: false,
+        checkpoint: true,
+      }, null, 2))
+      if (commits >= numberArg('commit-goal', 1)) break
+    } else {
+      candidateFailures[reason] = (candidateFailures[reason] ?? 0) + 1
+      rollbacks += 1
+      attempts.push({ candidateIndex, ...candidateResult, reason, final: candCounts })
+    }
+    candidateIndex += 1
+  }
+  runtimeLimitReached = Date.now() - started >= maxMinutes * 60 * 1000
+  const finalDrc = runParentDrc(kicadCli, out, path.join(outDir, 'boardforge-isolated-final-drc.json'))
+  if (!finalDrc.timedOut) currentCounts = finalDrc.counts
+  const result = {
+    mode: 'isolated_exact_finish',
+    startingBoard: board,
+    latestBoard: out,
+    baseline,
+    final: currentCounts,
+    attempts: attempts.length,
+    commits,
+    rollbacks,
+    committedItems,
+    attemptLog: attempts.slice(-25),
+    candidateFailures,
+    rejectedItems: rejectedItems.slice(0, 25),
+    targetNet: arg('target-net'),
+    isolatedCandidates: true,
+    candidateTimeoutMs,
+    exhausted,
+    runtimeLimitReached,
+  }
+  fs.writeFileSync(report, JSON.stringify(result, null, 2))
+  return result
+}
+
 function runGroundZoneConnectivityRepair(board, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
   const out = arg('out', path.join(outDir, `${path.basename(board, '.kicad_pcb')}_boardforge_gnd_zone_finished.kicad_pcb`))
@@ -938,12 +1339,14 @@ const outDir = arg('out-dir', path.dirname(board))
 const mode = arg('mode', hasFlag('clearance-aware') ? 'clearance-aware-exact-finish' : 'plan')
 const result = mode === 'clearance-aware-exact-finish'
   ? runClearanceAwareFinish(board, outDir)
+  : mode === 'isolated-exact-finish'
+    ? runIsolatedExactFinish(board, outDir)
   : mode === 'ground-zone-connectivity-repair'
     ? runGroundZoneConnectivityRepair(board, outDir)
     : mode === 'redundant-ground-stub-cleanup'
       ? runRedundantGroundStubCleanup(board, outDir)
   : buildExactRatsnestFinisherPlan(board)
-if (!['clearance-aware-exact-finish', 'ground-zone-connectivity-repair', 'redundant-ground-stub-cleanup'].includes(mode)) {
+if (!['clearance-aware-exact-finish', 'isolated-exact-finish', 'ground-zone-connectivity-repair', 'redundant-ground-stub-cleanup'].includes(mode)) {
   fs.writeFileSync(path.join(outDir, 'boardforge-exact-ratsnest-finisher-plan.json'), JSON.stringify(result, null, 2))
 }
 console.log(JSON.stringify(result, null, 2))
