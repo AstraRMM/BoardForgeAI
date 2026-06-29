@@ -1,0 +1,54 @@
+{
+  "id": "fixture_runner_real_kicad_validation_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "synthetic_fixture",
+  "problemType": "validation_pipeline",
+  "problemSignature": {
+    "symptom": "Fixture runner wrote reports saying KiCad validation was unavailable even though kicad-cli was installed in a common Windows path.",
+    "tool": "kicad-cli 10.0.3"
+  },
+  "rootCause": "The fixture runner was a state/report writer and did not call the existing KiCad CLI adapter, so generated boards could advance with stale validation language.",
+  "fixSummary": "Connect fixture generation to detectKiCadCli, runDrc, and runErc. Persist real DRC/ERC JSON reports and manifest counts before routing.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": ["validateFixtureProject", "issueCounts"],
+    "testsAdded": ["fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing"]
+  },
+  "applicability": {
+    "boardTypes": ["all_synthetic_fixtures", "new_project_generation"],
+    "netRoles": [],
+    "conditions": ["kicad_cli_available", "fixture_generation", "pre_route_validation"]
+  },
+  "recipe": [
+    "Detect kicad-cli using configured path, environment path, and common Windows KiCad installs.",
+    "Run PCB DRC and schematic ERC immediately after writing fixture KiCad files.",
+    "Write reports/drc.json and reports/erc.json into the generated project folder.",
+    "Update project manifest and final status from measured KiCad evidence."
+  ],
+  "safetyRules": [
+    "Do not mark validation as passed without KiCad reports.",
+    "Do not export manufacturing files before routing/export stages run.",
+    "Keep generated fixture work outside protected ESC/FC paths."
+  ],
+  "evidence": {
+    "before": {
+      "fixtureRunnerDrc": "not_run_kicad_cli_unavailable",
+      "fixtureRunnerErc": "not_run_kicad_cli_unavailable"
+    },
+    "after": {
+      "kicadCli": "10.0.3",
+      "drcErrors": 0,
+      "drcWarnings": 0,
+      "ercErrors": 0,
+      "ercWarnings": 0
+    },
+    "tests": ["npm run test:product-platform-manifest", "npm run fixtures:run -- --fixture odd-shape-robot"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

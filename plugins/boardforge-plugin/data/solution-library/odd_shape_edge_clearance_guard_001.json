@@ -1,0 +1,54 @@
+{
+  "id": "odd_shape_edge_clearance_guard_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "odd_shape_robotics_sensor_hub",
+  "problemType": "fixture_generation_drc",
+  "problemSignature": {
+    "drcFamily": "copper_edge_clearance",
+    "objects": ["mounting_holes", "edge_connectors", "concave_edgecuts"],
+    "symptom": "Generated holes and edge connectors were too close to odd outline notches."
+  },
+  "rootCause": "The odd-shape fixture generator placed mounting holes and side connectors from rectangular-board assumptions without checking distance to concave Edge.Cuts segments.",
+  "fixSummary": "Move mounting holes and side connectors inward from concave outline features and validate the generated PCB with real KiCad DRC before promoting it to routing.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": ["fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing"]
+  },
+  "applicability": {
+    "boardTypes": ["odd_shape", "compact_robotics", "connector_edge_planned"],
+    "netRoles": [],
+    "conditions": ["non_rectangular_outline", "mounting_ears", "connector_notches", "edge_connectors"]
+  },
+  "recipe": [
+    "Generate Edge.Cuts first.",
+    "Place mechanical holes and edge connectors using outline-aware clearances, not rectangular offsets.",
+    "Run KiCad DRC immediately after fixture generation.",
+    "Reject or repair any copper_edge_clearance error before DSN export or FreeRouting."
+  ],
+  "safetyRules": [
+    "Do not change protected ESC/FC projects.",
+    "Do not route a generated fixture with pre-route Edge.Cuts clearance errors.",
+    "Do not manufacture-export until DRC/ERC evidence is clean."
+  ],
+  "evidence": {
+    "before": {
+      "drcViolations": 20,
+      "copperEdgeClearanceErrors": 6
+    },
+    "after": {
+      "drcErrors": 0,
+      "drcWarnings": 0,
+      "ercErrors": 0,
+      "unconnected": 0
+    },
+    "tests": ["npm run test:product-platform-manifest", "npm run fixtures:run -- --fixture odd-shape-robot"]
+  },
+  "status": "active",
+  "confidence": "high"
+}
