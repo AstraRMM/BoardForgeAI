@@ -1,0 +1,66 @@
+{
+  "id": "canonical_cli_control_surface_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "boardforge_cli",
+  "problemType": "product_control_surface",
+  "problemSignature": {
+    "symptom": "BoardForge had many one-off npm scripts but no canonical product CLI vocabulary for create, validate, route, cleanup, export, report, and replay."
+  },
+  "rootCause": "The local engine existed, but product surfaces needed a stable command layer that maps user-facing verbs to guarded engine jobs without bypassing protected-path rules.",
+  "fixSummary": "Add boardforge-cli.mjs, root package aliases, dry-run job planning, dashboard report generation, replay command extraction, and protected ESC/FC path refusal.",
+  "implementation": {
+    "filesChanged": [
+      "package.json",
+      "plugins/boardforge-plugin/bin/boardforge-cli.mjs",
+      "plugins/boardforge-plugin/tests/platform-productization.test.mjs",
+      "plugins/boardforge-plugin/data/solution-library/canonical_cli_control_surface_001.json"
+    ],
+    "functionsAdded": [
+      "planCommand",
+      "guardProjectPath",
+      "planReportCommand",
+      "planReplayCommand"
+    ],
+    "testsAdded": [
+      "canonical BoardForge CLI maps product commands to guarded engine jobs"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Use as the shared local CLI entrypoint for web, KiCad plugin, and AI adapters",
+      "Use --dry-run when UI or AI wants a safe execution preview",
+      "Use protected-path guard before touching project paths"
+    ]
+  },
+  "recipe": [
+    "Expose canonical boardforge verbs as npm scripts.",
+    "Map each verb to an engine job or dashboard-data workflow.",
+    "Support --dry-run to inspect planned jobs.",
+    "Refuse protected ESC/FC paths before execution.",
+    "Keep replay command extraction read-only by default."
+  ],
+  "safetyRules": [
+    "Do not execute route/cleanup/export on protected user projects.",
+    "Do not let web, KiCad plugin, or AI adapters bypass the CLI/path guard.",
+    "Do not use replay as an implicit shell execution path."
+  ],
+  "evidence": {
+    "before": {
+      "cli": "one-off scripts only"
+    },
+    "after": {
+      "cli": "canonical guarded BoardForge product verbs"
+    },
+    "tests": [
+      "npm run test:platform-productization"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

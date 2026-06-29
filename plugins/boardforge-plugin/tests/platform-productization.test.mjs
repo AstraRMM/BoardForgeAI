@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
@@ -73,4 +74,43 @@ test('KiCad plugin scaffold refuses protected paths and hands off to CLI', () =>
   assert.match(source, /FN-ESC1/)
   assert.match(source, /boardforge:route-finish/)
   assert.match(source, /refused protected project path/i)
+})
+
+test('canonical BoardForge CLI maps product commands to guarded engine jobs', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const cli = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
+  const project = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'cli-safe-project')
+  const validate = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    'validate',
+    '--project',
+    project,
+    '--workspace',
+    path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'cli-workspace'),
+    '--dry-run',
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+  assert.equal(validate.status, 'BOARD_FORGE_CLI_DRY_RUN')
+  assert.equal(validate.job.type, 'run_project_preflight')
+
+  const report = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    'report',
+    '--manifest',
+    path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'rev-f.json'),
+    '--output',
+    path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'cli-dashboard.json'),
+    '--dry-run',
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+  assert.equal(report.kind, 'dashboard-data')
+  assert.equal(report.dashboard.manifestPaths.length, 1)
+
+  const blocked = spawnSync(process.execPath, [
+    cli,
+    'route',
+    '--project',
+    'C:/Users/luifi/Desktop/FN-ESC1/protected.kicad_pcb',
+    '--dry-run',
+  ], { cwd: repoRoot, encoding: 'utf8' })
+  assert.notEqual(blocked.status, 0)
+  assert.match(blocked.stderr, /protected_user_project/)
 })
