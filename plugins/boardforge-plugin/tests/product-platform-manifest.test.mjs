@@ -6,6 +6,7 @@ import test from 'node:test'
 import { createDashboardManifest, createEnginePlan, ENGINE_WORKFLOW_STEPS, selectBestBoardCandidate } from '../lib/engine/boardforge-engine.mjs'
 import { isManufacturingReadyManifest } from '../lib/platform/project-manifest.mjs'
 import { writeAiSessionReport } from '../lib/platform/ai-session-report.mjs'
+import { buildProjectDashboardData, buildProjectDashboardCard } from '../lib/platform/project-dashboard-data.mjs'
 
 test('local engine exposes required workflow API names', () => {
   const plan = createEnginePlan({ name: 'demo' })
@@ -33,6 +34,26 @@ test('dashboard sample manifest is product-readable and clean', () => {
   assert.equal(manifest.schema, 'boardforge.project-manifest.v1')
   assert.equal(manifest.validation.unconnected, 0)
   assert.equal(manifest.manufacturing.ready, true)
+})
+
+test('manifest-driven dashboard data normalizes real fixture evidence', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const oddShapeManifestPath = 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A/boardforge-project-manifest.json'
+  const oddShape = JSON.parse(fs.readFileSync(oddShapeManifestPath, 'utf8'))
+  const revF = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'rev-f.json'), 'utf8'))
+  const card = buildProjectDashboardCard(oddShape, { sourceManifest: oddShapeManifestPath })
+  assert.equal(card.schema, 'boardforge.project-dashboard-card.v1')
+  assert.equal(card.readiness, 'ready')
+  assert.equal(card.validation.drcViolations, 0)
+  assert.equal(card.validation.ercViolations, 0)
+  assert.equal(card.validation.schematicGraphStatus, 'real_symbol_graph_generated')
+  assert.equal(card.nextAction, 'human_manufacturing_review')
+  const dashboard = buildProjectDashboardData([revF, oddShape], { generatedAt: '2026-06-28T00:00:00.000Z' })
+  assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
+  assert.equal(dashboard.summary.totalProjects, 2)
+  assert.equal(dashboard.summary.manufacturingReady, 2)
+  assert.equal(dashboard.summary.blocked, 0)
+  assert.equal(dashboard.projects.every((project) => project.readiness === 'ready'), true)
 })
 
 test('AI session report is model-agnostic and preserves protected rejections', () => {

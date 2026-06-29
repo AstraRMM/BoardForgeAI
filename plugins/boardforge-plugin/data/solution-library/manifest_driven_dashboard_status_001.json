@@ -1,0 +1,68 @@
+{
+  "id": "manifest_driven_dashboard_status_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "synthetic_fixture_dashboard",
+  "problemType": "product_dashboard_data_normalization",
+  "problemSignature": {
+    "symptom": "Real fixture manifests and web sample manifests used different validation key shapes, making dashboard readiness fragile."
+  },
+  "rootCause": "BoardForge had clean project manifests, but no shared product-status adapter to normalize DRC/ERC/unconnected/manufacturing evidence into web-dashboard cards and project summaries.",
+  "fixSummary": "Add manifest-driven dashboard data generation that accepts real BoardForge project manifests, normalizes validation evidence, computes readiness, blockers, routing completion, and next action, and exposes a CLI writer.",
+  "implementation": {
+    "filesChanged": [
+      "package.json",
+      "plugins/boardforge-plugin/lib/platform/project-dashboard-data.mjs",
+      "plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs",
+      "plugins/boardforge-plugin/data/solution-library/manifest_driven_dashboard_status_001.json"
+    ],
+    "functionsAdded": [
+      "normalizeManifestValidation",
+      "buildProjectDashboardCard",
+      "buildProjectDashboardData",
+      "loadProjectDashboardData",
+      "writeProjectDashboardData"
+    ],
+    "testsAdded": [
+      "manifest-driven dashboard data normalizes real fixture evidence"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Use before rendering project cards in web UI or reports",
+      "Use when comparing golden fixtures and live generated projects",
+      "Use to avoid interpreting partial manifest fields differently across surfaces"
+    ]
+  },
+  "recipe": [
+    "Load one or more boardforge-project-manifest.json files.",
+    "Normalize validation fields from both simplified and detailed manifest schemas.",
+    "Compute readiness from shorts, forbidden vias, unconnected, DRC, ERC, and manufacturing-ready evidence.",
+    "Emit critical blockers and a deterministic next action.",
+    "Expose the normalized project list through dashboard JSON."
+  ],
+  "safetyRules": [
+    "Do not mark a project ready unless manufacturing.ready is true and validation is clean.",
+    "Do not hide DRC/ERC warnings by using a narrower field than the source manifest provides.",
+    "Do not mutate protected user projects while generating dashboard data."
+  ],
+  "evidence": {
+    "before": {
+      "dashboardData": "sample-only and field-shape dependent"
+    },
+    "after": {
+      "dashboardData": "normalizes real odd-shape fixture and REV_F sample manifests"
+    },
+    "tests": [
+      "npm run test:product-platform-manifest"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}
