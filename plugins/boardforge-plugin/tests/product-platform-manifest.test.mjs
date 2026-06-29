@@ -99,3 +99,27 @@ test('fixture runner creates odd-shape preroute KiCad artifacts without fake man
   assert.equal(fs.existsSync(path.join(projectRoot, 'reports', 'drc.json')), true)
   assert.equal(fs.existsSync(path.join(projectRoot, 'reports', 'erc.json')), true)
 })
+
+test('report 90 quick mode runs bounded fixture subset', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const output = execFileSync(process.execPath, [
+    path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-regression.mjs'),
+    '--workspace',
+    path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'quick-regression-test'),
+    '--target',
+    '90',
+    '--quick',
+    '--fresh',
+  ], { cwd: repoRoot, stdio: 'pipe', timeout: 60000 })
+  const result = JSON.parse(output.toString())
+  assert.equal(result.quickMode, true)
+  assert.deepEqual(result.selectedFixtureIds, [
+    'dense_difficult_honest_failure',
+    'odd_shaped_outline',
+    'rounded_rectangle_outline_only',
+    'missing_library_footprint',
+    'arbitrary_prompt_too_small',
+  ])
+  assert.equal(typeof result.readiness, 'number')
+  assert.ok(result.reportFiles.jsonFile)
+})

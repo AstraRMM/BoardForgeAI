@@ -1,0 +1,68 @@
+{
+  "id": "quick_regression_report_must_not_run_full_suite_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "synthetic_regression_fixture",
+  "problemType": "regression_timeout",
+  "problemSignature": {
+    "command": "npm run report:90:quick -- --fresh",
+    "symptom": "quick report was wired to the full target-90 regression and timed out before giving a useful health signal"
+  },
+  "rootCause": "The quick report script reused the full 90-percent fixture execution path, including slow project generation and heavyweight reports, so it behaved like a full regression instead of a bounded smoke/evidence report.",
+  "fixSummary": "Add explicit --quick mode to boardforge-regression with a small fixture subset, cached clean odd-shape evidence, static honest-failure guards, skipped heavyweight 90-percent reports, and a test that verifies quick mode stays bounded.",
+  "implementation": {
+    "filesChanged": [
+      "package.json",
+      "plugins/boardforge-plugin/bin/boardforge-regression.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs",
+      "plugins/boardforge-plugin/data/solution-library/quick_regression_report_must_not_run_full_suite_001.json"
+    ],
+    "functionsAdded": [
+      "hasArg",
+      "runQuickFixture"
+    ],
+    "testsAdded": [
+      "report 90 quick mode runs bounded fixture subset"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Use quick report for fast platform health checks",
+      "Use full report:90 for broad fresh fixture execution",
+      "Never treat quick mode as manufacturing proof for new boards"
+    ]
+  },
+  "recipe": [
+    "Add a dedicated quick-mode flag instead of overloading full regression.",
+    "Select a small stable fixture subset.",
+    "Use cached validated fixture evidence only when a manifest exists.",
+    "Keep honest-failure fixtures in the quick check so blocked states remain tested.",
+    "Skip heavyweight audit/category/deep repair reports in quick mode.",
+    "Print quickMode and selectedFixtureIds in the machine-readable output."
+  ],
+  "safetyRules": [
+    "Do not modify protected ESC/FC projects.",
+    "Do not fake readiness: quick mode may report targetReached false.",
+    "Do not export manufacturing artifacts from quick-mode-only evidence."
+  ],
+  "evidence": {
+    "before": {
+      "report90Quick": "timed out while running the full regression path"
+    },
+    "after": {
+      "report90Quick": "completed successfully in bounded quick mode",
+      "quickMode": true
+    },
+    "tests": [
+      "npm run report:90:quick -- --fresh",
+      "npm run test:product-platform-manifest"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}
