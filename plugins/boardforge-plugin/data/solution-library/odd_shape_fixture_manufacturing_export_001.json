@@ -1,0 +1,55 @@
+{
+  "id": "odd_shape_fixture_manufacturing_export_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "odd_shape_robotics_sensor_hub",
+  "problemType": "manufacturing_export_pipeline",
+  "problemSignature": {
+    "symptom": "Odd-shape fixture reached DRC/ERC clean routed state but initially stopped before manufacturing export.",
+    "requiredArtifacts": ["Gerbers", "drill files", "BOM", "CPL", "DRC report", "ERC report", "JLCPCB ZIP"]
+  },
+  "rootCause": "The fixture runner validated generated boards but did not continue into KiCad manufacturing export when all critical gates were clean.",
+  "fixSummary": "Export Gerbers, drill, CPL, a documented fixture BOM, and a JLCPCB review ZIP only after DRC errors, ERC errors, and unconnected items are all zero.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": ["fixtureBomRows", "csvCell", "exportFixtureManufacturing"],
+    "testsAdded": ["fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing"]
+  },
+  "applicability": {
+    "boardTypes": ["odd_shape", "synthetic_fixture", "manufacturing_candidate"],
+    "netRoles": ["signal", "local_power"],
+    "conditions": ["drc_zero", "erc_zero", "unconnected_zero", "kicad_cli_available"]
+  },
+  "recipe": [
+    "Run real KiCad DRC/ERC first.",
+    "Block export if DRC errors, ERC errors, or unconnected items remain.",
+    "Export Gerbers and drill files with kicad-cli.",
+    "Export CPL from the PCB and create a fixture BOM with sourcing status disclosed as NOT_API_VERIFIED.",
+    "Package all manufacturing evidence into a review ZIP."
+  ],
+  "safetyRules": [
+    "Do not fake manufacturing readiness.",
+    "Do not export ZIPs when KiCad validation has errors.",
+    "Do not imply supplier stock/API verification for fixture placeholder rows."
+  ],
+  "evidence": {
+    "before": {
+      "manufacturingReady": false,
+      "blockedReason": "manufacturing_export_not_run"
+    },
+    "after": {
+      "manufacturingReady": true,
+      "drcErrors": 0,
+      "ercErrors": 0,
+      "unconnected": 0,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip"
+    },
+    "tests": ["npm run fixtures:run -- --fixture odd-shape-robot", "npm run test:product-platform-manifest"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

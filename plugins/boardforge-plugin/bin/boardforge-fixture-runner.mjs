@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs'
 import path from 'node:path'
-import { detectKiCadCli, runDrc, runErc } from '../lib/kicad-cli.mjs'
+import { detectKiCadCli, exportCpl, exportDrill, exportGerbers, packageJlcpcb, runDrc, runErc } from '../lib/kicad-cli.mjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
 const fixtureRoot = path.join(repoRoot, 'fixtures', 'boards')
@@ -242,6 +242,61 @@ ${routeSegments}
 )`
 }
 
+function fixtureBomRows() {
+  return [
+    ['Refs', 'Value', 'Footprint', 'Qty', 'DNP', 'LCSC'],
+    ['J1', 'USB_C_EDGE', 'Fixture_USB_C_EDGE', '1', '', 'NOT_API_VERIFIED'],
+    ['J2', 'CAN_EDGE', 'Fixture_CAN_EDGE', '1', '', 'NOT_API_VERIFIED'],
+    ['J3', 'GPS_UART_EDGE', 'Fixture_GPS_UART_EDGE', '1', '', 'NOT_API_VERIFIED'],
+    ['J4', 'I2C_EDGE', 'Fixture_I2C_EDGE', '1', '', 'NOT_API_VERIFIED'],
+    ['J5', 'SWD_EDGE', 'Fixture_SWD_EDGE', '1', '', 'NOT_API_VERIFIED'],
+    ['U1', 'MCU', 'Fixture_MCU', '1', '', 'NOT_API_VERIFIED'],
+    ['U2', 'IMU', 'Fixture_IMU', '1', '', 'NOT_API_VERIFIED'],
+    ['U3', 'BARO', 'Fixture_BARO', '1', '', 'NOT_API_VERIFIED'],
+    ['U4', '3V3_REG', 'Fixture_3V3_REG', '1', '', 'NOT_API_VERIFIED'],
+    ['U5', 'CAN_XCVR', 'Fixture_CAN_XCVR', '1', '', 'NOT_API_VERIFIED'],
+  ]
+}
+
+function csvCell(value) {
+  const text = String(value ?? '')
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
+}
+
+async function exportFixtureManufacturing({ target, projectId, pcbFile, validation }) {
+  if (!validation.kicadCli.available) return { ready: false, zip: null, blockedReason: 'kicad_cli_unavailable', exports: null }
+  if (validation.drc.issueCounts?.errors !== 0 || validation.erc.issueCounts?.errors !== 0 || (validation.drc.report?.unconnected_items?.length ?? 0) !== 0) {
+    return { ready: false, zip: null, blockedReason: 'kicad_validation_issues_remain', exports: null }
+  }
+  const manufacturingDir = path.join(target, 'manufacturing')
+  const gerberDir = path.join(manufacturingDir, 'Gerbers')
+  const drillDir = path.join(manufacturingDir, 'Drill')
+  const bomFile = path.join(manufacturingDir, 'BOM', `${projectId}_BOM.csv`)
+  const cplFile = path.join(manufacturingDir, 'CPL', `${projectId}_CPL.csv`)
+  fs.mkdirSync(path.dirname(bomFile), { recursive: true })
+  fs.writeFileSync(bomFile, fixtureBomRows().map((row) => row.map(csvCell).join(',')).join('\n'), 'utf8')
+  const gerbers = await exportGerbers({ pcbFile, outputDir: gerberDir, kicadCliPath: validation.kicadCli.path })
+  const drill = await exportDrill({ pcbFile, outputDir: drillDir, kicadCliPath: validation.kicadCli.path })
+  const cpl = await exportCpl({ pcbFile, outputFile: cplFile, kicadCliPath: validation.kicadCli.path })
+  const zipFile = path.join(manufacturingDir, `${projectId}_JLCPCB.zip`)
+  const requiredFiles = [
+    ...(gerbers.files || []),
+    ...(drill.files || []),
+    bomFile,
+    cplFile,
+    validation.drc.reportFile,
+    validation.erc.reportFile,
+  ].filter(Boolean)
+  const pack = await packageJlcpcb({ projectDir: target, outputFile: zipFile, requiredFiles })
+  const ready = pack.status === 'MANUFACTURING_PACKAGE_GENERATED_NEEDS_REVIEW'
+  return {
+    ready,
+    zip: ready ? zipFile : null,
+    blockedReason: ready ? null : pack.status,
+    exports: { gerbers, drill, bom: { status: 'BOM_EXPORTED', files: [bomFile] }, cpl, package: pack },
+  }
+}
+
 function pcbEvidence(pcbText) {
   return {
     namedNets: (pcbText.match(/\n  \(net [1-9][0-9]* /g) || []).length,
@@ -334,9 +389,8 @@ async function writeOddShapeFixtureProject(fixture) {
   const ercErrors = validation.erc.issueCounts?.errors ?? null
   const ercWarnings = validation.erc.issueCounts?.warnings ?? null
   const unconnected = validation.drc.report?.unconnected_items?.length ?? null
-  const manufacturingBlockedReason = drcErrors === 0 && ercErrors === 0 && unconnected === 0
-    ? 'manufacturing_export_not_run'
-    : 'kicad_validation_issues_remain'
+  const manufacturing = await exportFixtureManufacturing({ target, projectId, pcbFile, validation })
+  const manufacturingBlockedReason = manufacturing.blockedReason
   const projectStatus = drcErrors === 0 && ercErrors === 0 && unconnected === 0 && evidence.routedSegments > 0
     ? 'routed_fixture_validated'
     : 'fixture_created_validation_pending'
@@ -358,6 +412,7 @@ async function writeOddShapeFixtureProject(fixture) {
       routedSegments: evidence.routedSegments,
       nettedPads: evidence.nettedPads,
     },
+    manufacturing,
     nextStage: drcErrors === 0 && ercErrors === 0
       ? 'export_manufacturing_candidate'
       : 'repair_fixture_generation_before_routing',
@@ -384,8 +439,8 @@ async function writeOddShapeFixtureProject(fixture) {
       nettedPads: evidence.nettedPads,
     },
     manufacturing: {
-      ready: false,
-      zip: null,
+      ready: manufacturing.ready,
+      zip: manufacturing.zip,
       blockedReason: manufacturingBlockedReason,
     },
     reports: {
@@ -398,7 +453,7 @@ async function writeOddShapeFixtureProject(fixture) {
   }
   fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'), JSON.stringify(routeability, null, 2))
   fs.writeFileSync(path.join(target, 'boardforge-project-manifest.json'), JSON.stringify(manifest, null, 2))
-  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: not exported\n- Next stage: ${routeability.nextStage}\n`)
+  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}\n- Manufacturing ready: ${manufacturing.ready}\n- Next stage: ${manufacturing.ready ? 'human_manufacturing_review' : routeability.nextStage}\n`)
   return { target, projectFile, schematicFile, pcbFile, manifest, routeability }
 }
 
