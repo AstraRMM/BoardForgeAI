@@ -130,6 +130,15 @@ test('exact finisher resolves PTH pad and via DRC endpoint descriptions', () => 
   assert.match(source, /PCB_VIA/)
 })
 
+test('route finisher can remove redundant generated ground stubs transactionally', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /redundant-ground-stub-cleanup/)
+  assert.match(source, /runRedundantGroundStubCleanup/)
+  assert.match(source, /select_redundant_ground_stubs/)
+  assert.match(source, /after\['unconnected'\] <= before\['unconnected'\]/)
+  assert.match(source, /ZONE_FILLER\(trial\)\.Fill\(trial\.Zones\(\)\)/)
+})
+
 test('minimum design relaxation report ranks least invasive options first', () => {
   const options = buildMinimumDesignRelaxationOptions([], { remainingUnconnected: 236 })
   assert.equal(options[0].violatesHardLock, false)

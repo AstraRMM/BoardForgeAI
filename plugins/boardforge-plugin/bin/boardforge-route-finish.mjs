@@ -659,6 +659,127 @@ with open(args.report, 'w', encoding='utf-8') as f:
 print(json.dumps(result, indent=2))
 `
 
+const redundantGroundStubCleanupHelper = String.raw`
+import argparse
+import json
+import math
+import os
+import shutil
+import subprocess
+import time
+
+import pcbnew
+
+NM_PER_MM = 1000000
+
+def to_mm(value):
+    return float(value) / NM_PER_MM
+
+def load_json(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def run_drc(kicad_cli, board_path, out_path):
+    proc = subprocess.run([kicad_cli, 'pcb', 'drc', '--format', 'json', '--output', out_path, board_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    data = load_json(out_path) if os.path.exists(out_path) else {}
+    return {'exitCode': proc.returncode, 'stdout': proc.stdout, 'stderr': proc.stderr, 'data': data}
+
+def counts(data):
+    violations = data.get('violations') or []
+    unconnected = data.get('unconnected_items') or []
+    shorts = [v for v in violations if str(v.get('type', '')).lower() in ('shorting_items', 'shorting')]
+    forbidden = [v for v in violations if 'forbidden' in str(v.get('type', '')).lower() and 'via' in str(v).lower()]
+    return {'violations': len(violations), 'unconnected': len(unconnected), 'shorts': len(shorts), 'forbiddenVias': len(forbidden)}
+
+def point(pos):
+    return (to_mm(pos.x), to_mm(pos.y))
+
+def midpoint(track):
+    start = point(track.GetStart())
+    end = point(track.GetEnd())
+    return ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+
+def in_window(mid, window):
+    x, y = mid
+    return window[0] <= x <= window[2] and window[1] <= y <= window[3]
+
+def select_redundant_ground_stubs(board, window, max_length):
+    selected = []
+    for track in board.GetTracks():
+        if type(track).__name__ != 'PCB_TRACK':
+            continue
+        if track.GetNetname() != 'GND':
+            continue
+        length = track.GetLength() / NM_PER_MM
+        mid = midpoint(track)
+        if length <= max_length and in_window(mid, window):
+            selected.append({'track': track, 'mid': mid, 'length': length})
+    selected.sort(key=lambda item: item['length'])
+    return selected
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--board', required=True)
+parser.add_argument('--out', required=True)
+parser.add_argument('--out-dir', required=True)
+parser.add_argument('--report', required=True)
+parser.add_argument('--kicad-cli', required=True)
+parser.add_argument('--window', default='4,4,25,15')
+parser.add_argument('--max-length', type=float, default=0.35)
+parser.add_argument('--max-remove', type=int, default=12)
+args = parser.parse_args()
+started = time.time()
+os.makedirs(args.out_dir, exist_ok=True)
+window = [float(part) for part in args.window.split(',')]
+baseline_report = os.path.join(args.out_dir, 'boardforge-redundant-ground-stub-baseline-drc.json')
+baseline = run_drc(args.kicad_cli, args.board, baseline_report)
+before = counts(baseline['data'])
+current = args.board
+removed = []
+attempts = 1
+trial = pcbnew.LoadBoard(current)
+candidates = select_redundant_ground_stubs(trial, window, args.max_length)[:args.max_remove]
+for selected in candidates:
+    removed.append({'mid': selected['mid'], 'length': selected['length']})
+    trial.Remove(selected['track'])
+try:
+    pcbnew.ZONE_FILLER(trial).Fill(trial.Zones())
+except Exception:
+    pass
+candidate_path = os.path.join(args.out_dir, 'boardforge-redundant-ground-stub-candidate.kicad_pcb')
+candidate_report = os.path.join(args.out_dir, 'boardforge-redundant-ground-stub-candidate-drc.json')
+pcbnew.SaveBoard(candidate_path, trial)
+candidate_drc = run_drc(args.kicad_cli, candidate_path, candidate_report)
+after = counts(candidate_drc['data'])
+if after['violations'] == 0 and after['shorts'] == 0 and after['forbiddenVias'] == 0 and after['unconnected'] <= before['unconnected']:
+    current = candidate_path
+else:
+    removed = []
+if removed:
+    shutil.copyfile(current, args.out)
+else:
+    shutil.copyfile(args.board, args.out)
+final_report = os.path.join(args.out_dir, 'boardforge-redundant-ground-stub-final-drc.json')
+final_drc = run_drc(args.kicad_cli, args.out, final_report)
+final_counts = counts(final_drc['data'])
+result = {
+    'mode': 'redundant_ground_stub_cleanup',
+    'startingBoard': args.board,
+    'latestBoard': args.out,
+    'baseline': before,
+    'final': final_counts,
+    'attempts': attempts,
+    'removedCount': len(removed),
+    'removed': removed,
+    'window': window,
+    'maxLengthMm': args.max_length,
+    'committed': bool(removed) and final_counts['violations'] == 0 and final_counts['unconnected'] <= before['unconnected'],
+    'elapsedMs': int((time.time() - started) * 1000),
+}
+with open(args.report, 'w', encoding='utf-8') as f:
+    json.dump(result, f, indent=2)
+print(json.dumps(result, indent=2))
+`
+
 function runClearanceAwareFinish(board, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
   const out = arg('out', path.join(outDir, `${path.basename(board, '.kicad_pcb')}_boardforge_exact_finished.kicad_pcb`))
@@ -729,6 +850,33 @@ function runGroundZoneConnectivityRepair(board, outDir) {
   return JSON.parse(fs.readFileSync(report, 'utf8'))
 }
 
+function runRedundantGroundStubCleanup(board, outDir) {
+  fs.mkdirSync(outDir, { recursive: true })
+  const out = arg('out', path.join(outDir, `${path.basename(board, '.kicad_pcb')}_boardforge_gnd_stub_cleanup.kicad_pcb`))
+  const report = arg('report', path.join(outDir, 'boardforge-redundant-ground-stub-cleanup-report.json'))
+  const helperPath = path.join(os.tmpdir(), `boardforge-redundant-ground-stub-cleanup-${process.pid}.py`)
+  fs.writeFileSync(helperPath, redundantGroundStubCleanupHelper)
+  const kicadPython = arg('kicad-python', findDefaultKicadPython())
+  const kicadCli = arg('kicad-cli', findDefaultKicadCli())
+  const proc = spawnSync(kicadPython, [
+    helperPath,
+    '--board', board,
+    '--out', out,
+    '--out-dir', outDir,
+    '--report', report,
+    '--kicad-cli', kicadCli,
+    '--window', arg('window', '4,4,25,15'),
+    '--max-length', String(numberArg('max-length', 0.35)),
+    '--max-remove', String(numberArg('max-remove', 12)),
+  ], { encoding: 'utf8', maxBuffer: 1024 * 1024 * 20 })
+  if (proc.stdout) process.stdout.write(proc.stdout)
+  if (proc.stderr) process.stderr.write(proc.stderr)
+  if (proc.status !== 0) {
+    throw new Error(`redundant ground stub cleanup failed with exit ${proc.status}`)
+  }
+  return JSON.parse(fs.readFileSync(report, 'utf8'))
+}
+
 const board = arg('board')
 if (!board) throw new Error('--board is required')
 const outDir = arg('out-dir', path.dirname(board))
@@ -737,8 +885,10 @@ const result = mode === 'clearance-aware-exact-finish'
   ? runClearanceAwareFinish(board, outDir)
   : mode === 'ground-zone-connectivity-repair'
     ? runGroundZoneConnectivityRepair(board, outDir)
+    : mode === 'redundant-ground-stub-cleanup'
+      ? runRedundantGroundStubCleanup(board, outDir)
   : buildExactRatsnestFinisherPlan(board)
-if (!['clearance-aware-exact-finish', 'ground-zone-connectivity-repair'].includes(mode)) {
+if (!['clearance-aware-exact-finish', 'ground-zone-connectivity-repair', 'redundant-ground-stub-cleanup'].includes(mode)) {
   fs.writeFileSync(path.join(outDir, 'boardforge-exact-ratsnest-finisher-plan.json'), JSON.stringify(result, null, 2))
 }
 console.log(JSON.stringify(result, null, 2))

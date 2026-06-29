@@ -20,6 +20,15 @@
       "repair": "F.Cu full-connect GND zone inset inside Edge.Cuts",
       "cliMode": "boardforge:route-finish --mode ground-zone-connectivity-repair"
     },
+    "redundantGeneratedGroundStubCleanup": {
+      "unconnectedBefore": 13,
+      "unconnectedAfter": 13,
+      "drcViolationsBefore": 0,
+      "drcViolationsAfter": 0,
+      "removedGeneratedObjects": 2,
+      "repair": "transactionally remove short redundant GND stubs in congested LED/control window after a GND zone makes them unnecessary",
+      "cliMode": "boardforge:route-finish --mode redundant-ground-stub-cleanup"
+    },
     "latestPhysicalRunnerEvidence": {
       "unconnectedBefore": 13,
       "unconnectedAfter": 13,
@@ -39,7 +48,7 @@
     }
   },
   "rootCause": "BoardForge treated a clean compact fallback as REV_F completion while the true outline-aware placement board still had exact KiCad unconnected items. The first exact finishers also used representative DRC positions instead of resolving KiCad pad/track UUIDs to actual endpoints, and they lacked commit checkpointing.",
-  "fixSummary": "Separate fallback manufacturing candidates from unfinished outline-aware boards. Add clearance-aware exact finisher planning and CLI execution that resolves DRC item endpoints, tests physical candidates with KiCad DRC, commits only when connectivity improves with zero DRC, checkpoints progress, adds a gated GND-zone connectivity repair for isolated return islands, and escalates to routeability-changing placement/rip-up when exact finishing is exhausted.",
+  "fixSummary": "Separate fallback manufacturing candidates from unfinished outline-aware boards. Add clearance-aware exact finisher planning and CLI execution that resolves DRC item endpoints, tests physical candidates with KiCad DRC, commits only when connectivity improves with zero DRC, checkpoints progress, adds a gated GND-zone connectivity repair for isolated return islands, removes redundant generated GND stubs transactionally after zones replace their connectivity role, and escalates to routeability-changing placement/rip-up when exact finishing is exhausted.",
   "implementation": {
     "filesChanged": [
       "plugins/boardforge-plugin/lib/routing/exact-ratsnest-finisher.mjs",
@@ -56,11 +65,14 @@
       "runClearanceAwareFinish"
       ,
       "runGroundZoneConnectivityRepair"
+      ,
+      "runRedundantGroundStubCleanup"
     ],
     "testsAdded": [
       "clearance-aware exact finisher resolves KiCad UUID endpoints and checkpoints productive runs",
       "exact ratsnest finisher CLI can execute clearance-aware physical candidates",
       "route finisher CLI can promote a gated ground-zone connectivity repair",
+      "route finisher can remove redundant generated ground stubs transactionally",
       "REV_F true outline-aware board requires exact finisher until connectivity is clean"
     ]
   },
@@ -94,7 +106,8 @@
     ,
     "Before routeability-changing placement, try a gated GND-zone connectivity repair on low-current synthetic fixtures: add a full-connect GND pour inside Edge.Cuts and keep it only if DRC remains zero and unconnected decreases.",
     "After adding any copper candidate on a board with zones, refill zones before DRC. Stale filled zones can falsely reject valid candidates with clearance or crossing errors.",
-    "Parse KiCad DRC endpoints beyond simple pads/tracks, including PTH pad and via descriptions, otherwise the exact finisher silently skips legitimate unconnected items."
+    "Parse KiCad DRC endpoints beyond simple pads/tracks, including PTH pad and via descriptions, otherwise the exact finisher silently skips legitimate unconnected items.",
+    "After a GND zone is committed, remove short redundant generated GND stubs in congested route windows only if KiCad proves DRC remains clean and unconnected does not increase."
   ],
   "safetyRules": [
     "Do not call a fallback board the same as the unfinished outline-aware board.",
@@ -116,7 +129,8 @@
       "test:rev-f-outline-aware-manufacturing-candidate",
       "boardforge:route-finish --mode clearance-aware-exact-finish physical runner",
       "exact finisher refills zones before candidate DRC promotion",
-      "exact finisher resolves PTH pad and via DRC endpoint descriptions"
+      "exact finisher resolves PTH pad and via DRC endpoint descriptions",
+      "route finisher can remove redundant generated ground stubs transactionally"
     ]
   },
   "status": "active",
