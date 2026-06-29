@@ -1,0 +1,58 @@
+{
+  "id": "golden_demo_docs_must_reference_real_evidence_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "product_demo",
+  "problemType": "demo_evidence_traceability",
+  "problemSignature": {
+    "symptom": "Golden demo docs described the product flow but did not point to exact validated fixture files, replay commands, or dashboard evidence generation."
+  },
+  "rootCause": "BoardForge product demos can drift into marketing claims unless the demo script anchors every claim to real KiCad/manufacturing artifacts and commands.",
+  "fixSummary": "Update golden demo, current limitations, and product demo script docs to reference the odd-shape golden fixture, exact evidence files, replay commands, dashboard-data generation, and honest limitations.",
+  "implementation": {
+    "filesChanged": [
+      "docs/BOARD_FORGE_GOLDEN_DEMO.md",
+      "docs/BOARD_FORGE_CURRENT_LIMITATIONS.md",
+      "docs/PRODUCT_DEMO_SCRIPT.md",
+      "plugins/boardforge-plugin/data/solution-library/golden_demo_docs_must_reference_real_evidence_001.json"
+    ],
+    "functionsAdded": [],
+    "testsAdded": []
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Use when preparing demos, investor/user walkthroughs, or marketing claims",
+      "Require real BoardForge manifests before claiming a board is manufacturing-ready"
+    ]
+  },
+  "recipe": [
+    "Name the exact fixture used in the demo.",
+    "List the manifest, routeability report, status report, and manufacturing ZIP.",
+    "Include replay commands.",
+    "State non-negotiable claims and limitations.",
+    "Keep dashboard evidence tied to generated manifest data."
+  ],
+  "safetyRules": [
+    "Do not use protected ESC/FC projects in public demo automation.",
+    "Do not claim supplier/API verification without provider evidence.",
+    "Do not treat quick regression as a full 90-percent proof."
+  ],
+  "evidence": {
+    "before": {
+      "demoDocs": "high-level flow only"
+    },
+    "after": {
+      "demoDocs": "specific fixture, artifacts, commands, gates, and limitations"
+    },
+    "tests": [
+      "documentation update; verified by file inspection"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

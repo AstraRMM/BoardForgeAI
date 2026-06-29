@@ -1,5 +1,15 @@
 # BoardForge Product Demo Script
 
+## Setup
+
+Use the safe dev workspace:
+
+```text
+C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai
+```
+
+Do not open or mutate protected ESC/FC projects during the demo.
+
 ## Demo Flow
 
 1. Open BoardForge web dashboard.
@@ -13,6 +23,24 @@
 9. Export Gerbers, drill, BOM, CPL, JLCPCB ZIP, and manifest.
 10. Open KiCad plugin panel and show the same project manifest.
 11. Replay the CLI command from the manifest.
+12. Generate dashboard data and show the normalized project cards.
+
+## Commands To Show
+
+```bash
+npm run fixtures:run -- --fixture odd-shape-robot
+npm run boardforge:dashboard-data -- --manifest ".\apps\web\src\sample-manifests\rev-f.json" --manifest "C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-ODD-SHAPE-ROBOT-01_REV_A\boardforge-project-manifest.json" --output ".\apps\web\src\sample-manifests\project-dashboard.json"
+npm run report:90:quick -- --fresh
+```
+
+## Proof Points
+
+- Real KiCad schematic graph exists.
+- Routed PCB has zero unconnected items.
+- KiCad DRC and ERC are honestly clean.
+- Manufacturing ZIP is gated by validation evidence.
+- Dashboard status is generated from the same manifest evidence.
+- Quick regression is honest when it does not reach 90%.
 
 ## Key Message
 
