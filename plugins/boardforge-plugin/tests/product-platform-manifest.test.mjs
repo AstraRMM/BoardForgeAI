@@ -34,6 +34,11 @@ test('dashboard sample manifest is product-readable and clean', () => {
   assert.equal(manifest.schema, 'boardforge.project-manifest.v1')
   assert.equal(manifest.validation.unconnected, 0)
   assert.equal(manifest.manufacturing.ready, true)
+  const dashboard = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'project-dashboard.json'), 'utf8'))
+  assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
+  assert.equal(dashboard.summary.totalProjects, 2)
+  assert.equal(dashboard.summary.manufacturingReady, 2)
+  assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ODD-SHAPE-ROBOT-01_REV_A' && project.readiness === 'ready'), true)
 })
 
 test('manifest-driven dashboard data normalizes real fixture evidence', () => {

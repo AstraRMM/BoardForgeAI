@@ -1,0 +1,91 @@
+{
+  "schema": "boardforge.project-dashboard-data.v1",
+  "generatedAt": "2026-06-29T00:53:58.939Z",
+  "summary": {
+    "totalProjects": 2,
+    "manufacturingReady": 2,
+    "blocked": 0,
+    "review": 0,
+    "needsRouting": 0,
+    "cleanDrcErc": 2
+  },
+  "projects": [
+    {
+      "schema": "boardforge.project-dashboard-card.v1",
+      "projectId": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+      "projectName": "BF-ODD-SHAPE-ROBOT-01",
+      "status": "routed_fixture_validated",
+      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_pcb",
+      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch",
+      "readiness": "ready",
+      "routingCompletionPercent": 100,
+      "validation": {
+        "shorts": 0,
+        "unconnected": 0,
+        "forbiddenVias": 0,
+        "drcViolations": 0,
+        "drcErrors": 0,
+        "drcWarnings": 0,
+        "ercViolations": 0,
+        "ercErrors": 0,
+        "ercWarnings": 0,
+        "namedNets": 5,
+        "routedSegments": 10,
+        "nettedPads": 10,
+        "schematicGraphStatus": "real_symbol_graph_generated"
+      },
+      "manufacturing": {
+        "ready": true,
+        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip",
+        "blockedReason": null
+      },
+      "reports": {
+        "routeability": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BoardForge_Odd_Shape_Routeability_Report.json",
+        "status": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BoardForge_Odd_Shape_Final_Status.md"
+      },
+      "replayCommand": "npm run fixtures:run -- --fixture odd-shape-robot",
+      "criticalBlockers": [],
+      "nextAction": "human_manufacturing_review",
+      "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\boardforge-project-manifest.json"
+    },
+    {
+      "schema": "boardforge.project-dashboard-card.v1",
+      "projectId": "BF-SENSOR-HUB-01_REV_F",
+      "projectName": "BF-SENSOR-HUB-01 REV_F",
+      "status": "manufacturing_candidate",
+      "boardPath": null,
+      "schematicPath": null,
+      "readiness": "ready",
+      "routingCompletionPercent": 100,
+      "validation": {
+        "shorts": 0,
+        "unconnected": 0,
+        "forbiddenVias": 0,
+        "drcViolations": 0,
+        "drcErrors": 0,
+        "drcWarnings": 0,
+        "ercViolations": 0,
+        "ercErrors": 0,
+        "ercWarnings": 0,
+        "namedNets": 0,
+        "routedSegments": 0,
+        "nettedPads": 0,
+        "schematicGraphStatus": "unknown"
+      },
+      "manufacturing": {
+        "ready": true,
+        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\manufacturing\\BF-SENSOR-HUB-01_REV_F_JLCPCB.zip",
+        "blockedReason": null
+      },
+      "reports": {
+        "status": "BoardForge_REV_F_Final_Status.md",
+        "drcErc": "BoardForge_REV_F_DRC_ERC_Report.md",
+        "manufacturing": "BoardForge_REV_F_Manufacturing_Readiness_Report.md"
+      },
+      "replayCommand": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F",
+      "criticalBlockers": [],
+      "nextAction": "human_manufacturing_review",
+      "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\apps\\web\\src\\sample-manifests\\rev-f.json"
+    }
+  ]
+}
