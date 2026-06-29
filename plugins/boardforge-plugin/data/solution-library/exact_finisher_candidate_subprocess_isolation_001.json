@@ -1,0 +1,83 @@
+{
+  "id": "exact_finisher_candidate_subprocess_isolation_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic_robotics_sensor_hub",
+  "problemType": "exact_ratsnest_finisher_reliability",
+  "problemSignature": {
+    "baselineDrcViolations": 0,
+    "baselineUnconnected": 13,
+    "targetNet": "LED_PWR_RET",
+    "symptom": "targeted local DRC-repair route candidates can hang before final report emission",
+    "observedHelperProcesses": "orphaned KiCad Python helpers after shell timeout"
+  },
+  "rootCause": "The exact finisher executes multiple physical KiCad candidate mutations inside one KiCad Python helper. Some local bridge/via candidate geometries can wedge during board mutation, KiCad DRC, or related KiCad internals before the normal report writer runs. A subprocess timeout around kicad-cli DRC is not sufficient if the hang happens elsewhere in the helper.",
+  "fixSummary": "Added target-net filtering, local DRC-repair bridge candidates for short leftovers, optional candidate zone-fill skip, and DRC timeout reporting. The next required hardening is to execute each physical candidate in an isolated child process with a hard timeout and parent-owned rollback/report aggregation.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-route-finish.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ],
+    "functionsAdded": [
+      "local-drc-repair-bridge candidate family",
+      "target-net exact finisher filter",
+      "candidate DRC timeout handling",
+      "optional skip-zone-fill candidate mode"
+    ],
+    "testsAdded": [
+      "exact finisher generates local DRC-repair bridge candidates for short leftovers"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "outline-aware compact boards",
+      "dense MCU/control boards"
+    ],
+    "netRoles": [
+      "LED",
+      "USB",
+      "UART",
+      "I2C",
+      "sensor-control"
+    ],
+    "conditions": [
+      "direct route reduces unconnected but creates local DRC",
+      "candidate geometry can hang before report emission",
+      "remaining board is DRC-clean but exact routing is exhausted"
+    ]
+  },
+  "recipe": [
+    "Filter exact finishing to one target net when debugging a known local blocker.",
+    "Prioritize local repair bridge candidates for short pad-to-pad leftovers.",
+    "Treat DRC timeout as a rollback reason, not as a final state.",
+    "If helper hangs before report emission, terminate orphaned helper processes and do not promote the candidate board.",
+    "Implement next generation as parent-supervised per-candidate subprocess execution with hard timeout and durable progress files."
+  ],
+  "safetyRules": [
+    "Do not promote candidate boards without a current DRC report proving zero violations and reduced unconnected count.",
+    "Do not export manufacturing while unconnected items remain.",
+    "Do not touch protected ESC/FC projects.",
+    "Do not globally suppress DRC or hide timed-out candidates."
+  ],
+  "evidence": {
+    "before": {
+      "board": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT_boardforge_stub_cleanup_cli.kicad_pcb",
+      "drcViolations": 0,
+      "unconnected": 13,
+      "shorts": 0,
+      "forbiddenVias": 0
+    },
+    "after": {
+      "boardPromoted": false,
+      "drcViolations": 0,
+      "unconnected": 13,
+      "helperProcessesCleanedUp": true
+    },
+    "tests": [
+      "node --test plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

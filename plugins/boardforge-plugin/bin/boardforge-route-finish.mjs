@@ -72,7 +72,17 @@ def load_json(path):
 
 def run_drc(kicad_cli, board_path, out_path):
     cmd = [kicad_cli, 'pcb', 'drc', '--format', 'json', '--output', out_path, board_path]
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=75)
+    except subprocess.TimeoutExpired as exc:
+        return {
+            'exitCode': 124,
+            'stdout': exc.stdout or '',
+            'stderr': exc.stderr or 'KiCad DRC timed out for candidate',
+            'reportPath': out_path,
+            'timedOut': True,
+            'data': {'violations': [{'type': 'drc_timeout', 'description': 'KiCad DRC timed out for this candidate'}], 'unconnected_items': []},
+        }
     data = {}
     if os.path.exists(out_path):
         data = load_json(out_path)
@@ -298,7 +308,9 @@ def candidate_paths(a, b):
     bx, by = b['pos']
     midx = (ax + bx) / 2
     midy = (ay + by) / 2
+    endpoint_distance = dist((ax, ay), (bx, by))
     candidates = []
+    local_repair_candidates = []
     candidates.append({'name': 'direct', 'layers': [a['layer']], 'points': [(ax, ay), (bx, by)]})
     candidates.append({'name': 'xy', 'layers': [a['layer']], 'points': [(ax, ay), (bx, ay), (bx, by)]})
     candidates.append({'name': 'yx', 'layers': [a['layer']], 'points': [(ax, ay), (ax, by), (bx, by)]})
@@ -333,7 +345,38 @@ def candidate_paths(a, b):
                     {'layer': b['layer'], 'points': [tv, (bx, by)]},
                 ],
             })
-    return candidates
+    if endpoint_distance <= 6.0:
+        # Short local leftovers often fail because a direct top-layer stitch crosses adjacent pads.
+        # Escape both pads away from the local row, bridge on another copper layer, and return.
+        for route_layer in [3, 2, 1]:
+            if route_layer in (a['layer'], b['layer']):
+                continue
+            for escape in [0.65, -0.65, 0.9, -0.9, 1.25, -1.25, 1.75, -1.75]:
+                sv = (ax, ay + escape)
+                tv = (bx, by + escape)
+                local_repair_candidates.append({
+                    'name': f'local-drc-repair-bridge-y-{route_layer}-{escape}',
+                    'vias': [sv, tv],
+                    'segments': [
+                        {'layer': a['layer'], 'points': [(ax, ay), sv]},
+                        {'layer': route_layer, 'points': [sv, tv]},
+                        {'layer': b['layer'], 'points': [tv, (bx, by)]},
+                    ],
+                    'repairIntent': 'avoid_same_layer_pad_crossing',
+                })
+                sv = (ax + escape, ay)
+                tv = (bx + escape, by)
+                local_repair_candidates.append({
+                    'name': f'local-drc-repair-bridge-x-{route_layer}-{escape}',
+                    'vias': [sv, tv],
+                    'segments': [
+                        {'layer': a['layer'], 'points': [(ax, ay), sv]},
+                        {'layer': route_layer, 'points': [sv, tv]},
+                        {'layer': b['layer'], 'points': [tv, (bx, by)]},
+                    ],
+                    'repairIntent': 'avoid_same_layer_pad_crossing',
+                })
+    return local_repair_candidates + candidates
 
 def apply_candidate(board, endpoint, candidate, width, via_width, via_drill):
     if 'segments' in candidate:
@@ -412,6 +455,7 @@ def run(args):
     candidate_failures = {}
     committed_items = []
     rejected_items = []
+    target_skipped = 0
     def write_progress(runtime_limit=False):
         final_report = run_drc(args.kicad_cli, latest, os.path.join(args.out_dir, 'boardforge-route-finish-progress-drc.json'))
         after_counts = drc_counts(final_report['data'])
@@ -427,6 +471,8 @@ def run(args):
             'committedItems': committed_items,
             'candidateFailures': candidate_failures,
             'rejectedItems': rejected_items[:25],
+            'targetNet': args.target_net,
+            'targetSkipped': target_skipped,
             'elapsedMs': int((time.time() - started) * 1000),
             'runtimeLimitReached': runtime_limit,
             'checkpoint': True,
@@ -449,6 +495,9 @@ def run(args):
             if not endpoint:
                 rejected_items.append({'index': item_index, 'reason': 'endpoint_resolution_failed'})
                 continue
+            if args.target_net and endpoint['net'] != args.target_net:
+                target_skipped += 1
+                continue
             endpoint['index'] = item_index
             endpoint['distance'] = dist(endpoint['a']['pos'], endpoint['b']['pos'])
             resolved.append(endpoint)
@@ -469,10 +518,11 @@ def run(args):
                     continue
                 cand_board = pcbnew.LoadBoard(latest)
                 apply_candidate(cand_board, endpoint, candidate, args.width, args.via_width, args.via_drill)
-                try:
-                    pcbnew.ZONE_FILLER(cand_board).Fill(cand_board.Zones())
-                except Exception:
-                    pass
+                if not args.skip_zone_fill:
+                    try:
+                        pcbnew.ZONE_FILLER(cand_board).Fill(cand_board.Zones())
+                    except Exception:
+                        pass
                 candidate_path = os.path.join(args.out_dir, f'boardforge-route-finish-candidate-{attempts + 1}.kicad_pcb')
                 pcbnew.SaveBoard(candidate_path, cand_board)
                 cand_report_path = os.path.join(args.out_dir, f'boardforge-route-finish-candidate-{attempts + 1}-drc.json')
@@ -545,6 +595,8 @@ parser.add_argument('--max-minutes', type=float, default=20)
 parser.add_argument('--width', type=float, default=0.2)
 parser.add_argument('--via-width', type=float, default=0.6)
 parser.add_argument('--via-drill', type=float, default=0.3)
+parser.add_argument('--target-net', default='')
+parser.add_argument('--skip-zone-fill', action='store_true')
 args = parser.parse_args()
 run(args)
 `
@@ -808,6 +860,9 @@ function runClearanceAwareFinish(board, outDir) {
     '--via-width', String(numberArg('via-width', 0.6)),
     '--via-drill', String(numberArg('via-drill', 0.3)),
   ]
+  const targetNet = arg('target-net')
+  if (targetNet) args.push('--target-net', targetNet)
+  if (hasFlag('skip-zone-fill')) args.push('--skip-zone-fill')
   const proc = spawnSync(kicadPython, args, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 20 })
   if (proc.stdout) process.stdout.write(proc.stdout)
   if (proc.stderr) process.stderr.write(proc.stderr)

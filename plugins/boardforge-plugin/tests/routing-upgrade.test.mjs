@@ -154,6 +154,21 @@ test('route finisher can remove redundant generated ground stubs transactionally
   assert.match(source, /ZONE_FILLER\(trial\)\.Fill\(trial\.Zones\(\)\)/)
 })
 
+test('exact finisher generates local DRC-repair bridge candidates for short leftovers', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /endpoint_distance <= 6\.0/)
+  assert.match(source, /local-drc-repair-bridge-y/)
+  assert.match(source, /local-drc-repair-bridge-x/)
+  assert.match(source, /avoid_same_layer_pad_crossing/)
+  assert.match(source, /return local_repair_candidates \+ candidates/)
+  assert.match(source, /--target-net/)
+  assert.match(source, /--skip-zone-fill/)
+  assert.match(source, /targetNet/)
+  assert.match(source, /endpoint\['net'\] != args\.target_net/)
+  assert.match(source, /TimeoutExpired/)
+  assert.match(source, /drc_timeout/)
+})
+
 test('controlled placement nudge CLI physically executes candidates with exact-route promotion gate', () => {
   const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-controlled-placement-nudge.mjs'), 'utf8')
   assert.match(source, /runPhysicalControlledNudge/)
