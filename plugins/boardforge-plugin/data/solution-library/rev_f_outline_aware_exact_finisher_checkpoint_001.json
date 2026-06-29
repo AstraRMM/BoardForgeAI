@@ -26,6 +26,11 @@
       "attempts": 19,
       "commits": 0,
       "rollbacks": 19,
+      "runnerFixesAdded": [
+        "refill zones after candidate track/via mutation before KiCad DRC",
+        "resolve KiCad DRC PTH pad endpoint descriptions",
+        "resolve KiCad DRC via endpoint descriptions"
+      ],
       "dominantFailures": [
         "tracks_crossing",
         "shorting_items",
@@ -87,7 +92,9 @@
     ,
     "If a real physical exact-finisher batch rolls back every candidate because crossings/shorts dominate, stop burning DRC cycles and escalate to routeability-changing actions: controlled component nudge, bounded regional rip-up/reroute, or regenerated placement corridors."
     ,
-    "Before routeability-changing placement, try a gated GND-zone connectivity repair on low-current synthetic fixtures: add a full-connect GND pour inside Edge.Cuts and keep it only if DRC remains zero and unconnected decreases."
+    "Before routeability-changing placement, try a gated GND-zone connectivity repair on low-current synthetic fixtures: add a full-connect GND pour inside Edge.Cuts and keep it only if DRC remains zero and unconnected decreases.",
+    "After adding any copper candidate on a board with zones, refill zones before DRC. Stale filled zones can falsely reject valid candidates with clearance or crossing errors.",
+    "Parse KiCad DRC endpoints beyond simple pads/tracks, including PTH pad and via descriptions, otherwise the exact finisher silently skips legitimate unconnected items."
   ],
   "safetyRules": [
     "Do not call a fallback board the same as the unfinished outline-aware board.",
@@ -107,7 +114,9 @@
     "tests": [
       "test:exact-ratsnest-finisher",
       "test:rev-f-outline-aware-manufacturing-candidate",
-      "boardforge:route-finish --mode clearance-aware-exact-finish physical runner"
+      "boardforge:route-finish --mode clearance-aware-exact-finish physical runner",
+      "exact finisher refills zones before candidate DRC promotion",
+      "exact finisher resolves PTH pad and via DRC endpoint descriptions"
     ]
   },
   "status": "active",

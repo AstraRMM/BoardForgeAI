@@ -117,6 +117,19 @@ test('route finisher CLI can promote a gated ground-zone connectivity repair', (
   assert.match(source, /after\['unconnected'\] < before\['unconnected'\]/)
 })
 
+test('exact finisher refills zones before candidate DRC promotion', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /apply_candidate\(cand_board/)
+  assert.match(source, /ZONE_FILLER\(cand_board\)\.Fill\(cand_board\.Zones\(\)\)/)
+})
+
+test('exact finisher resolves PTH pad and via DRC endpoint descriptions', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /PTH.*pad/)
+  assert.match(source, /parse_via_desc/)
+  assert.match(source, /PCB_VIA/)
+})
+
 test('minimum design relaxation report ranks least invasive options first', () => {
   const options = buildMinimumDesignRelaxationOptions([], { remainingUnconnected: 236 })
   assert.equal(options[0].violatesHardLock, false)

@@ -123,6 +123,8 @@ def uuid_string(item):
 def parse_pad_desc(desc):
     # Example: Pad 6 [I2C1_SCL] of U1 on F.Cu
     parts = desc.split()
+    if len(parts) >= 6 and parts[0] == 'PTH' and parts[1] == 'pad':
+        parts = ['Pad', parts[2], *parts[3:]]
     if len(parts) < 5 or parts[0] != 'Pad':
         return None
     pad = parts[1]
@@ -135,6 +137,18 @@ def parse_pad_desc(desc):
     if ' on ' in desc:
         layer = desc.rsplit(' on ', 1)[1].strip()
     return {'ref': ref, 'pad': pad, 'layer': layer}
+
+def parse_via_desc(desc):
+    # Example: Via [I2C1_SDA] on F.Cu - In2.Cu
+    if not desc.startswith('Via '):
+        return None
+    net = ''
+    if '[' in desc and ']' in desc:
+        net = desc.split('[', 1)[1].split(']', 1)[0]
+    layers = ['F.Cu']
+    if ' on ' in desc:
+        layers = [part.strip() for part in desc.split(' on ', 1)[1].split('-')]
+    return {'net': net, 'layer': layers[0]}
 
 def parse_track_desc(desc):
     # Example: Track [I2C1_SCL] on F.Cu, length 0.8000 mm
@@ -203,6 +217,29 @@ def endpoint_for_item(board, item, other_pos=None):
                 'pos': chosen,
                 'layer': wanted_layer,
                 'uuid': uuid_string(track),
+            }
+    via_info = parse_via_desc(desc)
+    if via_info:
+        best = None
+        for via in board.GetTracks():
+            if type(via).__name__ != 'PCB_VIA':
+                continue
+            if via.GetNetname() != via_info['net']:
+                continue
+            pos = point(via.GetPosition())
+            score = dist(reported_pos, pos)
+            if best is None or score < best[0]:
+                best = (score, via, pos)
+        if best:
+            _, via, pos = best
+            return {
+                'kind': 'via',
+                'description': desc,
+                'net': via.GetNetname(),
+                'netCode': via.GetNetCode(),
+                'pos': pos,
+                'layer': layer_id(board, via_info['layer']),
+                'uuid': uuid_string(via),
             }
     return {
         'kind': 'reported',
@@ -432,6 +469,10 @@ def run(args):
                     continue
                 cand_board = pcbnew.LoadBoard(latest)
                 apply_candidate(cand_board, endpoint, candidate, args.width, args.via_width, args.via_drill)
+                try:
+                    pcbnew.ZONE_FILLER(cand_board).Fill(cand_board.Zones())
+                except Exception:
+                    pass
                 candidate_path = os.path.join(args.out_dir, f'boardforge-route-finish-candidate-{attempts + 1}.kicad_pcb')
                 pcbnew.SaveBoard(candidate_path, cand_board)
                 cand_report_path = os.path.join(args.out_dir, f'boardforge-route-finish-candidate-{attempts + 1}-drc.json')
