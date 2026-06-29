@@ -42,6 +42,7 @@ function findDefaultKicadCli() {
 const clearanceAwareHelper = String.raw`
 import argparse
 import copy
+import heapq
 import json
 import math
 import os
@@ -677,6 +678,165 @@ def estimate_candidate_short_risk(board, endpoint, candidate, width_mm, via_widt
                     }
     return {'risk': False}
 
+def grid_key(p, step):
+    return (round(p[0] / step), round(p[1] / step))
+
+def grid_point(key, step):
+    return (key[0] * step, key[1] * step)
+
+def point_is_route_safe(board, endpoint, layer, p, width_mm, via_width_mm=0.0):
+    candidate_net = int(endpoint['netCode'])
+    threshold = max(0.22, float(width_mm) / 2.0 + 0.14, float(via_width_mm) / 2.0 + 0.10)
+    for track in board.GetTracks():
+        if int(track.GetNetCode()) == candidate_net:
+            continue
+        if type(track).__name__ == 'PCB_TRACK':
+            try:
+                if track.GetLayer() != layer:
+                    continue
+            except Exception:
+                continue
+            if point_segment_distance(p, point(track.GetStart()), point(track.GetEnd())) <= threshold:
+                return False
+        elif type(track).__name__ == 'PCB_VIA':
+            if dist(p, point(track.GetPosition())) <= threshold:
+                return False
+    for fp in board.GetFootprints():
+        for pad in fp.Pads():
+            if int(pad.GetNetCode()) == candidate_net:
+                continue
+            if not pad_on_layer(pad, layer):
+                continue
+            if dist(p, point(pad.GetPosition())) <= threshold:
+                return False
+    return True
+
+def nearest_safe_grid_key(board, endpoint, layer, pos, step, bounds, width_mm, via_width_mm=0.0):
+    base = grid_key(pos, step)
+    candidates = [base]
+    for radius in range(1, 5):
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                if abs(dx) != radius and abs(dy) != radius:
+                    continue
+                candidates.append((base[0] + dx, base[1] + dy))
+    for key in candidates:
+        p = grid_point(key, step)
+        if not inside_bounds([p], bounds):
+            continue
+        if point_is_route_safe(board, endpoint, layer, p, width_mm, via_width_mm):
+            return key
+    return None
+
+def search_grid_path(board, endpoint, layer, start, goal, bounds, width_mm, via_width_mm=0.0):
+    step = 0.5
+    minx, miny, maxx, maxy = bounds
+    # Keep the search local but allow enough room to route around connector/MCU clutter.
+    window = 4.0
+    local_minx = max(minx, min(start[0], goal[0]) - window)
+    local_maxx = min(maxx, max(start[0], goal[0]) + window)
+    local_miny = max(miny, min(start[1], goal[1]) - window)
+    local_maxy = min(maxy, max(start[1], goal[1]) + window)
+    start_key = nearest_safe_grid_key(board, endpoint, layer, start, step, bounds, width_mm, via_width_mm)
+    goal_key = nearest_safe_grid_key(board, endpoint, layer, goal, step, bounds, width_mm, via_width_mm)
+    if not start_key or not goal_key:
+        return None
+    queue = []
+    heapq.heappush(queue, (dist(grid_point(start_key, step), grid_point(goal_key, step)), 0, start_key))
+    came_from = {}
+    cost = {start_key: 0}
+    visited = 0
+    while queue and visited < 220:
+        _, current_cost, current = heapq.heappop(queue)
+        visited += 1
+        if current == goal_key:
+            points = [grid_point(current, step)]
+            while current in came_from:
+                current = came_from[current]
+                points.append(grid_point(current, step))
+            points.reverse()
+            simplified = []
+            for p in points:
+                if len(simplified) < 2:
+                    simplified.append(p)
+                    continue
+                a = simplified[-2]
+                b = simplified[-1]
+                if abs((b[0] - a[0]) * (p[1] - b[1]) - (b[1] - a[1]) * (p[0] - b[0])) < 1e-9:
+                    simplified[-1] = p
+                else:
+                    simplified.append(p)
+            return simplified
+        for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+            nxt = (current[0] + dx, current[1] + dy)
+            p = grid_point(nxt, step)
+            if p[0] < local_minx or p[0] > local_maxx or p[1] < local_miny or p[1] > local_maxy:
+                continue
+            if not inside_bounds([p], bounds):
+                continue
+            if not point_is_route_safe(board, endpoint, layer, p, width_mm, via_width_mm):
+                continue
+            new_cost = current_cost + step
+            if nxt not in cost or new_cost < cost[nxt]:
+                cost[nxt] = new_cost
+                came_from[nxt] = current
+                priority = new_cost + dist(p, grid_point(goal_key, step))
+                heapq.heappush(queue, (priority, new_cost, nxt))
+    return None
+
+def grid_channel_candidates(board, endpoint, copper_layers, width_mm, via_width_mm):
+    endpoint_distance = dist(endpoint['a']['pos'], endpoint['b']['pos'])
+    if endpoint_distance > 10.0:
+        return []
+    bounds = board_bounds(board)
+    a = endpoint['a']
+    b = endpoint['b']
+    candidates = []
+    same_layer_path = search_grid_path(board, endpoint, a['layer'], a['pos'], b['pos'], bounds, width_mm)
+    if same_layer_path and len(same_layer_path) >= 2:
+        candidates.append({
+            'name': f'grid-channel-same-layer-{a["layer"]}',
+            'layers': [a['layer']],
+            'points': [a['pos']] + same_layer_path + [b['pos']],
+            'repairIntent': 'grid_channel_search',
+        })
+    for route_layer in copper_layers:
+        if route_layer == a['layer'] and route_layer == b['layer']:
+            continue
+        for offset in [0.8, -0.8]:
+            for axis in ['x', 'y']:
+                if axis == 'x':
+                    sv = (a['pos'][0] + offset, a['pos'][1])
+                    tv = (b['pos'][0] - offset, b['pos'][1])
+                else:
+                    sv = (a['pos'][0], a['pos'][1] + offset)
+                    tv = (b['pos'][0], b['pos'][1] - offset)
+                if not inside_bounds([sv, tv], bounds):
+                    continue
+                if not point_is_route_safe(board, endpoint, a['layer'], sv, width_mm, via_width_mm):
+                    continue
+                if not point_is_route_safe(board, endpoint, b['layer'], tv, width_mm, via_width_mm):
+                    continue
+                if not point_is_route_safe(board, endpoint, route_layer, sv, width_mm, via_width_mm):
+                    continue
+                if not point_is_route_safe(board, endpoint, route_layer, tv, width_mm, via_width_mm):
+                    continue
+                path = search_grid_path(board, endpoint, route_layer, sv, tv, bounds, width_mm, via_width_mm)
+                if path and len(path) >= 2:
+                    candidates.append({
+                        'name': f'grid-channel-via-{route_layer}-{axis}-{offset}',
+                        'vias': [sv, tv],
+                        'segments': [
+                            {'layer': a['layer'], 'points': [a['pos'], sv]},
+                            {'layer': route_layer, 'points': path},
+                            {'layer': b['layer'], 'points': [tv, b['pos']]},
+                        ],
+                        'repairIntent': 'grid_channel_search_with_layer_escape',
+                    })
+                if len(candidates) >= 2:
+                    return candidates
+    return candidates
+
 def run(args):
     started = time.time()
     os.makedirs(args.out_dir, exist_ok=True)
@@ -745,7 +905,7 @@ def run(args):
                 break
             board = pcbnew.LoadBoard(latest)
             tried_for_item = 0
-            candidates = candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
+            candidates = grid_channel_candidates(board, endpoint, copper_layers, args.width, args.via_width) + candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
             for candidate in candidates[:args.max_candidates_per_item]:
                 if attempts >= args.max_drc_calls or (time.time() - started) >= args.max_minutes * 60:
                     break
@@ -870,7 +1030,7 @@ def flatten_candidates(board, unconnected, target_net, max_items, max_candidates
     selected = sorted(resolved, key=lambda endpoint: endpoint['distance'])[:max_items]
     flattened = []
     for endpoint in selected:
-        candidates = candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
+        candidates = grid_channel_candidates(board, endpoint, copper_layers, width, via_width) + candidate_paths(endpoint['a'], endpoint['b'], copper_layers)
         for candidate in candidates[:max_candidates_per_item]:
             if not inside_bounds(candidate_all_points(candidate), bounds):
                 rejected.append({

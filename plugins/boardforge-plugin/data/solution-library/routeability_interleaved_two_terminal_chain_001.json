@@ -1,0 +1,73 @@
+{
+  "id": "routeability_interleaved_two_terminal_chain_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic_sensor_hub_fixture",
+  "problemType": "placement_routeability_blocker",
+  "problemSignature": {
+    "pattern": "two two-terminal footprints placed collinearly with target-net pads separated by unrelated pads",
+    "example": "R8/D1 pads ordered LED_PWR_RET, GND, +3V3, LED_PWR_RET",
+    "symptom": "exact finisher can reduce unconnected only by adding DRC violations or shorts"
+  },
+  "rootCause": "The placement engine allowed a two-component chain to interleave unrelated nets between the two pads that must connect. The router then needed vias or long detours around adjacent pads/tracks for what should have been a simple local series connection.",
+  "fixSummary": "Detect interleaved two-terminal chains during routeability scoring and penalize or repair placement before routing. Recommended action is to rotate or stagger the two-terminal pair before FreeRouting/exact finishing.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/routing/routeability-optimizer.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ],
+    "functionsAdded": [
+      "detectInterleavedTwoTerminalChains"
+    ],
+    "testsAdded": [
+      "routeability optimizer detects interleaved two-terminal chains before routing",
+      "routeability scoring penalizes known placement blockers"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "sensor_hub",
+      "control_board",
+      "compact_smd_fixture"
+    ],
+    "netRoles": [
+      "led",
+      "pullup",
+      "series_passive",
+      "local_signal"
+    ],
+    "conditions": [
+      "two-terminal footprints share a row or column",
+      "same-net endpoint pads are separated by unrelated-net pads",
+      "local exact routing repeatedly creates clearance, crossing, or short regressions"
+    ]
+  },
+  "recipe": [
+    "Extract two-terminal pad positions before routing.",
+    "Sort nearby pads by row/column.",
+    "Detect repeated target-net pads separated by unrelated-net pads across two refs.",
+    "Penalize the placement candidate and prefer rotation/staggering before route export.",
+    "If discovered post-route, classify as placement repair rather than continuing random exact-route attempts."
+  ],
+  "safetyRules": [
+    "Do not change footprints, packages, symbols, nets, or pads.",
+    "Do not use blind, buried, micro, or via-in-pad repairs.",
+    "Only promote placement repair after DRC/ERC and connectivity improve."
+  ],
+  "evidence": {
+    "before": {
+      "revFOutlineAwareUnconnected": 12,
+      "exampleNet": "LED_PWR_RET",
+      "exactFinisherOutcome": "all prefiltered or DRC-regressing candidates"
+    },
+    "after": {
+      "engineImprovement": "routeability detector added before routing/placement promotion"
+    },
+    "tests": [
+      "node --test plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

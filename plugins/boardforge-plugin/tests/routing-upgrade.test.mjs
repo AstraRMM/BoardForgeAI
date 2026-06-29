@@ -7,7 +7,7 @@ import { detectFreeRoutingBackend } from '../lib/routing/router-backend-freeRout
 import { detectTopoRBackend } from '../lib/routing/router-backend-topor.mjs'
 import { detectElectraBackend } from '../lib/routing/router-backend-electra.mjs'
 import { scoreRouterResult, chooseBestRouterResult } from '../lib/routing/router-result-scorer.mjs'
-import { analyzeRouteability } from '../lib/routing/routeability-optimizer.mjs'
+import { analyzeRouteability, detectInterleavedTwoTerminalChains } from '../lib/routing/routeability-optimizer.mjs'
 import { buildControlledNudgeExecutionPlan, runControlledComponentNudge } from '../lib/routing/controlled-component-nudge.mjs'
 import { runRegionalRipupReroute } from '../lib/routing/regional-ripup-reroute.mjs'
 import { buildClearanceAwareExactFinisherPlan, buildExactRatsnestFinisherPlan, classifyExactFinisherRun, isExactRatsnestSuccess, shouldCheckpointExactFinisher } from '../lib/routing/exact-ratsnest-finisher.mjs'
@@ -70,6 +70,32 @@ test('routeability optimizer clusters unconnected blocker regions', () => {
   })
   assert.equal(result.regions[0].unconnectedItems, 2)
   assert.ok(result.regions[0].refs.includes('IC1'))
+})
+
+test('routeability optimizer detects interleaved two-terminal chains before routing', () => {
+  const blockers = detectInterleavedTwoTerminalChains([
+    { ref: 'R8', pad: '1', net: 'LED_PWR_RET', x: 17.4, y: 7.0 },
+    { ref: 'R8', pad: '2', net: 'GND', x: 18.6, y: 7.0 },
+    { ref: 'D1', pad: '1', net: '+3V3', x: 19.4, y: 7.0 },
+    { ref: 'D1', pad: '2', net: 'LED_PWR_RET', x: 20.6, y: 7.0 },
+  ])
+  assert.equal(blockers.length, 1)
+  assert.equal(blockers[0].net, 'LED_PWR_RET')
+  assert.equal(blockers[0].recommendedAction, 'rotate_or_stagger_two_terminal_pair_before_routing')
+})
+
+test('routeability scoring penalizes known placement blockers', () => {
+  const clean = analyzeRouteability('board.kicad_pcb', { pads: [] })
+  const blocked = analyzeRouteability('board.kicad_pcb', {
+    pads: [
+      { ref: 'R8', pad: '1', net: 'LED_PWR_RET', x: 17.4, y: 7.0 },
+      { ref: 'R8', pad: '2', net: 'GND', x: 18.6, y: 7.0 },
+      { ref: 'D1', pad: '1', net: '+3V3', x: 19.4, y: 7.0 },
+      { ref: 'D1', pad: '2', net: 'LED_PWR_RET', x: 20.6, y: 7.0 },
+    ],
+  })
+  assert.equal(clean.placementBlockers.length, 0)
+  assert.equal(blocked.placementBlockers.length, 1)
 })
 
 test('controlled component nudge preserves hard locks in plan mode', () => {
@@ -216,6 +242,21 @@ test('exact finisher generates obstacle-aware detour candidates before local bri
   assert.match(source, /obstacle-layer-channel-x/)
   assert.match(source, /return obstacle_detour_candidates \+ local_repair_candidates \+ candidates/)
   assert.doesNotMatch(source, /startswith\('two-via'\)/)
+})
+
+test('exact finisher generates bounded grid-channel candidates before deterministic paths', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /import heapq/)
+  assert.match(source, /def search_grid_path/)
+  assert.match(source, /def grid_channel_candidates/)
+  assert.match(source, /grid_channel_search/)
+  assert.match(source, /grid_channel_search_with_layer_escape/)
+  assert.match(source, /heapq\.heappush/)
+  assert.match(source, /endpoint_distance > 10\.0/)
+  assert.match(source, /visited < 220/)
+  assert.match(source, /window = 4\.0/)
+  assert.match(source, /grid_channel_candidates\(board, endpoint, copper_layers, args\.width, args\.via_width\) \+ candidate_paths/)
+  assert.match(source, /grid_channel_candidates\(board, endpoint, copper_layers, width, via_width\) \+ candidate_paths/)
 })
 
 test('controlled placement nudge CLI physically executes candidates with exact-route promotion gate', () => {
