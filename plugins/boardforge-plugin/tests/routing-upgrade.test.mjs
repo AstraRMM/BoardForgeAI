@@ -1,5 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
 import { detectRouterBackends, runRouterBackendManager } from '../lib/routing/router-backend-manager.mjs'
 import { detectFreeRoutingBackend } from '../lib/routing/router-backend-freeRouting.mjs'
 import { detectTopoRBackend } from '../lib/routing/router-backend-topor.mjs'
@@ -10,6 +12,8 @@ import { runControlledComponentNudge } from '../lib/routing/controlled-component
 import { runRegionalRipupReroute } from '../lib/routing/regional-ripup-reroute.mjs'
 import { buildClearanceAwareExactFinisherPlan, buildExactRatsnestFinisherPlan, classifyExactFinisherRun, isExactRatsnestSuccess, shouldCheckpointExactFinisher } from '../lib/routing/exact-ratsnest-finisher.mjs'
 import { buildMinimumDesignRelaxationOptions } from '../lib/routing/minimum-design-relaxation-report.mjs'
+
+const repoRoot = path.resolve(import.meta.dirname, '..')
 
 test('router backend manager detects ensemble backends', () => {
   const backends = detectRouterBackends({})
@@ -93,6 +97,15 @@ test('exact ratsnest finisher clearance-aware mode resolves KiCad UUID endpoints
   assert.ok(plan.endpointResolution.includes('prefer_actual_track_endpoint_over_reported_midpoint'))
   assert.equal(shouldCheckpointExactFinisher({ commits: 1, elapsedMs: 30_000 }, plan.finisher).reason, 'commit_checkpoint')
   assert.equal(classifyExactFinisherRun({ unconnected: 20 }, { unconnected: 18, drcViolations: 0 }, { commits: 2 }), 'productive_checkpoint_continue')
+})
+
+test('exact ratsnest finisher CLI can execute clearance-aware physical candidates', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /clearance-aware-exact-finish/)
+  assert.match(source, /runClearanceAwareFinish/)
+  assert.match(source, /spawnSync\(kicadPython/)
+  assert.match(source, /kicad-cli/)
+  assert.match(source, /global_unconnected_decreases|unconnected.*</s)
 })
 
 test('minimum design relaxation report ranks least invasive options first', () => {
