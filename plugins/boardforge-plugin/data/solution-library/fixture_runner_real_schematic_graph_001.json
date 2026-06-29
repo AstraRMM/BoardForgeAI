@@ -1,0 +1,88 @@
+{
+  "id": "fixture_runner_real_schematic_graph_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "synthetic odd-shape robotics fixture",
+  "problemType": "fixture_schematic_shell_promoted_as_ready",
+  "problemSignature": {
+    "schematicShellOnly": true,
+    "manufacturingCandidate": true,
+    "risk": "A clean PCB/manufacturing ZIP can hide that the schematic is only a title-block shell."
+  },
+  "rootCause": "The fixture runner generated a valid routed PCB and manufacturing package but wrote a schematic shell instead of a real KiCad symbol/net graph. That made the board look product-complete while weakening schematic-to-PCB proof.",
+  "fixSummary": "Generate embedded BoardForge fixture symbols, project-local KiCad symbol/footprint libraries, symbol instances, footprint properties, wires, global labels, and no-connect markers from the same component/net source used by PCB generation. Expose schematic graph counts in the manifest and routeability report.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": [
+      "fixtureComponents",
+      "fixtureRoutes",
+      "schematicLibSymbol",
+      "schematicSymbol",
+      "schematicNetLabels",
+      "schematicNoConnectMarkers",
+      "schematicEvidence",
+      "buildLocalSymbolLibrary",
+      "buildLocalFootprint",
+      "writeLocalFixtureLibraries"
+    ],
+    "testsAdded": [
+      "fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "synthetic fixtures",
+      "custom outline boards",
+      "sensor hubs",
+      "future generated KiCad projects"
+    ],
+    "netRoles": [
+      "signal",
+      "power",
+      "connector"
+    ],
+    "conditions": [
+      "BoardForge generates a new project from prompt",
+      "manufacturing readiness requires schematic plus PCB evidence",
+      "dashboard/status reports need to distinguish shell schematics from real graphs"
+    ]
+  },
+  "recipe": [
+    "Use a shared component/net model for schematic, PCB, BOM, and reports.",
+    "Generate KiCad embedded symbols with footprint properties.",
+    "Write project-local sym-lib-table, fp-lib-table, .kicad_sym, and .pretty footprint files.",
+    "Connect every routed net through global labels and wires.",
+    "Mark unused fixture pins with no-connect markers.",
+    "Add manifest evidence counters for symbols, global labels, wires, and no-connects.",
+    "Fail fixture tests if a manufacturing candidate regresses to a schematic shell."
+  ],
+  "safetyRules": [
+    "Do not modify protected ESC or FC projects.",
+    "Do not fake ERC/DRC readiness.",
+    "Do not export manufacturing unless KiCad validation and schematic evidence are honest."
+  ],
+  "evidence": {
+    "before": {
+      "schematicGraphStatus": "schematic_shell_only"
+    },
+    "after": {
+      "schematicGraphStatus": "real_symbol_graph_generated",
+      "drcErrors": 0,
+      "drcWarnings": 0,
+      "ercErrors": 0,
+      "ercWarnings": 0,
+      "unconnected": 0,
+      "manufacturingReady": true
+    },
+    "tests": [
+      "npm run fixtures:run -- --fixture odd-shape-robot",
+      "npm run test:product-platform-manifest"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

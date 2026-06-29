@@ -28,6 +28,7 @@
     "test:existing-project": "node ./plugins/boardforge-plugin/bin/boardforge-regression.mjs --workspace ./plugins/boardforge-plugin/tmp/regression --target 90",
     "test:arbitrary-prompts": "node ./plugins/boardforge-plugin/bin/boardforge-regression.mjs --workspace ./plugins/boardforge-plugin/tmp/regression --target 90",
     "report:90": "node ./plugins/boardforge-plugin/bin/boardforge-regression.mjs --workspace ./plugins/boardforge-plugin/tmp/regression --target 90",
+    "report:90:quick": "node ./plugins/boardforge-plugin/bin/boardforge-regression.mjs --workspace ./plugins/boardforge-plugin/tmp/regression --target 90",
     "smoke:plugin": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/outline-job.json --workspace ./plugins/boardforge-plugin/tmp",
     "mcp:plugin": "node ./plugins/boardforge-plugin/bin/boardforge-mcp.mjs --workspace ./boardforge-workspace",
     "sync:libraries": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/library-sync-job.json --workspace ./boardforge-workspace",

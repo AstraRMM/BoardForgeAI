@@ -78,6 +78,42 @@ const fixturePadOffsets = [
   [1.2, 3],
 ]
 
+const schematicPinOffsets = [
+  [-5.08, 3.81],
+  [5.08, 3.81],
+  [-5.08, 1.27],
+  [5.08, 1.27],
+  [-5.08, -1.27],
+  [5.08, -1.27],
+  [-5.08, -3.81],
+  [5.08, -3.81],
+]
+
+function fixtureComponents() {
+  return [
+    { ref: 'J1', value: 'USB_C_EDGE', footprint: 'Fixture_USB_C_EDGE', footprintLibId: 'BoardForgeFixture:Fixture_USB_C_EDGE', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'connector' },
+    { ref: 'J2', value: 'CAN_EDGE', footprint: 'Fixture_CAN_EDGE', footprintLibId: 'BoardForgeFixture:Fixture_CAN_EDGE', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'connector' },
+    { ref: 'J3', value: 'GPS_UART_EDGE', footprint: 'Fixture_GPS_UART_EDGE', footprintLibId: 'BoardForgeFixture:Fixture_GPS_UART_EDGE', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'connector' },
+    { ref: 'J4', value: 'I2C_EDGE', footprint: 'Fixture_I2C_EDGE', footprintLibId: 'BoardForgeFixture:Fixture_I2C_EDGE', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'connector' },
+    { ref: 'J5', value: 'SWD_EDGE', footprint: 'Fixture_SWD_EDGE', footprintLibId: 'BoardForgeFixture:Fixture_SWD_EDGE', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'connector' },
+    { ref: 'U1', value: 'MCU', footprint: 'Fixture_MCU', footprintLibId: 'BoardForgeFixture:Fixture_MCU', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'mcu' },
+    { ref: 'U2', value: 'IMU', footprint: 'Fixture_IMU', footprintLibId: 'BoardForgeFixture:Fixture_IMU', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'sensor' },
+    { ref: 'U3', value: 'BARO', footprint: 'Fixture_BARO', footprintLibId: 'BoardForgeFixture:Fixture_BARO', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'sensor' },
+    { ref: 'U4', value: '3V3_REG', footprint: 'Fixture_3V3_REG', footprintLibId: 'BoardForgeFixture:Fixture_3V3_REG', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'power' },
+    { ref: 'U5', value: 'CAN_XCVR', footprint: 'Fixture_CAN_XCVR', footprintLibId: 'BoardForgeFixture:Fixture_CAN_XCVR', symbol: 'BoardForge:FIXTURE_8PIN', kind: 'comms' },
+  ]
+}
+
+function fixtureRoutes(width, height) {
+  return [
+    { id: 1, name: 'USB_DP', from: { ref: 'J1', pad: 1 }, to: { ref: 'U3', pad: 1 }, mid: { x: 11, y: 14.5 } },
+    { id: 2, name: 'REG_3V3', from: { ref: 'U4', pad: 1 }, to: { ref: 'U1', pad: 1 }, mid: { x: 41, y: 14.5 } },
+    { id: 3, name: 'CAN_TX', from: { ref: 'U5', pad: 1 }, to: { ref: 'J2', pad: 1 }, mid: { x: 57, y: 27 } },
+    { id: 4, name: 'GPS_TX', from: { ref: 'U1', pad: 8 }, to: { ref: 'J3', pad: 1 }, mid: { x: 43, y: 35.8 } },
+    { id: 5, name: 'I2C_SCL', from: { ref: 'U2', pad: 1 }, to: { ref: 'J4', pad: 1 }, mid: { x: 35, y: 10.8 } },
+  ].map((route) => ({ ...route, boardWidth: width, boardHeight: height }))
+}
+
 function rotatePoint([x, y], rot = 0) {
   const radians = rot * Math.PI / 180
   const cos = Math.cos(radians)
@@ -171,13 +207,7 @@ function buildPcb(fixture, projectId) {
     U4: { x: width / 2 + 13, y: height / 2 - 8, rot: 0 },
     U5: { x: width / 2 + 14, y: height / 2 + 8, rot: 0 },
   }
-  const nets = [
-    { id: 1, name: 'USB_DP', from: { ref: 'J1', pad: 1 }, to: { ref: 'U3', pad: 1 }, mid: { x: 11, y: 14.5 } },
-    { id: 2, name: 'REG_3V3', from: { ref: 'U4', pad: 1 }, to: { ref: 'U1', pad: 1 }, mid: { x: 41, y: 14.5 } },
-    { id: 3, name: 'CAN_TX', from: { ref: 'U5', pad: 1 }, to: { ref: 'J2', pad: 1 }, mid: { x: 57, y: 27 } },
-    { id: 4, name: 'GPS_TX', from: { ref: 'U1', pad: 8 }, to: { ref: 'J3', pad: 1 }, mid: { x: 43, y: 35.8 } },
-    { id: 5, name: 'I2C_SCL', from: { ref: 'U2', pad: 1 }, to: { ref: 'J4', pad: 1 }, mid: { x: 35, y: 10.8 } },
-  ]
+  const nets = fixtureRoutes(width, height)
   const padNetNames = {}
   for (const net of nets) {
     for (const endpoint of [net.from, net.to]) {
@@ -194,16 +224,7 @@ function buildPcb(fixture, projectId) {
     mountingHole('H4', width - 13, height - 9),
   ].join('\n')
   const footprints = [
-    fixtureFootprint('J1', 'USB_C_EDGE', positions.J1, padNetNames.J1),
-    fixtureFootprint('J2', 'CAN_EDGE', positions.J2, padNetNames.J2),
-    fixtureFootprint('J3', 'GPS_UART_EDGE', positions.J3, padNetNames.J3),
-    fixtureFootprint('J4', 'I2C_EDGE', positions.J4, padNetNames.J4),
-    fixtureFootprint('J5', 'SWD_EDGE', positions.J5, padNetNames.J5),
-    fixtureFootprint('U1', 'MCU', positions.U1, padNetNames.U1),
-    fixtureFootprint('U2', 'IMU', positions.U2, padNetNames.U2),
-    fixtureFootprint('U3', 'BARO', positions.U3, padNetNames.U3),
-    fixtureFootprint('U4', '3V3_REG', positions.U4, padNetNames.U4),
-    fixtureFootprint('U5', 'CAN_XCVR', positions.U5, padNetNames.U5),
+    ...fixtureComponents().map((component) => fixtureFootprint(component.ref, component.value, positions[component.ref], padNetNames[component.ref])),
   ].join('\n')
   return `(kicad_pcb (version 20240108) (generator "BoardForge fixture runner")
   (general)
@@ -245,16 +266,7 @@ ${routeSegments}
 function fixtureBomRows() {
   return [
     ['Refs', 'Value', 'Footprint', 'Qty', 'DNP', 'LCSC'],
-    ['J1', 'USB_C_EDGE', 'Fixture_USB_C_EDGE', '1', '', 'NOT_API_VERIFIED'],
-    ['J2', 'CAN_EDGE', 'Fixture_CAN_EDGE', '1', '', 'NOT_API_VERIFIED'],
-    ['J3', 'GPS_UART_EDGE', 'Fixture_GPS_UART_EDGE', '1', '', 'NOT_API_VERIFIED'],
-    ['J4', 'I2C_EDGE', 'Fixture_I2C_EDGE', '1', '', 'NOT_API_VERIFIED'],
-    ['J5', 'SWD_EDGE', 'Fixture_SWD_EDGE', '1', '', 'NOT_API_VERIFIED'],
-    ['U1', 'MCU', 'Fixture_MCU', '1', '', 'NOT_API_VERIFIED'],
-    ['U2', 'IMU', 'Fixture_IMU', '1', '', 'NOT_API_VERIFIED'],
-    ['U3', 'BARO', 'Fixture_BARO', '1', '', 'NOT_API_VERIFIED'],
-    ['U4', '3V3_REG', 'Fixture_3V3_REG', '1', '', 'NOT_API_VERIFIED'],
-    ['U5', 'CAN_XCVR', 'Fixture_CAN_XCVR', '1', '', 'NOT_API_VERIFIED'],
+    ...fixtureComponents().map((component) => [component.ref, component.value, component.footprint, '1', '', 'NOT_API_VERIFIED']),
   ]
 }
 
@@ -305,16 +317,149 @@ function pcbEvidence(pcbText) {
   }
 }
 
+function schematicLibSymbol() {
+  const pins = schematicPinOffsets.map(([x, y], index) => {
+    const number = index + 1
+    const side = x < 0 ? 0 : 180
+    return `        (pin passive line (at ${x.toFixed(2)} ${y.toFixed(2)} ${side}) (length 2.54) (name "P${number}" (effects (font (size 1.0 1.0)))) (number "${number}" (effects (font (size 1.0 1.0)))))`
+  }).join('\n')
+  return `    (symbol "BoardForge:FIXTURE_8PIN" (pin_names (offset 1.016)) (exclude_from_sim no) (in_bom yes) (on_board yes)
+      (property "Reference" "U" (at 0 -8.89 0) (effects (font (size 1.27 1.27))))
+      (property "Value" "FIXTURE_8PIN" (at 0 8.89 0) (effects (font (size 1.27 1.27))))
+      (symbol "FIXTURE_8PIN_0_1"
+        (rectangle (start -5.08 6.35) (end 5.08 -6.35) (stroke (width 0.254) (type default)) (fill (type background)))
+${pins}
+      )
+    )`
+}
+
+function schematicPinEndpoint(symbol, padNumber) {
+  const [x, y] = schematicPinOffsets[padNumber - 1]
+  const left = x < 0
+  return {
+    x: Number((symbol.x + x).toFixed(2)),
+    y: Number((symbol.y + y).toFixed(2)),
+    labelX: Number((symbol.x + (left ? -12.70 : 12.70)).toFixed(2)),
+    labelJustify: left ? 'right' : 'left',
+    labelAngle: left ? 180 : 0,
+  }
+}
+
+function schematicSymbol(component, position) {
+  const pins = fixturePadOffsets.map((_, index) => `    (pin "${index + 1}" (uuid "${cryptoId()}"))`).join('\n')
+  return `  (symbol (lib_id "${component.symbol}") (at ${position.x.toFixed(2)} ${position.y.toFixed(2)} 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
+    (uuid "${cryptoId()}")
+    (property "Reference" "${component.ref}" (at ${position.x.toFixed(2)} ${(position.y - 8.89).toFixed(2)} 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "${component.value}" (at ${position.x.toFixed(2)} ${(position.y + 8.89).toFixed(2)} 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "${component.footprintLibId}" (at ${position.x.toFixed(2)} ${(position.y + 11.10).toFixed(2)} 0) (effects (font (size 1.0 1.0)) hide))
+    (property "Datasheet" "https://boardforge.local/fixture/${component.ref}" (at ${position.x.toFixed(2)} ${(position.y + 13.10).toFixed(2)} 0) (effects (font (size 1.0 1.0)) hide))
+${pins}
+    (instances (project "fixture" (path "/" (reference "${component.ref}") (unit 1))))
+  )`
+}
+
+function schematicNetLabels(routes, positions) {
+  const endpoints = routes.flatMap((route) => [
+    { ...route.from, net: route.name },
+    { ...route.to, net: route.name },
+  ])
+  return endpoints.map((endpoint) => {
+    const point = schematicPinEndpoint(positions[endpoint.ref], endpoint.pad)
+    return `  (wire (pts (xy ${point.labelX.toFixed(2)} ${point.y.toFixed(2)}) (xy ${point.x.toFixed(2)} ${point.y.toFixed(2)})) (stroke (width 0) (type default)) (uuid "${cryptoId()}"))
+  (global_label "${endpoint.net}" (shape input) (at ${point.labelX.toFixed(2)} ${point.y.toFixed(2)} ${point.labelAngle}) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify ${point.labelJustify})) (uuid "${cryptoId()}"))`
+  }).join('\n')
+}
+
+function schematicNoConnectMarkers(components, routes, positions) {
+  const used = new Set(routes.flatMap((route) => [`${route.from.ref}:${route.from.pad}`, `${route.to.ref}:${route.to.pad}`]))
+  return components.flatMap((component) => fixturePadOffsets.map((_, index) => {
+    const padNumber = index + 1
+    if (used.has(`${component.ref}:${padNumber}`)) return null
+    const point = schematicPinEndpoint(positions[component.ref], padNumber)
+    return `  (no_connect (at ${point.x.toFixed(2)} ${point.y.toFixed(2)}) (uuid "${cryptoId()}"))`
+  })).filter(Boolean).join('\n')
+}
+
+function schematicEvidence(schematicText) {
+  return {
+    schematicSymbols: (schematicText.match(/\n  \(symbol \(lib_id /g) || []).length,
+    schematicGlobalLabels: (schematicText.match(/\n  \(global_label /g) || []).length,
+    schematicWires: (schematicText.match(/\n  \(wire /g) || []).length,
+    schematicNoConnects: (schematicText.match(/\n  \(no_connect /g) || []).length,
+    schematicLibSymbols: (schematicText.match(/\n    \(symbol "BoardForge:/g) || []).length,
+  }
+}
+
+function buildLocalSymbolLibrary() {
+  return `(kicad_symbol_lib (version 20231120) (generator "BoardForge fixture runner")
+${schematicLibSymbol()}
+)`
+}
+
+function buildLocalFootprint(component) {
+  return `(footprint "${component.footprint}" (version 20240108) (generator "BoardForge fixture runner") (layer "F.Cu")
+  (descr "BoardForge synthetic fixture footprint for ${component.ref}")
+  (tags "boardforge fixture synthetic")
+  (attr smd)
+  (fp_text reference "REF**" (at 0 -4.5 0) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.12))))
+  (fp_text value "${component.footprint}" (at 0 4.5 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.12))))
+${fixturePadOffsets.map(([x, y], index) => `  (pad "${index + 1}" smd roundrect (at ${x} ${y}) (size 0.6 0.6) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25))`).join('\n')}
+)`
+}
+
+function writeLocalFixtureLibraries(target) {
+  fs.writeFileSync(path.join(target, 'sym-lib-table'), `(sym_lib_table
+  (lib (name "BoardForge")(type "KiCad")(uri "\${KIPRJMOD}/BoardForge.kicad_sym")(options "")(descr "BoardForge synthetic fixture symbols"))
+)`)
+  fs.writeFileSync(path.join(target, 'fp-lib-table'), `(fp_lib_table
+  (lib (name "BoardForgeFixture")(type "KiCad")(uri "\${KIPRJMOD}/BoardForgeFixture.pretty")(options "")(descr "BoardForge synthetic fixture footprints"))
+)`)
+  fs.writeFileSync(path.join(target, 'BoardForge.kicad_sym'), buildLocalSymbolLibrary())
+  const footprintDir = path.join(target, 'BoardForgeFixture.pretty')
+  fs.mkdirSync(footprintDir, { recursive: true })
+  for (const component of fixtureComponents()) {
+    fs.writeFileSync(path.join(footprintDir, `${component.footprint}.kicad_mod`), buildLocalFootprint(component))
+  }
+}
+
 function buildSchematic(fixture, projectId) {
-  return `(kicad_sch (version 20230121) (generator "BoardForge fixture runner")
+  const components = fixtureComponents()
+  const routes = fixtureRoutes(fixture.outline.widthMm, fixture.outline.heightMm)
+  const positions = {
+    J1: { x: 25.4, y: 35.56 },
+    U3: { x: 63.5, y: 35.56 },
+    U4: { x: 25.4, y: 60.96 },
+    U1: { x: 63.5, y: 60.96 },
+    U5: { x: 25.4, y: 86.36 },
+    J2: { x: 63.5, y: 86.36 },
+    J3: { x: 25.4, y: 111.76 },
+    J4: { x: 63.5, y: 111.76 },
+    J5: { x: 104.14, y: 35.56 },
+    U2: { x: 104.14, y: 60.96 },
+  }
+  const symbols = components.map((component) => schematicSymbol(component, positions[component.ref])).join('\n')
+  const labels = schematicNetLabels(routes, positions)
+  const noConnects = schematicNoConnectMarkers(components, routes, positions)
+  const symbolInstances = components.map((component) => `    (path "/${cryptoId()}" (reference "${component.ref}") (unit 1) (value "${component.value}") (footprint "${component.footprint}"))`).join('\n')
+  return `(kicad_sch (version 20250114) (generator "BoardForge fixture runner") (generator_version "0.4")
   (uuid "${cryptoId()}")
   (paper "A4")
   (title_block
     (title "${projectId}")
+    (company "BoardForge Synthetic Fixture")
     (comment 1 "${fixture.brief}")
-    (comment 2 "Fixture schematic graph placeholder: symbol graph generation is the next execution stage.")
+    (comment 2 "Real fixture schematic graph generated from the same component/net source as the routed PCB.")
   )
+  (lib_symbols
+${schematicLibSymbol()}
+  )
+${symbols}
+${labels}
+${noConnects}
   (sheet_instances (path "/" (page "1")))
+  (symbol_instances
+${symbolInstances}
+  )
 )`
 }
 
@@ -379,10 +524,13 @@ async function writeOddShapeFixtureProject(fixture) {
   const schematicFile = path.join(target, `${projectId}.kicad_sch`)
   const pcbFile = path.join(target, `${projectId}.kicad_pcb`)
   fs.writeFileSync(projectFile, JSON.stringify({ meta: { filename: `${projectId}.kicad_pro`, version: 1 }, board: { design_settings: { defaults: {} } } }, null, 2))
-  fs.writeFileSync(schematicFile, buildSchematic(fixture, projectId))
+  writeLocalFixtureLibraries(target)
+  const schematicText = buildSchematic(fixture, projectId)
+  fs.writeFileSync(schematicFile, schematicText)
   const pcbText = buildPcb(fixture, projectId)
   fs.writeFileSync(pcbFile, pcbText)
   const evidence = pcbEvidence(pcbText)
+  const schematicGraph = schematicEvidence(schematicText)
   const validation = await validateFixtureProject({ target, schematicFile, pcbFile })
   const drcErrors = validation.drc.issueCounts?.errors ?? null
   const drcWarnings = validation.drc.issueCounts?.warnings ?? null
@@ -411,6 +559,7 @@ async function writeOddShapeFixtureProject(fixture) {
       namedNets: evidence.namedNets,
       routedSegments: evidence.routedSegments,
       nettedPads: evidence.nettedPads,
+      schematicGraph,
     },
     manufacturing,
     nextStage: drcErrors === 0 && ercErrors === 0
@@ -437,6 +586,10 @@ async function writeOddShapeFixtureProject(fixture) {
       namedNets: evidence.namedNets,
       routedSegments: evidence.routedSegments,
       nettedPads: evidence.nettedPads,
+      ...schematicGraph,
+      schematicGraphStatus: schematicGraph.schematicSymbols > 0 && schematicGraph.schematicGlobalLabels > 0
+        ? 'real_symbol_graph_generated'
+        : 'schematic_shell_only',
     },
     manufacturing: {
       ready: manufacturing.ready,
@@ -453,7 +606,7 @@ async function writeOddShapeFixtureProject(fixture) {
   }
   fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'), JSON.stringify(routeability, null, 2))
   fs.writeFileSync(path.join(target, 'boardforge-project-manifest.json'), JSON.stringify(manifest, null, 2))
-  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}\n- Manufacturing ready: ${manufacturing.ready}\n- Next stage: ${manufacturing.ready ? 'human_manufacturing_review' : routeability.nextStage}\n`)
+  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Schematic graph: ${manifest.validation.schematicGraphStatus}\n- Schematic symbols: ${schematicGraph.schematicSymbols}\n- Schematic global labels: ${schematicGraph.schematicGlobalLabels}\n- Schematic wires: ${schematicGraph.schematicWires}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}\n- Manufacturing ready: ${manufacturing.ready}\n- Next stage: ${manufacturing.ready ? 'human_manufacturing_review' : routeability.nextStage}\n`)
   return { target, projectFile, schematicFile, pcbFile, manifest, routeability }
 }
 
