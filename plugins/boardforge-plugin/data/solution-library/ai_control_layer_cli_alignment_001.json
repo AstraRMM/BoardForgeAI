@@ -1,0 +1,65 @@
+{
+  "id": "ai_control_layer_cli_alignment_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "ai_control_layer",
+  "problemType": "adapter_command_drift",
+  "problemSignature": {
+    "symptom": "The AI command layer used older command names that did not align with the canonical BoardForge CLI verbs."
+  },
+  "rootCause": "Codex/AI adapters had their own command vocabulary while the product CLI was moving toward create, validate, route, cleanup, export, report, and replay. That could make web, KiCad, and AI surfaces diverge.",
+  "fixSummary": "Normalize AI command aliases into canonical product commands, map each command to a guarded BoardForge CLI verb and engine job preview, and document the model-agnostic contract.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/platform/ai-command-schema.mjs",
+      "plugins/boardforge-plugin/lib/platform/ai-command-runner.mjs",
+      "docs/AI_CONTROL_LAYER.md",
+      "plugins/boardforge-plugin/tests/platform-productization.test.mjs",
+      "plugins/boardforge-plugin/data/solution-library/ai_control_layer_cli_alignment_001.json"
+    ],
+    "functionsAdded": [
+      "aiCommandToCliVerb",
+      "buildCliPlan",
+      "aiCommandToEngineJob"
+    ],
+    "testsAdded": [
+      "AI command layer normalizes aliases and maps to canonical CLI verbs"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Use for Codex, web agent, KiCad plugin, or other AI assistant adapters",
+      "Use dry-run planning by default before executing local board actions",
+      "Use canonical CLI verbs as the shared execution boundary"
+    ]
+  },
+  "recipe": [
+    "Normalize legacy adapter commands into canonical BoardForge commands.",
+    "Reject protected project paths before planning execution.",
+    "Attach CLI command line and engine job preview to accepted AI commands.",
+    "Keep adapters model-agnostic: no Codex-only assumptions in the engine contract."
+  ],
+  "safetyRules": [
+    "Do not bypass protected path guards from AI commands.",
+    "Do not execute by default; dry-run planning remains the safe default.",
+    "Do not let aliases create hidden behavior that differs from canonical CLI verbs."
+  ],
+  "evidence": {
+    "before": {
+      "aiCommands": "older adapter command names only"
+    },
+    "after": {
+      "aiCommands": "canonical commands with compatibility aliases and CLI mapping"
+    },
+    "tests": [
+      "npm run test:platform-productization"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

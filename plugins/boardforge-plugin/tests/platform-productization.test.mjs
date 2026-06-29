@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { buildAiSessionReport, planAiCommand } from '../lib/platform/ai-command-runner.mjs'
+import { normalizeAiCommand, validateAiCommand } from '../lib/platform/ai-command-schema.mjs'
 import { buildBoardForgeProductManifest, validateProductManifest } from '../lib/platform/product-manifest.mjs'
 import { choosePromotionCandidate, scoreRouteabilityCandidate } from '../lib/routing/routeability-optimizer.mjs'
 
@@ -31,6 +32,24 @@ test('AI session report counts protected-path rejections', () => {
   ])
   assert.equal(report.accepted, 1)
   assert.equal(report.protectedRejections, 1)
+})
+
+test('AI command layer normalizes aliases and maps to canonical CLI verbs', () => {
+  const routed = planAiCommand({
+    type: 'route_project',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/demo-board',
+    dryRun: true,
+  }, { workspace: 'C:/Users/luifi/Desktop/BoardForge_Dev/boardforge-ai/boardforge-workspace' })
+  assert.equal(routed.accepted, true)
+  assert.equal(routed.command.type, 'run_routing')
+  assert.equal(routed.command.originalType, 'route_project')
+  assert.equal(routed.cli.verb, 'route')
+  assert.match(routed.cli.commandLine, /boardforge:route/)
+  assert.equal(routed.engineJob.type, 'autoroute_and_apply')
+
+  const validation = validateAiCommand({ type: 'continue_from_checkpoint', projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/demo-board' })
+  assert.equal(validation.valid, true)
+  assert.equal(normalizeAiCommand({ type: 'run_drc_erc', projectPath: 'safe' }).type, 'validate_project')
 })
 
 test('routeability scoring promotes clean fallback over prettier incomplete outline', () => {

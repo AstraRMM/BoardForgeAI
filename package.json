@@ -43,7 +43,7 @@
     "mcp:plugin": "node ./plugins/boardforge-plugin/bin/boardforge-mcp.mjs --workspace ./boardforge-workspace",
     "sync:libraries": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/library-sync-job.json --workspace ./boardforge-workspace",
     "resolve:components": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/resolve-components-job.json --workspace ./boardforge-workspace",
-    "test:platform-productization": "node --test --test-name-pattern \"product manifest|AI command runner|AI session report|routeability scoring|promotion candidate|KiCad plugin scaffold|canonical BoardForge CLI\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:platform-productization": "node --test --test-name-pattern \"product manifest|AI command runner|AI command layer|AI session report|routeability scoring|promotion candidate|KiCad plugin scaffold|canonical BoardForge CLI\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:routeability-promotion-gate": "node --test --test-name-pattern \"routeability scoring|promotion candidate\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:product-platform-manifest": "node --test --test-name-pattern \"local engine exposes|required workflow|project manifest|dashboard sample manifest|manifest-driven dashboard data|AI session report|engine candidate selector|odd-shape robot fixture|fixture runner creates|report 90 quick mode\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:solution-library": "node --test ./plugins/boardforge-plugin/tests/solution-library.test.mjs",
