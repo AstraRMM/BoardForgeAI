@@ -108,6 +108,15 @@ test('exact ratsnest finisher CLI can execute clearance-aware physical candidate
   assert.match(source, /global_unconnected_decreases|unconnected.*</s)
 })
 
+test('route finisher CLI can promote a gated ground-zone connectivity repair', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-route-finish.mjs'), 'utf8')
+  assert.match(source, /ground-zone-connectivity-repair/)
+  assert.match(source, /runGroundZoneConnectivityRepair/)
+  assert.match(source, /ZONE_CONNECTION_FULL/)
+  assert.match(source, /after\['violations'\] == 0/)
+  assert.match(source, /after\['unconnected'\] < before\['unconnected'\]/)
+})
+
 test('minimum design relaxation report ranks least invasive options first', () => {
   const options = buildMinimumDesignRelaxationOptions([], { remainingUnconnected: 236 })
   assert.equal(options[0].violatesHardLock, false)

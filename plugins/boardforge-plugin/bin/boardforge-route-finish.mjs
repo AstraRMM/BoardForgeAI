@@ -508,6 +508,116 @@ args = parser.parse_args()
 run(args)
 `
 
+const groundZoneHelper = String.raw`
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import time
+
+import pcbnew
+
+NM_PER_MM = 1000000
+
+def mm(value):
+    return int(round(float(value) * NM_PER_MM))
+
+def load_json(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def run_drc(kicad_cli, board_path, out_path):
+    proc = subprocess.run([kicad_cli, 'pcb', 'drc', '--format', 'json', '--output', out_path, board_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    data = load_json(out_path) if os.path.exists(out_path) else {}
+    return {'exitCode': proc.returncode, 'stdout': proc.stdout, 'stderr': proc.stderr, 'data': data}
+
+def counts(data):
+    violations = data.get('violations') or []
+    unconnected = data.get('unconnected_items') or []
+    shorts = [v for v in violations if str(v.get('type', '')).lower() in ('shorting_items', 'shorting')]
+    forbidden = [v for v in violations if 'forbidden' in str(v.get('type', '')).lower() and 'via' in str(v).lower()]
+    return {'violations': len(violations), 'unconnected': len(unconnected), 'shorts': len(shorts), 'forbiddenVias': len(forbidden)}
+
+def edge_bounds(board):
+    xs, ys = [], []
+    for drawing in board.GetDrawings():
+        try:
+            if drawing.GetLayerName() != 'Edge.Cuts':
+                continue
+            for pos in [drawing.GetStart(), drawing.GetEnd()]:
+                xs.append(pos.x / NM_PER_MM)
+                ys.append(pos.y / NM_PER_MM)
+        except Exception:
+            pass
+    if not xs:
+        return None
+    return min(xs), min(ys), max(xs), max(ys)
+
+def add_ground_zone(board, layer, margin):
+    net = board.FindNet('GND')
+    if not net:
+        raise RuntimeError('GND net not found')
+    bounds = edge_bounds(board)
+    if not bounds:
+        raise RuntimeError('Edge.Cuts bounds not found')
+    x0, y0, x1, y1 = bounds
+    zone = pcbnew.ZONE(board)
+    zone.SetLayer(layer)
+    zone.SetNetCode(net.GetNetCode())
+    zone.SetPadConnection(pcbnew.ZONE_CONNECTION_FULL)
+    try:
+        zone.SetLocalClearance(mm(0.2))
+    except Exception:
+        pass
+    for x, y in [(x0 + margin, y0 + margin), (x1 - margin, y0 + margin), (x1 - margin, y1 - margin), (x0 + margin, y1 - margin)]:
+        zone.AppendCorner(pcbnew.VECTOR2I(mm(x), mm(y)), -1)
+    board.Add(zone)
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--board', required=True)
+parser.add_argument('--out', required=True)
+parser.add_argument('--out-dir', required=True)
+parser.add_argument('--report', required=True)
+parser.add_argument('--kicad-cli', required=True)
+parser.add_argument('--layer', type=int, default=0)
+parser.add_argument('--margin', type=float, default=0.8)
+args = parser.parse_args()
+started = time.time()
+os.makedirs(args.out_dir, exist_ok=True)
+baseline_report = os.path.join(args.out_dir, 'boardforge-ground-zone-baseline-drc.json')
+baseline = run_drc(args.kicad_cli, args.board, baseline_report)
+before = counts(baseline['data'])
+candidate = os.path.join(args.out_dir, 'boardforge-ground-zone-candidate.kicad_pcb')
+board = pcbnew.LoadBoard(args.board)
+add_ground_zone(board, args.layer, args.margin)
+pcbnew.SaveBoard(candidate, board)
+candidate_report = os.path.join(args.out_dir, 'boardforge-ground-zone-candidate-drc.json')
+candidate_drc = run_drc(args.kicad_cli, candidate, candidate_report)
+after = counts(candidate_drc['data'])
+committed = after['violations'] == 0 and after['shorts'] == 0 and after['forbiddenVias'] == 0 and after['unconnected'] < before['unconnected']
+if committed:
+    shutil.copyfile(candidate, args.out)
+else:
+    shutil.copyfile(args.board, args.out)
+result = {
+    'mode': 'ground_zone_connectivity_repair',
+    'startingBoard': args.board,
+    'latestBoard': args.out,
+    'baseline': before,
+    'final': after if committed else before,
+    'candidate': after,
+    'committed': committed,
+    'layer': args.layer,
+    'marginMm': args.margin,
+    'elapsedMs': int((time.time() - started) * 1000),
+}
+with open(args.report, 'w', encoding='utf-8') as f:
+    json.dump(result, f, indent=2)
+print(json.dumps(result, indent=2))
+`
+
 function runClearanceAwareFinish(board, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
   const out = arg('out', path.join(outDir, `${path.basename(board, '.kicad_pcb')}_boardforge_exact_finished.kicad_pcb`))
@@ -552,14 +662,42 @@ function runClearanceAwareFinish(board, outDir) {
   return result
 }
 
+function runGroundZoneConnectivityRepair(board, outDir) {
+  fs.mkdirSync(outDir, { recursive: true })
+  const out = arg('out', path.join(outDir, `${path.basename(board, '.kicad_pcb')}_boardforge_gnd_zone_finished.kicad_pcb`))
+  const report = arg('report', path.join(outDir, 'boardforge-ground-zone-connectivity-repair-report.json'))
+  const helperPath = path.join(os.tmpdir(), `boardforge-ground-zone-repair-${process.pid}.py`)
+  fs.writeFileSync(helperPath, groundZoneHelper)
+  const kicadPython = arg('kicad-python', findDefaultKicadPython())
+  const kicadCli = arg('kicad-cli', findDefaultKicadCli())
+  const proc = spawnSync(kicadPython, [
+    helperPath,
+    '--board', board,
+    '--out', out,
+    '--out-dir', outDir,
+    '--report', report,
+    '--kicad-cli', kicadCli,
+    '--layer', String(numberArg('layer', 0)),
+    '--margin', String(numberArg('margin', 0.8)),
+  ], { encoding: 'utf8', maxBuffer: 1024 * 1024 * 20 })
+  if (proc.stdout) process.stdout.write(proc.stdout)
+  if (proc.stderr) process.stderr.write(proc.stderr)
+  if (proc.status !== 0) {
+    throw new Error(`ground-zone connectivity repair failed with exit ${proc.status}`)
+  }
+  return JSON.parse(fs.readFileSync(report, 'utf8'))
+}
+
 const board = arg('board')
 if (!board) throw new Error('--board is required')
 const outDir = arg('out-dir', path.dirname(board))
 const mode = arg('mode', hasFlag('clearance-aware') ? 'clearance-aware-exact-finish' : 'plan')
 const result = mode === 'clearance-aware-exact-finish'
   ? runClearanceAwareFinish(board, outDir)
+  : mode === 'ground-zone-connectivity-repair'
+    ? runGroundZoneConnectivityRepair(board, outDir)
   : buildExactRatsnestFinisherPlan(board)
-if (mode !== 'clearance-aware-exact-finish') {
+if (!['clearance-aware-exact-finish', 'ground-zone-connectivity-repair'].includes(mode)) {
   fs.writeFileSync(path.join(outDir, 'boardforge-exact-ratsnest-finisher-plan.json'), JSON.stringify(result, null, 2))
 }
 console.log(JSON.stringify(result, null, 2))

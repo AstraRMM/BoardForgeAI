@@ -12,9 +12,17 @@
     "unconnectedStarted": 20,
     "unconnectedAfterSafeCommits": 18,
     "failureMode": "candidate search used KiCad DRC as the only prefilter and hit runtime limits",
-    "latestPhysicalRunnerEvidence": {
+    "groundZoneConnectivityRepair": {
       "unconnectedBefore": 18,
-      "unconnectedAfter": 18,
+      "unconnectedAfter": 13,
+      "drcViolationsBefore": 0,
+      "drcViolationsAfter": 0,
+      "repair": "F.Cu full-connect GND zone inset inside Edge.Cuts",
+      "cliMode": "boardforge:route-finish --mode ground-zone-connectivity-repair"
+    },
+    "latestPhysicalRunnerEvidence": {
+      "unconnectedBefore": 13,
+      "unconnectedAfter": 13,
       "attempts": 19,
       "commits": 0,
       "rollbacks": 19,
@@ -26,7 +34,7 @@
     }
   },
   "rootCause": "BoardForge treated a clean compact fallback as REV_F completion while the true outline-aware placement board still had exact KiCad unconnected items. The first exact finishers also used representative DRC positions instead of resolving KiCad pad/track UUIDs to actual endpoints, and they lacked commit checkpointing.",
-  "fixSummary": "Separate fallback manufacturing candidates from unfinished outline-aware boards. Add clearance-aware exact finisher planning and CLI execution that resolves DRC item endpoints, tests physical candidates with KiCad DRC, commits only when connectivity improves with zero DRC, checkpoints progress, and escalates to routeability-changing placement/rip-up when exact finishing is exhausted.",
+  "fixSummary": "Separate fallback manufacturing candidates from unfinished outline-aware boards. Add clearance-aware exact finisher planning and CLI execution that resolves DRC item endpoints, tests physical candidates with KiCad DRC, commits only when connectivity improves with zero DRC, checkpoints progress, adds a gated GND-zone connectivity repair for isolated return islands, and escalates to routeability-changing placement/rip-up when exact finishing is exhausted.",
   "implementation": {
     "filesChanged": [
       "plugins/boardforge-plugin/lib/routing/exact-ratsnest-finisher.mjs",
@@ -41,10 +49,13 @@
       "shouldCheckpointExactFinisher",
       "classifyExactFinisherRun",
       "runClearanceAwareFinish"
+      ,
+      "runGroundZoneConnectivityRepair"
     ],
     "testsAdded": [
       "clearance-aware exact finisher resolves KiCad UUID endpoints and checkpoints productive runs",
       "exact ratsnest finisher CLI can execute clearance-aware physical candidates",
+      "route finisher CLI can promote a gated ground-zone connectivity repair",
       "REV_F true outline-aware board requires exact finisher until connectivity is clean"
     ]
   },
@@ -75,6 +86,8 @@
     "Checkpoint after every safe commit so long exact finishing can resume."
     ,
     "If a real physical exact-finisher batch rolls back every candidate because crossings/shorts dominate, stop burning DRC cycles and escalate to routeability-changing actions: controlled component nudge, bounded regional rip-up/reroute, or regenerated placement corridors."
+    ,
+    "Before routeability-changing placement, try a gated GND-zone connectivity repair on low-current synthetic fixtures: add a full-connect GND pour inside Edge.Cuts and keep it only if DRC remains zero and unconnected decreases."
   ],
   "safetyRules": [
     "Do not call a fallback board the same as the unfinished outline-aware board.",
@@ -88,7 +101,7 @@
       "drcViolations": 0
     },
     "after": {
-      "unconnected": 18,
+      "unconnected": 13,
       "drcViolations": 0
     },
     "tests": [
