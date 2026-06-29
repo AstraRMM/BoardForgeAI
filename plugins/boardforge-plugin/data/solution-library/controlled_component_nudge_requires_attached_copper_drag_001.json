@@ -1,0 +1,91 @@
+{
+  "id": "controlled_component_nudge_requires_attached_copper_drag_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+  "boardType": "synthetic_robotics_sensor_hub",
+  "problemType": "postroute_routeability",
+  "problemSignature": {
+    "drcViolations": 0,
+    "unconnected": 13,
+    "exactFinisherCommits": 0,
+    "symptom": "plain footprint nudge creates DRC damage or fails to improve exact connectivity"
+  },
+  "rootCause": "The controlled component nudge planner generated placement moves, but physical execution initially moved only footprints. Existing connected copper stayed behind, creating shorts or clearance errors before exact routing could improve connectivity. Candidate ordering also exhausted one reference before sampling the whole blocker region.",
+  "fixSummary": "Controlled component nudge now has a transactional CLI runner, round-robin candidate sampling across references, attached-track-endpoint dragging for footprint moves, KiCad DRC gating, optional exact-ratsnest routing after each safe nudge, and promotion only when DRC remains clean and unconnected count decreases.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/routing/controlled-component-nudge.mjs",
+      "plugins/boardforge-plugin/bin/boardforge-controlled-placement-nudge.mjs",
+      "plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ],
+    "functionsAdded": [
+      "buildControlledNudgeExecutionPlan",
+      "runPhysicalControlledNudge",
+      "writeNudgeCandidate",
+      "runExactAfterNudge"
+    ],
+    "testsAdded": [
+      "controlled component nudge exposes transactional execution gate",
+      "controlled component nudge samples refs round-robin instead of exhausting one part",
+      "controlled placement nudge CLI physically executes candidates with exact-route promotion gate"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "outline-aware compact boards",
+      "dense MCU/control boards",
+      "synthetic routing fixtures"
+    ],
+    "netRoles": [
+      "USB",
+      "UART",
+      "I2C",
+      "CAN",
+      "sensor-control",
+      "LED"
+    ],
+    "conditions": [
+      "exact routing is exhausted",
+      "DRC is already clean",
+      "remaining unconnected items are caused by tight placement/corridors",
+      "component movement is allowed inside the existing outline"
+    ]
+  },
+  "recipe": [
+    "Generate placement nudge candidates round-robin across the blocker-region references.",
+    "For each candidate, move only allowed non-mounting-hole footprints.",
+    "Drag same-net track endpoints attached to moved pads so existing copper remains coherent.",
+    "Refill zones, run KiCad DRC, and reject any candidate that creates DRC violations, shorts, or forbidden vias.",
+    "Run clearance-aware exact routing on DRC-clean nudge candidates.",
+    "Promote only if DRC remains clean and unconnected count decreases versus the original baseline.",
+    "If all nudge candidates rollback, escalate to local route-with-DRC-repair or regional reroute rather than declaring the board finished."
+  ],
+  "safetyRules": [
+    "Do not move mounting holes.",
+    "Do not change board outline.",
+    "Do not change footprints/packages/parts.",
+    "Do not promote a nudge that creates shorts, forbidden vias, or DRC violations.",
+    "Do not count a moved component as progress unless exact connectivity improves or a separately gated routeability-improvement mode is enabled."
+  ],
+  "evidence": {
+    "before": {
+      "board": "BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT_boardforge_stub_cleanup_cli.kicad_pcb",
+      "drcViolations": 0,
+      "unconnected": 13,
+      "shorts": 0,
+      "forbiddenVias": 0
+    },
+    "after": {
+      "physicalNudgeCandidatesAttempted": 16,
+      "physicalNudgeCommits": 0,
+      "rollbacks": 16,
+      "reason": "promotion gate correctly rejected candidates that either created DRC damage or did not reduce unconnected after exact routing"
+    },
+    "tests": [
+      "node --test plugins/boardforge-plugin/tests/routing-upgrade.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

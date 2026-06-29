@@ -8,7 +8,7 @@ import { detectTopoRBackend } from '../lib/routing/router-backend-topor.mjs'
 import { detectElectraBackend } from '../lib/routing/router-backend-electra.mjs'
 import { scoreRouterResult, chooseBestRouterResult } from '../lib/routing/router-result-scorer.mjs'
 import { analyzeRouteability } from '../lib/routing/routeability-optimizer.mjs'
-import { runControlledComponentNudge } from '../lib/routing/controlled-component-nudge.mjs'
+import { buildControlledNudgeExecutionPlan, runControlledComponentNudge } from '../lib/routing/controlled-component-nudge.mjs'
 import { runRegionalRipupReroute } from '../lib/routing/regional-ripup-reroute.mjs'
 import { buildClearanceAwareExactFinisherPlan, buildExactRatsnestFinisherPlan, classifyExactFinisherRun, isExactRatsnestSuccess, shouldCheckpointExactFinisher } from '../lib/routing/exact-ratsnest-finisher.mjs'
 import { buildMinimumDesignRelaxationOptions } from '../lib/routing/minimum-design-relaxation-report.mjs'
@@ -78,6 +78,21 @@ test('controlled component nudge preserves hard locks in plan mode', () => {
   assert.ok(result.candidates.every((candidate) => candidate.ref !== 'H1'))
 })
 
+test('controlled component nudge exposes transactional execution gate', () => {
+  const plan = buildControlledNudgeExecutionPlan('board.kicad_pcb', { refs: ['U1', 'J3', 'H1'] }, { maxCandidates: 4 })
+  assert.equal(plan.mode, 'controlled_component_nudge_transaction')
+  assert.equal(plan.routeAfterNudge, true)
+  assert.equal(plan.promotionGate.requiresConnectivityImprovementAfterExactFinish, true)
+  assert.equal(plan.promotionGate.mountingHolesMustRemainFixed, true)
+  assert.ok(plan.candidates.every((candidate) => candidate.ref !== 'H1'))
+})
+
+test('controlled component nudge samples refs round-robin instead of exhausting one part', () => {
+  const plan = buildControlledNudgeExecutionPlan('board.kicad_pcb', { refs: ['D1', 'R8', 'U1'] }, { maxCandidates: 6, deltasMm: [0.25] })
+  assert.deepEqual(plan.candidates.slice(0, 3).map((candidate) => candidate.ref), ['D1', 'R8', 'U1'])
+  assert.deepEqual(plan.candidates.slice(3, 6).map((candidate) => candidate.ref), ['D1', 'R8', 'U1'])
+})
+
 test('regional ripup reroute creates transactional bounded plan', () => {
   const result = runRegionalRipupReroute('board.kicad_pcb', { refs: ['IC1'], nets: ['/NRST'], radiusMm: 20 })
   assert.equal(result.regionRadiusMm, 8)
@@ -137,6 +152,18 @@ test('route finisher can remove redundant generated ground stubs transactionally
   assert.match(source, /select_redundant_ground_stubs/)
   assert.match(source, /after\['unconnected'\] <= before\['unconnected'\]/)
   assert.match(source, /ZONE_FILLER\(trial\)\.Fill\(trial\.Zones\(\)\)/)
+})
+
+test('controlled placement nudge CLI physically executes candidates with exact-route promotion gate', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'bin', 'boardforge-controlled-placement-nudge.mjs'), 'utf8')
+  assert.match(source, /runPhysicalControlledNudge/)
+  assert.match(source, /writeNudgeCandidate/)
+  assert.match(source, /runExactAfterNudge/)
+  assert.match(source, /attachedTrackEndpointsMoved/)
+  assert.match(source, /track\.SetStart/)
+  assert.match(source, /clearance-aware-exact-finish/)
+  assert.match(source, /finalCounts\.unconnected < baselineDrc\.counts\.unconnected/)
+  assert.match(source, /rolled_back_no_connectivity_improvement/)
 })
 
 test('minimum design relaxation report ranks least invasive options first', () => {
