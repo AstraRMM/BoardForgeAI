@@ -1,0 +1,57 @@
+{
+  "id": "fixture_routed_net_syntax_and_rotation_001",
+  "createdAt": "2026-06-28T00:00:00.000Z",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "sourceBoard": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+  "boardType": "odd_shape_robotics_sensor_hub",
+  "problemType": "kicad_geometry_writer",
+  "problemSignature": {
+    "symptom": "Generated routed fixture initially failed KiCad load or created shorts/unconnected items after netted pads and tracks were added.",
+    "drcFamilies": ["drc_command_failed", "tracks_crossing", "shorting_items", "unconnected_items"],
+    "rootSignals": ["segment net syntax", "footprint pad rotation convention", "overcrowded placeholder pads"]
+  },
+  "rootCause": "The fixture writer emitted numeric net references in tracks/pads while known-good BoardForge KiCad files use net names, and the pad-world coordinate transform used the wrong rotation sign for KiCad footprint pad coordinates.",
+  "fixSummary": "Emit named nets on pads and segments, use KiCad-compatible clockwise pad rotation math, widen placeholder pad pitch, and keep this beginner odd-shape fixture to a small clean routed net set.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": ["pcbEvidence"],
+    "testsAdded": ["fixture runner creates odd-shape preroute KiCad artifacts without fake manufacturing"]
+  },
+  "applicability": {
+    "boardTypes": ["odd_shape", "fixture_generation", "generated_routing"],
+    "netRoles": ["signal", "local_power"],
+    "conditions": ["generated_tracks", "rotated_footprints", "placeholder_footprints"]
+  },
+  "recipe": [
+    "Use KiCad-compatible net names on generated tracks and pads.",
+    "Use clockwise pad rotation when converting footprint-local pad offsets to board coordinates.",
+    "Run KiCad DRC after generated copper is written.",
+    "If a fixture is meant to prove the product pipeline, start with a small clean routed net set before increasing density."
+  ],
+  "safetyRules": [
+    "Never treat generated copper as valid until KiCad loads the board and reports DRC/ERC evidence.",
+    "Do not hide command-load failures as DRC counts.",
+    "Do not use dense generated fixtures as beginner proof if a smaller routed fixture better validates the platform."
+  ],
+  "evidence": {
+    "before": {
+      "loadFailure": "Failed to load board",
+      "drcViolationsAfterFirstRoutedAttempt": 43,
+      "unconnectedAfterFirstRoutedAttempt": 9
+    },
+    "after": {
+      "namedNets": 5,
+      "nettedPads": 10,
+      "routedSegments": 10,
+      "drcErrors": 0,
+      "ercErrors": 0,
+      "unconnected": 0
+    },
+    "tests": ["npm run fixtures:run -- --fixture odd-shape-robot", "npm run test:product-platform-manifest"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

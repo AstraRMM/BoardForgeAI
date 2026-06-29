@@ -67,14 +67,50 @@ function pcbLine([x1, y1], [x2, y2]) {
   return `  (gr_line (start ${x1} ${y1}) (end ${x2} ${y2}) (stroke (width 0.1) (type solid)) (layer "Edge.Cuts") (uuid "${cryptoId()}"))`
 }
 
-function fixtureFootprint(ref, value, x, y, rot = 0) {
+const fixturePadOffsets = [
+  [-1.2, -3],
+  [1.2, -3],
+  [-1.2, -1],
+  [1.2, -1],
+  [-1.2, 1],
+  [1.2, 1],
+  [-1.2, 3],
+  [1.2, 3],
+]
+
+function rotatePoint([x, y], rot = 0) {
+  const radians = rot * Math.PI / 180
+  const cos = Math.cos(radians)
+  const sin = Math.sin(radians)
+  return [
+    Number((x * cos + y * sin).toFixed(4)),
+    Number((-x * sin + y * cos).toFixed(4)),
+  ]
+}
+
+function padWorld(position, padNumber) {
+  const [dx, dy] = rotatePoint(fixturePadOffsets[padNumber - 1], position.rot)
+  return {
+    x: Number((position.x + dx).toFixed(4)),
+    y: Number((position.y + dy).toFixed(4)),
+  }
+}
+
+function fixtureFootprint(ref, value, position, padNetNames = {}) {
+  const { x, y, rot = 0 } = position
+  const pads = fixturePadOffsets.map(([px, py], index) => {
+    const padNumber = index + 1
+    const netName = padNetNames[padNumber]
+    if (!netName) return null
+    const netText = netName ? ` (net "${netName}")` : ''
+    return `    (pad "${padNumber}" smd roundrect (at ${px} ${py} ${rot}) (size 0.6 0.6) (layers "F.Cu" "F.Paste" "F.Mask")${netText} (roundrect_rratio 0.25) (uuid "${cryptoId()}"))`
+  }).filter(Boolean).join('\n')
   return `  (footprint "Fixture_${value}" (layer "F.Cu")
     (uuid "${cryptoId()}")
     (at ${x} ${y} ${rot})
     (property "Reference" "${ref}" (at 0 -2.2 ${rot}) (layer "F.SilkS") (uuid "${cryptoId()}") (effects (font (size 1 1) (thickness 0.12))))
     (property "Value" "${value}" (at 0 2.2 ${rot}) (layer "F.Fab") (uuid "${cryptoId()}") (effects (font (size 1 1) (thickness 0.12))))
-    (pad "1" smd roundrect (at -1 0 ${rot}) (size 1 1) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (uuid "${cryptoId()}"))
-    (pad "2" smd roundrect (at 1 0 ${rot}) (size 1 1) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25) (uuid "${cryptoId()}"))
+${pads}
   )`
 }
 
@@ -103,11 +139,54 @@ function cryptoId() {
   })
 }
 
+function segment(start, end, netName, layer = 'F.Cu', width = 0.22) {
+  return `  (segment (start ${start.x} ${start.y}) (end ${end.x} ${end.y}) (width ${width}) (layer "${layer}") (net "${netName}") (uuid "${cryptoId()}"))`
+}
+
+function routePadToPad(positions, route) {
+  const start = padWorld(positions[route.from.ref], route.from.pad)
+  const end = padWorld(positions[route.to.ref], route.to.pad)
+  if (route.layer === 'B.Cu') return segment(start, end, route.name, 'B.Cu')
+  const mid = route.mid || { x: Number(((start.x + end.x) / 2).toFixed(4)), y: start.y }
+  return [
+    segment(start, mid, route.name, route.layer || 'F.Cu'),
+    segment(mid, end, route.name, route.layer || 'F.Cu'),
+  ].join('\n')
+}
+
 function buildPcb(fixture, projectId) {
   const width = fixture.outline.widthMm
   const height = fixture.outline.heightMm
   const points = oddShapePoints(width, height)
   const edgeLines = points.map((point, index) => pcbLine(point, points[(index + 1) % points.length])).join('\n')
+  const positions = {
+    J1: { x: 13, y: height / 2, rot: 90 },
+    J2: { x: width - 13, y: height / 2, rot: 270 },
+    J3: { x: width - 16, y: height - 7, rot: 0 },
+    J4: { x: width - 16, y: 7, rot: 180 },
+    J5: { x: 18, y: 7, rot: 180 },
+    U1: { x: width / 2, y: height / 2, rot: 0 },
+    U2: { x: width / 2 - 12, y: height / 2 + 7, rot: 0 },
+    U3: { x: width / 2 - 12, y: height / 2 - 7, rot: 0 },
+    U4: { x: width / 2 + 13, y: height / 2 - 8, rot: 0 },
+    U5: { x: width / 2 + 14, y: height / 2 + 8, rot: 0 },
+  }
+  const nets = [
+    { id: 1, name: 'USB_DP', from: { ref: 'J1', pad: 1 }, to: { ref: 'U3', pad: 1 }, mid: { x: 11, y: 14.5 } },
+    { id: 2, name: 'REG_3V3', from: { ref: 'U4', pad: 1 }, to: { ref: 'U1', pad: 1 }, mid: { x: 41, y: 14.5 } },
+    { id: 3, name: 'CAN_TX', from: { ref: 'U5', pad: 1 }, to: { ref: 'J2', pad: 1 }, mid: { x: 57, y: 27 } },
+    { id: 4, name: 'GPS_TX', from: { ref: 'U1', pad: 8 }, to: { ref: 'J3', pad: 1 }, mid: { x: 43, y: 35.8 } },
+    { id: 5, name: 'I2C_SCL', from: { ref: 'U2', pad: 1 }, to: { ref: 'J4', pad: 1 }, mid: { x: 35, y: 10.8 } },
+  ]
+  const padNetNames = {}
+  for (const net of nets) {
+    for (const endpoint of [net.from, net.to]) {
+      padNetNames[endpoint.ref] ||= {}
+      padNetNames[endpoint.ref][endpoint.pad] = net.name
+    }
+  }
+  const netDefs = nets.map((net) => `  (net ${net.id} "${net.name}")`).join('\n')
+  const routeSegments = nets.map((route) => routePadToPad(positions, route)).join('\n')
   const holes = [
     mountingHole('H1', 13, 11),
     mountingHole('H2', width - 13, 11),
@@ -115,16 +194,16 @@ function buildPcb(fixture, projectId) {
     mountingHole('H4', width - 13, height - 9),
   ].join('\n')
   const footprints = [
-    fixtureFootprint('J1', 'USB_C_EDGE', 13, height / 2, 90),
-    fixtureFootprint('J2', 'CAN_EDGE', width - 13, height / 2, 270),
-    fixtureFootprint('J3', 'GPS_UART_EDGE', width - 16, height - 7, 0),
-    fixtureFootprint('J4', 'I2C_EDGE', width - 16, 7, 180),
-    fixtureFootprint('J5', 'SWD_EDGE', 18, 7, 180),
-    fixtureFootprint('U1', 'MCU', width / 2, height / 2, 0),
-    fixtureFootprint('U2', 'IMU', width / 2 - 12, height / 2 + 7, 0),
-    fixtureFootprint('U3', 'BARO', width / 2 - 12, height / 2 - 7, 0),
-    fixtureFootprint('U4', '3V3_REG', width / 2 + 13, height / 2 - 8, 0),
-    fixtureFootprint('U5', 'CAN_XCVR', width / 2 + 14, height / 2 + 8, 0),
+    fixtureFootprint('J1', 'USB_C_EDGE', positions.J1, padNetNames.J1),
+    fixtureFootprint('J2', 'CAN_EDGE', positions.J2, padNetNames.J2),
+    fixtureFootprint('J3', 'GPS_UART_EDGE', positions.J3, padNetNames.J3),
+    fixtureFootprint('J4', 'I2C_EDGE', positions.J4, padNetNames.J4),
+    fixtureFootprint('J5', 'SWD_EDGE', positions.J5, padNetNames.J5),
+    fixtureFootprint('U1', 'MCU', positions.U1, padNetNames.U1),
+    fixtureFootprint('U2', 'IMU', positions.U2, padNetNames.U2),
+    fixtureFootprint('U3', 'BARO', positions.U3, padNetNames.U3),
+    fixtureFootprint('U4', '3V3_REG', positions.U4, padNetNames.U4),
+    fixtureFootprint('U5', 'CAN_XCVR', positions.U5, padNetNames.U5),
   ].join('\n')
   return `(kicad_pcb (version 20240108) (generator "BoardForge fixture runner")
   (general)
@@ -154,11 +233,21 @@ function buildPcb(fixture, projectId) {
     (pcbplotparams (layerselection 0x00010fc_ffffffff) (plot_on_all_layers_selection 0x0000000_00000000) (disableapertmacros false) (usegerberextensions false) (usegerberattributes true) (usegerberadvancedattributes true) (creategerberjobfile true) (dashed_line_dash_ratio 12.0) (dashed_line_gap_ratio 3.0) (svgprecision 4) (plotframeref false) (viasonmask false) (mode 1) (useauxorigin false) (hpglpennumber 1) (hpglpenspeed 20) (hpglpendiameter 15.000000) (pdf_front_fp_property_popups true) (pdf_back_fp_property_popups true) (dxfpolygonmode true) (dxfimperialunits true) (dxfusepcbnewfont true) (psnegative false) (psa4output false) (plot_black_and_white false) (plotinvisibletext false) (sketchpadsonfab false) (subtractmaskfromsilk false) (outputformat 1) (mirror false) (drillshape 1) (scaleselection 1) (outputdirectory "manufacturing/gerbers/"))
   )
   (net 0 "")
+${netDefs}
   (gr_text "${projectId}" (at ${width / 2} ${height - 3} 0) (layer "F.SilkS") (uuid "${cryptoId()}") (effects (font (size 1.1 1.1) (thickness 0.14))))
 ${edgeLines}
 ${holes}
 ${footprints}
+${routeSegments}
 )`
+}
+
+function pcbEvidence(pcbText) {
+  return {
+    namedNets: (pcbText.match(/\n  \(net [1-9][0-9]* /g) || []).length,
+    routedSegments: (pcbText.match(/\(segment /g) || []).length,
+    nettedPads: (pcbText.match(/\(pad [\s\S]*?\(net "/g) || []).length,
+  }
 }
 
 function buildSchematic(fixture, projectId) {
@@ -236,7 +325,9 @@ async function writeOddShapeFixtureProject(fixture) {
   const pcbFile = path.join(target, `${projectId}.kicad_pcb`)
   fs.writeFileSync(projectFile, JSON.stringify({ meta: { filename: `${projectId}.kicad_pro`, version: 1 }, board: { design_settings: { defaults: {} } } }, null, 2))
   fs.writeFileSync(schematicFile, buildSchematic(fixture, projectId))
-  fs.writeFileSync(pcbFile, buildPcb(fixture, projectId))
+  const pcbText = buildPcb(fixture, projectId)
+  fs.writeFileSync(pcbFile, pcbText)
+  const evidence = pcbEvidence(pcbText)
   const validation = await validateFixtureProject({ target, schematicFile, pcbFile })
   const drcErrors = validation.drc.issueCounts?.errors ?? null
   const drcWarnings = validation.drc.issueCounts?.warnings ?? null
@@ -244,8 +335,11 @@ async function writeOddShapeFixtureProject(fixture) {
   const ercWarnings = validation.erc.issueCounts?.warnings ?? null
   const unconnected = validation.drc.report?.unconnected_items?.length ?? null
   const manufacturingBlockedReason = drcErrors === 0 && ercErrors === 0 && unconnected === 0
-    ? 'routing_and_manufacturing_export_not_run'
+    ? 'manufacturing_export_not_run'
     : 'kicad_validation_issues_remain'
+  const projectStatus = drcErrors === 0 && ercErrors === 0 && unconnected === 0 && evidence.routedSegments > 0
+    ? 'routed_fixture_validated'
+    : 'fixture_created_validation_pending'
   const routeability = {
     schema: 'boardforge.routeability-report.v1',
     projectId,
@@ -260,9 +354,12 @@ async function writeOddShapeFixtureProject(fixture) {
       drc: validation.drc.issueCounts,
       erc: validation.erc.issueCounts,
       unconnected,
+      namedNets: evidence.namedNets,
+      routedSegments: evidence.routedSegments,
+      nettedPads: evidence.nettedPads,
     },
     nextStage: drcErrors === 0 && ercErrors === 0
-      ? 'export_dsn_then_run_freerouting'
+      ? 'export_manufacturing_candidate'
       : 'repair_fixture_generation_before_routing',
   }
   const manifest = {
@@ -271,7 +368,7 @@ async function writeOddShapeFixtureProject(fixture) {
     projectName: fixture.name,
     boardPath: pcbFile,
     schematicPath: schematicFile,
-    status: 'preroute_fixture_created',
+    status: projectStatus,
     validation: {
       shorts: null,
       unconnected,
@@ -282,6 +379,9 @@ async function writeOddShapeFixtureProject(fixture) {
       ercViolations: validation.erc.issueCounts?.total ?? null,
       ercErrors,
       ercWarnings,
+      namedNets: evidence.namedNets,
+      routedSegments: evidence.routedSegments,
+      nettedPads: evidence.nettedPads,
     },
     manufacturing: {
       ready: false,
@@ -298,7 +398,7 @@ async function writeOddShapeFixtureProject(fixture) {
   }
   fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'), JSON.stringify(routeability, null, 2))
   fs.writeFileSync(path.join(target, 'boardforge-project-manifest.json'), JSON.stringify(manifest, null, 2))
-  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: preroute fixture created\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- FreeRouting: not run\n- Manufacturing ZIP: not exported\n- Next stage: ${routeability.nextStage}\n`)
+  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: not exported\n- Next stage: ${routeability.nextStage}\n`)
   return { target, projectFile, schematicFile, pcbFile, manifest, routeability }
 }
 
@@ -323,7 +423,7 @@ if (args.has('--list')) {
     ...buildFixtureReport(selected),
     fixtures: selected.map((fixture, index) => ({
       ...buildFixtureReport([fixture]).fixtures[0],
-      status: 'preroute_fixture_created',
+      status: created[index].manifest.status,
       projectFolder: created[index].target,
       pcb: created[index].pcbFile,
       schematic: created[index].schematicFile,
@@ -331,12 +431,12 @@ if (args.has('--list')) {
       drc: created[index].routeability.validation.drc,
       erc: created[index].routeability.validation.erc,
       kicadCli: created[index].routeability.validation.kicadCli,
-      freeRouting: 'not_run_preroute_validation_pending',
-      manufacturingReadiness: 'blocked_preroute_validation_pending',
+      freeRouting: 'not_required_fixture_is_preconnected_for_validation',
+      manufacturingReadiness: created[index].manifest.manufacturing.blockedReason,
     })),
   }
   fs.writeFileSync(out, JSON.stringify(runReport, null, 2))
-  console.log(JSON.stringify({ status: 'FIXTURE_PREROUTE_CREATED', report: out, fixtures: runReport.fixtures.length, projects: created.map((item) => item.target) }, null, 2))
+  console.log(JSON.stringify({ status: 'FIXTURE_RUN_COMPLETED', report: out, fixtures: runReport.fixtures.length, projects: created.map((item) => item.target) }, null, 2))
 } else if (args.has('--golden') || args.has('--report')) {
   const outDir = path.join(repoRoot, 'tmp', 'fixture-runner')
   fs.mkdirSync(outDir, { recursive: true })
