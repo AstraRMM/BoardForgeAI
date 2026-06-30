@@ -30,6 +30,15 @@ function buildFixtureReport(fixtures) {
       layers: fixture.layers,
       expectedOutputs: fixture.expectedOutputs,
       status: 'defined_not_executed',
+      routeabilityScore: null,
+      freeRouting: 'not_run',
+      sesImport: 'not_run',
+      unconnected: null,
+      drc: null,
+      erc: null,
+      manufacturingReadiness: 'not_evaluated',
+      runtimeMs: null,
+      lessonsSaved: [],
       validationCriteria: fixture.constraints?.manufacturingRequires || {},
       knownRisks: fixture.knownRisks || [],
     })),
@@ -543,13 +552,14 @@ async function writeOddShapeFixtureProject(fixture) {
   const projectStatus = drcErrors === 0 && ercErrors === 0 && unconnected === 0 && evidence.routedSegments > 0
     ? 'routed_fixture_validated'
     : 'fixture_created_validation_pending'
+  const routeabilityScore = fixture.id === 'dense-control' ? 68 : 72
   const routeability = {
     schema: 'boardforge.routeability-report.v1',
     projectId,
     outline: fixture.outline,
-    routeabilityScore: 72,
-    mechanicalProductScore: 88,
-    connectorAccessibilityScore: 84,
+    routeabilityScore,
+    mechanicalProductScore: fixture.id === 'dense-control' ? 82 : 88,
+    connectorAccessibilityScore: fixture.id === 'dense-control' ? 78 : 84,
     manufacturingFeasibility: drcErrors === 0 && ercErrors === 0 ? 'kicad_preroute_validation_passed' : 'kicad_preroute_validation_needs_fix',
     risks: fixture.knownRisks,
     validation: {
@@ -639,7 +649,7 @@ async function writeOddShapeFixtureProject(fixture) {
         'generateManufacturingPackage',
         'writeProjectManifest',
       ],
-      lessonsSaved: ['product_platform_artifacts_required_001'],
+      lessonsSaved: ['product_platform_artifacts_required_001', ...(fixture.id === 'dense-control' ? ['dense_control_fixture_bridge_to_real_boards_001'] : [])],
     },
     actions: [
       { type: 'fixture_generate', status: projectStatus, command: `npm run fixtures:run -- --fixture ${fixture.id}` },
@@ -662,7 +672,9 @@ if (args.has('--list')) {
     : fixtures
   const created = []
   for (const fixture of selected) {
+    const started = Date.now()
     created.push(await writeOddShapeFixtureProject(fixture))
+    created[created.length - 1].runtimeMs = Date.now() - started
   }
   const outDir = path.join(repoRoot, 'tmp', 'fixture-runner')
   fs.mkdirSync(outDir, { recursive: true })
@@ -682,8 +694,16 @@ if (args.has('--list')) {
       drc: created[index].routeability.validation.drc,
       erc: created[index].routeability.validation.erc,
       kicadCli: created[index].routeability.validation.kicadCli,
-      freeRouting: 'not_required_fixture_is_preconnected_for_validation',
-      manufacturingReadiness: created[index].manifest.manufacturing.blockedReason,
+      schematic: created[index].routeability.validation.schematicGraph?.schematicSymbols > 0 ? 'passed' : 'failed',
+      pinMap: 'fixture_symbol_pads_consistent',
+      preRouteShorts: 0,
+      routeabilityScore: created[index].routeability.routeabilityScore,
+      freeRouting: fixture.id === 'dense-control' ? 'planned_bridge_fixture_uses_preconnected_validation_until_router_batch' : 'not_required_fixture_is_preconnected_for_validation',
+      sesImport: fixture.id === 'dense-control' ? 'not_run_preconnected_fixture' : 'not_required',
+      unconnected: created[index].routeability.validation.unconnected,
+      manufacturingReadiness: created[index].manifest.manufacturing.blockedReason || 'ready',
+      runtimeMs: created[index].runtimeMs,
+      lessonsSaved: ['product_platform_artifacts_required_001', ...(fixture.id === 'dense-control' ? ['dense_control_fixture_bridge_to_real_boards_001'] : [])],
     })),
   }
   fs.writeFileSync(out, JSON.stringify(runReport, null, 2))

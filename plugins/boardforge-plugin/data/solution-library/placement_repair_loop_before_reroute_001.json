@@ -1,0 +1,22 @@
+{
+  "id": "placement_repair_loop_before_reroute_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "dense control robotics board",
+  "problemType": "placement_routeability",
+  "problemSignature": { "blockedCorridors": true, "failureMode": "routing retries waste time when placement already blocks corridors" },
+  "rootCause": "FreeRouting and exact routing can stall when component placement creates narrow corridors or interleaved escape chains.",
+  "fixSummary": "Add a placement repair loop that scores routeability, proposes corridor-opening moves, and selects better candidates before rerouting.",
+  "implementation": {
+    "filesChanged": ["plugins/boardforge-plugin/lib/placement/placement-repair-loop.mjs", "plugins/boardforge-plugin/lib/placement/corridor-aware-placement.mjs"],
+    "functionsAdded": ["generatePlacementRepairCandidates", "runPlacementRepairLoop", "proposeCorridorAwareMoves"],
+    "testsAdded": ["placement repair loop moves components away from blocked corridors"]
+  },
+  "applicability": { "boardTypes": ["dense control", "compact robotics"], "netRoles": ["signal", "control", "debug"], "conditions": ["routeability score says repair placement before routing"] },
+  "recipe": ["Score candidate", "Identify blocked corridors", "Generate bounded component moves", "Promote higher routeability candidate"],
+  "safetyRules": ["preserve outline and footprints", "do not move mounting holes"],
+  "evidence": { "tests": ["test:placement-repair-loop"] },
+  "status": "active",
+  "confidence": "medium"
+}

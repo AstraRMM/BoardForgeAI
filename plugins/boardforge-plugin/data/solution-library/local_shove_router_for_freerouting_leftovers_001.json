@@ -1,0 +1,22 @@
+{
+  "id": "local_shove_router_for_freerouting_leftovers_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "dense control robotics board",
+  "problemType": "local_shove_routing",
+  "problemSignature": { "leftoverRatsnest": true, "blockingGeneratedCopper": true },
+  "rootCause": "FreeRouting leftovers often need local generated copper displacement rather than another full-board route attempt.",
+  "fixSummary": "Add a first local shove transaction planner/executor that identifies generated blockers, plans moves, routes target net, and commits only with safety proof.",
+  "implementation": {
+    "filesChanged": ["plugins/boardforge-plugin/lib/routing/local-shove-router.mjs"],
+    "functionsAdded": ["identifyBlockingObjects", "planLocalShoveTransaction", "runLocalShoveRouter"],
+    "testsAdded": ["local shove router commits only when exact connectivity improves and safety gates pass"]
+  },
+  "applicability": { "boardTypes": ["dense control", "sensor hub", "robotics"], "netRoles": ["signal", "control"], "conditions": ["exact ratsnest route is blocked by generated copper"] },
+  "recipe": ["Identify blocking generated copper", "Create transaction", "Move blocking object", "Route target net", "Commit only if connectivity improves and shorts remain zero"],
+  "safetyRules": ["rollback unsafe transactions", "do not touch fixed objects", "no forbidden vias"],
+  "evidence": { "tests": ["test:local-shove-router"] },
+  "status": "active",
+  "confidence": "medium"
+}

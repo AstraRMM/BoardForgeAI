@@ -1,0 +1,42 @@
+{
+  "id": "dense-control",
+  "name": "BF-DENSE-CONTROL-01",
+  "revision": "REV_A",
+  "type": "dense_control_robotics_board",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A",
+  "brief": "A dense 4-layer robotics control board that bridges easy sensor fixtures and real dense boards without touching ESC/FC projects.",
+  "layers": 4,
+  "outline": {
+    "shape": "compact rounded control board with connector edges and a cable notch",
+    "widthMm": 58,
+    "heightMm": 36,
+    "features": ["compact outline", "connector edge rows", "tight MCU sensor corridor", "mounting ears"]
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid compact custom outline",
+    "routeability score before routing",
+    "FreeRouting DSN/SES attempt",
+    "exact ratsnest finishing report",
+    "local shove/rip-up blocker proof",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean"
+  ],
+  "knownRisks": [
+    "tight connector-to-MCU corridors",
+    "interleaved small passives can block LED/control routes",
+    "USB/CAN/I2C/UART/SWD escape routes compete near MCU",
+    "local shove/rip-up may be required for FreeRouting leftovers"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "dense_control_fixture_bridge_to_real_boards_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "dense control robotics board",
+  "problemType": "fixture_gap",
+  "problemSignature": { "gap": "easy synthetic boards were clean, real ESC/FC boards were too harsh as training targets" },
+  "rootCause": "BoardForge needed an intermediate fixture that stresses connector placement, tight corridors, and local finishing without risking user projects.",
+  "fixSummary": "Add BF-DENSE-CONTROL-01_REV_A as a safe dense-control bridge fixture.",
+  "implementation": {
+    "filesChanged": ["fixtures/boards/dense-control/fixture.json", "plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs"],
+    "functionsAdded": [],
+    "testsAdded": ["dense-control fixture is listed and emits platform artifacts when run"]
+  },
+  "applicability": { "boardTypes": ["control", "robotics", "sensor hub"], "netRoles": ["USB", "CAN", "I2C", "UART", "SWD"], "conditions": ["training hard-board routeability without touching real user boards"] },
+  "recipe": ["Use compact 4-layer control architecture", "Score routeability", "Run through fixture regression", "Emit product artifacts"],
+  "safetyRules": ["synthetic fixtures only", "no protected ESC/FC path writes"],
+  "evidence": { "after": { "fixtureId": "dense-control" }, "tests": ["test:fixture-runner"] },
+  "status": "active",
+  "confidence": "high"
+}
