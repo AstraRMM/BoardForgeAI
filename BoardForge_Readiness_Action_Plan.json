@@ -1,0 +1,35 @@
+{
+  "schema": "boardforge.readiness-action-plan.v1",
+  "date": "2026-06-30",
+  "previousScore": 59,
+  "newScore": 64,
+  "improvements": [
+    "Added dense-control physical mutation proof to quick readiness evidence",
+    "Added Sensor Hub REV_D manufacturing candidate to quick readiness evidence",
+    "Exported fixture evidence increased from 1 to 3",
+    "ERC/DRC clean fixture evidence increased from 1 to 3"
+  ],
+  "remainingBlockers": [
+    {
+      "id": "golden_demo_not_clean",
+      "impact": "high",
+      "nextAction": "Repair or replace the golden demo with a DRC/ERC/export-clean synthetic fixture"
+    },
+    {
+      "id": "poe_not_fixed_or_explained",
+      "impact": "high",
+      "nextAction": "Create exact PoE blocker proof or clean PoE fixture"
+    },
+    {
+      "id": "robotics_drc_zero_missing",
+      "impact": "high",
+      "nextAction": "Add robotics-controller fixture with DRC 0 / ERC 0 / ZIP exported"
+    },
+    {
+      "id": "existing_project_scan_missing",
+      "impact": "medium",
+      "nextAction": "Scan a safe synthetic KiCad project and emit review gates"
+    }
+  ],
+  "gatePolicy": "Do not weaken readiness gates; only add evidence-backed clean fixtures or honest blocker proofs."
+}

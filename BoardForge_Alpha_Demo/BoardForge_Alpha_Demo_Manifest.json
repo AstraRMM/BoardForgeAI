@@ -1,0 +1,40 @@
+{
+  "schema": "boardforge.alpha-demo.v1",
+  "generatedAt": "2026-06-30T16:14:42.757Z",
+  "outputDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Alpha_Demo",
+  "projects": [
+    {
+      "projectId": "BF-DENSE-CONTROL-01_REV_A",
+      "readiness": "ready",
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\manufacturing\\BF-DENSE-CONTROL-01_REV_A_JLCPCB.zip",
+      "replayCommand": "npm run boardforge:dense-control-repair -- --fixture \"C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\""
+    },
+    {
+      "projectId": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+      "readiness": "ready",
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip",
+      "replayCommand": "npm run fixtures:run -- --fixture odd-shape-robot"
+    },
+    {
+      "projectId": "BF-SENSOR-HUB-01_REV_D",
+      "readiness": "ready",
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_D\\manufacturing\\BF-SENSOR-HUB-01_REV_D_JLCPCB.zip",
+      "replayCommand": "npm run boardforge:validate -- --project \"C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_D\""
+    },
+    {
+      "projectId": "BF-SENSOR-HUB-01_REV_F",
+      "readiness": "blocked",
+      "manufacturingReady": false,
+      "zip": null,
+      "replayCommand": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F --mode clearance-aware-exact-finish"
+    }
+  ],
+  "proofSummary": {
+    "manufacturingReadyProjects": 3,
+    "blockedProjects": 1,
+    "denseControlMutationProof": true
+  }
+}

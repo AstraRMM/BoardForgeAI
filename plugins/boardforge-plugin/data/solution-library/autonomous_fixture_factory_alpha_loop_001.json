@@ -1,0 +1,56 @@
+{
+  "id": "autonomous_fixture_factory_alpha_loop_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "synthetic-fixture-suite",
+  "boardType": "product-platform-fixture-suite",
+  "problemType": "platform_productization",
+  "problemSignature": {
+    "symptom": "BoardForge proofs existed as separate fixture runs instead of a repeatable alpha product training loop."
+  },
+  "rootCause": "The engine had validated fixtures and repair proof, but no single fixture-factory command that reran the suite and emitted product evidence.",
+  "fixSummary": "Add a fixture factory command that runs the fixture runner, summarizes manufacturing readiness, records lessons, and feeds alpha demo/product dashboards.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/bin/boardforge-fixture-factory.mjs",
+      "plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "fixture factory emits manufacturing readiness summary",
+      "alpha demo package command writes product proof artifacts"
+    ]
+  },
+  "applicability": {
+    "boardTypes": ["synthetic fixtures", "alpha demo boards"],
+    "netRoles": [],
+    "conditions": ["before public demo", "before product readiness review"]
+  },
+  "recipe": [
+    "Run fixture suite",
+    "Collect DRC/ERC/unconnected/manufacturing readiness evidence",
+    "Write dashboard/demo artifacts",
+    "Save lessons",
+    "Report blocked fixtures honestly"
+  ],
+  "safetyRules": [
+    "Do not touch protected ESC/FC projects",
+    "Do not fake manufacturing readiness",
+    "Do not export ZIPs unless validation is clean"
+  ],
+  "evidence": {
+    "before": {
+      "alphaDemoPackage": false
+    },
+    "after": {
+      "alphaDemoPackage": true,
+      "fixtureFactory": true
+    },
+    "tests": [
+      "npm run test:product-platform-manifest",
+      "npm run fixtures:run"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

@@ -39,6 +39,7 @@
     "boardforge:report": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs report",
     "boardforge:replay": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs replay",
     "boardforge:dashboard-data": "node ./plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
+    "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
     "smoke:plugin": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/outline-job.json --workspace ./plugins/boardforge-plugin/tmp",
     "mcp:plugin": "node ./plugins/boardforge-plugin/bin/boardforge-mcp.mjs --workspace ./boardforge-workspace",
     "sync:libraries": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/library-sync-job.json --workspace ./boardforge-workspace",
@@ -52,10 +53,16 @@
     "test:cli-replay-command": "node --test --test-name-pattern \"dashboard sample manifest\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:dense-control-drc-repair": "npm --prefix ./plugins/boardforge-plugin run test:dense-control-drc-repair",
     "test:manufacturing-manifest": "npm --prefix ./plugins/boardforge-plugin run test:manufacturing-manifest",
+    "test:routeability-scorer": "npm --prefix ./plugins/boardforge-plugin run test:routeability-scorer",
+    "test:placement-repair-loop": "npm --prefix ./plugins/boardforge-plugin run test:placement-repair-loop",
+    "test:local-shove-router": "npm --prefix ./plugins/boardforge-plugin run test:local-shove-router",
+    "test:regional-ripup-reroute": "npm --prefix ./plugins/boardforge-plugin run test:regional-ripup-reroute",
     "fixtures:list": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --list",
     "fixtures:run": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --run",
     "fixtures:golden": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --golden",
-    "fixtures:report": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --report"
+    "fixtures:report": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --report",
+    "fixtures:factory": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-factory.mjs",
+    "test:alpha-demo-package": "node --test --test-name-pattern \"alpha demo package|fixture factory\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

@@ -38,10 +38,11 @@ test('dashboard sample manifest is product-readable and honest about blocked fix
   assert.equal(manifest.manufacturing.ready, false)
   const dashboard = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'project-dashboard.json'), 'utf8'))
   assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
-  assert.equal(dashboard.summary.totalProjects, 3)
-  assert.equal(dashboard.summary.manufacturingReady, 2)
+  assert.equal(dashboard.summary.totalProjects, 4)
+  assert.equal(dashboard.summary.manufacturingReady, 3)
   assert.equal(dashboard.summary.blocked, 1)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-DENSE-CONTROL-01_REV_A' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
+  assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_D' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ODD-SHAPE-ROBOT-01_REV_A' && project.readiness === 'ready'), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_F' && project.readiness === 'blocked'), true)
 })
@@ -145,6 +146,44 @@ test('platform artifacts CLI creates replayable dashboard and plugin action file
   assert.match(replay, /boardforge:validate/)
 })
 
+test('alpha demo package command writes product proof artifacts', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const cli = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-alpha-demo-package.mjs')
+  const outputDir = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'alpha-demo-test')
+  fs.rmSync(outputDir, { recursive: true, force: true })
+
+  const output = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    '--output',
+    outputDir,
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+
+  assert.equal(output.status, 'BOARD_FORGE_ALPHA_DEMO_PACKAGE_WRITTEN')
+  assert.ok(output.manufacturingReady >= 1)
+  assert.equal(fs.existsSync(path.join(outputDir, 'BoardForge_Alpha_Demo_Index.md')), true)
+  assert.equal(fs.existsSync(path.join(outputDir, 'BoardForge_Alpha_Demo_Manifest.json')), true)
+  assert.equal(fs.existsSync(path.join(outputDir, 'CLI_Replay_Commands.md')), true)
+  const manifest = JSON.parse(fs.readFileSync(path.join(outputDir, 'BoardForge_Alpha_Demo_Manifest.json'), 'utf8'))
+  assert.equal(manifest.schema, 'boardforge.alpha-demo.v1')
+  assert.equal(manifest.proofSummary.denseControlMutationProof, true)
+  assert.equal(manifest.projects.some((project) => project.projectId === 'BF-DENSE-CONTROL-01_REV_A'), true)
+})
+
+test('fixture factory emits manufacturing readiness summary', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const cli = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-fixture-factory.mjs')
+  const output = JSON.parse(execFileSync(process.execPath, [cli], { cwd: repoRoot, stdio: 'pipe', timeout: 180000 }).toString())
+
+  assert.equal(output.status, 'BOARD_FORGE_FIXTURE_FACTORY_COMPLETED')
+  assert.ok(output.summary.fixturesRun >= 2)
+  assert.ok(output.summary.manufacturingReady >= 1)
+  assert.equal(fs.existsSync(output.report), true)
+  assert.equal(fs.existsSync(output.markdown), true)
+  const report = JSON.parse(fs.readFileSync(output.report, 'utf8'))
+  assert.equal(report.schema, 'boardforge.fixture-factory-report.v1')
+  assert.equal(report.fixtures.some((fixture) => fixture.id === 'dense-control'), true)
+})
+
 test('AI session report is model-agnostic and preserves protected rejections', () => {
   const report = writeAiSessionReport([
     { type: 'route_project', projectPath: 'C:/Users/luifi/Desktop/FN-ESC1/board.kicad_pcb' },
@@ -236,11 +275,15 @@ test('report 90 quick mode runs bounded fixture subset', () => {
   assert.equal(result.quickMode, true)
   assert.deepEqual(result.selectedFixtureIds, [
     'dense_difficult_honest_failure',
+    'dense_control_physical_repair_cached',
+    'sensor_hub_rev_d_cached',
     'odd_shaped_outline',
     'rounded_rectangle_outline_only',
     'missing_library_footprint',
     'arbitrary_prompt_too_small',
   ])
   assert.equal(typeof result.readiness, 'number')
+  assert.ok(result.readiness >= 64)
+  assert.equal(result.acceptance.exportedFixtureCount >= 3, true)
   assert.ok(result.reportFiles.jsonFile)
 })
