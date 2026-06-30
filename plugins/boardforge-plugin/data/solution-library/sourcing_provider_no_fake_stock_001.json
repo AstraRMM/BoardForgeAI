@@ -1,0 +1,60 @@
+{
+  "id": "sourcing_provider_no_fake_stock_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BoardForge platform",
+  "boardType": "all",
+  "problemType": "sourcing_verification",
+  "problemSignature": {
+    "risk": "provider adapters could imply stock or assembly availability without a live API result",
+    "statuses": ["API_VERIFIED", "MANUAL_CANDIDATE", "PLACEHOLDER", "NOT_CHECKED", "OUT_OF_STOCK", "OBSOLETE"]
+  },
+  "rootCause": "BoardForge needed a product-grade sourcing provider contract where every BOM row carries sourcing, stock, assembly, pin-map, and risk fields without inventing live supplier evidence.",
+  "fixSummary": "Add sourcing provider modules for Digi-Key, Mouser, LCSC, and JLCPCB assembly that disclose missing credentials and never claim API_VERIFIED until a real provider query is implemented and run.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/sourcing/part-source-provider.mjs",
+      "plugins/boardforge-plugin/lib/sourcing/digikey-provider.mjs",
+      "plugins/boardforge-plugin/lib/sourcing/mouser-provider.mjs",
+      "plugins/boardforge-plugin/lib/sourcing/lcsc-provider.mjs",
+      "plugins/boardforge-plugin/lib/sourcing/jlcpcb-assembly-provider.mjs",
+      "plugins/boardforge-plugin/lib/sourcing/part-verification-report.mjs",
+      "plugins/boardforge-plugin/tests/sourcing-platform.test.mjs"
+    ],
+    "functionsAdded": [
+      "verifyBomWithProviders",
+      "normalizePartVerification",
+      "createDigikeyProvider",
+      "createMouserProvider",
+      "createLcscProvider",
+      "createJlcpcbAssemblyProvider",
+      "buildPartVerificationReport"
+    ],
+    "testsAdded": ["sourcing-platform.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["BOM or manufacturing package needs part availability and assembly disclosure"]
+  },
+  "recipe": [
+    "Normalize every BOM row with MPN, manufacturer, symbol, footprint, pin-map status, sourcing status, stock status, assembly availability, and risk.",
+    "Return NOT_CHECKED when credentials are missing.",
+    "Return MANUAL_CANDIDATE for manually selected but unverified parts.",
+    "Return PLACEHOLDER for generated placeholder parts.",
+    "Use API_VERIFIED only after live provider evidence exists."
+  ],
+  "safetyRules": [
+    "do not fake stock",
+    "do not fake assembly availability",
+    "do not fake lifecycle status",
+    "do not mark manufacturing-ready from unchecked sourcing evidence"
+  ],
+  "evidence": {
+    "before": { "providerContract": "scattered or ESC-specific sourcing helpers" },
+    "after": { "providerContract": "product-grade normalized sourcing report" },
+    "tests": ["test:sourcing-provider", "test:solution-library"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

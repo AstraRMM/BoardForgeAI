@@ -435,6 +435,7 @@
     "test:symbol-footprint-pinmap-equivalence": "node --test --test-name-pattern \"symbol footprint pinmap equivalence\" ./tests/*.test.mjs",
     "test:no-silent-placeholders": "node --test --test-name-pattern \"no silent placeholders\" ./tests/*.test.mjs",
     "test:sourcing-status-report": "node --test --test-name-pattern \"sourcing status report\" ./tests/*.test.mjs",
+    "test:sourcing-provider": "node --test --test-name-pattern \"sourcing providers|manual provider|part verification report|configured provider\" ./tests/*.test.mjs",
     "test:rev-d-end-to-end-manufacturing-candidate": "node --test --test-name-pattern \"REV_D end-to-end manufacturing candidate\" ./tests/*.test.mjs",
     "test:outline-engine": "node --test --test-name-pattern \"outline engine\" ./tests/*.test.mjs",
     "test:edgecuts-writer": "node --test --test-name-pattern \"edgecuts writer\" ./tests/*.test.mjs",
