@@ -1,0 +1,49 @@
+{
+  "id": "manufacturing_readiness_requires_full_validation_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BoardForge platform",
+  "boardType": "all",
+  "problemType": "manufacturing_readiness_gate",
+  "problemSignature": {
+    "risk": "a project could produce a ZIP or partial exports while still having unconnected items, DRC/ERC violations, forbidden vias, missing BOM/CPL, or unchecked sourcing"
+  },
+  "rootCause": "Manufacturing readiness must be a strict evidence gate, not a side effect of having generated files on disk.",
+  "fixSummary": "Add a manufacturing readiness report that gates release on clean validation, exported Gerbers/drill/BOM/CPL/ZIP, zero forbidden vias, zero unconnected items, and critical part verification.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/manufacturing/manufacturing-readiness-report.mjs",
+      "plugins/boardforge-plugin/tests/manufacturing-readiness-platform.test.mjs",
+      "plugins/boardforge-plugin/package.json"
+    ],
+    "functionsAdded": [
+      "buildManufacturingReadinessReport",
+      "canExportManufacturingPackage"
+    ],
+    "testsAdded": ["manufacturing-readiness-platform.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["before marking any BoardForge project manufacturing-ready or allowing a JLCPCB package to be promoted"]
+  },
+  "recipe": [
+    "Normalize KiCad validation evidence.",
+    "Require shorts=0, unconnected=0, forbidden vias=0, DRC=0, ERC=0.",
+    "Require Gerbers, drill files, BOM, CPL, and JLCPCB ZIP.",
+    "Require critical part/pin-map/sourcing checks to pass.",
+    "Return blockers instead of pretending the board is ready."
+  ],
+  "safetyRules": [
+    "do not fake DRC/ERC pass",
+    "do not fake sourcing verification",
+    "do not call a board manufacturing-ready when any hard gate is blocked"
+  ],
+  "evidence": {
+    "before": { "risk": "export files could be confused with manufacturing readiness" },
+    "after": { "strictReadinessGate": true },
+    "tests": ["test:manufacturing-readiness-platform", "test:solution-library"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

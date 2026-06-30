@@ -25,6 +25,7 @@
     "test:drc-repair": "node --test --test-name-pattern \"DRC repair|drc repair|repair planner|self repair|same-net unsafe\" ./tests/*.test.mjs",
     "test:category-exports": "node ./bin/boardforge-category-exports-test.mjs",
     "test:manufacturing-manifest": "node ./bin/boardforge-manufacturing-manifest-test.mjs",
+    "test:manufacturing-readiness-platform": "node --test --test-name-pattern \"manufacturing readiness\" ./tests/*.test.mjs",
     "test:universal-engine": "node --test --test-name-pattern \"universal board engine|universal scenarios|anti-template\" ./tests/*.test.mjs",
     "test:placement-candidates": "node --test --test-name-pattern \"placement candidate|universal placement\" ./tests/*.test.mjs",
     "test:autonomous-job": "node --test --test-name-pattern \"autonomous job\" ./tests/*.test.mjs",
