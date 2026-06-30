@@ -1,0 +1,41 @@
+{
+  "id": "robotics-controller-clean",
+  "name": "BF-ROBOTICS-CONTROLLER-01",
+  "revision": "REV_A",
+  "type": "robotics_controller",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A",
+  "brief": "A clean robotics controller alpha fixture with MCU, USB-C, CAN, UART/GPS, I2C, SWD, servo/PWM connector, status LEDs, reset/boot, and regulator routing evidence.",
+  "layers": 4,
+  "outline": {
+    "shape": "rounded robotics controller with connector edge rows and service notch",
+    "widthMm": 72,
+    "heightMm": 46,
+    "features": ["USB service edge", "CAN/UART connector edge", "servo header edge", "mounting ears", "debug access corridor"]
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid robotics custom outline",
+    "routeability score before routing",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean",
+    "project manifest",
+    "dashboard data",
+    "CLI replay command"
+  ],
+  "knownRisks": [
+    "servo/PWM connector can pinch MCU escape corridors",
+    "CAN and UART edge connectors compete with debug header access",
+    "mounting ears can reduce routing corridor width"
+  ]
+}

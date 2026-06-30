@@ -9,6 +9,7 @@ BoardForge is a local-first AI PCB engineering platform for KiCad. This demo pac
 | Dense Control DRC Repair Proof | ready | 0 | 0 | 0 | C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-DENSE-CONTROL-01_REV_A\manufacturing\BF-DENSE-CONTROL-01_REV_A_JLCPCB.zip |
 | Odd Shape Robot Fixture | ready | 0 | 0 | 0 | C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-ODD-SHAPE-ROBOT-01_REV_A\manufacturing\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip |
 | Sensor Hub REV_D Verified Parts Proof | ready | 0 | 0 | 0 | C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-SENSOR-HUB-01_REV_D\manufacturing\BF-SENSOR-HUB-01_REV_D_JLCPCB.zip |
+| Robotics Controller Clean Fixture | ready | 0 | 0 | 0 | C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-ROBOTICS-CONTROLLER-01_REV_A\manufacturing\BF-ROBOTICS-CONTROLLER-01_REV_A_JLCPCB.zip |
 
 ## Blocked Or Learning Fixtures
 

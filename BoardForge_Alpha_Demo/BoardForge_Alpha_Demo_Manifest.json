@@ -1,6 +1,6 @@
 {
   "schema": "boardforge.alpha-demo.v1",
-  "generatedAt": "2026-06-30T16:14:42.757Z",
+  "generatedAt": "2026-06-30T16:44:57.219Z",
   "outputDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Alpha_Demo",
   "projects": [
     {
@@ -25,6 +25,13 @@
       "replayCommand": "npm run boardforge:validate -- --project \"C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_D\""
     },
     {
+      "projectId": "BF-ROBOTICS-CONTROLLER-01_REV_A",
+      "readiness": "ready",
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\manufacturing\\BF-ROBOTICS-CONTROLLER-01_REV_A_JLCPCB.zip",
+      "replayCommand": "npm run fixtures:run -- --fixture robotics-controller-clean"
+    },
+    {
       "projectId": "BF-SENSOR-HUB-01_REV_F",
       "readiness": "blocked",
       "manufacturingReady": false,
@@ -33,7 +40,7 @@
     }
   ],
   "proofSummary": {
-    "manufacturingReadyProjects": 3,
+    "manufacturingReadyProjects": 4,
     "blockedProjects": 1,
     "denseControlMutationProof": true
   }

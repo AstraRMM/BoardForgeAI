@@ -1,34 +1,33 @@
 {
   "schema": "boardforge.readiness-action-plan.v1",
   "date": "2026-06-30",
-  "previousScore": 59,
-  "newScore": 64,
+  "previousScore": 64,
+  "newScore": 70,
   "improvements": [
+    "Added generated alpha demo package as golden demo evidence",
     "Added dense-control physical mutation proof to quick readiness evidence",
+    "Added clean robotics controller fixture to quick readiness evidence",
     "Added Sensor Hub REV_D manufacturing candidate to quick readiness evidence",
-    "Exported fixture evidence increased from 1 to 3",
-    "ERC/DRC clean fixture evidence increased from 1 to 3"
+    "Added safe synthetic existing-project scan proof",
+    "Added PoE honest future-fixture blocker decision",
+    "Exported fixture evidence increased from 1 to 6",
+    "ERC/DRC clean fixture evidence increased from 1 to 6"
   ],
   "remainingBlockers": [
     {
-      "id": "golden_demo_not_clean",
-      "impact": "high",
-      "nextAction": "Repair or replace the golden demo with a DRC/ERC/export-clean synthetic fixture"
-    },
-    {
-      "id": "poe_not_fixed_or_explained",
-      "impact": "high",
-      "nextAction": "Create exact PoE blocker proof or clean PoE fixture"
-    },
-    {
-      "id": "robotics_drc_zero_missing",
-      "impact": "high",
-      "nextAction": "Add robotics-controller fixture with DRC 0 / ERC 0 / ZIP exported"
-    },
-    {
-      "id": "existing_project_scan_missing",
+      "id": "existing_project_copy_sandbox_missing",
       "impact": "medium",
-      "nextAction": "Scan a safe synthetic KiCad project and emit review gates"
+      "nextAction": "Add copy-sandbox command for uploaded user KiCad projects"
+    },
+    {
+      "id": "poe_advanced_fixture_not_production_ready",
+      "impact": "medium",
+      "nextAction": "Build real PoE fixture with RJ45, magnetics, isolation, and exact blocker rules"
+    },
+    {
+      "id": "category_depth_quick_evidence_missing",
+      "impact": "medium",
+      "nextAction": "Add bounded category-depth evidence to quick readiness"
     }
   ],
   "gatePolicy": "Do not weaken readiness gates; only add evidence-backed clean fixtures or honest blocker proofs."

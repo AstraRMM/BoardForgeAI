@@ -38,11 +38,12 @@ test('dashboard sample manifest is product-readable and honest about blocked fix
   assert.equal(manifest.manufacturing.ready, false)
   const dashboard = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'project-dashboard.json'), 'utf8'))
   assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
-  assert.equal(dashboard.summary.totalProjects, 4)
-  assert.equal(dashboard.summary.manufacturingReady, 3)
+  assert.equal(dashboard.summary.totalProjects, 5)
+  assert.equal(dashboard.summary.manufacturingReady, 4)
   assert.equal(dashboard.summary.blocked, 1)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-DENSE-CONTROL-01_REV_A' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_D' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
+  assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ROBOTICS-CONTROLLER-01_REV_A' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ODD-SHAPE-ROBOT-01_REV_A' && project.readiness === 'ready'), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_F' && project.readiness === 'blocked'), true)
 })
@@ -274,16 +275,24 @@ test('report 90 quick mode runs bounded fixture subset', () => {
   const result = JSON.parse(output.toString())
   assert.equal(result.quickMode, true)
   assert.deepEqual(result.selectedFixtureIds, [
+    'golden_demo',
+    'poe_ethernet_sensor',
     'dense_difficult_honest_failure',
     'dense_control_physical_repair_cached',
+    'robotics_controller_clean_cached',
     'sensor_hub_rev_d_cached',
     'odd_shaped_outline',
     'rounded_rectangle_outline_only',
     'missing_library_footprint',
+    'existing_kicad_project_scan',
     'arbitrary_prompt_too_small',
   ])
   assert.equal(typeof result.readiness, 'number')
-  assert.ok(result.readiness >= 64)
-  assert.equal(result.acceptance.exportedFixtureCount >= 3, true)
+  assert.ok(result.readiness >= 70)
+  assert.equal(result.acceptance.goldenPasses, true)
+  assert.equal(result.acceptance.roboticsDrcZero, true)
+  assert.equal(result.acceptance.existingProjectScan, true)
+  assert.equal(result.acceptance.poeFixedOrExplained, true)
+  assert.equal(result.acceptance.exportedFixtureCount >= 5, true)
   assert.ok(result.reportFiles.jsonFile)
 })

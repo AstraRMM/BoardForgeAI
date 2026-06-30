@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export function loadBoardObjects(boardPath) {
-  const text = fs.readFileSync(boardPath, 'utf8')
+  const text = readTextFileWithTransientLockRetry(boardPath)
   return {
     boardPath,
     text,
@@ -171,6 +171,28 @@ export function commitMutation(transaction) {
 export function findCopperNearViolation(board, violation = {}, radiusMm = 2) {
   const coordinates = (violation.items || []).map((item) => item.pos).filter(Boolean)
   return board.segments.filter((segment) => coordinates.some((point) => distance(segment.start, point) <= radiusMm || distance(segment.end, point) <= radiusMm))
+}
+
+function readTextFileWithTransientLockRetry(filePath, options = {}) {
+  const attempts = Number(options.attempts ?? 10)
+  const delayMs = Number(options.delayMs ?? 125)
+  let lastError = null
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return fs.readFileSync(filePath, 'utf8')
+    } catch (error) {
+      lastError = error
+      if (!['EBUSY', 'EPERM'].includes(error.code) || attempt === attempts - 1) {
+        throw error
+      }
+      sleepSync(delayMs)
+    }
+  }
+  throw lastError
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
 }
 
 function parseSegments(text) {

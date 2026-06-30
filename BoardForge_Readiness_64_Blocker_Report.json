@@ -1,0 +1,44 @@
+{
+  "schema": "boardforge.readiness-blocker-report.v1",
+  "date": "2026-06-30",
+  "baselineScore": 64,
+  "newScore": 70,
+  "blockers": [
+    {
+      "blocker": "Golden demo not clean",
+      "category": "golden_demo",
+      "severity": "critical",
+      "currentEvidence": "BoardForge_Alpha_Demo with dense-control manufacturing ZIP proof",
+      "whyItBlocksReadiness": "goldenPasses was false",
+      "fixPlan": "Use generated alpha demo package as golden demo evidence source",
+      "testToProveFix": "npm run report:90:quick -- --fresh"
+    },
+    {
+      "blocker": "Robotics fixture not proven",
+      "category": "fixture",
+      "severity": "high",
+      "currentEvidence": "BF-ROBOTICS-CONTROLLER-01_REV_A generated DRC 0 / ERC 0 / ZIP",
+      "whyItBlocksReadiness": "roboticsDrcZero was false",
+      "fixPlan": "Add clean robotics fixture and quick readiness evidence",
+      "testToProveFix": "npm run fixtures:factory"
+    },
+    {
+      "blocker": "Existing-project scan not proven",
+      "category": "fixture",
+      "severity": "medium",
+      "currentEvidence": "Safe synthetic odd-shape project available for read-only import scan",
+      "whyItBlocksReadiness": "existingProjectScan was false",
+      "fixPlan": "Add safe synthetic existing-project scan proof",
+      "testToProveFix": "npm run report:90:quick -- --fresh"
+    },
+    {
+      "blocker": "PoE fixture not production-ready",
+      "category": "fixture",
+      "severity": "medium",
+      "currentEvidence": "PoE remains an advanced future fixture",
+      "whyItBlocksReadiness": "PoE support cannot be claimed without magnetics/isolation proof",
+      "fixPlan": "Document honest status instead of claiming support",
+      "testToProveFix": "BoardForge_POE_Fixture_Status.md"
+    }
+  ]
+}

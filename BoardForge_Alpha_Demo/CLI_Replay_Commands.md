@@ -18,6 +18,12 @@ npm run fixtures:run -- --fixture odd-shape-robot
 npm run boardforge:validate -- --project "C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-SENSOR-HUB-01_REV_D"
 ```
 
+## Robotics Controller Clean Fixture
+
+```powershell
+npm run fixtures:run -- --fixture robotics-controller-clean
+```
+
 ## Sensor Hub REV_F Outline-Aware Proof
 
 ```powershell

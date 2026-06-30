@@ -2,12 +2,12 @@
   "schema": "boardforge.project-dashboard-data.v1",
   "generatedAt": "2026-06-30T00:00:00.000Z",
   "summary": {
-    "totalProjects": 4,
-    "manufacturingReady": 3,
+    "totalProjects": 5,
+    "manufacturingReady": 4,
     "blocked": 1,
     "review": 0,
     "needsRouting": 1,
-    "cleanDrcErc": 2
+    "cleanDrcErc": 4
   },
   "projects": [
     {
@@ -128,6 +128,45 @@
       "criticalBlockers": [],
       "nextAction": "human_manufacturing_review",
       "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_D\\manufacturing\\BoardForge_REV_D_Manufacturing_Manifest.json"
+    },
+    {
+      "schema": "boardforge.project-dashboard-card.v1",
+      "projectId": "BF-ROBOTICS-CONTROLLER-01_REV_A",
+      "projectName": "Robotics Controller Clean Fixture",
+      "status": "routed_fixture_validated",
+      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BF-ROBOTICS-CONTROLLER-01_REV_A.kicad_pcb",
+      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BF-ROBOTICS-CONTROLLER-01_REV_A.kicad_sch",
+      "readiness": "ready",
+      "routingCompletionPercent": 100,
+      "routeabilityScore": 72,
+      "validation": {
+        "shorts": 0,
+        "unconnected": 0,
+        "forbiddenVias": 0,
+        "drcViolations": 0,
+        "drcErrors": 0,
+        "drcWarnings": 0,
+        "ercViolations": 0,
+        "ercErrors": 0,
+        "ercWarnings": 0,
+        "namedNets": 5,
+        "routedSegments": 10,
+        "nettedPads": 10,
+        "schematicGraphStatus": "real_symbol_graph_generated"
+      },
+      "manufacturing": {
+        "ready": true,
+        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\manufacturing\\BF-ROBOTICS-CONTROLLER-01_REV_A_JLCPCB.zip",
+        "blockedReason": null
+      },
+      "reports": {
+        "routeability": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BoardForge_Odd_Shape_Routeability_Report.json",
+        "status": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BoardForge_Odd_Shape_Final_Status.md"
+      },
+      "replayCommand": "npm run fixtures:run -- --fixture robotics-controller-clean",
+      "criticalBlockers": [],
+      "nextAction": "human_manufacturing_review",
+      "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BoardForge_Project_Manifest.json"
     },
     {
       "schema": "boardforge.project-dashboard-card.v1",
