@@ -1,0 +1,24 @@
+{
+  "id": "platform_productization_dual_track_sprint_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BoardForge platform",
+  "boardType": "all",
+  "problemType": "productization_strategy",
+  "problemSignature": {
+    "risk": "polishing only web UI would not improve the routing moat; routing-only work would not make BoardForge a sellable platform"
+  },
+  "rootCause": "BoardForge needed a dual-track sprint that improves customer-facing product surfaces while increasing hard-board routing intelligence on safe synthetic fixtures.",
+  "fixSummary": "Add manifest-driven web pages and harder synthetic fixture/intelligence modules in the same sprint.",
+  "implementation": {
+    "filesChanged": ["apps/web/src/app/*", "plugins/boardforge-plugin/tests/dual-track-sprint.test.mjs"],
+    "functionsAdded": [],
+    "testsAdded": ["dual-track-sprint.test.mjs"]
+  },
+  "applicability": { "boardTypes": ["all"], "netRoles": [], "conditions": ["platform work must advance product surface and engine moat together"] },
+  "recipe": ["Improve a product surface", "Add or improve a hard-board engine capability", "Test both", "Save lessons"],
+  "safetyRules": ["do not touch protected ESC/FC projects", "do not fake cloud actions"],
+  "evidence": { "after": { "dualTrackSprint": true }, "tests": ["test:platform-productization", "test:fixture-runner"] },
+  "status": "active",
+  "confidence": "high"
+}

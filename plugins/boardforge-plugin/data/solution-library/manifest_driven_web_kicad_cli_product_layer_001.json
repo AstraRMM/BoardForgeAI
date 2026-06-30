@@ -1,0 +1,22 @@
+{
+  "id": "manifest_driven_web_kicad_cli_product_layer_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BoardForge platform",
+  "boardType": "all",
+  "problemType": "platform_artifacts",
+  "problemSignature": { "surfaces": ["web", "KiCad plugin", "CLI", "AI"], "risk": "surfaces disagree if not driven by common manifests" },
+  "rootCause": "BoardForge product surfaces need to consume the same engine-generated project evidence instead of duplicating state.",
+  "fixSummary": "Add manifest-driven web pages and keep local-engine actions explicit.",
+  "implementation": {
+    "filesChanged": ["apps/web/src/app/*", "apps/web/src/components/ProjectStatusCard.tsx"],
+    "functionsAdded": ["ProjectStatusCard"],
+    "testsAdded": ["web dashboard pages consume BoardForge manifest data instead of fake cloud actions"]
+  },
+  "applicability": { "boardTypes": ["all"], "netRoles": [], "conditions": ["displaying BoardForge project status in web/KiCad/CLI surfaces"] },
+  "recipe": ["Read BoardForge manifests", "Display DRC/ERC/unconnected/manufacturing state", "Expose replay command", "Do not fake cloud actions"],
+  "safetyRules": ["manifest is source of truth", "local actions must be labeled honestly"],
+  "evidence": { "tests": ["test:web-dashboard-project-data"] },
+  "status": "active",
+  "confidence": "high"
+}
