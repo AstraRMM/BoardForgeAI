@@ -1,0 +1,7 @@
+{
+  "id": "poe_fixture_requires_honesty_badges_001",
+  "rootCause": "PoE-style fixtures can be electrically routed without proving IEEE PoE compliance, magnetics, isolation, sourcing, or stock.",
+  "fix": "BoardForge may use a PoE electrical workflow fixture as routing/manufacturing evidence only when it carries explicit honesty badges: POE_COMPLIANCE_NOT_VERIFIED, MAGNETICS_NOT_VERIFIED, ISOLATION_NOT_VERIFIED, and SOURCING_NOT_API_VERIFIED.",
+  "appliesTo": ["poe_fixture", "sourcing", "manufacturing_readiness", "dashboard_badges"],
+  "tests": ["npm run test:poe-fixture-honesty"]
+}

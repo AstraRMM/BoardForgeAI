@@ -2,7 +2,7 @@
   "schema": "boardforge.readiness-action-plan.v1",
   "date": "2026-06-30",
   "previousScore": 64,
-  "newScore": 70,
+  "newScore": 73,
   "improvements": [
     "Added generated alpha demo package as golden demo evidence",
     "Added dense-control physical mutation proof to quick readiness evidence",
@@ -10,24 +10,27 @@
     "Added Sensor Hub REV_D manufacturing candidate to quick readiness evidence",
     "Added safe synthetic existing-project scan proof",
     "Added PoE honest future-fixture blocker decision",
-    "Exported fixture evidence increased from 1 to 6",
-    "ERC/DRC clean fixture evidence increased from 1 to 6"
+    "Added safe copy-sandbox importer proof with source hashing",
+    "Added clean PoE electrical fixture proof with explicit honesty limitations",
+    "Added bounded category-depth evidence to quick readiness",
+    "Exported fixture evidence increased from 6 to 8",
+    "ERC/DRC clean fixture evidence increased from 6 to 8"
   ],
   "remainingBlockers": [
     {
-      "id": "existing_project_copy_sandbox_missing",
+      "id": "existing_project_import_ui_missing",
       "impact": "medium",
-      "nextAction": "Add copy-sandbox command for uploaded user KiCad projects"
+      "nextAction": "Expose copy-sandbox importer through web dashboard and KiCad plugin upload flows"
     },
     {
-      "id": "poe_advanced_fixture_not_production_ready",
+      "id": "poe_compliance_not_verified",
       "impact": "medium",
-      "nextAction": "Build real PoE fixture with RJ45, magnetics, isolation, and exact blocker rules"
+      "nextAction": "Build certified-style PoE model with RJ45/MagJack, PD controller, isolation constraints, and exact blocker rules"
     },
     {
-      "id": "category_depth_quick_evidence_missing",
+      "id": "category_specific_models_still_template_backed",
       "impact": "medium",
-      "nextAction": "Add bounded category-depth evidence to quick readiness"
+      "nextAction": "Replace remaining category fixture shells with real category-specific schematic/layout models"
     }
   ],
   "gatePolicy": "Do not weaken readiness gates; only add evidence-backed clean fixtures or honest blocker proofs."

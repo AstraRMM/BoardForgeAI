@@ -2,12 +2,12 @@
   "schema": "boardforge.project-dashboard-data.v1",
   "generatedAt": "2026-06-30T00:00:00.000Z",
   "summary": {
-    "totalProjects": 5,
-    "manufacturingReady": 4,
+    "totalProjects": 7,
+    "manufacturingReady": 6,
     "blocked": 1,
     "review": 0,
     "needsRouting": 1,
-    "cleanDrcErc": 4
+    "cleanDrcErc": 6
   },
   "projects": [
     {
@@ -170,6 +170,95 @@
     },
     {
       "schema": "boardforge.project-dashboard-card.v1",
+      "projectId": "BF-POE-SENSOR-01_REV_A",
+      "projectName": "BF-POE-SENSOR-01",
+      "status": "routed_fixture_validated",
+      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\BF-POE-SENSOR-01_REV_A.kicad_pcb",
+      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\BF-POE-SENSOR-01_REV_A.kicad_sch",
+      "readiness": "ready",
+      "routingCompletionPercent": 100,
+      "routeabilityScore": 72,
+      "validation": {
+        "shorts": 0,
+        "unconnected": 0,
+        "forbiddenVias": 0,
+        "drcViolations": 0,
+        "drcErrors": 0,
+        "drcWarnings": 0,
+        "ercViolations": 0,
+        "ercErrors": 0,
+        "ercWarnings": 0,
+        "namedNets": 0,
+        "routedSegments": 0,
+        "nettedPads": 0,
+        "schematicGraphStatus": "imported_manifest_evidence"
+      },
+      "manufacturing": {
+        "ready": true,
+        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\manufacturing\\BF-POE-SENSOR-01_REV_A_JLCPCB.zip",
+        "blockedReason": null
+      },
+      "reports": {
+        "routeability": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\BoardForge_Odd_Shape_Routeability_Report.json",
+        "status": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\BoardForge_Odd_Shape_Final_Status.md"
+      },
+      "replayCommand": "npm run fixtures:run -- --fixture poe-sensor-electrical",
+      "criticalBlockers": [],
+      "nextAction": "human_manufacturing_review",
+      "sourceManifest": "C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_A/BoardForge_Project_Manifest.json",
+      "honestyBadges": [
+        "ELECTRICAL_FIXTURE_ONLY",
+        "POE_COMPLIANCE_NOT_VERIFIED",
+        "MAGNETICS_NOT_VERIFIED",
+        "ISOLATION_NOT_VERIFIED",
+        "SOURCING_NOT_API_VERIFIED"
+      ]
+    },
+    {
+      "schema": "boardforge.project-dashboard-card.v1",
+      "projectId": "BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox",
+      "projectName": "BF-ODD-SHAPE-ROBOT-01_REV_A Import Sandbox",
+      "status": "existing_project_import_sandbox_scanned",
+      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes\\BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_pcb",
+      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes\\BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch",
+      "readiness": "ready",
+      "routingCompletionPercent": 100,
+      "routeabilityScore": 72,
+      "validation": {
+        "shorts": 0,
+        "unconnected": 0,
+        "forbiddenVias": 0,
+        "drcViolations": 0,
+        "drcErrors": 0,
+        "drcWarnings": 0,
+        "ercViolations": 0,
+        "ercErrors": 0,
+        "ercWarnings": 0,
+        "namedNets": 0,
+        "routedSegments": 0,
+        "nettedPads": 0,
+        "schematicGraphStatus": "imported_manifest_evidence"
+      },
+      "manufacturing": {
+        "ready": true,
+        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip",
+        "blockedReason": null
+      },
+      "reports": {
+        "importReport": "C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes\\BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox\\BoardForge_Copy_Sandbox_Import_Report.md"
+      },
+      "replayCommand": "npm run boardforge:import-sandbox -- --source \"C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\"",
+      "criticalBlockers": [],
+      "nextAction": "human_manufacturing_review",
+      "sourceManifest": "C:/Users/luifi/Desktop/BoardForge_Sandboxes/BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox/BoardForge_Project_Manifest.json",
+      "importSandbox": {
+        "status": "COPY_SANDBOX_IMPORT_COMPLETED",
+        "originalUntouched": true,
+        "report": "C:/Users/luifi/Desktop/BoardForge_Sandboxes/BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox/BoardForge_Copy_Sandbox_Import_Report.md"
+      }
+    },
+    {
+      "schema": "boardforge.project-dashboard-card.v1",
       "projectId": "BF-SENSOR-HUB-01_REV_F",
       "projectName": "Sensor Hub REV_F Outline-Aware Proof",
       "status": "outline_aware_exact_finish_required",
@@ -205,8 +294,16 @@
       },
       "replayCommand": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F --mode clearance-aware-exact-finish",
       "criticalBlockers": [
-        { "code": "UNCONNECTED_ITEMS_REMAIN", "count": 18, "severity": "critical" },
-        { "code": "ERC_ERRORS_REMAIN", "count": 182, "severity": "error" }
+        {
+          "code": "UNCONNECTED_ITEMS_REMAIN",
+          "count": 18,
+          "severity": "critical"
+        },
+        {
+          "code": "ERC_ERRORS_REMAIN",
+          "count": 182,
+          "severity": "error"
+        }
       ],
       "nextAction": "run_clearance_aware_exact_finisher",
       "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\apps\\web\\src\\sample-manifests\\rev-f.json"

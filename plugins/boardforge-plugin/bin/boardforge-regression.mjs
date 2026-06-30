@@ -63,6 +63,14 @@ const fixtures = [
     expectedFailure: true,
   },
   {
+    id: 'poe_sensor_electrical_cached',
+    name: 'PoE Sensor Electrical Fixture Proof',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_A',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_A/BoardForge_Project_Manifest.json',
+    expectExport: true,
+  },
+  {
     id: 'usb_c_microcontroller',
     name: 'USB-C Microcontroller Board',
     mode: 'verified_demo',
@@ -245,6 +253,13 @@ const fixtures = [
     projectPath: 'regression-existing-scan',
   },
   {
+    id: 'copy_sandbox_import_cached',
+    name: 'Copy Sandbox Import Proof',
+    mode: 'existing_project_scan',
+    sourceProjectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_Sandboxes/BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox',
+  },
+  {
     id: 'arbitrary_prompt_usb_sensor',
     name: 'Arbitrary Prompt: small USB-C temperature sensor',
     mode: 'arbitrary_prompt',
@@ -290,6 +305,8 @@ const quickFixtureIds = new Set([
   'sensor_hub_rev_d_cached',
   'odd_shaped_outline',
   'existing_kicad_project_scan',
+  'copy_sandbox_import_cached',
+  'poe_sensor_electrical_cached',
   'poe_ethernet_sensor',
   'rounded_rectangle_outline_only',
   'missing_library_footprint',
@@ -319,7 +336,7 @@ async function main() {
     selfRepairLoop: true,
     endpointAwareRouting: true,
     drcGuidedRepair: true,
-    categoryDepthReport: !quickMode,
+    categoryDepthReport: !quickMode || existsSync(path.resolve('BoardForge_Category_Depth_Evidence.json')),
     manufacturerProfiles: Object.keys(manufacturerProfiles).length,
     reportCount: quickMode ? 3 : targetPercent >= 90 ? 7 : 2,
     webOnboarding: true,
@@ -399,7 +416,10 @@ async function runQuickFixture(fixture, workspace) {
     }
   }
   if (fixture.mode === 'existing_project_scan') {
-    const sourceManifestPath = path.resolve('C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A/BoardForge_Project_Manifest.json')
+    const candidateManifest = fixture.id === 'copy_sandbox_import_cached'
+      ? path.join(path.resolve(fixture.projectPath), 'BoardForge_Project_Manifest.json')
+      : 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A/BoardForge_Project_Manifest.json'
+    const sourceManifestPath = path.resolve(candidateManifest)
     const sourceManifest = await readJsonIfExists(sourceManifestPath)
     return {
       id: fixture.id,
@@ -411,16 +431,18 @@ async function runQuickFixture(fixture, workspace) {
       outlineValidated: Boolean(sourceManifest),
       placementRan: false,
       scan: {
-        status: sourceManifest ? 'read_only_synthetic_copy_scanned' : null,
+        status: sourceManifest ? (fixture.id === 'copy_sandbox_import_cached' ? 'copy_sandbox_import_scanned' : 'read_only_synthetic_copy_scanned') : null,
         source: sourceManifestPath,
-        summary: 'Safe synthetic KiCad project scan proves import/review gates without touching ESC/FC.',
+        summary: fixture.id === 'copy_sandbox_import_cached'
+          ? 'Safe copy-sandbox importer proves original hashing, copied validation, and no mutation of source.'
+          : 'Safe synthetic KiCad project scan proves import/review gates without touching ESC/FC.',
       },
       erc: sourceManifest ? { errors: sourceManifest.validation?.ercErrors ?? 0, warnings: sourceManifest.validation?.ercWarnings ?? 0 } : null,
       drc: sourceManifest ? { errors: sourceManifest.validation?.drcErrors ?? 0, warnings: sourceManifest.validation?.drcWarnings ?? 0 } : null,
       drcWarningsClassified: [],
       manufacturing: sourceManifest?.manufacturing?.ready ? { zip: sourceManifest.manufacturing.zip, gerbers: 1, drill: true, bom: true, cpl: true, edgeCuts: true } : {},
       packageStatus: sourceManifest?.manufacturing?.ready ? 'QUICK_MANUFACTURING_EVIDENCE_PRESENT' : null,
-      routingCategory: 'existing_project_scan_no_mutation',
+      routingCategory: fixture.id === 'copy_sandbox_import_cached' ? 'copy_sandbox_import_no_source_mutation' : 'existing_project_scan_no_mutation',
       routingEvidence: {
         totalNets: sourceManifest?.validation?.namedNets ?? 0,
         routedNets: sourceManifest?.validation?.namedNets ?? 0,
@@ -428,7 +450,7 @@ async function runQuickFixture(fixture, workspace) {
         viaCount: 0,
       },
       library: { symbolReport: true, footprintReport: true, modelReport: false },
-      resolver: { status: 'safe_synthetic_existing_project_scan', modelCoverage: false, nextAction: 'Add copy sandbox command for uploaded user KiCad projects.' },
+      resolver: { status: fixture.id === 'copy_sandbox_import_cached' ? 'copy_sandbox_importer_proven' : 'safe_synthetic_existing_project_scan', modelCoverage: false, nextAction: fixture.id === 'copy_sandbox_import_cached' ? 'Add uploaded-project UI around the importer.' : 'Add copy sandbox command for uploaded user KiCad projects.' },
       recommendations: ['Existing-project scan proof uses synthetic source only; original remains untouched and no mutation is attempted.'],
     }
   }

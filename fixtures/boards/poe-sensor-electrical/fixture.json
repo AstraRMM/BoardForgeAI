@@ -1,0 +1,48 @@
+{
+  "id": "poe-sensor-electrical",
+  "name": "BF-POE-SENSOR-01",
+  "revision": "REV_A",
+  "type": "poe_ethernet_sensor",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A",
+  "brief": "A minimal PoE Ethernet sensor electrical workflow fixture with RJ45/MagJack candidate, PoE PD front-end candidate, 3V3 regulator, MCU, I2C sensor, status LEDs, and SWD/debug routing evidence.",
+  "layers": 4,
+  "outline": {
+    "shape": "rectangular ethernet sensor with RJ45 edge and debug side corridor",
+    "widthMm": 76,
+    "heightMm": 48,
+    "features": ["RJ45/MagJack edge", "PoE power block corridor", "sensor quiet zone", "SWD service edge"]
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "honesty": {
+    "fixtureStatus": "ELECTRICAL_FIXTURE_ONLY",
+    "poeCompliance": "POE_COMPLIANCE_NOT_VERIFIED",
+    "magnetics": "MAGNETICS_NOT_VERIFIED",
+    "isolation": "ISOLATION_NOT_VERIFIED",
+    "sourcing": "SOURCING_NOT_API_VERIFIED",
+    "stock": "NOT_CHECKED"
+  },
+  "expectedOutputs": [
+    "real KiCad schematic graph",
+    "pin-map checks pass",
+    "pre-route shorts zero",
+    "routeability score",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean",
+    "PoE honesty report"
+  ],
+  "knownRisks": [
+    "PoE compliance is not certified by this fixture",
+    "Magnetics and isolation safety are explicitly not verified",
+    "Supplier stock is not API verified"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "copy_sandbox_importer_hash_guard_001",
+  "rootCause": "Existing-project import readiness could be claimed without proving the user source project remained untouched.",
+  "fix": "BoardForge imports user projects by copying into a sandbox, hashing source files before and after copy, refusing protected paths, scanning only the copy, and writing a replayable import report.",
+  "appliesTo": ["existing_project_import", "protected_project_guard", "dashboard_upload_flow"],
+  "tests": ["npm run test:copy-sandbox-importer", "npm run test:protected-path-guard"]
+}

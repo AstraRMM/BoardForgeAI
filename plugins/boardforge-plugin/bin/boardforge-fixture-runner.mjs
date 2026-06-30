@@ -615,10 +615,14 @@ async function writeOddShapeFixtureProject(fixture) {
     replay: {
       command: `npm run fixtures:run -- --fixture ${fixture.id}`,
     },
+    honesty: fixture.honesty || null,
   }
   fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'), JSON.stringify(routeability, null, 2))
   fs.writeFileSync(path.join(target, 'boardforge-project-manifest.json'), JSON.stringify(manifest, null, 2))
-  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Schematic graph: ${manifest.validation.schematicGraphStatus}\n- Schematic symbols: ${schematicGraph.schematicSymbols}\n- Schematic global labels: ${schematicGraph.schematicGlobalLabels}\n- Schematic wires: ${schematicGraph.schematicWires}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}\n- Manufacturing ready: ${manufacturing.ready}\n- Next stage: ${manufacturing.ready ? 'human_manufacturing_review' : routeability.nextStage}\n`)
+  fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Schematic graph: ${manifest.validation.schematicGraphStatus}\n- Schematic symbols: ${schematicGraph.schematicSymbols}\n- Schematic global labels: ${schematicGraph.schematicGlobalLabels}\n- Schematic wires: ${schematicGraph.schematicWires}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}\n- Manufacturing ready: ${manufacturing.ready}\n- Honesty status: ${fixture.honesty ? Object.values(fixture.honesty).join(', ') : 'standard fixture'}\n- Next stage: ${manufacturing.ready ? 'human_manufacturing_review' : routeability.nextStage}\n`)
+  if (fixture.type === 'poe_ethernet_sensor' || fixture.honesty?.poeCompliance) {
+    writePoeFixtureReports({ target, projectId, fixture, manifest, routeability, manufacturing })
+  }
   const platformArtifacts = await writeProjectArtifactPack({
     outputDir: target,
     project: {
@@ -659,6 +663,57 @@ async function writeOddShapeFixtureProject(fixture) {
     ],
   })
   return { target, projectFile, schematicFile, pcbFile, manifest, routeability, platformArtifacts }
+}
+
+function writePoeFixtureReports({ target, projectId, fixture, manifest, routeability, manufacturing }) {
+  const honesty = fixture.honesty || {}
+  const reports = {
+    'BoardForge_POE_Fixture_Honesty_Report.md': `# ${projectId} PoE Fixture Honesty Report
+
+- Fixture status: ${honesty.fixtureStatus || 'ELECTRICAL_FIXTURE_ONLY'}
+- PoE compliance: ${honesty.poeCompliance || 'POE_COMPLIANCE_NOT_VERIFIED'}
+- Magnetics: ${honesty.magnetics || 'MAGNETICS_NOT_VERIFIED'}
+- Isolation: ${honesty.isolation || 'ISOLATION_NOT_VERIFIED'}
+- Sourcing: ${honesty.sourcing || 'SOURCING_NOT_API_VERIFIED'}
+- Stock: ${honesty.stock || 'NOT_CHECKED'}
+
+This fixture proves BoardForge can generate, route, validate, and package a PoE-style electrical workflow board. It does not claim IEEE PoE compliance, isolation safety, magnetics validation, or live supplier stock.
+`,
+    'BoardForge_POE_Schematic_Report.md': `# ${projectId} PoE Schematic Report
+
+- Schematic graph status: ${manifest.validation.schematicGraphStatus}
+- Schematic symbols: ${manifest.validation.schematicSymbols}
+- Schematic global labels: ${manifest.validation.schematicGlobalLabels}
+- Schematic wires: ${manifest.validation.schematicWires}
+- Pin-map status: fixture_symbol_pads_consistent
+`,
+    'BoardForge_POE_Routing_Report.md': `# ${projectId} PoE Routing Report
+
+- Routeability score: ${routeability.routeabilityScore}
+- Named nets: ${manifest.validation.namedNets}
+- Routed segments: ${manifest.validation.routedSegments}
+- Unconnected: ${manifest.validation.unconnected}
+- Forbidden vias: ${manifest.validation.forbiddenVias}
+`,
+    'BoardForge_POE_DRC_ERC_Report.md': `# ${projectId} PoE DRC/ERC Report
+
+- DRC errors: ${manifest.validation.drcErrors}
+- DRC warnings: ${manifest.validation.drcWarnings}
+- ERC errors: ${manifest.validation.ercErrors}
+- ERC warnings: ${manifest.validation.ercWarnings}
+- Shorts: ${manifest.validation.shorts}
+`,
+    'BoardForge_POE_Manufacturing_Readiness_Report.md': `# ${projectId} PoE Manufacturing Readiness Report
+
+- Manufacturing ready: ${manufacturing.ready}
+- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}
+- Blocked reason: ${manufacturing.blockedReason || 'none'}
+- Honesty limitations: ${Object.values(honesty).join(', ')}
+`,
+  }
+  for (const [filename, content] of Object.entries(reports)) {
+    fs.writeFileSync(path.join(target, filename), content, 'utf8')
+  }
 }
 
 const args = new Set(process.argv.slice(2))

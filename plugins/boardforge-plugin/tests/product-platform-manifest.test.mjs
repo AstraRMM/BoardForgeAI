@@ -38,12 +38,14 @@ test('dashboard sample manifest is product-readable and honest about blocked fix
   assert.equal(manifest.manufacturing.ready, false)
   const dashboard = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'project-dashboard.json'), 'utf8'))
   assert.equal(dashboard.schema, 'boardforge.project-dashboard-data.v1')
-  assert.equal(dashboard.summary.totalProjects, 5)
-  assert.equal(dashboard.summary.manufacturingReady, 4)
+  assert.equal(dashboard.summary.totalProjects, 7)
+  assert.equal(dashboard.summary.manufacturingReady, 6)
   assert.equal(dashboard.summary.blocked, 1)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-DENSE-CONTROL-01_REV_A' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_D' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ROBOTICS-CONTROLLER-01_REV_A' && project.readiness === 'ready' && project.manufacturing.ready === true), true)
+  assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-POE-SENSOR-01_REV_A' && project.readiness === 'ready' && project.honestyBadges?.includes('POE_COMPLIANCE_NOT_VERIFIED')), true)
+  assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox' && project.importSandbox?.originalUntouched === true), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-ODD-SHAPE-ROBOT-01_REV_A' && project.readiness === 'ready'), true)
   assert.equal(dashboard.projects.some((project) => project.projectId === 'BF-SENSOR-HUB-01_REV_F' && project.readiness === 'blocked'), true)
 })
@@ -277,6 +279,7 @@ test('report 90 quick mode runs bounded fixture subset', () => {
   assert.deepEqual(result.selectedFixtureIds, [
     'golden_demo',
     'poe_ethernet_sensor',
+    'poe_sensor_electrical_cached',
     'dense_difficult_honest_failure',
     'dense_control_physical_repair_cached',
     'robotics_controller_clean_cached',
@@ -285,14 +288,15 @@ test('report 90 quick mode runs bounded fixture subset', () => {
     'rounded_rectangle_outline_only',
     'missing_library_footprint',
     'existing_kicad_project_scan',
+    'copy_sandbox_import_cached',
     'arbitrary_prompt_too_small',
   ])
   assert.equal(typeof result.readiness, 'number')
-  assert.ok(result.readiness >= 70)
+  assert.ok(result.readiness > 70)
   assert.equal(result.acceptance.goldenPasses, true)
   assert.equal(result.acceptance.roboticsDrcZero, true)
   assert.equal(result.acceptance.existingProjectScan, true)
   assert.equal(result.acceptance.poeFixedOrExplained, true)
-  assert.equal(result.acceptance.exportedFixtureCount >= 5, true)
+  assert.equal(result.acceptance.exportedFixtureCount >= 6, true)
   assert.ok(result.reportFiles.jsonFile)
 })

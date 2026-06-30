@@ -1,0 +1,7 @@
+{
+  "id": "category_depth_requires_artifact_evidence_001",
+  "rootCause": "Readiness scoring can plateau when category breadth is described in docs but not backed by machine-readable fixture evidence.",
+  "fix": "BoardForge writes BoardForge_Category_Depth_Evidence.json/md from real fixture manifests and only counts category-depth readiness when that artifact exists.",
+  "appliesTo": ["readiness_score", "fixture_factory", "web_dashboard"],
+  "tests": ["npm run test:category-depth-evidence"]
+}

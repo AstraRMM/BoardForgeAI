@@ -1,0 +1,101 @@
+{
+  "schema": "boardforge.category-depth-evidence.v1",
+  "generatedAt": "2026-06-30T18:19:24.579Z",
+  "categories": [
+    {
+      "category": "sensor hub",
+      "fixture": "BF-SENSOR-HUB-01_REV_D",
+      "schematic": "not_found",
+      "routing": "blocked_or_not_scanned",
+      "DRC": 0,
+      "ERC": 0,
+      "manufacturingReady": false,
+      "zip": "",
+      "limitations": "Supplier sourcing remains NOT_API_VERIFIED unless keys are configured.",
+      "proofReports": [],
+      "manifest": "C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-SENSOR-HUB-01_REV_D/BoardForge_Project_Manifest.json"
+    },
+    {
+      "category": "odd-shape robot board",
+      "fixture": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+      "schematic": "present",
+      "routing": "routed_or_import_scanned_clean",
+      "DRC": 0,
+      "ERC": 0,
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip",
+      "limitations": "Synthetic fixture footprint set; product outline/routing flow proven.",
+      "proofReports": [
+        "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BoardForge_Odd_Shape_Routeability_Report.json",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BoardForge_Odd_Shape_Final_Status.md"
+      ],
+      "manifest": "C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A/BoardForge_Project_Manifest.json"
+    },
+    {
+      "category": "dense control board",
+      "fixture": "BF-DENSE-CONTROL-01_REV_A",
+      "schematic": "present",
+      "routing": "routed_or_import_scanned_clean",
+      "DRC": 0,
+      "ERC": 0,
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\manufacturing\\BF-DENSE-CONTROL-01_REV_A_JLCPCB.zip",
+      "limitations": "Synthetic dense-control repair proof; not arbitrary-customer-board universal yet.",
+      "proofReports": [],
+      "manifest": "C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DENSE-CONTROL-01_REV_A/BoardForge_Project_Manifest.json"
+    },
+    {
+      "category": "robotics controller",
+      "fixture": "BF-ROBOTICS-CONTROLLER-01_REV_A",
+      "schematic": "present",
+      "routing": "routed_or_import_scanned_clean",
+      "DRC": 0,
+      "ERC": 0,
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\manufacturing\\BF-ROBOTICS-CONTROLLER-01_REV_A_JLCPCB.zip",
+      "limitations": "Clean alpha fixture proof; more connector-heavy variants still needed.",
+      "proofReports": [
+        "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BoardForge_Odd_Shape_Routeability_Report.json",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ROBOTICS-CONTROLLER-01_REV_A\\BoardForge_Odd_Shape_Final_Status.md"
+      ],
+      "manifest": "C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ROBOTICS-CONTROLLER-01_REV_A/BoardForge_Project_Manifest.json"
+    },
+    {
+      "category": "PoE sensor fixture",
+      "fixture": "BF-POE-SENSOR-01_REV_A",
+      "schematic": "present",
+      "routing": "routed_or_import_scanned_clean",
+      "DRC": 0,
+      "ERC": 0,
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\manufacturing\\BF-POE-SENSOR-01_REV_A_JLCPCB.zip",
+      "limitations": "ELECTRICAL_FIXTURE_ONLY; POE_COMPLIANCE_NOT_VERIFIED; MAGNETICS_NOT_VERIFIED; ISOLATION_NOT_VERIFIED; SOURCING_NOT_API_VERIFIED.",
+      "proofReports": [
+        "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\BoardForge_Odd_Shape_Routeability_Report.json",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_A\\BoardForge_Odd_Shape_Final_Status.md"
+      ],
+      "manifest": "C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_A/BoardForge_Project_Manifest.json"
+    },
+    {
+      "category": "existing-project import sandbox",
+      "fixture": "BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox",
+      "schematic": "present",
+      "routing": "routed_or_import_scanned_clean",
+      "DRC": 0,
+      "ERC": 0,
+      "manufacturingReady": true,
+      "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip",
+      "limitations": "Import proof uses synthetic source only and never mutates original project.",
+      "proofReports": [
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes\\BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox\\BoardForge_Copy_Sandbox_Import_Report.md"
+      ],
+      "manifest": "C:/Users/luifi/Desktop/BoardForge_Sandboxes/BF-ODD-SHAPE-ROBOT-01_REV_A_import_sandbox/BoardForge_Project_Manifest.json"
+    }
+  ],
+  "summary": {
+    "categoriesCovered": 6,
+    "manufacturingReadyCount": 5,
+    "cleanDrcErcCount": 6,
+    "honestLimitations": 6
+  }
+}

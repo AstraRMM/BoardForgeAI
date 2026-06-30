@@ -38,6 +38,8 @@
     "boardforge:export": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs export",
     "boardforge:report": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs report",
     "boardforge:replay": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs replay",
+    "boardforge:import-sandbox": "node ./plugins/boardforge-plugin/bin/boardforge-import-sandbox.mjs",
+    "boardforge:category-depth": "node ./plugins/boardforge-plugin/bin/boardforge-category-depth-evidence.mjs",
     "boardforge:dashboard-data": "node ./plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
     "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
     "smoke:plugin": "node ./plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job ./plugins/boardforge-plugin/examples/outline-job.json --workspace ./plugins/boardforge-plugin/tmp",
@@ -63,6 +65,10 @@
     "fixtures:report": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --report",
     "fixtures:factory": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-factory.mjs",
     "test:alpha-demo-package": "node --test --test-name-pattern \"alpha demo package|fixture factory\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:copy-sandbox-importer": "node --test --test-name-pattern \"copy sandbox importer\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:protected-path-guard": "node --test --test-name-pattern \"protected path guard\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-fixture-honesty": "node --test --test-name-pattern \"PoE fixture honesty\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:category-depth-evidence": "node --test --test-name-pattern \"category-depth evidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
