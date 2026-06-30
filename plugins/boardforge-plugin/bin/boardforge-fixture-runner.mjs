@@ -2,6 +2,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { detectKiCadCli, exportCpl, exportDrill, exportGerbers, packageJlcpcb, runDrc, runErc } from '../lib/kicad-cli.mjs'
+import { writeProjectArtifactPack } from '../lib/platform/project-artifacts.mjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
 const fixtureRoot = path.join(repoRoot, 'fixtures', 'boards')
@@ -607,7 +608,46 @@ async function writeOddShapeFixtureProject(fixture) {
   fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Routeability_Report.json'), JSON.stringify(routeability, null, 2))
   fs.writeFileSync(path.join(target, 'boardforge-project-manifest.json'), JSON.stringify(manifest, null, 2))
   fs.writeFileSync(path.join(target, 'BoardForge_Odd_Shape_Final_Status.md'), `# ${projectId} Status\n\n- State: ${projectStatus}\n- KiCad CLI: ${validation.kicadCli.available ? `${validation.kicadCli.path} (${validation.kicadCli.version})` : validation.kicadCli.reason}\n- Schematic graph: ${manifest.validation.schematicGraphStatus}\n- Schematic symbols: ${schematicGraph.schematicSymbols}\n- Schematic global labels: ${schematicGraph.schematicGlobalLabels}\n- Schematic wires: ${schematicGraph.schematicWires}\n- Named nets: ${evidence.namedNets}\n- Netted pads: ${evidence.nettedPads}\n- Routed segments: ${evidence.routedSegments}\n- DRC errors/warnings: ${drcErrors ?? 'not run'} / ${drcWarnings ?? 'not run'}\n- ERC errors/warnings: ${ercErrors ?? 'not run'} / ${ercWarnings ?? 'not run'}\n- Unconnected items: ${unconnected ?? 'not measured'}\n- Manufacturing ZIP: ${manufacturing.zip || 'not exported'}\n- Manufacturing ready: ${manufacturing.ready}\n- Next stage: ${manufacturing.ready ? 'human_manufacturing_review' : routeability.nextStage}\n`)
-  return { target, projectFile, schematicFile, pcbFile, manifest, routeability }
+  const platformArtifacts = await writeProjectArtifactPack({
+    outputDir: target,
+    project: {
+      id: projectId,
+      name: fixture.name,
+      boardPath: pcbFile,
+      schematicPath: schematicFile,
+      projectPath: target,
+      workspace: repoRoot,
+    },
+    evidence: {
+      ...manifest.validation,
+      status: projectStatus,
+      manufacturingReady: manufacturing.ready,
+      manufacturingZip: manufacturing.zip,
+      blockedReason: manufacturing.blockedReason,
+      reports: manifest.reports,
+      replayCommand: manifest.replay.command,
+    },
+    run: {
+      controller: 'boardforge_fixture_runner',
+      workflowSteps: [
+        'generateSchematic',
+        'generateBoardOutline',
+        'placeComponents',
+        'scoreRouteability',
+        'runDrc',
+        'runErc',
+        'generateManufacturingPackage',
+        'writeProjectManifest',
+      ],
+      lessonsSaved: ['product_platform_artifacts_required_001'],
+    },
+    actions: [
+      { type: 'fixture_generate', status: projectStatus, command: `npm run fixtures:run -- --fixture ${fixture.id}` },
+      { type: 'kicad_drc', status: drcErrors === 0 ? 'passed' : 'review', reportPath: path.join(target, 'reports', 'drc.json') },
+      { type: 'kicad_erc', status: ercErrors === 0 ? 'passed' : 'review', reportPath: path.join(target, 'reports', 'erc.json') },
+    ],
+  })
+  return { target, projectFile, schematicFile, pcbFile, manifest, routeability, platformArtifacts }
 }
 
 const args = new Set(process.argv.slice(2))
@@ -636,6 +676,9 @@ if (args.has('--list')) {
       pcb: created[index].pcbFile,
       schematic: created[index].schematicFile,
       manifest: path.join(created[index].target, 'boardforge-project-manifest.json'),
+      platformManifest: created[index].platformArtifacts.files.manifest,
+      dashboardData: created[index].platformArtifacts.files.dashboardData,
+      cliReplayCommand: created[index].platformArtifacts.files.cliReplayCommand,
       drc: created[index].routeability.validation.drc,
       erc: created[index].routeability.validation.erc,
       kicadCli: created[index].routeability.validation.kicadCli,

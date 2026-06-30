@@ -7,6 +7,7 @@ import { createDashboardManifest, createEnginePlan, ENGINE_WORKFLOW_STEPS, selec
 import { isManufacturingReadyManifest } from '../lib/platform/project-manifest.mjs'
 import { writeAiSessionReport } from '../lib/platform/ai-session-report.mjs'
 import { buildProjectDashboardData, buildProjectDashboardCard } from '../lib/platform/project-dashboard-data.mjs'
+import { BOARD_FORGE_PROJECT_ARTIFACT_FILES, buildProjectArtifactPack, writeProjectArtifactPack } from '../lib/platform/project-artifacts.mjs'
 
 test('local engine exposes required workflow API names', () => {
   const plan = createEnginePlan({ name: 'demo' })
@@ -65,6 +66,84 @@ test('manifest-driven dashboard data normalizes real fixture evidence', () => {
   assert.equal(dashboard.projects.some((project) => project.readiness === 'blocked'), true)
 })
 
+test('project artifact pack writes every platform surface output from one evidence source', async () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const outputDir = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'platform-artifacts-test')
+  fs.rmSync(outputDir, { recursive: true, force: true })
+
+  const project = {
+    id: 'BF-ARTIFACT-SMOKE',
+    name: 'BF Artifact Smoke',
+    boardPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ARTIFACT-SMOKE/BF-ARTIFACT-SMOKE.kicad_pcb',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ARTIFACT-SMOKE',
+  }
+  const evidence = {
+    status: 'routed_fixture_validated',
+    shorts: 0,
+    unconnected: 0,
+    forbiddenVias: 0,
+    drcViolations: 0,
+    ercViolations: 0,
+    manufacturingReady: true,
+    manufacturingZip: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ARTIFACT-SMOKE/manufacturing/BF-ARTIFACT-SMOKE_JLCPCB.zip',
+  }
+  const result = await writeProjectArtifactPack({
+    outputDir,
+    project,
+    evidence,
+    run: {
+      controller: 'node_test',
+      workflowSteps: ['generateSchematic', 'runFreeRouting', 'generateManufacturingPackage'],
+      lessonsSaved: ['product_platform_artifacts_required_001'],
+    },
+    actions: [{ type: 'run_validation', status: 'passed', command: 'boardforge validate' }],
+  })
+
+  for (const filename of Object.values(BOARD_FORGE_PROJECT_ARTIFACT_FILES)) {
+    assert.equal(fs.existsSync(path.join(outputDir, filename)), true, `${filename} should exist`)
+  }
+  assert.equal(result.artifactPack.manifest.schema, 'boardforge.project-manifest.v1')
+  assert.equal(result.artifactPack.dashboardData.schema, 'boardforge.project-dashboard-data.v1')
+  assert.equal(result.artifactPack.webProjectCard.readiness, 'ready')
+  assert.match(result.artifactPack.userReport, /BoardForge Project Report/)
+  assert.match(result.artifactPack.cliReplayCommand, /boardforge:validate/)
+  assert.equal(result.artifactPack.kicadPluginActionLog.actions[0].type, 'run_validation')
+})
+
+test('platform artifacts CLI creates replayable dashboard and plugin action files', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const cli = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-platform-artifacts.mjs')
+  const outputDir = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'tmp', 'platform-artifacts-cli-test')
+  fs.rmSync(outputDir, { recursive: true, force: true })
+
+  const output = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    '--output',
+    outputDir,
+    '--project-id',
+    'BF-CLI-ARTIFACTS',
+    '--project-name',
+    'BF CLI Artifacts',
+    '--status',
+    'in_progress',
+    '--unconnected',
+    '7',
+    '--drc',
+    '2',
+    '--step',
+    'runPreflight',
+    '--lesson',
+    'product_platform_artifacts_required_001',
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+
+  assert.equal(output.status, 'BOARD_FORGE_PROJECT_ARTIFACTS_WRITTEN')
+  assert.equal(output.readiness, 'blocked')
+  assert.equal(output.nextAction, 'run_exact_ratsnest_finisher')
+  assert.equal(fs.existsSync(path.join(outputDir, 'BoardForge_Web_Project_Card.json')), true)
+  const replay = fs.readFileSync(path.join(outputDir, 'BoardForge_CLI_Replay_Command.txt'), 'utf8')
+  assert.match(replay, /boardforge:validate/)
+})
+
 test('AI session report is model-agnostic and preserves protected rejections', () => {
   const report = writeAiSessionReport([
     { type: 'route_project', projectPath: 'C:/Users/luifi/Desktop/FN-ESC1/board.kicad_pcb' },
@@ -104,6 +183,11 @@ test('fixture runner creates odd-shape preroute KiCad artifacts without fake man
   const schematic = fs.readFileSync(path.join(projectRoot, 'BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch'), 'utf8')
   assert.equal(fs.existsSync(path.join(projectRoot, 'BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_pcb')), true)
   assert.equal(fs.existsSync(path.join(projectRoot, 'BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch')), true)
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BoardForge_Project_Manifest.json')), true)
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BoardForge_Project_Dashboard_Data.json')), true)
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BoardForge_Web_Project_Card.json')), true)
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BoardForge_KiCad_Plugin_Action_Log.json')), true)
+  assert.equal(fs.existsSync(path.join(projectRoot, 'BoardForge_CLI_Replay_Command.txt')), true)
   assert.equal(manifest.status, 'routed_fixture_validated')
   assert.equal(manifest.validation.drcErrors, 0)
   assert.equal(manifest.validation.ercErrors, 0)
@@ -126,6 +210,12 @@ test('fixture runner creates odd-shape preroute KiCad artifacts without fake man
   assert.equal(routeability.schema, 'boardforge.routeability-report.v1')
   assert.equal(routeability.validation.schematicGraph.schematicSymbols, manifest.validation.schematicSymbols)
   assert.equal(routeability.manufacturing.ready, true)
+  const platformManifest = JSON.parse(fs.readFileSync(path.join(projectRoot, 'BoardForge_Project_Manifest.json'), 'utf8'))
+  const webCard = JSON.parse(fs.readFileSync(path.join(projectRoot, 'BoardForge_Web_Project_Card.json'), 'utf8'))
+  const actionLog = JSON.parse(fs.readFileSync(path.join(projectRoot, 'BoardForge_KiCad_Plugin_Action_Log.json'), 'utf8'))
+  assert.equal(platformManifest.schema, 'boardforge.project-manifest.v1')
+  assert.equal(webCard.readiness, 'ready')
+  assert.equal(actionLog.actions.some((action) => action.type === 'fixture_generate'), true)
   assert.equal(fs.existsSync(path.join(projectRoot, 'reports', 'drc.json')), true)
   assert.equal(fs.existsSync(path.join(projectRoot, 'reports', 'erc.json')), true)
 })

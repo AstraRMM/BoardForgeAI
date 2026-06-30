@@ -1,0 +1,71 @@
+{
+  "id": "product_platform_artifacts_required_001",
+  "createdAt": "2026-06-29T00:00:00.000Z",
+  "updatedAt": "2026-06-29T00:00:00.000Z",
+  "sourceBoard": "BoardForge platform",
+  "boardType": "all",
+  "problemType": "product_platform_artifacts",
+  "problemSignature": {
+    "missingArtifacts": [
+      "BoardForge_Project_Manifest.json",
+      "BoardForge_Project_Dashboard_Data.json",
+      "BoardForge_Engine_Run_Log.json",
+      "BoardForge_User_Facing_Report.md",
+      "BoardForge_Web_Project_Card.json",
+      "BoardForge_KiCad_Plugin_Action_Log.json",
+      "BoardForge_CLI_Replay_Command.txt"
+    ],
+    "risk": "CLI, KiCad plugin, web dashboard, and AI controller could disagree about project status"
+  },
+  "rootCause": "BoardForge had manifest and dashboard helpers, but no single canonical artifact writer that produced the full product-facing run bundle from one evidence source.",
+  "fixSummary": "Add a project artifact pack builder and CLI so every BoardForge run can emit manifest, dashboard data, user report, web card, KiCad action log, engine run log, and replay command together.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/platform/project-artifacts.mjs",
+      "plugins/boardforge-plugin/bin/boardforge-platform-artifacts.mjs",
+      "plugins/boardforge-plugin/package.json",
+      "plugins/boardforge-plugin/tests/product-platform-manifest.test.mjs"
+    ],
+    "functionsAdded": [
+      "buildProjectArtifactPack",
+      "writeProjectArtifactPack",
+      "buildReplayCommand"
+    ],
+    "testsAdded": [
+      "project artifact pack writes every platform surface output from one evidence source",
+      "platform artifacts CLI creates replayable dashboard and plugin action files"
+    ]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["any BoardForge project run needs product dashboard, CLI replay, or KiCad plugin status"]
+  },
+  "recipe": [
+    "Build the project manifest from validation evidence.",
+    "Derive dashboard data and web card from the same manifest.",
+    "Write engine run log and KiCad plugin action log beside the project.",
+    "Write a CLI replay command so future controllers can continue without asking the user to reconstruct state."
+  ],
+  "safetyRules": [
+    "do not write product artifacts into protected ESC/FC projects",
+    "do not mark manufacturing ready unless validation evidence is clean",
+    "do not fake DRC/ERC or sourcing status"
+  ],
+  "evidence": {
+    "before": {
+      "artifactFlow": "manifest/dashboard helpers existed but project output bundle was incomplete"
+    },
+    "after": {
+      "canonicalArtifactPack": true,
+      "cliEntryPoint": "boardforge:platform-artifacts"
+    },
+    "tests": [
+      "test:product-platform-manifest",
+      "test:cli-replay-command",
+      "test:solution-library"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}
