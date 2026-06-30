@@ -1,0 +1,24 @@
+{
+  "schema": "boardforge.fixture-gallery.v1",
+  "generatedAt": "2026-06-30T00:00:00.000Z",
+  "fixtures": [
+    {
+      "id": "dense-control",
+      "name": "BF-DENSE-CONTROL-01_REV_A",
+      "difficulty": "dense",
+      "proof": "dirty DRC fixture repaired by physical KiCad mutation",
+      "before": { "drc": 10, "erc": 0, "unconnected": 0 },
+      "after": { "drc": 0, "erc": 0, "unconnected": 0 },
+      "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\manufacturing\\BF-DENSE-CONTROL-01_REV_A_JLCPCB.zip"
+    },
+    {
+      "id": "odd-shape-robot",
+      "name": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+      "difficulty": "odd-shape",
+      "proof": "custom outline fixture validated to manufacturing candidate",
+      "before": { "drc": 0, "erc": 0, "unconnected": 0 },
+      "after": { "drc": 0, "erc": 0, "unconnected": 0 },
+      "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\manufacturing\\BF-ODD-SHAPE-ROBOT-01_REV_A_JLCPCB.zip"
+    }
+  ]
+}

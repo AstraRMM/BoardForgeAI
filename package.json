@@ -50,6 +50,8 @@
     "test:web-dashboard-project-data": "node --test --test-name-pattern \"dashboard sample manifest|project manifest\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:kicad-plugin-action-log": "node --test --test-name-pattern \"KiCad plugin scaffold\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:cli-replay-command": "node --test --test-name-pattern \"dashboard sample manifest\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:dense-control-drc-repair": "npm --prefix ./plugins/boardforge-plugin run test:dense-control-drc-repair",
+    "test:manufacturing-manifest": "npm --prefix ./plugins/boardforge-plugin run test:manufacturing-manifest",
     "fixtures:list": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --list",
     "fixtures:run": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --run",
     "fixtures:golden": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-runner.mjs --golden",

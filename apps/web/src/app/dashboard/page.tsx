@@ -13,6 +13,14 @@ export default function DashboardPage() {
         <Summary label="Manufacturing Ready" value={dashboard.summary.manufacturingReady} />
         <Summary label="Needs Routing" value={dashboard.summary.needsRouting} />
       </section>
+      <section className="mx-auto mt-6 max-w-6xl rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+        <p className="text-sm uppercase tracking-wide text-emerald-300">Latest engine proof</p>
+        <h2 className="mt-1 text-xl font-semibold">Dense-control DRC 10 to manufacturing ZIP</h2>
+        <p className="mt-2 text-sm text-emerald-100">
+          BoardForge physically mutated KiCad copper and silkscreen, committed 6/6 repair transactions,
+          and exported a manufacturing ZIP only after DRC 0 / ERC 0 / unconnected 0.
+        </p>
+      </section>
       <section className="mx-auto mt-6 grid max-w-6xl gap-4 lg:grid-cols-2">
         {dashboard.projects.map((project) => <ProjectStatusCard key={project.projectId} project={project as any} />)}
       </section>

@@ -12,6 +12,8 @@ dist
 dist-ssr
 .next
 .boardforge/
+coverage/
+*.tsbuildinfo
 *.local
 .env
 .env.*
@@ -30,6 +32,19 @@ dist-ssr
 *.jar
 tools/java/
 tools/freerouting/
+*.gbr
+*.gbrjob
+*.gtl
+*.gbl
+*.gts
+*.gbs
+*.gto
+*.gbo
+*.gtp
+*.gbp
+*.gm1
+*.drl
+*-drl_map.pdf
 
 # BoardForge local run outputs
 tmp/
@@ -37,6 +52,9 @@ plugins/boardforge-plugin/tmp/
 plugins/boardforge-plugin/tmp-*/
 plugins/boardforge-plugin/.boardforge/
 plugins/boardforge-plugin/boardforge-*.json
+BoardForge_New_Board_Fixtures/
+*.kicad_prl
+*.ses.log
 
 # Editor directories and files
 .vscode/*

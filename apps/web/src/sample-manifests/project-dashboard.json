@@ -1,24 +1,25 @@
 {
   "schema": "boardforge.project-dashboard-data.v1",
-  "generatedAt": "2026-06-29T00:53:58.939Z",
+  "generatedAt": "2026-06-30T00:00:00.000Z",
   "summary": {
-    "totalProjects": 2,
-    "manufacturingReady": 1,
+    "totalProjects": 3,
+    "manufacturingReady": 2,
     "blocked": 1,
     "review": 0,
-    "needsRouting": 0,
+    "needsRouting": 1,
     "cleanDrcErc": 2
   },
   "projects": [
     {
       "schema": "boardforge.project-dashboard-card.v1",
-      "projectId": "BF-ODD-SHAPE-ROBOT-01_REV_A",
-      "projectName": "BF-ODD-SHAPE-ROBOT-01",
-      "status": "routed_fixture_validated",
-      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_pcb",
-      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch",
+      "projectId": "BF-DENSE-CONTROL-01_REV_A",
+      "projectName": "Dense Control DRC Repair Proof",
+      "status": "dense_control_manufacturing_candidate_generated",
+      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BF-DENSE-CONTROL-01_REV_A_postroute_repair_candidate.kicad_pcb",
+      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BF-DENSE-CONTROL-01_REV_A.kicad_sch",
       "readiness": "ready",
       "routingCompletionPercent": 100,
+      "routeabilityScore": 68,
       "validation": {
         "shorts": 0,
         "unconnected": 0,
@@ -26,8 +27,48 @@
         "drcViolations": 0,
         "drcErrors": 0,
         "drcWarnings": 0,
-        "ercViolations": 182,
-        "ercErrors": 182,
+        "ercViolations": 0,
+        "ercErrors": 0,
+        "ercWarnings": 0,
+        "namedNets": 5,
+        "routedSegments": 15,
+        "nettedPads": 10,
+        "schematicGraphStatus": "real_symbol_graph_generated"
+      },
+      "manufacturing": {
+        "ready": true,
+        "zip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\manufacturing\\BF-DENSE-CONTROL-01_REV_A_JLCPCB.zip",
+        "blockedReason": null
+      },
+      "reports": {
+        "repairRun": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BoardForge_Dense_Control_Repair_Run_Log.md",
+        "taskList": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BoardForge_Dense_Control_DRC_Repair_Task_List.json",
+        "readiness": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BoardForge_Dense_Control_Manufacturing_Readiness_Report.md"
+      },
+      "replayCommand": "npm run boardforge:dense-control-repair -- --fixture \"C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\"",
+      "criticalBlockers": [],
+      "nextAction": "human_manufacturing_review",
+      "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BoardForge_Project_Manifest.json"
+    },
+    {
+      "schema": "boardforge.project-dashboard-card.v1",
+      "projectId": "BF-ODD-SHAPE-ROBOT-01_REV_A",
+      "projectName": "Odd Shape Robot Fixture",
+      "status": "routed_fixture_validated",
+      "boardPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_pcb",
+      "schematicPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BF-ODD-SHAPE-ROBOT-01_REV_A.kicad_sch",
+      "readiness": "ready",
+      "routingCompletionPercent": 100,
+      "routeabilityScore": 72,
+      "validation": {
+        "shorts": 0,
+        "unconnected": 0,
+        "forbiddenVias": 0,
+        "drcViolations": 0,
+        "drcErrors": 0,
+        "drcWarnings": 0,
+        "ercViolations": 0,
+        "ercErrors": 0,
         "ercWarnings": 0,
         "namedNets": 5,
         "routedSegments": 10,
@@ -46,17 +87,18 @@
       "replayCommand": "npm run fixtures:run -- --fixture odd-shape-robot",
       "criticalBlockers": [],
       "nextAction": "human_manufacturing_review",
-      "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\boardforge-project-manifest.json"
+      "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A\\BoardForge_Project_Manifest.json"
     },
     {
       "schema": "boardforge.project-dashboard-card.v1",
       "projectId": "BF-SENSOR-HUB-01_REV_F",
-      "projectName": "BF-SENSOR-HUB-01 REV_F outline-aware proof",
+      "projectName": "Sensor Hub REV_F Outline-Aware Proof",
       "status": "outline_aware_exact_finish_required",
       "boardPath": null,
       "schematicPath": null,
       "readiness": "blocked",
       "routingCompletionPercent": 77,
+      "routeabilityScore": 61,
       "validation": {
         "shorts": 0,
         "unconnected": 18,
@@ -64,13 +106,13 @@
         "drcViolations": 0,
         "drcErrors": 0,
         "drcWarnings": 0,
-        "ercViolations": 0,
-        "ercErrors": 0,
+        "ercViolations": 182,
+        "ercErrors": 182,
         "ercWarnings": 0,
         "namedNets": 0,
         "routedSegments": 0,
         "nettedPads": 0,
-        "schematicGraphStatus": "unknown"
+        "schematicGraphStatus": "outline_aware_feature_proof_not_manufacturing_candidate"
       },
       "manufacturing": {
         "ready": false,
@@ -84,8 +126,8 @@
       },
       "replayCommand": "npm run boardforge:route-finish -- --fixture BF-SENSOR-HUB-01_REV_F --mode clearance-aware-exact-finish",
       "criticalBlockers": [
-        "18 exact KiCad unconnected items remain on true outline-aware board",
-        "182 schematic ERC issues remain on true outline-aware board"
+        { "code": "UNCONNECTED_ITEMS_REMAIN", "count": 18, "severity": "critical" },
+        { "code": "ERC_ERRORS_REMAIN", "count": 182, "severity": "error" }
       ],
       "nextAction": "run_clearance_aware_exact_finisher",
       "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\apps\\web\\src\\sample-manifests\\rev-f.json"

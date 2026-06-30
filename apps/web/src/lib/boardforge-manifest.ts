@@ -32,6 +32,7 @@ export type BoardForgeDashboardCard = {
   schematicPath: string | null
   readiness: BoardForgeReadiness
   routingCompletionPercent: number
+  routeabilityScore?: number
   validation: BoardForgeManifest['validation'] & {
     drcErrors?: number
     drcWarnings?: number

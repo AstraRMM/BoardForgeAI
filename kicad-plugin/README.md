@@ -11,4 +11,11 @@ The plugin should:
 - write reports beside the active project,
 - never claim routing or manufacturing success without validation artifacts.
 
-The current implementation is intentionally a safe action-plugin stub. It records the expected command handoff but does not mutate boards by itself.
+Current behavior:
+
+- refuses protected ESC/FC paths,
+- locates the active board's `BoardForge_Project_Manifest.json`,
+- prints local CLI commands for validate, route, cleanup, export, report, and replay,
+- leaves all core engineering work inside the BoardForge local engine.
+
+The plugin is a KiCad control surface, not a second engine. It should never duplicate routing or DRC repair logic inside Python.
