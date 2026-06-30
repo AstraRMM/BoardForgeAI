@@ -1,0 +1,58 @@
+{
+  "id": "physical_kicad_mutation_from_shove_planner_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "dense_control_fixture",
+  "problemType": "routing_repair_capability_gap",
+  "problemSignature": {
+    "symptom": "local shove/rip-up could plan transactions but could not physically mutate KiCad boards"
+  },
+  "rootCause": "The local shove router only returned simulated proof data and did not load, alter, validate, commit, or rollback KiCad PCB geometry.",
+  "fixSummary": "Add a KiCad board mutator that can transactionally reroute generated segments, move vias, repair silkscreen references, and gate commits with validation evidence.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/kicad/kicad-board-mutator.mjs",
+      "plugins/boardforge-plugin/lib/routing/local-shove-router.mjs"
+    ],
+    "functionsAdded": [
+      "loadBoardObjects",
+      "createBoardMutationTransaction",
+      "rerouteNetSegment",
+      "repairSilkscreenOverlap",
+      "validateMutation",
+      "rollbackMutation",
+      "commitMutation",
+      "runPhysicalLocalShoveRouter"
+    ],
+    "testsAdded": ["dense-control-repair.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["synthetic_fixture", "dense_control", "postroute_cleanup"],
+    "netRoles": ["signal", "control", "local_power"],
+    "conditions": ["generated copper can be safely moved without changing footprints or board outline"]
+  },
+  "recipe": [
+    "Create candidate copy",
+    "Back up original candidate",
+    "Load KiCad board objects",
+    "Apply local mutation",
+    "Run DRC/ERC",
+    "Commit only if validation improves",
+    "Rollback otherwise"
+  ],
+  "safetyRules": [
+    "preserve original board",
+    "do not move footprints",
+    "do not change board outline",
+    "no forbidden vias",
+    "rollback failed mutations"
+  ],
+  "evidence": {
+    "before": { "plannerOnly": true },
+    "after": { "physicalMutation": true },
+    "tests": ["npm run test:kicad-board-mutator", "npm run test:local-shove-router-mutates-board"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

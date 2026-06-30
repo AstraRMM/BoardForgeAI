@@ -1,0 +1,47 @@
+{
+  "id": "dense_control_drc_repair_to_manufacturing_candidate_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "dense_control_fixture",
+  "problemType": "postroute_drc_repair",
+  "problemSignature": {
+    "drcBefore": 10,
+    "families": ["tracks_crossing", "shorting_items", "hole_clearance", "copper_edge_clearance", "solder_mask_bridge", "silk_overlap"]
+  },
+  "rootCause": "Compact dense-control geometry routed all nets but left localized copper/silkscreen DRC issues that blocked manufacturing export.",
+  "fixSummary": "Generate a repair task list, reroute five generated nets through safe corridors, hide colliding reference text, validate KiCad DRC/ERC, and export manufacturing only after DRC 0/ERC 0.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/routing/dense-control-repair-workflow.mjs",
+      "plugins/boardforge-plugin/bin/boardforge-dense-control-repair.mjs"
+    ],
+    "functionsAdded": ["runDenseControlDrcRepair", "buildRepairTasks", "denseControlRepairRecipes"],
+    "testsAdded": ["dense-control-repair.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["dense_control_fixture", "medium_density_signal_board"],
+    "netRoles": ["USB", "I2C", "CAN", "GPS", "3V3"],
+    "conditions": ["all connectivity is complete but DRC blocks manufacturing"]
+  },
+  "recipe": [
+    "Parse DRC JSON into repair tasks",
+    "Repair electrical copper issues first",
+    "Repair silkscreen last",
+    "Validate candidate with KiCad",
+    "Generate manufacturing ZIP only if clean"
+  ],
+  "safetyRules": [
+    "shorts must be zero",
+    "unconnected must be zero",
+    "forbidden vias must be zero",
+    "DRC/ERC must be zero before export"
+  ],
+  "evidence": {
+    "before": { "drc": 10, "erc": 0, "unconnected": 0 },
+    "after": { "drc": 0, "erc": 0, "unconnected": 0 },
+    "tests": ["npm run test:dense-control-drc-repair"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

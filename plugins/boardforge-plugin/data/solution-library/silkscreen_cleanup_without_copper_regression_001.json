@@ -1,0 +1,38 @@
+{
+  "id": "silkscreen_cleanup_without_copper_regression_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "all",
+  "problemType": "silkscreen_drc_cleanup",
+  "problemSignature": {
+    "family": "silk_overlap",
+    "objects": ["reference fields", "connector labels", "component labels"]
+  },
+  "rootCause": "Dense placement can leave useful labels colliding with other silkscreen or pads even when copper connectivity is clean.",
+  "fixSummary": "Repair silkscreen separately from copper by moving or hiding colliding reference text on non-manufacturing layers, then rerun DRC.",
+  "implementation": {
+    "filesChanged": ["plugins/boardforge-plugin/lib/kicad/kicad-board-mutator.mjs"],
+    "functionsAdded": ["repairSilkscreenOverlap"],
+    "testsAdded": ["dense-control-repair.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["silkscreen DRC remains after copper is clean"]
+  },
+  "recipe": [
+    "Classify silkscreen-only DRC",
+    "Move or hide colliding labels",
+    "Avoid copper/netlist changes",
+    "Rerun DRC before export"
+  ],
+  "safetyRules": ["silkscreen cleanup must not mutate copper connectivity"],
+  "evidence": {
+    "before": { "silkOverlap": 1 },
+    "after": { "silkOverlap": 0 },
+    "tests": ["npm run test:repair-silkscreen-overlap"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

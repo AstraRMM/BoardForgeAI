@@ -1,3 +1,11 @@
+import {
+  commitMutation,
+  createBoardMutationTransaction,
+  rerouteNetSegment,
+  rollbackMutation,
+  validateMutation,
+} from '../kicad/kicad-board-mutator.mjs'
+
 export function identifyBlockingObjects(ratsnestItem = {}, objects = []) {
   const targetNet = ratsnestItem.net
   return objects.filter((object) => object.generated && object.net !== targetNet && intersectsCorridor(ratsnestItem, object))
@@ -44,6 +52,59 @@ export function runLocalShoveRouter(ratsnestItem = {}, objects = [], options = {
       forbiddenVias: simulated.forbiddenVias ?? null,
       connectivityImproved: Boolean(simulated.connectivityImproved),
     },
+  }
+}
+
+export function runPhysicalLocalShoveRouter(boardPath, repairs = [], options = {}) {
+  const transaction = createBoardMutationTransaction(boardPath, { backupPath: options.backupPath })
+  const before = options.before || {}
+  const results = []
+  try {
+    for (const repair of repairs) {
+      if (repair.type === 'reroute_net_segment') {
+        results.push(rerouteNetSegment(transaction, repair.net, repair.points, repair))
+      }
+    }
+    const after = options.after || options.simulateAfter || {}
+    const gate = validateMutation(before, after, {
+      shortsMustRemain: options.shortsMustRemain ?? before.shorts ?? 0,
+      unconnectedMustRemain: options.unconnectedMustRemain ?? before.unconnected ?? 0,
+      forbiddenViasMustRemain: options.forbiddenViasMustRemain ?? before.forbiddenVias ?? 0,
+      ercMustRemain: options.ercMustRemain ?? before.erc ?? 0,
+    })
+    if (!gate.accepted) {
+      rollbackMutation(transaction)
+      return {
+        schema: 'boardforge.physical-local-shove-result.v1',
+        status: 'ROLLED_BACK_SCORE_GATE',
+        committed: false,
+        rolledBack: true,
+        transaction,
+        results,
+        gate,
+      }
+    }
+    commitMutation(transaction)
+    return {
+      schema: 'boardforge.physical-local-shove-result.v1',
+      status: 'COMMITTED_IMPROVED',
+      committed: true,
+      rolledBack: false,
+      transaction,
+      results,
+      gate,
+    }
+  } catch (error) {
+    rollbackMutation(transaction)
+    return {
+      schema: 'boardforge.physical-local-shove-result.v1',
+      status: 'ROLLED_BACK_EXCEPTION',
+      committed: false,
+      rolledBack: true,
+      error: error.message,
+      transaction,
+      results,
+    }
   }
 }
 

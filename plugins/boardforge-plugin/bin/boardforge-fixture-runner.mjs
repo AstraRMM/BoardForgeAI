@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { detectKiCadCli, exportCpl, exportDrill, exportGerbers, packageJlcpcb, runDrc, runErc } from '../lib/kicad-cli.mjs'
 import { writeProjectArtifactPack } from '../lib/platform/project-artifacts.mjs'
+import { runDenseControlDrcRepair } from '../lib/routing/dense-control-repair-workflow.mjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
 const fixtureRoot = path.join(repoRoot, 'fixtures', 'boards')
@@ -674,6 +675,9 @@ if (args.has('--list')) {
   for (const fixture of selected) {
     const started = Date.now()
     created.push(await writeOddShapeFixtureProject(fixture))
+    if (fixture.id === 'dense-control') {
+      created[created.length - 1].repairResult = await runDenseControlDrcRepair({ fixtureFolder: fixture.targetFolder })
+    }
     created[created.length - 1].runtimeMs = Date.now() - started
   }
   const outDir = path.join(repoRoot, 'tmp', 'fixture-runner')
@@ -683,16 +687,26 @@ if (args.has('--list')) {
     ...buildFixtureReport(selected),
     fixtures: selected.map((fixture, index) => ({
       ...buildFixtureReport([fixture]).fixtures[0],
-      status: created[index].manifest.status,
+      status: created[index].repairResult?.status || created[index].manifest.status,
       projectFolder: created[index].target,
-      pcb: created[index].pcbFile,
+      pcb: created[index].repairResult?.latestBoard || created[index].pcbFile,
       schematic: created[index].schematicFile,
       manifest: path.join(created[index].target, 'boardforge-project-manifest.json'),
       platformManifest: created[index].platformArtifacts.files.manifest,
       dashboardData: created[index].platformArtifacts.files.dashboardData,
       cliReplayCommand: created[index].platformArtifacts.files.cliReplayCommand,
-      drc: created[index].routeability.validation.drc,
-      erc: created[index].routeability.validation.erc,
+      drc: created[index].repairResult ? {
+        errors: created[index].repairResult.after.drc,
+        warnings: 0,
+        total: created[index].repairResult.after.drc,
+        byType: {},
+      } : created[index].routeability.validation.drc,
+      erc: created[index].repairResult ? {
+        errors: created[index].repairResult.after.erc,
+        warnings: 0,
+        total: created[index].repairResult.after.erc,
+        byType: {},
+      } : created[index].routeability.validation.erc,
       kicadCli: created[index].routeability.validation.kicadCli,
       schematic: created[index].routeability.validation.schematicGraph?.schematicSymbols > 0 ? 'passed' : 'failed',
       pinMap: 'fixture_symbol_pads_consistent',
@@ -700,10 +714,11 @@ if (args.has('--list')) {
       routeabilityScore: created[index].routeability.routeabilityScore,
       freeRouting: fixture.id === 'dense-control' ? 'planned_bridge_fixture_uses_preconnected_validation_until_router_batch' : 'not_required_fixture_is_preconnected_for_validation',
       sesImport: fixture.id === 'dense-control' ? 'not_run_preconnected_fixture' : 'not_required',
-      unconnected: created[index].routeability.validation.unconnected,
-      manufacturingReadiness: created[index].manifest.manufacturing.blockedReason || 'ready',
+      unconnected: created[index].repairResult?.after.unconnected ?? created[index].routeability.validation.unconnected,
+      manufacturingReadiness: created[index].repairResult?.manufacturing.ready ? 'ready' : (created[index].manifest.manufacturing.blockedReason || 'ready'),
+      manufacturingZip: created[index].repairResult?.manufacturing.zip || created[index].manifest.manufacturing.zip,
       runtimeMs: created[index].runtimeMs,
-      lessonsSaved: ['product_platform_artifacts_required_001', ...(fixture.id === 'dense-control' ? ['dense_control_fixture_bridge_to_real_boards_001'] : [])],
+      lessonsSaved: ['product_platform_artifacts_required_001', ...(fixture.id === 'dense-control' ? ['dense_control_fixture_bridge_to_real_boards_001', 'dense_control_drc_repair_to_manufacturing_candidate_001'] : [])],
     })),
   }
   fs.writeFileSync(out, JSON.stringify(runReport, null, 2))

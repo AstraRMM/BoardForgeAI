@@ -1,0 +1,36 @@
+{
+  "id": "transactional_board_mutation_score_gate_001",
+  "createdAt": "2026-06-30T00:00:00.000Z",
+  "updatedAt": "2026-06-30T00:00:00.000Z",
+  "sourceBoard": "BF-DENSE-CONTROL-01_REV_A",
+  "boardType": "all",
+  "problemType": "mutation_safety_gate",
+  "problemSignature": {
+    "risk": "a local geometry fix can reduce one violation while creating equal or worse DRC elsewhere"
+  },
+  "rootCause": "Physical PCB mutation needs a transaction boundary and a score gate; candidate edits cannot be promoted from geometry intent alone.",
+  "fixSummary": "Require DRC total improvement while preserving shorts, unconnected count, forbidden via count, and ERC before committing any board mutation.",
+  "implementation": {
+    "filesChanged": ["plugins/boardforge-plugin/lib/kicad/kicad-board-mutator.mjs"],
+    "functionsAdded": ["validateMutation", "rollbackMutation", "commitMutation"],
+    "testsAdded": ["dense-control-repair.test.mjs"]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": ["all"],
+    "conditions": ["any automated KiCad board geometry mutation"]
+  },
+  "recipe": [
+    "Backup candidate board",
+    "Apply one bounded mutation",
+    "Measure before/after validation",
+    "Accept only if safety gates pass and score improves"
+  ],
+  "safetyRules": ["rollback unsafe candidates", "do not hide validation failures"],
+  "evidence": {
+    "after": { "scoreGate": "implemented" },
+    "tests": ["npm run test:kicad-board-mutator"]
+  },
+  "status": "active",
+  "confidence": "high"
+}
