@@ -8,23 +8,41 @@ export const IMPORTED_REPAIR_PROJECT_ID = 'BF-IMPORTED-USER-BOARD-REPAIR-01'
 export const IMPORTED_REPAIR_SOURCE = `C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\${IMPORTED_REPAIR_PROJECT_ID}_SOURCE`
 export const IMPORTED_REPAIR_SANDBOX = `C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\${IMPORTED_REPAIR_PROJECT_ID}_SANDBOX`
 const SEED = 'C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A'
+const FIXTURE_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures'
+
+export const importedBoardRepairSuite = [
+  { projectId: 'BF-IMPORTED-USER-BOARD-REPAIR-01', category: 'dirty sensor/control board' },
+  { projectId: 'BF-IMPORTED-USER-BOARD-REPAIR-02', category: 'imported USB-C MCU style board' },
+  { projectId: 'BF-IMPORTED-USER-BOARD-REPAIR-03', category: 'imported CAN/connector-heavy board' },
+]
+
+export function importedRepairPaths(projectId = IMPORTED_REPAIR_PROJECT_ID) {
+  return {
+    projectId,
+    sourceFolder: path.join(FIXTURE_ROOT, `${projectId}_SOURCE`),
+    sandboxFolder: path.join(FIXTURE_ROOT, `${projectId}_SANDBOX`),
+  }
+}
 
 export async function runImportedBoardSandboxRepairProof(options = {}) {
-  const sourceFolder = options.sourceFolder || IMPORTED_REPAIR_SOURCE
-  const sandboxFolder = options.sandboxFolder || IMPORTED_REPAIR_SANDBOX
+  const projectId = options.projectId || IMPORTED_REPAIR_PROJECT_ID
+  const defaultPaths = importedRepairPaths(projectId)
+  const sourceFolder = options.sourceFolder || defaultPaths.sourceFolder
+  const sandboxFolder = options.sandboxFolder || defaultPaths.sandboxFolder
+  const category = options.category || importedBoardRepairSuite.find((item) => item.projectId === projectId)?.category || 'imported KiCad board'
   assertSafeFixturePath(sourceFolder)
   assertSafeFixturePath(sandboxFolder)
-  createImportedUserBoardSource({ sourceFolder })
+  createImportedUserBoardSource({ sourceFolder, projectId, category })
   const sourceHashBefore = hashProject(sourceFolder)
 
   const importResult = importProjectToSandbox({ source: sourceFolder, output: sandboxFolder })
   if (!importResult.originalUntouched) throw new Error('Source changed during sandbox import')
 
-  const seedBoardPath = path.join(sourceFolder, `${IMPORTED_REPAIR_PROJECT_ID}.kicad_pcb`)
-  const seedSchematicPath = path.join(sourceFolder, `${IMPORTED_REPAIR_PROJECT_ID}.kicad_sch`)
+  const seedBoardPath = path.join(sourceFolder, `${projectId}.kicad_pcb`)
+  const seedSchematicPath = path.join(sourceFolder, `${projectId}.kicad_sch`)
   const repair = await runDirtyRepairProof({
     fixtureFolder: sandboxFolder,
-    projectId: IMPORTED_REPAIR_PROJECT_ID,
+    projectId,
     seedBoardPath,
     seedSchematicPath,
     harder: true,
@@ -33,8 +51,8 @@ export async function runImportedBoardSandboxRepairProof(options = {}) {
   const sourceHashAfter = hashProject(sourceFolder)
   const sourceUntouched = JSON.stringify(sourceHashBefore.files) === JSON.stringify(sourceHashAfter.files)
 
-  const dirtyAlias = path.join(sandboxFolder, `${IMPORTED_REPAIR_PROJECT_ID}_dirty_imported_start.kicad_pcb`)
-  const cleanAlias = path.join(sandboxFolder, `${IMPORTED_REPAIR_PROJECT_ID}_clean_repaired_sandbox_candidate.kicad_pcb`)
+  const dirtyAlias = path.join(sandboxFolder, `${projectId}_dirty_imported_start.kicad_pcb`)
+  const cleanAlias = path.join(sandboxFolder, `${projectId}_clean_repaired_sandbox_candidate.kicad_pcb`)
   if (fs.existsSync(repair.startingBoard)) fs.copyFileSync(repair.startingBoard, dirtyAlias)
   if (repair.finalBoard && fs.existsSync(repair.finalBoard)) fs.copyFileSync(repair.finalBoard, cleanAlias)
 
@@ -43,6 +61,8 @@ export async function runImportedBoardSandboxRepairProof(options = {}) {
     status: sourceUntouched && repair.status === 'dirty_repair_manufacturing_candidate_generated'
       ? 'sandboxed_imported_board_repair_proof_completed'
       : 'sandboxed_imported_board_repair_blocked',
+    projectId,
+    category,
     sourceFolder,
     sandboxFolder,
     sourceHashBefore: sourceHashBefore.digest,
@@ -63,33 +83,74 @@ export async function runImportedBoardSandboxRepairProof(options = {}) {
   return proof
 }
 
-export function createImportedUserBoardSource({ sourceFolder = IMPORTED_REPAIR_SOURCE } = {}) {
+export async function runImportedBoardRepairSuite(options = {}) {
+  const selected = options.projects || importedBoardRepairSuite
+  const proofs = []
+  for (const item of selected) {
+    proofs.push(await runImportedBoardSandboxRepairProof(item))
+  }
+  const summary = {
+    schema: 'boardforge.imported-board-repair-suite.v1',
+    status: proofs.every((proof) => proof.status === 'sandboxed_imported_board_repair_proof_completed' && proof.sourceUntouched)
+      ? 'imported_board_repair_suite_completed'
+      : 'imported_board_repair_suite_blocked',
+    projectsImported: proofs.length,
+    sourceHashesUnchanged: proofs.filter((proof) => proof.sourceUntouched).length,
+    sandboxesRepaired: proofs.filter((proof) => proof.repair?.after?.drc === 0 && proof.repair?.manufacturing?.ready).length,
+    proofs,
+  }
+  writeJson(path.join(FIXTURE_ROOT, 'BoardForge_Imported_Board_Repair_Suite.json'), summary)
+  fs.writeFileSync(path.join(FIXTURE_ROOT, 'BoardForge_Imported_Board_Repair_Suite.md'), importedSuiteMarkdown(summary), 'utf8')
+  return summary
+}
+
+export function createImportedUserBoardSource({ sourceFolder = IMPORTED_REPAIR_SOURCE, projectId = IMPORTED_REPAIR_PROJECT_ID, category = 'imported KiCad board' } = {}) {
   assertSafeFixturePath(sourceFolder)
   fs.rmSync(sourceFolder, { recursive: true, force: true })
   fs.mkdirSync(sourceFolder, { recursive: true })
   const seedBoard = path.join(SEED, 'BF-DENSE-CONTROL-01_REV_A.kicad_pcb')
   const seedSch = path.join(SEED, 'BF-DENSE-CONTROL-01_REV_A.kicad_sch')
   if (!fs.existsSync(seedBoard) || !fs.existsSync(seedSch)) throw new Error('Seed fixture missing; run fixtures:run first.')
-  fs.copyFileSync(seedBoard, path.join(sourceFolder, `${IMPORTED_REPAIR_PROJECT_ID}.kicad_pcb`))
-  fs.copyFileSync(seedSch, path.join(sourceFolder, `${IMPORTED_REPAIR_PROJECT_ID}.kicad_sch`))
+  fs.copyFileSync(seedBoard, path.join(sourceFolder, `${projectId}.kicad_pcb`))
+  fs.copyFileSync(seedSch, path.join(sourceFolder, `${projectId}.kicad_sch`))
   for (const table of ['fp-lib-table', 'sym-lib-table']) {
     const src = path.join(SEED, table)
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(sourceFolder, table))
   }
-  fs.writeFileSync(path.join(sourceFolder, `${IMPORTED_REPAIR_PROJECT_ID}.kicad_pro`), JSON.stringify({
+  fs.writeFileSync(path.join(sourceFolder, `${projectId}.kicad_pro`), JSON.stringify({
     meta: { version: 1 },
-    board: { file: `${IMPORTED_REPAIR_PROJECT_ID}.kicad_pcb` },
-    schematic: { file: `${IMPORTED_REPAIR_PROJECT_ID}.kicad_sch` },
+    board: { file: `${projectId}.kicad_pcb` },
+    schematic: { file: `${projectId}.kicad_sch` },
   }, null, 2), 'utf8')
   fs.writeFileSync(path.join(sourceFolder, 'README_SOURCE_DO_NOT_REPAIR.md'), [
     '# Imported User Board Repair Source',
     '',
     'This synthetic source represents a user-uploaded KiCad project.',
+    `Category: ${category}.`,
     'BoardForge must copy it to a sandbox before repair.',
     'The source folder must remain hash-identical before and after sandbox repair.',
     '',
   ].join('\n'), 'utf8')
   return sourceFolder
+}
+
+function importedSuiteMarkdown(summary) {
+  const lines = [
+    '# BoardForge Imported Board Repair Suite',
+    '',
+    `Status: ${summary.status}`,
+    `Projects imported: ${summary.projectsImported}`,
+    `Source hashes unchanged: ${summary.sourceHashesUnchanged}`,
+    `Sandboxes repaired: ${summary.sandboxesRepaired}`,
+    '',
+    '| Project | Category | Source untouched | DRC | Shorts | Unconnected | ZIP |',
+    '| --- | --- | --- | --- | --- | --- | --- |',
+  ]
+  for (const proof of summary.proofs) {
+    lines.push(`| ${proof.projectId} | ${proof.category} | ${proof.sourceUntouched ? 'yes' : 'no'} | ${proof.repair.before.drc} -> ${proof.repair.after.drc} | ${proof.repair.before.shorts} -> ${proof.repair.after.shorts} | ${proof.repair.before.unconnected} -> ${proof.repair.after.unconnected} | ${proof.outputs.manufacturingZip || 'none'} |`)
+  }
+  lines.push('')
+  return lines.join('\n')
 }
 
 function writeImportedRepairReports({ sourceFolder, sandboxFolder, proof, sourceHashBefore, sourceHashAfter }) {

@@ -285,6 +285,8 @@ test('report 90 quick mode runs bounded fixture subset', () => {
     'dirty_repair_physical_proof_cached',
     'dirty_repair_physical_proof_02_cached',
     'imported_board_repair_sandbox_cached',
+    'imported_board_repair_sandbox_02_cached',
+    'imported_board_repair_sandbox_03_cached',
     'robotics_controller_clean_cached',
     'sensor_hub_rev_d_cached',
     'usb_c_mcu_cached',
@@ -299,12 +301,12 @@ test('report 90 quick mode runs bounded fixture subset', () => {
     'arbitrary_prompt_too_small',
   ])
   assert.equal(typeof result.readiness, 'number')
-  assert.ok(result.readiness >= 75)
+  assert.ok(result.readiness >= 85)
   assert.equal(result.acceptance.goldenPasses, true)
   assert.equal(result.acceptance.roboticsDrcZero, true)
   assert.equal(result.acceptance.existingProjectScan, true)
   assert.equal(result.acceptance.poeFixedOrExplained, true)
-  assert.equal(result.acceptance.exportedFixtureCount >= 15, true)
-  assert.equal(result.acceptance.sandboxedImportedBoardRepairProofCount, 1)
+  assert.equal(result.acceptance.exportedFixtureCount >= 17, true)
+  assert.equal(result.acceptance.sandboxedImportedBoardRepairProofCount, 3)
   assert.ok(result.reportFiles.jsonFile)
 })

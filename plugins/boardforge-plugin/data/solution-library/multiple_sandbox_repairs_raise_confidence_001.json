@@ -1,0 +1,17 @@
+{
+  "id": "multiple_sandbox_repairs_raise_confidence_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "BoardForge readiness plateaued when imported-board repair evidence was limited to one project style.",
+  "fixSummary": "Run source-protected sandbox repair against multiple imported board categories and weight readiness only when all sources remain unchanged and the sandboxes reach clean manufacturing candidates.",
+  "evidence": {
+    "categories": [
+      "dirty sensor/control board",
+      "USB-C MCU style board",
+      "CAN/connector-heavy board"
+    ],
+    "transactionsAttempted": 24,
+    "transactionsCommitted": 24,
+    "transactionsRolledBack": 0
+  }
+}

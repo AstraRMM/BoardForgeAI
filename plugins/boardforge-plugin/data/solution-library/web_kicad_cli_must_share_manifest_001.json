@@ -1,0 +1,16 @@
+{
+  "id": "web_kicad_cli_must_share_manifest_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "Product surfaces can drift if web pages, KiCad plugin actions, and CLI commands each invent their own status model.",
+  "fixSummary": "Use BoardForge project manifests, dashboard data, engine logs, plugin action logs, and replay command files as shared product artifacts consumed by web, KiCad plugin, CLI, and AI controllers.",
+  "evidence": {
+    "sharedArtifacts": [
+      "BoardForge_Project_Manifest.json",
+      "BoardForge_Project_Dashboard_Data.json",
+      "BoardForge_Engine_Run_Log.json",
+      "BoardForge_KiCad_Plugin_Action_Log.json",
+      "BoardForge_CLI_Replay_Command.txt"
+    ]
+  }
+}

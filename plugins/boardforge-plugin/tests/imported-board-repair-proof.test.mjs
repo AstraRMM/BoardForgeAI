@@ -6,6 +6,8 @@ import {
   IMPORTED_REPAIR_PROJECT_ID,
   IMPORTED_REPAIR_SANDBOX,
   IMPORTED_REPAIR_SOURCE,
+  importedBoardRepairSuite,
+  runImportedBoardRepairSuite,
   runImportedBoardSandboxRepairProof,
 } from '../lib/repair/imported-board-repair-proof.mjs'
 
@@ -50,4 +52,22 @@ test('imported-board dirty repair reaches clean sandbox manufacturing candidate'
   assert.equal(fs.existsSync(proof.outputs.cleanRepairedSandboxCandidate), true)
   assert.equal(fs.existsSync(proof.outputs.manufacturingZip), true)
   assert.match(proof.outputs.cleanRepairedSandboxCandidate, new RegExp(`${IMPORTED_REPAIR_PROJECT_ID}.*clean_repaired_sandbox_candidate`))
+})
+
+test('imported-board repair suite proves three source-hash-guarded sandbox repairs', async () => {
+  const suite = await runImportedBoardRepairSuite()
+  assert.equal(suite.status, 'imported_board_repair_suite_completed')
+  assert.equal(suite.projectsImported, importedBoardRepairSuite.length)
+  assert.equal(suite.sourceHashesUnchanged, 3)
+  assert.equal(suite.sandboxesRepaired, 3)
+  assert.equal(fs.existsSync('C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BoardForge_Imported_Board_Repair_Suite.json'), true)
+  for (const proof of suite.proofs) {
+    assert.equal(proof.sourceUntouched, true)
+    assert.equal(proof.changedSourceFiles.length, 0)
+    assert.equal(proof.repair.after.drc, 0)
+    assert.equal(proof.repair.after.erc, 0)
+    assert.equal(proof.repair.after.shorts, 0)
+    assert.equal(proof.repair.after.unconnected, 0)
+    assert.equal(fs.existsSync(proof.outputs.manufacturingZip), true)
+  }
 })

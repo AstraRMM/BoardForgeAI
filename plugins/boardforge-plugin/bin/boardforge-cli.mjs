@@ -22,14 +22,17 @@ function jsonOut(value) {
 function usage() {
   return {
     status: 'BOARD_FORGE_CLI_HELP',
-    usage: 'boardforge <init|create|validate|route|cleanup|export|report|replay> [options]',
+    usage: 'boardforge <init|create|import|validate|route|repair|cleanup|export|status|report|replay> [options]',
     commands: {
       init: 'Create a safe BoardForge workspace marker.',
       create: 'Create a KiCad project from a controlled BoardForge template.',
+      import: 'Copy an existing KiCad project into a BoardForge sandbox without mutating the source.',
       validate: 'Run preflight/manufacturing validation planning for a project.',
       route: 'Run the routed-board workflow entrypoint for a project.',
+      repair: 'Run or plan repair workflow for a sandbox project.',
       cleanup: 'Plan DRC/post-route repair for a project.',
       export: 'Generate manufacturing manifest/package gates.',
+      status: 'Read local BoardForge status artifacts for a sandbox/project.',
       report: 'Generate dashboard data from BoardForge manifests.',
       replay: 'Print or execute a manifest replay command.',
     },
@@ -76,6 +79,18 @@ async function main() {
     return
   }
 
+  if (planned.kind === 'import-sandbox') {
+    const { importProjectToSandbox } = await import('../lib/platform/copy-sandbox-importer.mjs')
+    jsonOut(importProjectToSandbox(planned.importOptions))
+    return
+  }
+
+  if (planned.kind === 'status') {
+    const { readLocalEngineStatus } = await import('../lib/platform/local-engine-status-reader.mjs')
+    jsonOut({ status: 'BOARD_FORGE_LOCAL_STATUS', projectPath: planned.projectPath, engine: readLocalEngineStatus(planned.projectPath) })
+    return
+  }
+
   if (planned.kind === 'replay') {
     jsonOut({ status: 'BOARD_FORGE_REPLAY_COMMAND_READY', replayCommand: planned.replayCommand, executeManually: true })
     return
@@ -89,8 +104,10 @@ async function main() {
 async function planCommand(name, context) {
   const { workspace, projectPath } = context
   if (name === 'init') return { kind: 'init', command: name, workspace }
+  if (name === 'import') return planImportCommand(context)
   if (name === 'report') return planReportCommand(context)
   if (name === 'replay') return planReplayCommand()
+  if (name === 'status') return planStatusCommand(context)
 
   const guarded = guardProjectPath(projectPath, name)
   const projectName = argValue('--name', path.basename(projectPath || 'boardforge-project'))
@@ -118,6 +135,11 @@ async function planCommand(name, context) {
       type: 'autoroute_and_apply',
       input: { projectPath },
     },
+    repair: {
+      id: 'cli_repair_project',
+      type: 'plan_drc_repairs',
+      input: { projectPath },
+    },
     cleanup: {
       id: 'cli_cleanup_project',
       type: 'plan_drc_repairs',
@@ -140,6 +162,29 @@ function guardProjectPath(projectPath, commandName) {
   const guarded = assertPathIsAllowed(projectPath)
   if (!guarded.allowed) throw new Error(`Refused ${commandName}: ${guarded.reason} (${projectPath || 'missing project path'})`)
   return guarded
+}
+
+function planImportCommand(context) {
+  const source = argValue('--source', context.projectPath || process.argv[3] || '')
+  const sourceGuard = assertPathIsAllowed(source)
+  if (!sourceGuard.allowed) throw new Error(`Refused import: ${sourceGuard.reason} (${source || 'missing source path'})`)
+  const name = path.basename(path.resolve(source || 'boardforge-import'))
+  const output = argValue('--output', path.join('C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes', `${name}_import_sandbox`))
+  const outputGuard = assertPathIsAllowed(output)
+  if (!outputGuard.allowed) throw new Error(`Refused import output: ${outputGuard.reason} (${output})`)
+  return {
+    kind: 'import-sandbox',
+    command: 'import',
+    workspace: context.workspace,
+    importOptions: { source, output },
+  }
+}
+
+function planStatusCommand(context) {
+  const target = context.projectPath || process.argv[3] || ''
+  const guarded = assertPathIsAllowed(target)
+  if (!guarded.allowed) throw new Error(`Refused status: ${guarded.reason} (${target || 'missing project path'})`)
+  return { kind: 'status', command: 'status', workspace: context.workspace, projectPath: target }
 }
 
 function planReportCommand(context) {

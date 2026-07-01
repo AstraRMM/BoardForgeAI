@@ -1,0 +1,19 @@
+{
+  "id": "local_engine_alpha_workflow_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "BoardForge needed a coherent local product workflow instead of isolated proof scripts.",
+  "fixSummary": "Expose import, validate, repair, route, export, status, and replay flows through the local CLI and use the same project artifacts for web dashboard and KiCad plugin surfaces.",
+  "evidence": {
+    "cliCommands": [
+      "boardforge import",
+      "boardforge validate",
+      "boardforge repair",
+      "boardforge route",
+      "boardforge export",
+      "boardforge status",
+      "boardforge replay"
+    ],
+    "localFirst": true
+  }
+}

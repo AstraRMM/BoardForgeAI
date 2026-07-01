@@ -128,6 +128,16 @@ test('web upload import repair status exposes source hash guard and sandbox repa
   assert.match(page, /boardforge:imported-board-repair-proof/)
 })
 
+test('web downloads page lists manufacturing zips and blocked review outputs honestly', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const page = fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
+  assert.match(page, /Manufacturing Packages/)
+  assert.match(page, /Blocked \/ Review Outputs/)
+  assert.match(page, /Manufacturing ZIP/)
+  assert.match(page, /local manufacturing validator/)
+  assert.match(page, /replayCommand/)
+})
+
 test('readiness evidence dashboard exposes score, gaps, and proof counts', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const pagePath = path.join(repoRoot, 'apps', 'web', 'src', 'app', 'readiness', 'page.tsx')
@@ -278,4 +288,69 @@ test('canonical BoardForge CLI maps product commands to guarded engine jobs', ()
   ], { cwd: repoRoot, encoding: 'utf8' })
   assert.notEqual(blocked.status, 0)
   assert.match(blocked.stderr, /protected_user_project/)
+})
+
+test('CLI alpha workflow exposes import repair status and replay verbs', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const cli = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
+  const safeSource = 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A'
+  const imported = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    'import',
+    '--source',
+    safeSource,
+    '--output',
+    'C:/Users/luifi/Desktop/BoardForge_Sandboxes/CLI_ALPHA_IMPORT_TEST',
+    '--dry-run',
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+  assert.equal(imported.status, 'BOARD_FORGE_CLI_DRY_RUN')
+  assert.equal(imported.kind, 'import-sandbox')
+  const repair = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    'repair',
+    '--project',
+    'C:/Users/luifi/Desktop/BoardForge_Sandboxes/CLI_ALPHA_IMPORT_TEST',
+    '--dry-run',
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+  assert.equal(repair.job.type, 'plan_drc_repairs')
+  const status = JSON.parse(execFileSync(process.execPath, [
+    cli,
+    'status',
+    '--project',
+    'C:/Users/luifi/Desktop/BoardForge_Sandboxes/CLI_ALPHA_IMPORT_TEST',
+    '--dry-run',
+  ], { cwd: repoRoot, stdio: 'pipe' }).toString())
+  assert.equal(status.kind, 'status')
+})
+
+test('alpha demo docs describe import sandbox repair sourcing and local install flow', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  for (const file of [
+    'BOARD_FORGE_CLI_ALPHA.md',
+    'BOARD_FORGE_ALPHA_READINESS.md',
+    'BOARD_FORGE_DEMO_FLOW.md',
+    'BOARD_FORGE_INSTALL_LOCAL.md',
+    'BOARD_FORGE_KICAD_PLUGIN_DEMO.md',
+    'BOARD_FORGE_WEB_DASHBOARD_DEMO.md',
+    'BOARD_FORGE_LIMITATIONS.md',
+    'BOARD_FORGE_SALES_POSITIONING.md',
+    'BOARD_FORGE_NEXT_30_DAYS.md',
+  ]) {
+    assert.equal(fs.existsSync(path.join(repoRoot, 'docs', file)), true, `${file} missing`)
+  }
+  const cliDoc = fs.readFileSync(path.join(repoRoot, 'docs', 'BOARD_FORGE_CLI_ALPHA.md'), 'utf8')
+  const installDoc = fs.readFileSync(path.join(repoRoot, 'docs', 'BOARD_FORGE_INSTALL_LOCAL.md'), 'utf8')
+  assert.match(cliDoc, /boardforge:import/)
+  assert.match(cliDoc, /source hashes must match/i)
+  assert.match(installDoc, /DIGIKEY_CLIENT_ID/)
+  assert.match(installDoc, /UNKNOWN/)
+})
+
+test('readiness 85 rubric requires imported-suite product workflow evidence', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const rubric = fs.readFileSync(path.join(repoRoot, 'docs', 'BOARD_FORGE_READINESS_RUBRIC.md'), 'utf8')
+  assert.match(rubric, /85: product alpha plus/)
+  assert.match(rubric, /at least three imported KiCad project sandbox repair proofs/)
+  assert.match(rubric, /CLI alpha workflow/)
+  assert.match(rubric, /sourcing provider env detection/)
 })

@@ -1,0 +1,13 @@
+{
+  "id": "imported_board_suite_required_for_alpha_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "A single sandboxed imported-board repair proof was useful but not enough to justify BoardForge as an alpha product workflow for real user projects.",
+  "fixSummary": "Require a small suite of imported KiCad projects across different board categories, copy each into a sandbox, hash-guard the source, repair only the sandbox, and export manufacturing output only when validation is clean.",
+  "evidence": {
+    "suiteReport": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BoardForge_Imported_Board_Repair_Suite.md",
+    "projectsImported": 3,
+    "sourceHashesUnchanged": 3,
+    "sandboxesRepaired": 3
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "readiness_85_requires_product_workflow_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "Readiness 85 should not be reached by adding more clean synthetic boards alone.",
+  "fixSummary": "Gate readiness 85 on multiple sandboxed imported-board repairs, source hash guards, dirty-to-clean repair evidence, web/KiCad/CLI workflow surfaces, manufacturing ZIP evidence, BOM/CPL validation, sourcing gates, and regression fixtures.",
+  "evidence": {
+    "requiredImportedRepairProofs": 3,
+    "requiresProductSurfaces": true,
+    "requiresSourcingGate": true,
+    "requiresRegression": true
+  }
+}

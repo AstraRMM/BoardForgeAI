@@ -1,0 +1,12 @@
+{
+  "id": "sourcing_gate_separates_fab_from_assembly_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "A board can be PCB fabrication ready while still lacking verified supplier stock and assembly availability.",
+  "fixSummary": "Separate PCB_FAB_READY from ASSEMBLY_READY_VERIFIED, detect missing sourcing API keys, mark stock and assembly availability as UNKNOWN when not checked, and never fake API_VERIFIED sourcing.",
+  "evidence": {
+    "missingKeysStatus": "NOT_CHECKED",
+    "stockWithoutApi": "UNKNOWN",
+    "assemblyWithoutApi": "UNKNOWN"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "source_hash_guard_customer_trust_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "Users need proof that BoardForge will not mutate their original KiCad projects during import, scan, repair, or route workflows.",
+  "fixSummary": "Hash source project files before and after sandbox import, refuse protected paths, mutate only the sandbox copy, and surface source-untouched evidence in reports, web dashboard, KiCad plugin status, and CLI replay data.",
+  "evidence": {
+    "sourceHashGuard": "before_after_identical",
+    "protectedPathGuard": true,
+    "sandboxOnlyMutation": true
+  }
+}
