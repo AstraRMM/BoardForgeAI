@@ -53,6 +53,12 @@ export type BoardForgeDashboardCard = {
   }>
   nextAction: string
   sourceManifest: string | null
+  honestyBadges?: string[]
+  importSandbox?: {
+    status: string
+    originalUntouched: boolean
+    report: string
+  }
 }
 
 export type BoardForgeDashboardData = {
@@ -86,4 +92,22 @@ export function dashboardSummaryLabel(data: BoardForgeDashboardData): 'all-ready
   if (data.summary.blocked > 0 || data.projects.some((project) => dashboardCardLabel(project) === 'blocked')) return 'blocked'
   if (data.summary.manufacturingReady === data.summary.totalProjects && data.summary.totalProjects > 0) return 'all-ready'
   return 'review'
+}
+
+export type BoardForgeReadinessEvidence = {
+  schema: 'boardforge.readiness-evidence.v1'
+  readiness: number
+  generatedAt: string
+  evidence: {
+    cleanFixtures: number
+    manufacturingExports: number
+    dirtyToCleanRepairs: number
+    categoryCoverage: number
+    safeImports: number
+  }
+  knownGaps: string[]
+  latestTests: Array<{
+    command: string
+    status: 'passed' | 'failed' | 'not_run'
+  }>
 }

@@ -1,0 +1,69 @@
+{
+  "id": "can-node",
+  "name": "BF-CAN-NODE-01",
+  "revision": "REV_A",
+  "type": "can_node_board",
+  "category": "CAN node",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-CAN-NODE-01_REV_A",
+  "brief": "A robotics CAN node fixture with MCU, CAN transceiver, connector, termination option, sensor header, and debug access.",
+  "difficulty": "medium",
+  "layers": 4,
+  "outline": {
+    "shape": "narrow rounded CAN node with connector edge",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["CAN connector edge", "debug side", "mounting holes"]
+  },
+  "boardType": "Robotics CAN sensor/control node",
+  "architecture": [
+    "MCU",
+    "CAN transceiver",
+    "CAN connector",
+    "120 ohm termination option",
+    "3V3 regulator",
+    "I2C sensor header",
+    "SWD debug header",
+    "status LEDs"
+  ],
+  "routeabilityTargets": {
+    "preRouteShorts": 0,
+    "unconnected": 0,
+    "drc": 0,
+    "erc": 0
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid connector-edge outline",
+    "routeability score",
+    "FreeRouting DSN/SES attempt",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean"
+  ],
+  "knownRisks": [
+    "CAN connector and transceiver can block routing corridors",
+    "termination and protection placement require review",
+    "alpha routeability gate may widen the board before manufacturing proof"
+  ],
+  "learningGoals": [
+    "differential-ish CAN pair routing discipline",
+    "connector-edge routing corridors",
+    "TVS/termination placement planning",
+    "post-route DRC repair"
+  ],
+  "honestyBadges": [
+    "CAN_SIGNAL_INTEGRITY_NOT_LAB_VERIFIED",
+    "SOURCING_NOT_API_VERIFIED"
+  ],
+  "protectionPolicy": "synthetic_only_no_ESC_FC_paths"
+}

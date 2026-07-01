@@ -4,13 +4,15 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import test from 'node:test'
 import { importProjectToSandbox } from '../lib/platform/copy-sandbox-importer.mjs'
-import { assertPathIsAllowed, isProtectedBoardPath } from '../lib/platform/protected-path-guard.mjs'
+import { assertPathIsAllowed, hasWrittenProtectedPathApproval, isProtectedBoardPath } from '../lib/platform/protected-path-guard.mjs'
 
 test('protected path guard refuses ESC and FC project names', () => {
   assert.equal(isProtectedBoardPath('C:/Users/luifi/Desktop/FN-ESC1/board.kicad_pcb'), true)
   assert.equal(isProtectedBoardPath('C:/tmp/my-flight-controller/project.kicad_pcb'), true)
   assert.equal(isProtectedBoardPath('C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ODD-SHAPE-ROBOT-01_REV_A'), false)
   assert.equal(assertPathIsAllowed('C:/Users/luifi/Desktop/FN-FC/project').allowed, false)
+  assert.equal(assertPathIsAllowed('C:/Users/luifi/Desktop/FN-FC/project', { allowProtected: true }).allowed, false)
+  assert.equal(hasWrittenProtectedPathApproval('C:/missing/approval.txt'), false)
 })
 
 test('copy sandbox importer copies synthetic project without mutating original', () => {
@@ -61,4 +63,23 @@ test('category-depth evidence covers product categories and honest limitations',
   const evidence = JSON.parse(fs.readFileSync(output.jsonFile, 'utf8'))
   assert.equal(evidence.categories.some((item) => item.category === 'PoE sensor fixture' && /COMPLIANCE_NOT_VERIFIED/.test(item.limitations)), true)
   assert.equal(evidence.categories.some((item) => item.category === 'existing-project import sandbox'), true)
+})
+
+test('category-specific fixture definitions cover next alpha board families', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const required = [
+    ['usb-c-mcu', 'USB-C MCU'],
+    ['can-node', 'CAN node'],
+    ['tiny-2layer', 'tiny 2-layer'],
+    ['compact-4layer', 'compact 4-layer'],
+  ]
+  for (const [folder, label] of required) {
+    const fixturePath = path.join(repoRoot, 'fixtures', 'boards', folder, 'fixture.json')
+    assert.equal(fs.existsSync(fixturePath), true, `${label} fixture missing`)
+    const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'))
+    assert.equal(fixture.category, label)
+    assert.equal(Array.isArray(fixture.learningGoals), true)
+    assert.equal(fixture.learningGoals.length > 0, true)
+    assert.match(fixture.protectionPolicy, /synthetic_only/)
+  }
 })

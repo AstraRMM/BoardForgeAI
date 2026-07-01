@@ -1,0 +1,26 @@
+{
+  "schema": "boardforge.readiness-dashboard-data.v1",
+  "score": 73,
+  "status": "early_alpha",
+  "headline": "BoardForge can generate, route, repair, validate, and package multiple synthetic KiCad fixtures.",
+  "metrics": [
+    { "label": "Manufacturing-ready proof boards", "value": 12 },
+    { "label": "Dirty-to-clean DRC repair proofs", "value": 1 },
+    { "label": "Fixture categories covered", "value": 10 },
+    { "label": "Protected real-project mutations", "value": 0 }
+  ],
+  "surfaceStatus": {
+    "localEngine": "working_alpha",
+    "cli": "working_alpha",
+    "webDashboard": "manifest_driven_alpha",
+    "kicadPlugin": "control_panel_scaffold",
+    "sourcing": "provider_scaffold_no_fake_stock",
+    "manufacturing": "strict_gate_working"
+  },
+  "links": {
+    "uploadSandbox": "apps/web/src/app/upload-kicad/page.tsx",
+    "downloads": "apps/web/src/app/downloads/page.tsx",
+    "readiness": "apps/web/src/app/readiness/page.tsx",
+    "alphaDemo": "BoardForge_Alpha_Demo"
+  }
+}

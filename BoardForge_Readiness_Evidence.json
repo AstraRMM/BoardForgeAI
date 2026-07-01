@@ -1,0 +1,38 @@
+{
+  "schema": "boardforge.readiness-evidence.v1",
+  "score": 73,
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "summary": {
+    "manufacturingReadyProofBoards": 12,
+    "dirtyToCleanRepairProofs": 1,
+    "categoryCoverage": 10,
+    "safeImportProofs": 1,
+    "protectedProjectMutations": 0
+  },
+  "proofBoards": [
+    "BF-SENSOR-HUB-01_REV_D",
+    "BF-SENSOR-HUB-01_REV_F",
+    "BF-ODD-SHAPE-ROBOT-01_REV_A",
+    "BF-DENSE-CONTROL-01_REV_A",
+    "BF-ROBOTICS-CONTROLLER-01_REV_A",
+    "BF-POE-SENSOR-01_REV_A",
+    "BF-USB-C-MCU-01_REV_A",
+    "BF-CAN-NODE-01_REV_A",
+    "BF-TINY-2LAYER-01_REV_A",
+    "BF-COMPACT-4LAYER-01_REV_A"
+  ],
+  "newCategoryDefinitions": [],
+  "evidence": {
+    "webUploadSandboxImport": "apps/web/src/app/upload-kicad/page.tsx",
+    "readinessDashboard": "apps/web/src/app/readiness/page.tsx",
+    "bomCplValidator": "plugins/boardforge-plugin/lib/manufacturing/bom-cpl-validator.mjs",
+    "solutionAutoApply": "plugins/boardforge-plugin/lib/solution-library/solution-auto-apply.mjs",
+    "physicalBoardMutator": "plugins/boardforge-plugin/tests/kicad-board-mutator.test.mjs"
+  },
+  "remainingBlockers": [
+    "real supplier API verification requires keys",
+    "advanced arbitrary-board shove/rip-up still early",
+    "web dashboard needs live local engine bridge",
+    "KiCad plugin panel is scaffolded, not polished native UI"
+  ]
+}

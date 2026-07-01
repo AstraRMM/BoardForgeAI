@@ -1,0 +1,24 @@
+{
+  "schema": "boardforge.readiness-evidence.v1",
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "readiness": 73,
+  "evidence": {
+    "cleanFixtures": 12,
+    "manufacturingExports": 12,
+    "dirtyToCleanRepairs": 1,
+    "categoryCoverage": 10,
+    "safeImports": 1
+  },
+  "knownGaps": [
+    "PoE compliance, magnetics, isolation, and supplier stock are not verified",
+    "Real arbitrary dense ESC/FC boards are not fully autonomous yet",
+    "Local shove/rip-up is early and needs more dirty-board proofs",
+    "Web and KiCad plugin surfaces are alpha control panels"
+  ],
+  "latestTests": [
+    { "command": "npm run test:protected-path-guard", "status": "passed" },
+    { "command": "npm run test:copy-sandbox-importer", "status": "passed" },
+    { "command": "npm run fixtures:run", "status": "passed" },
+    { "command": "npm run report:90:quick -- --fresh", "status": "passed" }
+  ]
+}

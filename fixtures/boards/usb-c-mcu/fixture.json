@@ -1,0 +1,68 @@
+{
+  "id": "usb-c-mcu",
+  "name": "BF-USB-C-MCU-01",
+  "revision": "REV_A",
+  "type": "usb_c_mcu_board",
+  "category": "USB-C MCU",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-USB-C-MCU-01_REV_A",
+  "brief": "A USB-C powered MCU development board fixture for connector placement, CC pin handling, SWD/UART access, and clean manufacturing export.",
+  "difficulty": "medium",
+  "layers": 4,
+  "outline": {
+    "shape": "compact rounded USB-C MCU board",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["USB-C edge", "debug header side", "mounting holes"]
+  },
+  "boardType": "USB-C powered MCU development board",
+  "architecture": [
+    "USB-C receptacle with CC resistors",
+    "MCU",
+    "3V3 regulator",
+    "SWD header",
+    "UART header",
+    "status LEDs",
+    "reset and boot controls"
+  ],
+  "routeabilityTargets": {
+    "preRouteShorts": 0,
+    "unconnected": 0,
+    "drc": 0,
+    "erc": 0
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid USB-C edge outline",
+    "routeability score",
+    "FreeRouting DSN/SES attempt",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean"
+  ],
+  "knownRisks": [
+    "USB-C pin mapping must not imply USB-PD support",
+    "compact connector edge can narrow MCU escape corridor",
+    "alpha routeability gate may widen the board before manufacturing proof"
+  ],
+  "learningGoals": [
+    "USB-C connector edge placement",
+    "CC pin and power-net separation",
+    "compact MCU escape routing",
+    "manufacturing ZIP gate"
+  ],
+  "honestyBadges": [
+    "USB_PD_NOT_CLAIMED",
+    "SOURCING_NOT_API_VERIFIED"
+  ],
+  "protectionPolicy": "synthetic_only_no_ESC_FC_paths"
+}

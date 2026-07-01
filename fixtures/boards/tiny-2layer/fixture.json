@@ -1,0 +1,67 @@
+{
+  "id": "tiny-2layer",
+  "name": "BF-TINY-2LAYER-01",
+  "revision": "REV_A",
+  "type": "tiny_2layer_sensor_board",
+  "category": "tiny 2-layer",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-TINY-2LAYER-01_REV_A",
+  "brief": "A compact two-layer sensor puck fixture used to test low-cost routing pressure and honest signal-integrity limitations.",
+  "difficulty": "medium-hard",
+  "layers": 2,
+  "outline": {
+    "shape": "tiny rounded sensor puck",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["small outline", "edge power header", "mounting holes"]
+  },
+  "boardType": "Low-cost compact two-layer sensor puck",
+  "architecture": [
+    "MCU",
+    "USB or UART power/input header",
+    "3V3 regulator",
+    "I2C sensor",
+    "SWD pads",
+    "status LED"
+  ],
+  "routeabilityTargets": {
+    "preRouteShorts": 0,
+    "unconnected": 0,
+    "drc": 0,
+    "erc": 0
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid compact outline",
+    "routeability score",
+    "FreeRouting DSN/SES attempt",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean"
+  ],
+  "knownRisks": [
+    "two-layer ground return needs review",
+    "tiny outline can over-constrain connector escape",
+    "alpha routeability gate may reject the tiny target and use a wider proof geometry"
+  ],
+  "learningGoals": [
+    "two-layer routeability scoring",
+    "ground return compromise detection",
+    "compact outline pressure",
+    "manufacturing gate without hiding limitations"
+  ],
+  "honestyBadges": [
+    "TWO_LAYER_SIGNAL_INTEGRITY_REVIEW_REQUIRED",
+    "SOURCING_NOT_API_VERIFIED"
+  ],
+  "protectionPolicy": "synthetic_only_no_ESC_FC_paths"
+}

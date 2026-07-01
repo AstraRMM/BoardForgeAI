@@ -10,6 +10,9 @@ PROTECTED_MARKERS = (
     "FN-ESC1",
     "FN-ESC",
     "FN-FC",
+    "ESC",
+    "FC",
+    "flight",
     "flight-controller",
     "flight_controller",
 )
@@ -26,8 +29,11 @@ def build_boardforge_command(board_path):
 
 def build_boardforge_commands(board_path):
     board_path = str(board_path)
+    project_dir = os.path.dirname(board_path)
     manifest = manifest_path_for(board_path)
+    sandbox_dir = sandbox_path_for(project_dir)
     return {
+        "import_sandbox": ["npm", "run", "boardforge:import-sandbox", "--", "--source", project_dir, "--output", sandbox_dir],
         "validate": ["npm", "run", "boardforge:validate", "--", "--project", board_path],
         "route": ["npm", "run", "boardforge:route", "--", "--project", board_path],
         "cleanup": ["npm", "run", "boardforge:cleanup", "--", "--project", board_path],
@@ -39,6 +45,16 @@ def build_boardforge_commands(board_path):
 
 def manifest_path_for(board_path):
     return os.path.join(os.path.dirname(str(board_path)), "BoardForge_Project_Manifest.json")
+
+
+def sandbox_path_for(project_dir):
+    name = os.path.basename(os.path.abspath(str(project_dir)))
+    return os.path.join("C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes", name + "_import_sandbox")
+
+
+def is_boardforge_sandbox(path):
+    text = str(path).lower().replace("/", "\\")
+    return "\\boardforge_sandboxes\\" in text or "\\boardforge_new_board_fixtures\\" in text
 
 
 def format_command(command):
@@ -73,9 +89,13 @@ if pcbnew:
             manifest = manifest_path_for(board_path)
             pcbnew.wxLogMessage("BoardForge local control panel")
             pcbnew.wxLogMessage("Manifest: " + manifest)
+            pcbnew.wxLogMessage("Import sandbox: " + format_command(commands["import_sandbox"]))
             pcbnew.wxLogMessage("Validate: " + format_command(commands["validate"]))
-            pcbnew.wxLogMessage("Route: " + format_command(commands["route"]))
-            pcbnew.wxLogMessage("Cleanup: " + format_command(commands["cleanup"]))
+            if is_boardforge_sandbox(board_path):
+                pcbnew.wxLogMessage("Route sandbox: " + format_command(commands["route"]))
+                pcbnew.wxLogMessage("Cleanup sandbox: " + format_command(commands["cleanup"]))
+            else:
+                pcbnew.wxLogMessage("Route/Cleanup disabled on active project. Import into BoardForge sandbox first.")
             pcbnew.wxLogMessage("Export: " + format_command(commands["export"]))
             pcbnew.wxLogMessage("Report: " + format_command(commands["report"]))
             pcbnew.wxLogMessage("Replay: " + format_command(commands["replay"]))

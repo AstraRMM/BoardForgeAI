@@ -66,9 +66,19 @@
     "fixtures:factory": "node ./plugins/boardforge-plugin/bin/boardforge-fixture-factory.mjs",
     "test:alpha-demo-package": "node --test --test-name-pattern \"alpha demo package|fixture factory\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:copy-sandbox-importer": "node --test --test-name-pattern \"copy sandbox importer\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:sandbox-import-never-mutates-source": "node --test --test-name-pattern \"copy sandbox importer copies synthetic project without mutating original\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:protected-path-guard": "node --test --test-name-pattern \"protected path guard\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-upload-sandbox-import": "node --test --test-name-pattern \"web upload page presents sandbox import\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-sandbox-import": "node --test --test-name-pattern \"KiCad plugin scaffold\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:poe-fixture-honesty": "node --test --test-name-pattern \"PoE fixture honesty\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:category-depth-evidence": "node --test --test-name-pattern \"category-depth evidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:category-specific-fixtures": "node --test --test-name-pattern \"category-specific fixture definitions\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:jlcpcb-assembly-provider": "node --test --test-name-pattern \"sourcing providers|jlcpcb|JLCPCB\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:bom-cpl-validator": "node --test --test-name-pattern \"BOM/CPL validator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:solution-library-auto-apply": "node --test --test-name-pattern \"solution library auto-apply\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-evidence-dashboard": "node --test --test-name-pattern \"readiness evidence dashboard\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-board-mutator": "npm --prefix ./plugins/boardforge-plugin run test:kicad-board-mutator"
+    ,"test:local-shove-router-mutates-board": "npm --prefix ./plugins/boardforge-plugin run test:local-shove-router-mutates-board"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

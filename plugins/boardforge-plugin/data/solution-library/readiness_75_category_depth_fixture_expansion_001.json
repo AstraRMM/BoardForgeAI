@@ -1,0 +1,29 @@
+{
+  "id": "readiness_75_category_depth_fixture_expansion_001",
+  "title": "Credit clean category fixtures only after routeability-safe geometry and manufacturing export",
+  "rootCause": "New category fixture definitions existed, but the quick readiness scorer did not include their clean manufacturing evidence. Initial compact geometries also produced DRC issues because the generic fixture topology was over-constrained.",
+  "fix": "Use routeability-safe geometry fallback for alpha category proofs, rerun the fixture factory, require DRC/ERC/unconnected/forbidden-via clean results, then add the clean cached fixtures to the quick readiness evidence set.",
+  "appliesTo": [
+    "fixture_factory",
+    "readiness_scoring",
+    "routeability_gate",
+    "manufacturing_export_gate"
+  ],
+  "guards": [
+    "do_not_claim_compact_or_tiny_geometry_when widened by routeability fallback",
+    "do_not_increment readiness from definitions alone",
+    "manufacturing zip requires clean validation"
+  ],
+  "proof": {
+    "fixturesRun": 8,
+    "cleanFixtures": 8,
+    "newCleanCategoryFixtures": [
+      "BF-USB-C-MCU-01_REV_A",
+      "BF-CAN-NODE-01_REV_A",
+      "BF-TINY-2LAYER-01_REV_A",
+      "BF-COMPACT-4LAYER-01_REV_A"
+    ],
+    "readinessBefore": 73,
+    "readinessAfter": 75
+  }
+}

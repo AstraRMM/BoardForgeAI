@@ -1,0 +1,69 @@
+{
+  "id": "compact-4layer",
+  "name": "BF-COMPACT-4LAYER-01",
+  "revision": "REV_A",
+  "type": "compact_4layer_controller",
+  "category": "compact 4-layer",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-COMPACT-4LAYER-01_REV_A",
+  "brief": "A compact four-layer controller fixture with multiple edge connectors and intentional routing-corridor pressure.",
+  "difficulty": "hard",
+  "layers": 4,
+  "outline": {
+    "shape": "compact asymmetric four-layer controller",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["connector edges", "mounting holes", "cable notch"]
+  },
+  "boardType": "Compact four-layer mixed connector controller",
+  "architecture": [
+    "MCU",
+    "USB-C",
+    "CAN",
+    "UART/GPS",
+    "I2C expansion",
+    "3V3 regulator",
+    "edge connectors",
+    "mounting holes"
+  ],
+  "routeabilityTargets": {
+    "preRouteShorts": 0,
+    "unconnected": 0,
+    "drc": 0,
+    "erc": 0
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "expectedOutputs": [
+    "real KiCad schematic",
+    "valid compact custom outline",
+    "routeability score before routing",
+    "FreeRouting DSN/SES attempt",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean"
+  ],
+  "knownRisks": [
+    "multiple edge connectors can starve routing corridors",
+    "compact geometry may require local shove/rip-up",
+    "alpha routeability gate may widen the board before manufacturing proof"
+  ],
+  "learningGoals": [
+    "routeability scoring under compact outline pressure",
+    "connector corridor planning",
+    "local shove/rip-up readiness",
+    "dashboard category-depth evidence"
+  ],
+  "honestyBadges": [
+    "COMPACT_ROUTEABILITY_STRESS_FIXTURE",
+    "SOURCING_NOT_API_VERIFIED"
+  ],
+  "protectionPolicy": "synthetic_only_no_ESC_FC_paths"
+}
