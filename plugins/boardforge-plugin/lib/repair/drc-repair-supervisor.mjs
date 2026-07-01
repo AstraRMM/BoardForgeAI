@@ -24,7 +24,13 @@ export async function runDirtyRepairProof(options = {}) {
   const projectId = options.projectId || DIRTY_REPAIR_PROJECT_ID
   const fixtureFolder = options.fixtureFolder || `C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\${projectId}`
   assertSafeFixtureFolder(fixtureFolder)
-  prepareDirtyRepairFixture({ fixtureFolder, seedFolder: options.seedFolder || DENSE_SEED_FOLDER, projectId })
+  prepareDirtyRepairFixture({
+    fixtureFolder,
+    seedFolder: options.seedFolder || DENSE_SEED_FOLDER,
+    seedBoardPath: options.seedBoardPath || null,
+    seedSchematicPath: options.seedSchematicPath || null,
+    projectId,
+  })
 
   const startingBoard = path.join(fixtureFolder, `${projectId}_dirty_start.kicad_pcb`)
   const projectBoard = path.join(fixtureFolder, `${projectId}.kicad_pcb`)
@@ -80,12 +86,12 @@ export async function runDirtyRepairProof(options = {}) {
   return result
 }
 
-export function prepareDirtyRepairFixture({ fixtureFolder = DIRTY_REPAIR_FOLDER, seedFolder = DENSE_SEED_FOLDER, projectId = DIRTY_REPAIR_PROJECT_ID } = {}) {
+export function prepareDirtyRepairFixture({ fixtureFolder = DIRTY_REPAIR_FOLDER, seedFolder = DENSE_SEED_FOLDER, projectId = DIRTY_REPAIR_PROJECT_ID, seedBoardPath = null, seedSchematicPath = null } = {}) {
   assertSafeFixtureFolder(fixtureFolder)
   fs.mkdirSync(path.join(fixtureFolder, 'reports'), { recursive: true })
   fs.mkdirSync(path.join(fixtureFolder, 'manufacturing'), { recursive: true })
-  const seedBoard = path.join(seedFolder, 'BF-DENSE-CONTROL-01_REV_A.kicad_pcb')
-  const seedSch = path.join(seedFolder, 'BF-DENSE-CONTROL-01_REV_A.kicad_sch')
+  const seedBoard = seedBoardPath || path.join(seedFolder, 'BF-DENSE-CONTROL-01_REV_A.kicad_pcb')
+  const seedSch = seedSchematicPath || path.join(seedFolder, 'BF-DENSE-CONTROL-01_REV_A.kicad_sch')
   if (!fs.existsSync(seedBoard) || !fs.existsSync(seedSch)) throw new Error('Dirty repair seed fixture is missing; run fixtures:run first.')
   const dirtyBoard = path.join(fixtureFolder, `${projectId}_dirty_start.kicad_pcb`)
   const projectBoard = path.join(fixtureFolder, `${projectId}.kicad_pcb`)

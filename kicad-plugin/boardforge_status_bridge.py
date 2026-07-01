@@ -3,11 +3,14 @@ import os
 
 
 def read_boardforge_status(project_dir):
+    kind = project_kind(project_dir)
     run_log = _read_json(os.path.join(project_dir, "BoardForge_Engine_Run_Log.json"))
     manifest = _read_json(os.path.join(project_dir, "BoardForge_Project_Manifest.json"))
     return {
         "schema": "boardforge.kicad-status-bridge.v1",
         "source": "local_artifact_polling",
+        "projectKind": kind,
+        "repairEnabled": kind == "sandbox",
         "projectDir": project_dir,
         "projectId": (manifest or {}).get("projectId") or (manifest or {}).get("id") or (run_log or {}).get("projectId"),
         "status": (run_log or {}).get("status") or (manifest or {}).get("status"),
@@ -18,6 +21,13 @@ def read_boardforge_status(project_dir):
         "manufacturingReady": bool(((run_log or {}).get("manufacturing") or {}).get("ready") or ((manifest or {}).get("manufacturing") or {}).get("ready")),
         "manufacturingZip": ((run_log or {}).get("manufacturing") or {}).get("zip") or ((manifest or {}).get("manufacturing") or {}).get("zip"),
     }
+
+
+def project_kind(project_dir):
+    text = str(project_dir).lower().replace("/", "\\")
+    if "\\boardforge_sandboxes\\" in text or "\\boardforge_new_board_fixtures\\" in text or text.endswith("_sandbox"):
+        return "sandbox"
+    return "source"
 
 
 def _read_json(path):

@@ -114,6 +114,20 @@ test('web upload page presents sandbox import without source mutation', () => {
   assert.match(helper, /BLOCKED_PROTECTED_USER_PROJECT/)
 })
 
+test('web upload import repair status exposes source hash guard and sandbox repair proof', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const pagePath = path.join(repoRoot, 'apps', 'web', 'src', 'app', 'upload-kicad', 'page.tsx')
+  const helperPath = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'import-sandbox.ts')
+  const page = fs.readFileSync(pagePath, 'utf8')
+  const helper = fs.readFileSync(helperPath, 'utf8')
+  assert.match(helper, /previewImportedRepairProof/)
+  assert.match(helper, /hash_guarded_no_source_mutation/)
+  assert.match(helper, /BF-IMPORTED-USER-BOARD-REPAIR-01/)
+  assert.match(page, /Sandboxed imported-board repair proof/)
+  assert.match(page, /Source untouched/)
+  assert.match(page, /boardforge:imported-board-repair-proof/)
+})
+
 test('readiness evidence dashboard exposes score, gaps, and proof counts', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const pagePath = path.join(repoRoot, 'apps', 'web', 'src', 'app', 'readiness', 'page.tsx')
@@ -170,6 +184,16 @@ test('non-template category depth is represented in scorer inputs', () => {
   assert.match(runner, /dirty_repair_physical_proof_02_cached/)
 })
 
+test('readiness imported repair evidence is represented in regression scorer inputs', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const runner = fs.readFileSync(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-regression.mjs'), 'utf8')
+  const scorer = fs.readFileSync(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'lib', 'mvp-reporting.mjs'), 'utf8')
+  assert.match(runner, /imported_board_repair_sandbox_cached/)
+  assert.match(runner, /BF-IMPORTED-USER-BOARD-REPAIR-01_SANDBOX/)
+  assert.match(scorer, /Sandboxed imported-board repair/)
+  assert.match(scorer, /sandboxedImportedBoardRepairProofCount/)
+})
+
 test('web dashboard engine status exposes dirty-to-clean repair proof', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const statusPath = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-engine-status.ts')
@@ -192,6 +216,29 @@ test('KiCad plugin status panel exposes sandbox repair and manufacturing status 
   assert.match(source, /Manufacturing folder/)
   assert.match(source, /Route\/Repair\/Cleanup\/Export disabled/)
   assert.match(source, /local artifacts/)
+})
+
+test('KiCad plugin refuses source mutation and exposes sandbox-only repair controls', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const pluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
+  const bridgePath = path.join(repoRoot, 'kicad-plugin', 'boardforge_status_bridge.py')
+  const plugin = fs.readFileSync(pluginPath, 'utf8')
+  const bridge = fs.readFileSync(bridgePath, 'utf8')
+  assert.match(plugin, /is_boardforge_sandbox/)
+  assert.match(plugin, /not sandboxed; mutation actions disabled/)
+  assert.match(plugin, /Repair sandbox/)
+  assert.match(bridge, /projectKind/)
+  assert.match(bridge, /repairEnabled/)
+  assert.match(bridge, /return "source"/)
+})
+
+test('KiCad plugin allows sandbox repair only when project kind is sandbox', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const bridgePath = path.join(repoRoot, 'kicad-plugin', 'boardforge_status_bridge.py')
+  const bridge = fs.readFileSync(bridgePath, 'utf8')
+  assert.match(bridge, /boardforge_sandboxes/)
+  assert.match(bridge, /boardforge_new_board_fixtures/)
+  assert.match(bridge, /repairEnabled": kind == "sandbox"/)
 })
 
 test('canonical BoardForge CLI maps product commands to guarded engine jobs', () => {

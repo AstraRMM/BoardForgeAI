@@ -1,0 +1,7 @@
+{
+  "id": "pcb_fab_ready_vs_assembly_sourcing_verified_001",
+  "title": "Separate PCB fabrication readiness from assembly sourcing verification",
+  "rootCause": "Boards with clean DRC/ERC/artifacts can be PCB-fab ready even when component stock and assembly sourcing are not API verified.",
+  "fix": "Use pcbFabReady for Gerber/drill/BOM/CPL/ZIP export gates and assemblyStatus for sourcing verification. Do not fake stock; report assembly as not verified when API evidence is absent.",
+  "appliesTo": ["manufacturing_readiness", "sourcing", "jlcpcb_export"]
+}

@@ -19,8 +19,8 @@ export function createUnavailableProvider({ id, name, requiredEnv = [], supporte
         provider: id,
         providerName: name,
         sourcingStatus: part.placeholder ? SOURCING_STATUSES.PLACEHOLDER : SOURCING_STATUSES.NOT_CHECKED,
-        stockStatus: 'NOT_CHECKED',
-        assemblyAvailability: 'NOT_CHECKED',
+        stockStatus: 'UNKNOWN',
+        assemblyAvailability: 'UNKNOWN',
         risk: missingProviderRisk(name, requiredEnv),
         evidence: {
           apiConfigured: false,

@@ -41,6 +41,7 @@
     "boardforge:import-sandbox": "node ./plugins/boardforge-plugin/bin/boardforge-import-sandbox.mjs",
     "boardforge:dirty-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs",
     "boardforge:dirty-repair-proof-02": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs -- --project-id BF-DIRTY-REPAIR-PROOF-02_REV_A --harder",
+    "boardforge:imported-board-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs",
     "boardforge:category-depth": "node ./plugins/boardforge-plugin/bin/boardforge-category-depth-evidence.mjs",
     "boardforge:dashboard-data": "node ./plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
     "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
@@ -100,6 +101,16 @@
     ,"test:repair-copper-edge-clearance": "node --test --test-name-pattern \"repairCopperEdgeClearance|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:repair-solder-mask-bridge": "node --test --test-name-pattern \"repairSolderMaskBridge|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:repair-silkscreen-overlap": "node --test --test-name-pattern \"repairSilkscreenOverlap|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:sandbox-import-existing-project": "node --test --test-name-pattern \"sandbox import existing project\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:imported-board-source-untouched": "node --test --test-name-pattern \"imported board source untouched\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:imported-board-dirty-repair": "node --test --test-name-pattern \"imported-board dirty repair\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:sourcing-env-detection": "node --test --test-name-pattern \"sourcing env detection\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:sourcing-no-fake-stock": "node --test --test-name-pattern \"unavailable API credentials|sourcing env detection\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:manufacturing-readiness-sourcing-states": "node --test --test-name-pattern \"manufacturing readiness\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-imported-repair-evidence": "node --test --test-name-pattern \"readiness imported repair evidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-upload-import-repair-status": "node --test --test-name-pattern \"web upload import repair status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-refuses-source-mutation": "node --test --test-name-pattern \"KiCad plugin refuses source mutation\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-allows-sandbox-repair": "node --test --test-name-pattern \"KiCad plugin allows sandbox repair\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

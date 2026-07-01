@@ -1,0 +1,16 @@
+{
+  "id": "sandboxed_imported_board_repair_proof_001",
+  "title": "Repair imported KiCad boards only inside a sandbox",
+  "rootCause": "BoardForge needed proof that an uploaded or imported board could be physically repaired without mutating the user's original project.",
+  "fix": "Copy the source KiCad project into a BoardForge sandbox, hash the source before and after, run dirty-to-clean repair only in the sandbox, and promote only the sandbox repair candidate when DRC/ERC/unconnected/shorts are clean.",
+  "appliesTo": ["copy_sandbox_import", "imported_board_repair", "physical_mutation", "manufacturing_gate"],
+  "evidence": {
+    "fixture": "BF-IMPORTED-USER-BOARD-REPAIR-01",
+    "sourceUntouched": true,
+    "dirtyDrc": 10,
+    "cleanDrc": 0,
+    "shorts": "1 -> 0",
+    "unconnected": "0 -> 0",
+    "manufacturingZip": true
+  }
+}

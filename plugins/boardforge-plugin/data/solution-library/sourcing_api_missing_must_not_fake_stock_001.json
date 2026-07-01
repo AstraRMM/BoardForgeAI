@@ -1,0 +1,7 @@
+{
+  "id": "sourcing_api_missing_must_not_fake_stock_001",
+  "title": "Missing sourcing API keys must produce NOT_CHECKED and UNKNOWN, not fake stock",
+  "rootCause": "A sourcing provider without API credentials cannot honestly know stock, lifecycle, or assembly availability.",
+  "fix": "When provider credentials are missing, set sourcingStatus to NOT_CHECKED, stockStatus to UNKNOWN, assemblyAvailability to UNKNOWN, and fakeStockAllowed to false.",
+  "appliesTo": ["sourcing", "bom", "part_verification", "assembly_gate"]
+}

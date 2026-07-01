@@ -1,6 +1,7 @@
-import { previewImportSandbox } from '../../lib/import-sandbox'
+import { previewImportedRepairProof, previewImportSandbox } from '../../lib/import-sandbox'
 
 const example = previewImportSandbox('C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A')
+const repairProof = previewImportedRepairProof()
 
 export default function UploadKicadPage() {
   return (
@@ -40,6 +41,24 @@ export default function UploadKicadPage() {
             <div key={item} className="rounded border border-slate-800 bg-slate-950 p-3 text-sm text-slate-300">{item}</div>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto mt-8 max-w-5xl rounded-lg border border-emerald-800/60 bg-emerald-950/30 p-5">
+        <p className="text-sm uppercase text-emerald-300">Sandboxed imported-board repair proof</p>
+        <h2 className="mt-2 text-xl font-semibold">{repairProof.proofId}</h2>
+        <p className="mt-2 text-sm text-emerald-100/80">
+          This proof repairs only the copied sandbox project. The source project is hash-checked before and after repair.
+        </p>
+        <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+          <Field label="Source path" value={repairProof.sourcePath} />
+          <Field label="Sandbox path" value={repairProof.sandboxPath} />
+          <Field label="Source untouched" value={repairProof.sourceUntouched ? 'yes, hash guard passed' : 'no'} />
+          <Field label="Repair result" value={`DRC ${repairProof.dirtyDrc} -> ${repairProof.cleanDrc}, shorts ${repairProof.dirtyShorts} -> ${repairProof.cleanShorts}`} />
+          <Field label="Status" value={repairProof.status} />
+          <Field label="Manufacturing ZIP" value={repairProof.manufacturingZip} />
+        </div>
+        <p className="mt-5 text-sm text-emerald-100/80">CLI action: npm run boardforge:imported-board-repair-proof</p>
+        <pre className="mt-5 overflow-auto rounded bg-slate-950 p-3 text-xs text-emerald-300">{repairProof.command}</pre>
       </section>
     </main>
   )

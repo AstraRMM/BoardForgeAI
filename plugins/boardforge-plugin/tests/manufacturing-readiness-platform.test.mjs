@@ -19,12 +19,12 @@ test('manufacturing readiness blocks ZIP promotion when validation is not clean'
     partVerification: { summary: { total: 3, apiVerified: 3, placeholders: 0, outOfStock: 0, obsolete: 0, notChecked: 0 } },
   })
   assert.equal(result.allowed, false)
-  assert.equal(result.status, 'MANUFACTURING_BLOCKED')
+  assert.equal(result.status, 'BLOCKED_DRC')
   assert.equal(result.blockers.some((gate) => gate.name === 'unconnected_zero'), true)
   assert.equal(result.blockers.some((gate) => gate.name === 'drc_zero'), true)
 })
 
-test('manufacturing readiness blocks unchecked sourcing when no API verified evidence exists', () => {
+test('manufacturing readiness separates PCB fab readiness from unverified assembly sourcing', () => {
   const report = buildManufacturingReadinessReport({
     manifest: {
       projectId: 'CLEAN_BUT_UNCHECKED_SOURCING',
@@ -40,7 +40,24 @@ test('manufacturing readiness blocks unchecked sourcing when no API verified evi
     partVerification: { summary: { total: 2, apiVerified: 0, notChecked: 2, placeholders: 0, outOfStock: 0, obsolete: 0 } },
   })
   assert.equal(report.ready, false)
+  assert.equal(report.pcbFabReady, true)
+  assert.equal(report.status, 'PCB_FAB_READY')
+  assert.equal(report.assemblyStatus, 'ASSEMBLY_READY_NOT_VERIFIED')
   assert.equal(report.blockers.some((gate) => gate.name === 'critical_part_verification'), true)
+  assert.equal(canExportManufacturingPackage({
+    manifest: {
+      projectId: 'CLEAN_BUT_UNCHECKED_SOURCING',
+      validation: { shorts: 0, unconnected: 0, forbiddenVias: 0, drcViolations: 0, ercViolations: 0 },
+      manufacturing: { zip: 'candidate.zip' },
+    },
+    artifacts: {
+      gerbers: ['front.gtl'],
+      drill: ['board.drl'],
+      bom: 'bom.csv',
+      cpl: 'cpl.csv',
+    },
+    partVerification: { summary: { total: 2, apiVerified: 0, notChecked: 2, placeholders: 0, outOfStock: 0, obsolete: 0 } },
+  }).allowed, true)
 })
 
 test('manufacturing readiness passes only with clean validation, artifacts, and critical part checks', () => {
@@ -61,7 +78,9 @@ test('manufacturing readiness passes only with clean validation, artifacts, and 
   })
   assert.equal(report.schema, 'boardforge.manufacturing-readiness-report.v1')
   assert.equal(report.ready, true)
-  assert.equal(report.status, 'MANUFACTURING_READY')
+  assert.equal(report.status, 'ASSEMBLY_READY_VERIFIED')
+  assert.equal(report.pcbFabReady, true)
+  assert.equal(report.assemblyStatus, 'ASSEMBLY_READY_VERIFIED')
   assert.equal(report.blockers.length, 0)
   assert.equal(report.policy.noFakeManufacturingReadiness, true)
 })

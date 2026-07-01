@@ -1,0 +1,7 @@
+{
+  "id": "web_upload_must_show_sandbox_status_001",
+  "title": "Web upload must show source, sandbox, hash guard, and repair status",
+  "rootCause": "A web upload/import surface is not trustworthy if it only says a project is copied without showing whether repair happened in the sandbox and whether the source stayed untouched.",
+  "fix": "Show source path, sandbox path, protected-path status, source hash guard, repair DRC before/after, shorts before/after, manufacturing ZIP, and CLI replay command.",
+  "appliesTo": ["web_dashboard", "upload_kicad", "imported_board_repair"]
+}

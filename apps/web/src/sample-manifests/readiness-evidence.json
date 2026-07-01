@@ -1,13 +1,14 @@
 {
   "schema": "boardforge.readiness-evidence.v1",
   "generatedAt": "2026-07-01T00:00:00.000Z",
-  "readiness": 78,
+  "readiness": 80,
   "evidence": {
-    "cleanFixtures": 14,
-    "manufacturingExports": 14,
-    "dirtyToCleanRepairs": 2,
+    "cleanFixtures": 15,
+    "manufacturingExports": 15,
+    "dirtyToCleanRepairs": 3,
     "categoryCoverage": 10,
-    "safeImports": 1
+    "safeImports": 2,
+    "sandboxedImportedBoardRepairs": 1
   },
   "dirtyToCleanPhysicalRepair": {
     "fixture": "BF-DIRTY-REPAIR-PROOF-01_REV_A",
@@ -26,6 +27,17 @@
     "shorts": "1 -> 0",
     "transactions": "8 attempted / 8 committed / 0 rolled back",
     "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-02_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-02_REV_A_JLCPCB.zip"
+  },
+  "sandboxedImportedBoardRepair": {
+    "fixture": "BF-IMPORTED-USER-BOARD-REPAIR-01",
+    "status": "sandboxed_imported_board_repair_proof_completed",
+    "sourceUntouched": true,
+    "sourceHashGuard": "before/after source hashes identical",
+    "drc": "10 -> 0",
+    "shorts": "1 -> 0",
+    "unconnected": "0 -> 0",
+    "transactions": "8 attempted / 8 committed / 0 rolled back",
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-IMPORTED-USER-BOARD-REPAIR-01_SANDBOX\\manufacturing\\BF-IMPORTED-USER-BOARD-REPAIR-01_JLCPCB.zip"
   },
   "knownGaps": [
     "PoE compliance, magnetics, isolation, and supplier stock are not verified",

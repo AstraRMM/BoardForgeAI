@@ -123,6 +123,15 @@ const fixtures = [
     categoryNote: 'Repeated harder dirty repair proof with local reroute and via-movement capability tasks.',
   },
   {
+    id: 'imported_board_repair_sandbox_cached',
+    name: 'Sandboxed Imported-Board Repair Proof',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-IMPORTED-USER-BOARD-REPAIR-01_SANDBOX',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-IMPORTED-USER-BOARD-REPAIR-01_SANDBOX/BoardForge_Project_Manifest.json',
+    expectExport: true,
+    categoryNote: 'Imported user-board sandbox proof: source project is hash-guarded untouched while the copied sandbox is physically repaired to a clean manufacturing ZIP.',
+  },
+  {
     id: 'robotics_controller_clean_cached',
     name: 'Robotics Controller Clean Fixture',
     mode: 'cached_alpha_fixture',
@@ -353,6 +362,7 @@ const quickFixtureIds = new Set([
   'dense_control_physical_repair_cached',
   'dirty_repair_physical_proof_cached',
   'dirty_repair_physical_proof_02_cached',
+  'imported_board_repair_sandbox_cached',
   'robotics_controller_clean_cached',
   'sensor_hub_rev_d_cached',
   'usb_c_mcu_cached',
@@ -521,12 +531,14 @@ async function runQuickFixture(fixture, workspace) {
     const validation = manifest?.validation || {}
     const dirtyRunLog = await readJsonIfExists(path.join(path.resolve(fixture.projectPath), 'BoardForge_Dirty_Repair_Run_Log.json')) ||
       await readJsonIfExists(path.join(path.resolve(fixture.projectPath), 'BoardForge_Engine_Run_Log.json'))
+    const importedProof = await readJsonIfExists(path.join(path.resolve(fixture.projectPath), 'BoardForge_Imported_Board_Sandbox_Manifest.json'))
     const isDirtyRepair = /dirty.*repair/i.test(`${fixture.id} ${fixture.name} ${fixture.categoryNote || ''}`)
+    const isImportedRepair = /imported.*repair|sandboxed imported/i.test(`${fixture.id} ${fixture.name} ${fixture.categoryNote || ''}`)
     return {
       id: fixture.id,
       name: fixture.name,
       mode: fixture.mode,
-      status: manifest?.status || 'cached_alpha_manufacturing_candidate',
+      status: importedProof?.status || manifest?.status || 'cached_alpha_manufacturing_candidate',
       projectPath: manifest?.boardPath || fixture.boardPath || fixture.projectPath,
       projectCreated: true,
       outlineValidated: true,
@@ -545,16 +557,23 @@ async function runQuickFixture(fixture, workspace) {
       },
       library: { symbolReport: true, footprintReport: true, modelReport: Boolean(manifest) },
       resolver: { status: validation.schematicGraphStatus || 'cached_alpha_verified_evidence', modelCoverage: Boolean(manifest), nextAction: 'Promote cached alpha proof into broader full regression fixtures.' },
-      recommendations: ['Cached alpha fixture has manufacturing ZIP evidence; use full regression to rebuild from source when runtime allows.'],
-      repairProof: isDirtyRepair ? {
+      recommendations: [isImportedRepair ? 'Imported-board proof repaired only the copied sandbox and source hashes remained identical.' : 'Cached alpha fixture has manufacturing ZIP evidence; use full regression to rebuild from source when runtime allows.'],
+      repairProof: isDirtyRepair || isImportedRepair ? {
         dirtyToClean: true,
-        drcBefore: dirtyRunLog?.result?.before?.drc ?? dirtyRunLog?.validation?.drcViolations ?? null,
-        drcAfter: dirtyRunLog?.result?.after?.drc ?? validation.drcViolations ?? null,
-        shortsBefore: dirtyRunLog?.result?.before?.shorts ?? null,
-        shortsAfter: dirtyRunLog?.result?.after?.shorts ?? validation.shorts ?? null,
-        transactionsCommitted: dirtyRunLog?.result?.transactions?.committed ?? null,
+        drcBefore: importedProof?.repair?.before?.drc ?? dirtyRunLog?.result?.before?.drc ?? dirtyRunLog?.validation?.drcViolations ?? null,
+        drcAfter: importedProof?.repair?.after?.drc ?? dirtyRunLog?.result?.after?.drc ?? validation.drcViolations ?? null,
+        shortsBefore: importedProof?.repair?.before?.shorts ?? dirtyRunLog?.result?.before?.shorts ?? null,
+        shortsAfter: importedProof?.repair?.after?.shorts ?? dirtyRunLog?.result?.after?.shorts ?? validation.shorts ?? null,
+        transactionsCommitted: importedProof?.repair?.transactions?.committed ?? dirtyRunLog?.result?.transactions?.committed ?? null,
       } : null,
-      categoryEvidence: { nonTemplate: isDirtyRepair || /POE|CAN|Tiny|Compact|Robotics|Dense|Odd/i.test(fixture.name) },
+      importedRepairProof: isImportedRepair ? {
+        sourceUntouched: Boolean(importedProof?.sourceUntouched),
+        sourceHashBefore: importedProof?.sourceHashBefore || null,
+        sourceHashAfter: importedProof?.sourceHashAfter || null,
+        changedSourceFiles: importedProof?.changedSourceFiles || [],
+        sandboxModified: Boolean(importedProof?.sandboxModified),
+      } : null,
+      categoryEvidence: { nonTemplate: isDirtyRepair || isImportedRepair || /POE|CAN|Tiny|Compact|Robotics|Dense|Odd/i.test(fixture.name) },
     }
   }
   if (fixture.id === 'odd_shaped_outline') {

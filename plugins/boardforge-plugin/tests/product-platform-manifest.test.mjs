@@ -282,6 +282,9 @@ test('report 90 quick mode runs bounded fixture subset', () => {
     'poe_sensor_electrical_cached',
     'dense_difficult_honest_failure',
     'dense_control_physical_repair_cached',
+    'dirty_repair_physical_proof_cached',
+    'dirty_repair_physical_proof_02_cached',
+    'imported_board_repair_sandbox_cached',
     'robotics_controller_clean_cached',
     'sensor_hub_rev_d_cached',
     'usb_c_mcu_cached',
@@ -301,6 +304,7 @@ test('report 90 quick mode runs bounded fixture subset', () => {
   assert.equal(result.acceptance.roboticsDrcZero, true)
   assert.equal(result.acceptance.existingProjectScan, true)
   assert.equal(result.acceptance.poeFixedOrExplained, true)
-  assert.equal(result.acceptance.exportedFixtureCount >= 12, true)
+  assert.equal(result.acceptance.exportedFixtureCount >= 15, true)
+  assert.equal(result.acceptance.sandboxedImportedBoardRepairProofCount, 1)
   assert.ok(result.reportFiles.jsonFile)
 })

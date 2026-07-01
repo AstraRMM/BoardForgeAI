@@ -8,6 +8,7 @@ import { createLcscProvider } from '../lib/sourcing/lcsc-provider.mjs'
 import { createMouserProvider } from '../lib/sourcing/mouser-provider.mjs'
 import { buildPartVerificationReport, writePartVerificationReport } from '../lib/sourcing/part-verification-report.mjs'
 import { createManualCandidateProvider, providerAvailability, SOURCING_STATUSES, verifyBomWithProviders } from '../lib/sourcing/part-source-provider.mjs'
+import { detectSourcingProviderEnv, writeSourcingApiStatusMarkdown } from '../lib/sourcing/source-provider-env.mjs'
 
 test('sourcing providers disclose unavailable API credentials instead of faking stock', async () => {
   const env = {}
@@ -24,8 +25,8 @@ test('sourcing providers disclose unavailable API credentials instead of faking 
     assert.ok(availability.missingEnv.length > 0)
     const row = await provider.verifyPart({ ref: 'U1', mpn: 'STM32G431CBU6', footprint: 'Package_QFN:QFN-48' })
     assert.equal(row.sourcingStatus, SOURCING_STATUSES.NOT_CHECKED)
-    assert.equal(row.stockStatus, 'NOT_CHECKED')
-    assert.equal(row.assemblyAvailability, 'NOT_CHECKED')
+    assert.equal(row.stockStatus, 'UNKNOWN')
+    assert.equal(row.assemblyAvailability, 'UNKNOWN')
     assert.match(row.risk, /not_configured/)
   }
 })
@@ -80,4 +81,18 @@ test('configured provider still does not claim API_VERIFIED before live query ev
   assert.equal(row.sourcingStatus, SOURCING_STATUSES.NOT_CHECKED)
   assert.equal(row.stockStatus, 'API_CONFIGURED_LIVE_QUERY_NOT_RUN')
   assert.notEqual(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
+})
+
+test('sourcing env detection reports missing API keys without fake stock', () => {
+  const report = detectSourcingProviderEnv({})
+  assert.equal(report.every((provider) => provider.apiCallable === false), true)
+  for (const provider of report) {
+    assert.equal(provider.fallbackBehavior.sourcingStatus, SOURCING_STATUSES.NOT_CHECKED)
+    assert.equal(provider.fallbackBehavior.stockStatus, 'UNKNOWN')
+    assert.equal(provider.fallbackBehavior.assemblyAvailability, 'UNKNOWN')
+    assert.equal(provider.fallbackBehavior.fakeStockAllowed, false)
+  }
+  const markdown = writeSourcingApiStatusMarkdown(report)
+  assert.match(markdown, /does not fake stock/)
+  assert.match(markdown, /NOT_CHECKED/)
 })

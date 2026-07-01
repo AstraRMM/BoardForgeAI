@@ -1,0 +1,7 @@
+{
+  "id": "kicad_plugin_must_refuse_source_mutation_001",
+  "title": "KiCad plugin repair controls must be sandbox-only",
+  "rootCause": "A KiCad plugin control panel can accidentally encourage mutation of the active source project unless route/repair/export actions are disabled for non-sandbox paths.",
+  "fix": "Expose import-sandbox, validate, report, and replay for source projects, but enable route/repair/cleanup/export only when the active project is a BoardForge sandbox or fixture.",
+  "appliesTo": ["kicad_plugin", "copy_sandbox_import", "protected_path_guard"]
+}

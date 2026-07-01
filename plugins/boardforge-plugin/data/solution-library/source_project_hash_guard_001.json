@@ -1,0 +1,11 @@
+{
+  "id": "source_project_hash_guard_001",
+  "title": "Hash imported source projects without writing proof files back to source",
+  "rootCause": "Writing hash reports into the source project mutates the exact folder being protected and invalidates the no-source-mutation proof.",
+  "fix": "Compute source hashes before and after sandbox repair, but write hash reports into the sandbox/report folder only. The source folder must remain byte-identical.",
+  "appliesTo": ["copy_sandbox_import", "protected_path_guard", "source_integrity"],
+  "guard": {
+    "writeReportsToSource": false,
+    "changedSourceFilesMustBeEmpty": true
+  }
+}

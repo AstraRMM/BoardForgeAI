@@ -481,6 +481,7 @@
     "boardforge:replay": "node ./bin/boardforge-cli.mjs replay",
     "boardforge:platform-artifacts": "node ./bin/boardforge-platform-artifacts.mjs",
     "boardforge:alpha-demo": "node ./bin/boardforge-alpha-demo-package.mjs",
+    "boardforge:imported-board-repair-proof": "node ./bin/boardforge-imported-board-repair-proof.mjs",
     "boardforge:route-ensemble": "node ./bin/boardforge-route-ensemble.mjs",
     "boardforge:dense-control-repair": "node ./bin/boardforge-dense-control-repair.mjs",
     "boardforge:route-finish": "node ./bin/boardforge-route-finish.mjs",
