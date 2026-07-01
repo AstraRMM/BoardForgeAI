@@ -3,9 +3,12 @@ import { runDirtyRepairProof } from '../lib/repair/drc-repair-supervisor.mjs'
 
 const fixtureIndex = process.argv.indexOf('--fixture')
 const fixtureFolder = fixtureIndex >= 0 ? process.argv[fixtureIndex + 1] : undefined
+const projectIndex = process.argv.indexOf('--project-id')
+const projectId = projectIndex >= 0 ? process.argv[projectIndex + 1] : undefined
+const harder = process.argv.includes('--harder')
 
 try {
-  const result = await runDirtyRepairProof({ fixtureFolder })
+  const result = await runDirtyRepairProof({ fixtureFolder, projectId, harder })
   console.log(JSON.stringify(result, null, 2))
   process.exit(result.status === 'dirty_repair_manufacturing_candidate_generated' ? 0 : 2)
 } catch (error) {

@@ -1,0 +1,7 @@
+{
+  "id": "non_template_category_depth_required_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "Fixture count alone can overstate readiness when multiple categories are backed by the same template path.",
+  "fixSummary": "Track non-template/category-specific evidence separately for boards with unique mechanical, connector, routing, PoE, CAN, two-layer, dense-control, and dirty-repair constraints."
+}

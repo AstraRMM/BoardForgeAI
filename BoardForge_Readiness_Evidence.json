@@ -1,10 +1,10 @@
 {
   "schema": "boardforge.readiness-evidence.v1",
-  "score": 75,
+  "score": 78,
   "generatedAt": "2026-07-01T00:00:00.000Z",
   "summary": {
-    "manufacturingReadyProofBoards": 13,
-    "dirtyToCleanRepairProofs": 1,
+    "manufacturingReadyProofBoards": 14,
+    "dirtyToCleanRepairProofs": 2,
     "categoryCoverage": 10,
     "safeImportProofs": 1,
     "protectedProjectMutations": 0
@@ -46,6 +46,43 @@
     "transactionsRolledBack": 0,
     "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-01_REV_A_JLCPCB.zip",
     "status": "dirty_repair_manufacturing_candidate_generated"
+  },
+  "dirty_to_clean_physical_repair_02": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-02_REV_A",
+    "startingBoard": "BF-DIRTY-REPAIR-PROOF-02_REV_A_dirty_start.kicad_pcb",
+    "finalBoard": "BF-DIRTY-REPAIR-PROOF-02_REV_A_clean_manufacturing_candidate.kicad_pcb",
+    "drcBefore": 10,
+    "drcAfter": 0,
+    "ercErrorsBefore": 0,
+    "ercErrorsAfter": 0,
+    "shortsBefore": 1,
+    "shortsAfter": 0,
+    "unconnectedBefore": 0,
+    "unconnectedAfter": 0,
+    "transactionsAttempted": 8,
+    "transactionsCommitted": 8,
+    "transactionsRolledBack": 0,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-02_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-02_REV_A_JLCPCB.zip",
+    "status": "dirty_repair_manufacturing_candidate_generated",
+    "note": "Separate harder task-list run with local reroute and via-movement capability tasks; raw KiCad DRC start remained 10."
+  },
+  "weightedEvidenceCategories": {
+    "syntheticCleanBoards": { "count": 13 },
+    "manufacturingExports": { "count": 14 },
+    "dirtyToCleanRepairs": { "count": 2 },
+    "categoryDepth": { "count": 10 },
+    "nonTemplateCategoryDepth": { "count": 8 },
+    "sandboxImportSafety": { "proven": true },
+    "protectedPathGuard": { "protectedMutations": 0 },
+    "liveEngineBridge": { "mode": "local_artifact_polling" },
+    "webDashboardSurface": { "dirtyRepairStatusVisible": true },
+    "kicadPluginSurface": { "sandboxRepairStatusVisible": true },
+    "cliReplay": { "proven": true },
+    "sourcingVerification": { "status": "provider_scaffold_no_fake_stock" },
+    "bomCplValidation": { "proven": true },
+    "physicalMutationRepair": { "proofs": 2 },
+    "hardBoardRepair": { "status": "synthetic_dirty_fixture_only" },
+    "fixtureRegressionReliability": { "quickFixtures": 19 }
   },
   "remainingBlockers": [
     "real supplier API verification requires keys",

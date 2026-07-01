@@ -1,0 +1,7 @@
+{
+  "id": "readiness_plateau_requires_evidence_model_audit_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "Readiness stayed at 75 after dirty repair evidence because the scorer averaged fixed categories that did not include dirty-to-clean repair or live product status.",
+  "fixSummary": "Audit readiness categories before changing scores, then add first-class evidence categories for repair proofs, local engine bridge, product surfaces, and non-template depth."
+}

@@ -40,6 +40,7 @@
     "boardforge:replay": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs replay",
     "boardforge:import-sandbox": "node ./plugins/boardforge-plugin/bin/boardforge-import-sandbox.mjs",
     "boardforge:dirty-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs",
+    "boardforge:dirty-repair-proof-02": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs -- --project-id BF-DIRTY-REPAIR-PROOF-02_REV_A --harder",
     "boardforge:category-depth": "node ./plugins/boardforge-plugin/bin/boardforge-category-depth-evidence.mjs",
     "boardforge:dashboard-data": "node ./plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
     "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
@@ -83,6 +84,14 @@
     ,"test:dirty-repair-fixture-generation": "node --test --test-name-pattern \"dirty repair fixture generation\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:drc-repair-task-list": "node --test --test-name-pattern \"DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:dirty-to-clean-repair-proof": "node --test --test-name-pattern \"dirty-to-clean repair proof\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:dirty-repair-proof-02": "node --test --test-name-pattern \"dirty repair proof 02\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-scorer-audit": "node --test --test-name-pattern \"readiness scorer audit\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-rubric": "node --test --test-name-pattern \"readiness rubric\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-evidence-weighting": "node --test --test-name-pattern \"readiness evidence weighting\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:local-engine-status-bridge": "node --test --test-name-pattern \"local engine status bridge\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-dirty-repair-proof-card": "node --test --test-name-pattern \"web dashboard engine status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-dirty-repair-status": "node --test --test-name-pattern \"KiCad plugin status panel\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:non-template-category-depth": "node --test --test-name-pattern \"non-template category depth\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:web-dashboard-engine-status": "node --test --test-name-pattern \"web dashboard engine status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:kicad-plugin-status-panel": "node --test --test-name-pattern \"KiCad plugin status panel\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:repair-track-crossing": "node --test --test-name-pattern \"repairTrackCrossing|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"

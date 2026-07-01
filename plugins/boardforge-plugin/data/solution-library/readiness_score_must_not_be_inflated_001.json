@@ -1,0 +1,7 @@
+{
+  "id": "readiness_score_must_not_be_inflated_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "Readiness scores are product claims and must reflect proven artifacts, not optimism or manual edits.",
+  "fixSummary": "Only raise readiness through scorer categories backed by generated fixtures, reports, tests, and manufacturing artifacts. If the runner score disagrees with static evidence, report the runner score."
+}

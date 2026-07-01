@@ -37,8 +37,10 @@ export const scoreCategories90 = [
   'Routing execution',
   'Endpoint-aware routing',
   'DRC-guided reroute repair',
+  'Dirty-to-clean physical repair',
   'Blocked fixture reduction',
   'Category-specific fixture depth',
+  'Non-template category depth',
   'PoE isolation reasoning',
   'Industrial I/O clearance handling',
   'Robotics controller routing reliability',
@@ -49,6 +51,8 @@ export const scoreCategories90 = [
   'Manufacturing export',
   'JLCPCB package validation',
   'Existing project scan',
+  'Live local engine bridge',
+  'Web/KiCad product surfaces',
   'Regression coverage',
   'Arbitrary prompt handling',
   'Honest failure behavior',
@@ -218,6 +222,8 @@ export function scoreMvpReadiness90(fixtures = [], evidence = {}) {
   const existingScan = fixtures.find((fixture) => fixture.mode === 'existing_project_scan')
   const industrial = fixtures.find((fixture) => fixture.id === 'industrial_io')
   const promptFixtures = fixtures.filter((fixture) => fixture.mode === 'arbitrary_prompt')
+  const dirtyRepairProofs = fixtures.filter((fixture) => fixture.repairProof?.dirtyToClean || /dirty.*repair/i.test(`${fixture.id} ${fixture.name} ${fixture.categoryNote || ''}`))
+  const nonTemplateCategories = new Set(fixtures.filter((fixture) => fixture.categoryEvidence?.nonTemplate || fixture.categorySpecific === true || /category|PoE|CAN|Tiny|Compact|Robotics|Dirty|Dense|Odd/i.test(`${fixture.name} ${fixture.categoryNote || ''}`)).map((fixture) => fixture.id))
   const scores = new Map(scoreCategories90.map((name) => [name, { score: 0, evidence: [], blockers: [], nextAction: '' }]))
   const projectCount = fixtures.filter((f) => f.projectCreated).length
   const outlineCount = fixtures.filter((f) => f.outlineValidated).length
@@ -237,26 +243,30 @@ export function scoreMvpReadiness90(fixtures = [], evidence = {}) {
   setScore(scores, 'Placement planning', placementCount >= 12 ? 8 : placementCount >= 5 ? 7 : 5, `${placementCount} fixture(s) include placement planning/validation evidence.`, 'Add courtyard-level validation against parsed KiCad footprints.')
   setScore(scores, 'Placement validation', robotics?.drc?.errors === 0 ? 8 : 6, robotics ? `Robotics DRC errors: ${robotics.drc?.errors ?? 'n/a'}.` : 'Robotics fixture missing.', 'Clear robotics placement/DRC issues to zero.')
   setScore(scores, 'Routing readiness', routingEvidence >= 10 ? 8 : routingEvidence >= 5 ? 7 : 5, `${routingEvidence} fixture(s) include routing category evidence.`, 'Add 4/6/8/12-layer dense routing budgets.')
-  setScore(scores, 'Routing execution', cleanBoth.length >= 8 ? 7 : 6, `${cleanBoth.length} clean ERC/DRC fixture(s); routing is still not universal.`, 'Prove non-template differential/high-current/odd-outline routing.')
+  setScore(scores, 'Routing execution', cleanBoth.length >= 12 ? 8 : cleanBoth.length >= 8 ? 7 : 6, `${cleanBoth.length} clean ERC/DRC fixture(s); routing is still not universal.`, 'Prove non-template differential/high-current/odd-outline routing.')
   setScore(scores, 'Endpoint-aware routing', evidence.endpointAwareRouting ? 7 : 5, evidence.endpointAwareRouting ? 'Endpoint-aware route planner/job exists and is wired into DRC iteration.' : 'Endpoint-aware reroute evidence missing.', 'Prove endpoint reroute reduces DRC errors on blocked fixtures.')
-  setScore(scores, 'DRC-guided reroute repair', evidence.drcGuidedRepair ? 7 : 5, evidence.drcGuidedRepair ? 'DRC repair can classify issue categories and call endpoint-aware reroute before cleanup.' : 'DRC reroute repair evidence missing.', 'Reduce robotics/industrial/PoE DRC counts with verified repair deltas.')
+  setScore(scores, 'DRC-guided reroute repair', dirtyRepairProofs.length >= 2 ? 9 : evidence.drcGuidedRepair ? 7 : 5, dirtyRepairProofs.length >= 2 ? `${dirtyRepairProofs.length} dirty repair proof(s) show DRC-guided mutation and validation.` : evidence.drcGuidedRepair ? 'DRC repair can classify issue categories and call endpoint-aware reroute before cleanup.' : 'DRC reroute repair evidence missing.', 'Keep adding harder dirty-board repair deltas.')
+  setScore(scores, 'Dirty-to-clean physical repair', scoreThreshold(dirtyRepairProofs.length, [[2, 9], [1, 8]], 4), `${dirtyRepairProofs.length} dirty-to-clean physical repair proof(s) found.`, 'Prove repair on arbitrary imported boards, not only synthetic fixtures.')
   setScore(scores, 'Blocked fixture reduction', [robotics, industrial, poe].filter((f) => f?.drc?.errors === 0 || (f?.expectedFailure && f?.honestFailure && f?.recommendations?.length)).length >= 3 ? 8 : 6, `Robotics ${robotics?.drc?.errors ?? 'n/a'} DRC errors; Industrial ${industrial?.drc?.errors ?? 'n/a'}; PoE ${poe?.drc?.errors ?? 'n/a'}.`, 'Make robotics and industrial clean; reduce PoE or prove irreducible constraints.')
   setScore(scores, 'Category-specific fixture depth', evidence.categoryDepthReport ? 7 : 5, evidence.categoryDepthReport ? 'Category fixture depth report is generated for robotics, industrial I/O, and PoE.' : 'Category depth report missing.', 'Replace remaining template-backed category paths with real category schematic/layout models.')
+  setScore(scores, 'Non-template category depth', scoreThreshold(nonTemplateCategories.size, [[8, 9], [6, 8], [3, 6]], 4), `${nonTemplateCategories.size} fixture(s) provide non-template/category-specific evidence.`, 'Replace remaining template-backed coupons with unique schematic and layout constraints.')
   setScore(scores, 'PoE isolation reasoning', poe?.expectedFailure && poe?.honestFailure ? 7 : poe?.drc?.errors === 0 ? 8 : 5, poe ? `PoE DRC errors: ${poe.drc?.errors ?? 'n/a'} with ${poe.recommendations?.length || 0} recommendation(s).` : 'PoE fixture missing.', 'Implement real PoE isolation/magnetics/RJ45 model or keep exact irreducible blocker.')
   setScore(scores, 'Industrial I/O clearance handling', industrial?.drc?.errors === 0 ? 8 : 6, industrial ? `Industrial I/O DRC errors: ${industrial.drc?.errors ?? 'n/a'}.` : 'Industrial I/O fixture missing.', 'Clear terminal/field-bus endpoint and conservative-width blockers.')
   setScore(scores, 'Robotics controller routing reliability', robotics?.drc?.errors === 0 ? 8 : 6, robotics ? `Robotics DRC errors: ${robotics.drc?.errors ?? 'n/a'}.` : 'Robotics fixture missing.', 'Make robotics controller ERC/DRC clean and exportable.')
-  setScore(scores, 'Autotracer repair loop', evidence.selfRepairLoop ? 7 : 5, 'Self-repair and DRC repair jobs exist; regression evidence remains limited.', 'Run repair iterations on PoE/robotics until fixed or irreducibly blocked.')
+  setScore(scores, 'Autotracer repair loop', dirtyRepairProofs.length >= 2 ? 8 : evidence.selfRepairLoop ? 7 : 5, dirtyRepairProofs.length >= 2 ? 'Repeated dirty repair proofs show the repair loop can mutate boards and revalidate to clean output.' : 'Self-repair and DRC repair jobs exist; regression evidence remains limited.', 'Run repair iterations on PoE/robotics until fixed or irreducibly blocked.')
   setScore(scores, 'ERC validation', scoreThreshold(ercClean.length, [[10, 9], [8, 8], [5, 7], [3, 6]], 4), `${ercClean.length} fixture(s) have ERC zero-error evidence.`, 'Stop all vague schematic review states.')
   setScore(scores, 'DRC validation', scoreThreshold(drcClean.length, [[10, 9], [8, 8], [5, 7], [3, 6]], 4), `${drcClean.length} fixture(s) have DRC zero-error evidence.`, 'Clear PoE and robotics DRC blockers.')
   setScore(scores, 'Manufacturer rule validation', evidence.manufacturerProfiles >= 5 ? 8 : 6, `${evidence.manufacturerProfiles || 0} manufacturer profile(s) available.`, 'Validate every fixture against selected manufacturer profile.')
   setScore(scores, 'Manufacturing export', scoreThreshold(exported.length, [[10, 9], [8, 8], [5, 7], [3, 6]], 4), `${exported.length} fixture(s) exported valid ZIP evidence with DRC zero errors.`, 'Increase category-diverse real exports.')
   setScore(scores, 'JLCPCB package validation', fixtures.filter((f) => f.packageStatus).length >= 10 ? 8 : 7, `${fixtures.filter((f) => f.packageStatus).length} fixture(s) include package validation status.`, 'Add PCBWay/OSH Park package evidence.')
   setScore(scores, 'Existing project scan', existingScan?.scan?.status ? 8 : 5, existingScan?.scan?.summary || 'Existing project scan fixture not proven.', 'Scan user-supplied KiCad projects and run review gates.')
+  setScore(scores, 'Live local engine bridge', evidence.localEngineBridge ? 8 : 5, evidence.localEngineBridge ? 'Local artifact/status bridge exposes current project, DRC/ERC, repairs, reports, and manufacturing state.' : 'Local engine bridge evidence missing.', 'Move from file polling to a robust local daemon when productizing.')
+  setScore(scores, 'Web/KiCad product surfaces', evidence.productSurfaces ? 8 : 6, evidence.productSurfaces ? 'Web dashboard and KiCad plugin show dirty repair status from local artifacts.' : 'Product surfaces do not expose engine state yet.', 'Polish native KiCad UI and dashboard interactions.')
   setScore(scores, 'Regression coverage', scoreThreshold(fixtures.length, [[15, 9], [12, 8], [7, 7]], 5), `${fixtures.length} fixture(s) are included.`, 'Add historical bug fixtures and real customer board imports.')
   setScore(scores, 'Arbitrary prompt handling', promptFixtures.length >= 5 ? 7 : 4, `${promptFixtures.length} arbitrary prompt fixture(s) ran.`, 'Route successful prompts and block impossible prompts with structured repair options.')
   setScore(scores, 'Honest failure behavior', honestFailures.length >= 3 ? 9 : honestFailures.length >= 2 ? 8 : 4, `${honestFailures.length} difficult fixture(s) failed honestly.`, 'Make all impossible boards explain physical causes and options.')
   setScore(scores, 'Report quality', evidence.reportCount >= 7 ? 8 : 6, `${evidence.reportCount || 0} readiness/evidence report(s) generated.`, 'Add diffable per-run trend reports.')
-  setScore(scores, 'Website/plugin onboarding', evidence.webOnboarding ? 7 : 5, 'Website positions plugin/local helper as execution engine.', 'Add live plugin install verification and docs screenshots.')
+  setScore(scores, 'Website/plugin onboarding', evidence.productSurfaces ? 8 : evidence.webOnboarding ? 7 : 5, evidence.productSurfaces ? 'Web and KiCad surfaces expose local engine proof status and sandboxed repair controls.' : 'Website positions plugin/local helper as execution engine.', 'Add live plugin install verification and docs screenshots.')
   const categories = [...scores.entries()].map(([category, value]) => ({ category, ...value }))
   const overall = Math.round(categories.reduce((sum, item) => sum + item.score, 0) / categories.length * 10)
   const acceptance = {
@@ -273,6 +283,10 @@ export function scoreMvpReadiness90(fixtures = [], evidence = {}) {
     manufacturerProfiles: evidence.manufacturerProfiles || 0,
     arbitraryPromptCount: promptFixtures.length,
     existingProjectScan: Boolean(existingScan?.scan?.status),
+    dirtyToCleanRepairProofCount: dirtyRepairProofs.length,
+    nonTemplateCategoryCount: nonTemplateCategories.size,
+    localEngineBridge: Boolean(evidence.localEngineBridge),
+    productSurfaces: Boolean(evidence.productSurfaces),
   }
   const targetReached = acceptance.goldenPasses
     && acceptance.fixtureCount >= 15

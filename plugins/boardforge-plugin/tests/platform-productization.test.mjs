@@ -6,6 +6,7 @@ import test from 'node:test'
 import { buildAiSessionReport, planAiCommand } from '../lib/platform/ai-command-runner.mjs'
 import { normalizeAiCommand, validateAiCommand } from '../lib/platform/ai-command-schema.mjs'
 import { buildBoardForgeProductManifest, validateProductManifest } from '../lib/platform/product-manifest.mjs'
+import { readLocalEngineStatus } from '../lib/platform/local-engine-status-reader.mjs'
 import { choosePromotionCandidate, scoreRouteabilityCandidate } from '../lib/routing/routeability-optimizer.mjs'
 
 test('product manifest covers BoardForge platform surfaces and capabilities', () => {
@@ -125,6 +126,48 @@ test('readiness evidence dashboard exposes score, gaps, and proof counts', () =>
   assert.match(page, /Readiness/)
   assert.match(page, /Known gaps/)
   assert.match(page, /Latest proof tests/)
+})
+
+test('readiness scorer audit documents plateau causes and required evidence', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const audit = fs.readFileSync(path.join(repoRoot, 'BoardForge_Readiness_Scorer_Audit.md'), 'utf8')
+  assert.match(audit, /Score Caps Found/)
+  assert.match(audit, /dirty-to-clean physical repair/)
+  assert.match(audit, /Evidence Required For 80/)
+})
+
+test('readiness rubric defines alpha and MVP evidence levels', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const rubric = fs.readFileSync(path.join(repoRoot, 'docs', 'BOARD_FORGE_READINESS_RUBRIC.md'), 'utf8')
+  assert.match(rubric, /75: early alpha platform/)
+  assert.match(rubric, /80: product alpha/)
+  assert.match(rubric, /90: credible MVP/)
+  assert.match(rubric, /dirty-to-clean repair/)
+})
+
+test('readiness evidence weighting includes dirty repair and local product surfaces', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const scorer = fs.readFileSync(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'lib', 'mvp-reporting.mjs'), 'utf8')
+  assert.match(scorer, /Dirty-to-clean physical repair/)
+  assert.match(scorer, /Live local engine bridge/)
+  assert.match(scorer, /Non-template category depth/)
+})
+
+test('local engine status bridge reads dirty repair artifacts', () => {
+  const status = readLocalEngineStatus('C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DIRTY-REPAIR-PROOF-01_REV_A')
+  assert.equal(status.source, 'local_artifact_polling')
+  assert.equal(status.projectId, 'BF-DIRTY-REPAIR-PROOF-01_REV_A')
+  assert.equal(status.drc, 0)
+  assert.equal(status.manufacturingReady, true)
+  assert.match(status.cliReplayCommand, /boardforge:dirty-repair-proof/)
+})
+
+test('non-template category depth is represented in scorer inputs', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const runner = fs.readFileSync(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-regression.mjs'), 'utf8')
+  assert.match(runner, /categoryEvidence/)
+  assert.match(runner, /nonTemplate/)
+  assert.match(runner, /dirty_repair_physical_proof_02_cached/)
 })
 
 test('web dashboard engine status exposes dirty-to-clean repair proof', () => {

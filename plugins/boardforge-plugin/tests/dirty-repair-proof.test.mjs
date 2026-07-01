@@ -41,3 +41,22 @@ test('dirty-to-clean repair proof emits product artifacts and replay command', (
   assert.equal(actionLog.latestStatus.manufacturingReady, true)
   assert.match(replay, /boardforge:dirty-repair-proof/)
 })
+
+test('dirty repair proof 02 generates separate harder fixture artifacts', () => {
+  const output = JSON.parse(execFileSync(process.execPath, [
+    path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-dirty-repair-proof.mjs'),
+    '--project-id',
+    'BF-DIRTY-REPAIR-PROOF-02_REV_A',
+    '--harder',
+  ], { cwd: repoRoot, stdio: 'pipe', timeout: 120000 }).toString())
+  assert.equal(output.projectId, 'BF-DIRTY-REPAIR-PROOF-02_REV_A')
+  assert.equal(output.status, 'dirty_repair_manufacturing_candidate_generated')
+  assert.equal(output.before.drc > 0, true)
+  assert.equal(output.after.drc, 0)
+  assert.equal(output.after.shorts, 0)
+  assert.equal(output.after.unconnected, 0)
+  assert.equal(fs.existsSync(output.manufacturing.zip), true)
+  const tasks = JSON.parse(fs.readFileSync(output.repairTaskList, 'utf8')).tasks
+  assert.equal(tasks.some((task) => task.type === 'local_reroute_requirement'), true)
+  assert.equal(tasks.some((task) => task.type === 'via_movement_requirement'), true)
+})

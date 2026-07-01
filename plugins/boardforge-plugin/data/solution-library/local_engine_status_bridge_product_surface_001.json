@@ -1,0 +1,7 @@
+{
+  "id": "local_engine_status_bridge_product_surface_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "Web and KiCad surfaces need a shared local engine status source instead of bespoke static panels.",
+  "fixSummary": "Add artifact-based local engine status reader/server/client modules that expose current board, DRC/ERC, shorts, unconnected, manufacturing status, report path, and CLI replay."
+}

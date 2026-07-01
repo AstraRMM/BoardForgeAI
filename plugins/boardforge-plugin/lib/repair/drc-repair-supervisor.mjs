@@ -21,20 +21,21 @@ export const DIRTY_REPAIR_FOLDER = `C:\\Users\\luifi\\Desktop\\BoardForge_New_Bo
 const DENSE_SEED_FOLDER = 'C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A'
 
 export async function runDirtyRepairProof(options = {}) {
-  const fixtureFolder = options.fixtureFolder || DIRTY_REPAIR_FOLDER
+  const projectId = options.projectId || DIRTY_REPAIR_PROJECT_ID
+  const fixtureFolder = options.fixtureFolder || `C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\${projectId}`
   assertSafeFixtureFolder(fixtureFolder)
-  prepareDirtyRepairFixture({ fixtureFolder, seedFolder: options.seedFolder || DENSE_SEED_FOLDER })
+  prepareDirtyRepairFixture({ fixtureFolder, seedFolder: options.seedFolder || DENSE_SEED_FOLDER, projectId })
 
-  const startingBoard = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}_dirty_start.kicad_pcb`)
-  const projectBoard = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}.kicad_pcb`)
-  const candidate = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}_repair_candidate.kicad_pcb`)
-  const finalBoard = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}_clean_manufacturing_candidate.kicad_pcb`)
-  const schematic = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}.kicad_sch`)
+  const startingBoard = path.join(fixtureFolder, `${projectId}_dirty_start.kicad_pcb`)
+  const projectBoard = path.join(fixtureFolder, `${projectId}.kicad_pcb`)
+  const candidate = path.join(fixtureFolder, `${projectId}_repair_candidate.kicad_pcb`)
+  const finalBoard = path.join(fixtureFolder, `${projectId}_clean_manufacturing_candidate.kicad_pcb`)
+  const schematic = path.join(fixtureFolder, `${projectId}.kicad_sch`)
   fs.copyFileSync(startingBoard, candidate)
 
   const cli = await detectKiCadCli()
   const beforeValidation = await validateDirtyBoard({ fixtureFolder, board: startingBoard, schematic, cli, tag: 'Before' })
-  const taskList = buildDirtyRepairTasks(beforeValidation.drc?.report)
+  const taskList = buildDirtyRepairTasks(beforeValidation.drc?.report, { harder: options.harder })
   writeDirtyRepairTaskFiles(fixtureFolder, taskList)
 
   const transaction = createBoardMutationTransaction(candidate, { backupPath: `${candidate}.transaction-backup` })
@@ -49,13 +50,14 @@ export async function runDirtyRepairProof(options = {}) {
     fs.copyFileSync(candidate, finalBoard)
     fs.copyFileSync(finalBoard, projectBoard)
     latestBoard = finalBoard
-    manufacturing = await exportDirtyManufacturing({ fixtureFolder, board: finalBoard, cli })
+    manufacturing = await exportDirtyManufacturing({ fixtureFolder, board: finalBoard, cli, projectId })
   } else {
     rollbackMutation(transaction)
   }
 
   const result = {
     schema: 'boardforge.dirty-to-clean-repair-proof.v1',
+    projectId,
     status: clean && manufacturing.ready ? 'dirty_repair_manufacturing_candidate_generated' : 'dirty_repair_blocked_with_exact_report',
     fixtureFolder,
     startingBoard,
@@ -74,20 +76,20 @@ export async function runDirtyRepairProof(options = {}) {
     manufacturing,
   }
   writeDirtyRepairReports({ fixtureFolder, result, beforeValidation, afterValidation, taskList, transactionResults })
-  await writeDirtyPlatformArtifacts({ fixtureFolder, latestBoard, schematic, result, taskList })
+  await writeDirtyPlatformArtifacts({ fixtureFolder, latestBoard, schematic, result, taskList, projectId })
   return result
 }
 
-export function prepareDirtyRepairFixture({ fixtureFolder = DIRTY_REPAIR_FOLDER, seedFolder = DENSE_SEED_FOLDER } = {}) {
+export function prepareDirtyRepairFixture({ fixtureFolder = DIRTY_REPAIR_FOLDER, seedFolder = DENSE_SEED_FOLDER, projectId = DIRTY_REPAIR_PROJECT_ID } = {}) {
   assertSafeFixtureFolder(fixtureFolder)
   fs.mkdirSync(path.join(fixtureFolder, 'reports'), { recursive: true })
   fs.mkdirSync(path.join(fixtureFolder, 'manufacturing'), { recursive: true })
   const seedBoard = path.join(seedFolder, 'BF-DENSE-CONTROL-01_REV_A.kicad_pcb')
   const seedSch = path.join(seedFolder, 'BF-DENSE-CONTROL-01_REV_A.kicad_sch')
   if (!fs.existsSync(seedBoard) || !fs.existsSync(seedSch)) throw new Error('Dirty repair seed fixture is missing; run fixtures:run first.')
-  const dirtyBoard = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}_dirty_start.kicad_pcb`)
-  const projectBoard = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}.kicad_pcb`)
-  const schematic = path.join(fixtureFolder, `${DIRTY_REPAIR_PROJECT_ID}.kicad_sch`)
+  const dirtyBoard = path.join(fixtureFolder, `${projectId}_dirty_start.kicad_pcb`)
+  const projectBoard = path.join(fixtureFolder, `${projectId}.kicad_pcb`)
+  const schematic = path.join(fixtureFolder, `${projectId}.kicad_sch`)
   fs.copyFileSync(seedBoard, dirtyBoard)
   fs.copyFileSync(seedBoard, projectBoard)
   fs.copyFileSync(seedSch, schematic)
@@ -106,7 +108,7 @@ This synthetic fixture is intentionally dirty and repairable. It is copied from 
   return { fixtureFolder, dirtyBoard, projectBoard, schematic }
 }
 
-export function buildDirtyRepairTasks(drcReport = {}) {
+export function buildDirtyRepairTasks(drcReport = {}, options = {}) {
   const parsed = (drcReport?.violations || []).map((violation, index) => taskFromViolation(violation, index))
   const seededFamilies = [
     ['shorting_item', 'repairShortingItem'],
@@ -131,7 +133,37 @@ export function buildDirtyRepairTasks(drcReport = {}) {
       afterDrcCount: null,
       source: 'seeded_repair_capability_task',
     }))
-  return [...parsed, ...seeded]
+  const harder = options.harder ? [
+    {
+      issueId: 'dirty-extra-local-reroute-01',
+      type: 'local_reroute_requirement',
+      objects: [],
+      nets: ['GPS_TX'],
+      layers: ['F.Cu'],
+      coordinates: [],
+      severity: 'training_seed',
+      repairStrategy: 'rerouteNetSegment',
+      transactionStatus: 'pending',
+      beforeDrcCount: drcReport?.violations?.length ?? 0,
+      afterDrcCount: null,
+      source: 'seeded_harder_repair_capability_task',
+    },
+    {
+      issueId: 'dirty-extra-via-move-01',
+      type: 'via_movement_requirement',
+      objects: [],
+      nets: ['REG_3V3'],
+      layers: ['F.Cu', 'B.Cu'],
+      coordinates: [],
+      severity: 'training_seed',
+      repairStrategy: 'moveLegalViaOrReroute',
+      transactionStatus: 'pending',
+      beforeDrcCount: drcReport?.violations?.length ?? 0,
+      afterDrcCount: null,
+      source: 'seeded_harder_repair_capability_task',
+    },
+  ] : []
+  return [...parsed, ...seeded, ...harder]
 }
 
 function taskFromViolation(violation, index) {
@@ -206,16 +238,16 @@ async function validateDirtyBoard({ fixtureFolder, board, schematic, cli, tag })
   return { drc, erc }
 }
 
-async function exportDirtyManufacturing({ fixtureFolder, board, cli }) {
+async function exportDirtyManufacturing({ fixtureFolder, board, cli, projectId = DIRTY_REPAIR_PROJECT_ID }) {
   const manufacturingDir = path.join(fixtureFolder, 'manufacturing')
-  const bomFile = path.join(manufacturingDir, 'BOM', `${DIRTY_REPAIR_PROJECT_ID}_BOM.csv`)
-  const cplFile = path.join(manufacturingDir, 'CPL', `${DIRTY_REPAIR_PROJECT_ID}_CPL.csv`)
+  const bomFile = path.join(manufacturingDir, 'BOM', `${projectId}_BOM.csv`)
+  const cplFile = path.join(manufacturingDir, 'CPL', `${projectId}_CPL.csv`)
   fs.mkdirSync(path.dirname(bomFile), { recursive: true })
   fs.writeFileSync(bomFile, dirtyBomRows().map((row) => row.map(csvCell).join(',')).join('\n'), 'utf8')
   const gerbers = await exportGerbers({ pcbFile: board, outputDir: path.join(manufacturingDir, 'Gerbers'), kicadCliPath: cli.path })
   const drill = await exportDrill({ pcbFile: board, outputDir: path.join(manufacturingDir, 'Drill'), kicadCliPath: cli.path })
   const cpl = await exportCpl({ pcbFile: board, outputFile: cplFile, kicadCliPath: cli.path })
-  const zip = path.join(manufacturingDir, `${DIRTY_REPAIR_PROJECT_ID}_JLCPCB.zip`)
+  const zip = path.join(manufacturingDir, `${projectId}_JLCPCB.zip`)
   const pack = await packageJlcpcb({
     projectDir: fixtureFolder,
     outputFile: zip,
@@ -273,12 +305,12 @@ function writeDirtyRepairReports({ fixtureFolder, result, beforeValidation, afte
   fs.writeFileSync(path.join(fixtureFolder, 'BoardForge_Engine_Run_Log.json'), JSON.stringify({ result, taskList, transactionResults, beforeValidation: summarizeValidation(beforeValidation), afterValidation: summarizeValidation(afterValidation) }, null, 2), 'utf8')
 }
 
-async function writeDirtyPlatformArtifacts({ fixtureFolder, latestBoard, schematic, result, taskList }) {
+async function writeDirtyPlatformArtifacts({ fixtureFolder, latestBoard, schematic, result, taskList, projectId = DIRTY_REPAIR_PROJECT_ID }) {
   await writeProjectArtifactPack({
     outputDir: fixtureFolder,
     project: {
-      id: DIRTY_REPAIR_PROJECT_ID,
-      name: 'BF-DIRTY-REPAIR-PROOF-01',
+      id: projectId,
+      name: projectId.replace(/_REV_A$/, ''),
       boardPath: latestBoard,
       schematicPath: schematic,
       projectPath: fixtureFolder,

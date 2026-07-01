@@ -1,0 +1,7 @@
+{
+  "id": "dirty_repair_proof_must_weight_readiness_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "Dirty-to-clean repair proves a different capability than clean board generation and should not be swallowed by generic DRC/manufacturing counts.",
+  "fixSummary": "Score repeated dirty repair proofs as their own readiness category with DRC before/after, shorts before/after, transaction counts, and manufacturing ZIP evidence."
+}

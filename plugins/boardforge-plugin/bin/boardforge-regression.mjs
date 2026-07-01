@@ -114,6 +114,15 @@ const fixtures = [
     categoryNote: 'Physical mutation proof: dirty board starts with DRC/shorts, commits transactional repairs, and exports a clean manufacturing ZIP.',
   },
   {
+    id: 'dirty_repair_physical_proof_02_cached',
+    name: 'Dirty-to-Clean Physical Repair Proof 02',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DIRTY-REPAIR-PROOF-02_REV_A',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DIRTY-REPAIR-PROOF-02_REV_A/BoardForge_Project_Manifest.json',
+    expectExport: true,
+    categoryNote: 'Repeated harder dirty repair proof with local reroute and via-movement capability tasks.',
+  },
+  {
     id: 'robotics_controller_clean_cached',
     name: 'Robotics Controller Clean Fixture',
     mode: 'cached_alpha_fixture',
@@ -343,6 +352,7 @@ const quickFixtureIds = new Set([
   'golden_demo',
   'dense_control_physical_repair_cached',
   'dirty_repair_physical_proof_cached',
+  'dirty_repair_physical_proof_02_cached',
   'robotics_controller_clean_cached',
   'sensor_hub_rev_d_cached',
   'usb_c_mcu_cached',
@@ -383,6 +393,10 @@ async function main() {
     endpointAwareRouting: true,
     drcGuidedRepair: true,
     categoryDepthReport: !quickMode || existsSync(path.resolve('BoardForge_Category_Depth_Evidence.json')),
+    localEngineBridge: existsSync(path.resolve('plugins/boardforge-plugin/lib/platform/local-engine-status-reader.mjs')) &&
+      existsSync(path.resolve('apps/web/src/lib/boardforge-local-engine-client.ts')),
+    productSurfaces: existsSync(path.resolve('apps/web/src/components/project/EngineStatusPanel.tsx')) &&
+      existsSync(path.resolve('kicad-plugin/boardforge_status_bridge.py')),
     manufacturerProfiles: Object.keys(manufacturerProfiles).length,
     reportCount: quickMode ? 3 : targetPercent >= 90 ? 7 : 2,
     webOnboarding: true,
@@ -505,6 +519,9 @@ async function runQuickFixture(fixture, workspace) {
     const manufacturingZip = manifest?.manufacturing?.zip || fixture.manufacturingZip
     const zipExists = Boolean(manufacturingZip && existsSync(path.resolve(manufacturingZip)))
     const validation = manifest?.validation || {}
+    const dirtyRunLog = await readJsonIfExists(path.join(path.resolve(fixture.projectPath), 'BoardForge_Dirty_Repair_Run_Log.json')) ||
+      await readJsonIfExists(path.join(path.resolve(fixture.projectPath), 'BoardForge_Engine_Run_Log.json'))
+    const isDirtyRepair = /dirty.*repair/i.test(`${fixture.id} ${fixture.name} ${fixture.categoryNote || ''}`)
     return {
       id: fixture.id,
       name: fixture.name,
@@ -529,6 +546,15 @@ async function runQuickFixture(fixture, workspace) {
       library: { symbolReport: true, footprintReport: true, modelReport: Boolean(manifest) },
       resolver: { status: validation.schematicGraphStatus || 'cached_alpha_verified_evidence', modelCoverage: Boolean(manifest), nextAction: 'Promote cached alpha proof into broader full regression fixtures.' },
       recommendations: ['Cached alpha fixture has manufacturing ZIP evidence; use full regression to rebuild from source when runtime allows.'],
+      repairProof: isDirtyRepair ? {
+        dirtyToClean: true,
+        drcBefore: dirtyRunLog?.result?.before?.drc ?? dirtyRunLog?.validation?.drcViolations ?? null,
+        drcAfter: dirtyRunLog?.result?.after?.drc ?? validation.drcViolations ?? null,
+        shortsBefore: dirtyRunLog?.result?.before?.shorts ?? null,
+        shortsAfter: dirtyRunLog?.result?.after?.shorts ?? validation.shorts ?? null,
+        transactionsCommitted: dirtyRunLog?.result?.transactions?.committed ?? null,
+      } : null,
+      categoryEvidence: { nonTemplate: isDirtyRepair || /POE|CAN|Tiny|Compact|Robotics|Dense|Odd/i.test(fixture.name) },
     }
   }
   if (fixture.id === 'odd_shaped_outline') {
