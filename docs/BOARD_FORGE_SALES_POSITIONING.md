@@ -2,14 +2,15 @@
 
 BoardForge AI: from PCB idea to manufacturable KiCad project.
 
-BoardForge is a local-first AI PCB engineering platform for KiCad. It combines a local engine, CLI, KiCad plugin, web dashboard, fixture regression, solution library, and optional AI control layer.
+BoardForge is a local-first PCB engineering platform for KiCad. It combines:
 
-The product promise is not "magic autorouting." The product promise is a supervised engineering workflow:
+- Prompt-to-board generation.
+- KiCad project validation.
+- Routing and post-route cleanup.
+- Dirty-to-clean repair.
+- Safe sandbox import of existing projects.
+- Manufacturing export gates.
+- Web dashboard, KiCad plugin, CLI, and AI control surfaces.
 
-- create projects
-- import safely
-- route with external and internal tools
-- repair DRC/ERC
-- protect source files
-- package manufacturing outputs honestly
-- explain blockers when a board cannot be finished
+BoardForge is not merely a Codex plugin. Codex is one controller. BoardForge owns the local engine, manifests, reports, validation, and manufacturing outputs.
+

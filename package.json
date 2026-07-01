@@ -113,7 +113,7 @@
     ,"test:imported-board-repair-suite": "node --test --test-name-pattern \"imported-board repair suite\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:sourcing-env-detection": "node --test --test-name-pattern \"sourcing env detection\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:sourcing-no-fake-stock": "node --test --test-name-pattern \"unavailable API credentials|sourcing env detection\" ./plugins/boardforge-plugin/tests/*.test.mjs"
-    ,"test:manufacturing-readiness-sourcing-states": "node --test --test-name-pattern \"manufacturing readiness\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:manufacturing-readiness-sourcing-states": "node --test --test-name-pattern \"manufacturing readiness\" ./plugins/boardforge-plugin/tests/manufacturing-readiness-platform.test.mjs"
     ,"test:readiness-imported-repair-evidence": "node --test --test-name-pattern \"readiness imported repair evidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:cli-alpha-workflow": "node --test --test-name-pattern \"CLI alpha workflow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:alpha-demo-docs": "node --test --test-name-pattern \"alpha demo docs\" ./plugins/boardforge-plugin/tests/*.test.mjs"
@@ -148,6 +148,15 @@
     ,"test:poe-isolation-boundary": "node --test --test-name-pattern \"PoE isolation boundary\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:poe-schematic-confidence-lift": "node --test --test-name-pattern \"PoE REV_D schematic confidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:poe-rev-d-readiness": "node --test --test-name-pattern \"PoE REV_D readiness\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"boardforge:poe-rev-d-sourcing": "node ./plugins/boardforge-plugin/bin/boardforge-poe-rev-d-sourcing-verification.mjs"
+    ,"test:supplier-env-config": "node --test --test-name-pattern \"supplier env config\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:secret-handling-no-logs": "node --test --test-name-pattern \"secret handling no logs\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:digikey-provider-normalization": "node --test --test-name-pattern \"Digi-Key provider normalization\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:mouser-provider-normalization": "node --test --test-name-pattern \"Mouser provider normalization\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:lcsc-provider-normalization": "node --test --test-name-pattern \"LCSC provider normalization\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:jlcpcb-assembly-provider-normalization": "node --test --test-name-pattern \"JLCPCB assembly provider normalization\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-rev-d-sourcing-verification": "node --test --test-name-pattern \"PoE REV_D sourcing verification\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:alpha-release-docs": "node --test --test-name-pattern \"alpha release docs\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

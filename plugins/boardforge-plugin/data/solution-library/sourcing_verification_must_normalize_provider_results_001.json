@@ -1,0 +1,8 @@
+{
+  "id": "sourcing_verification_must_normalize_provider_results_001",
+  "title": "Sourcing providers must normalize results into one BoardForge schema",
+  "rootCause": "Different supplier APIs expose stock, price, lifecycle, and assembly data with different fields, making BOM readiness impossible to compare safely.",
+  "fixSummary": "Require every provider to detect credentials, expose canVerify, verifyPart, normalizeResult, and writeProviderReport with a common row shape.",
+  "appliesTo": ["sourcing", "bom", "assembly_readiness"],
+  "tests": ["npm run test:digikey-provider-normalization", "npm run test:mouser-provider-normalization", "npm run test:lcsc-provider-normalization", "npm run test:jlcpcb-assembly-provider-normalization"]
+}

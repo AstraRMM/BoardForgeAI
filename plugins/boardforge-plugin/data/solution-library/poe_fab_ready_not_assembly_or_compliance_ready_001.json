@@ -1,0 +1,8 @@
+{
+  "id": "poe_fab_ready_not_assembly_or_compliance_ready_001",
+  "title": "PoE PCB fabrication readiness is not assembly or compliance readiness",
+  "rootCause": "A PoE-style PCB can have DRC 0 and ERC 0 while still lacking supplier stock verification and safety/compliance engineering review.",
+  "fixSummary": "Represent PoE REV_D as PCB_FAB_READY while keeping ASSEMBLY_READY_NOT_VERIFIED, BLOCKED_SOURCING, and BLOCKED_COMPLIANCE_REVIEW until live verification and review are complete.",
+  "appliesTo": ["poe_fixture", "manufacturing_readiness", "compliance"],
+  "tests": ["npm run test:poe-rev-d-sourcing-verification", "npm run test:manufacturing-readiness-sourcing-states"]
+}

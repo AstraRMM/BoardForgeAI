@@ -1,15 +1,23 @@
 # BoardForge Alpha Readiness
 
-Current target: evidence-backed product alpha.
+BoardForge is an evidence-backed alpha / early MVP candidate.
 
-BoardForge is ready to demonstrate:
+Current proof:
 
-- generated synthetic boards
-- sandboxed imported KiCad project repair
-- source hash guard
-- dirty-to-clean physical board mutation
-- DRC/ERC validation
-- manufacturing ZIP export when validation is clean
-- web/KiCad/CLI local control surfaces
+- Prompt-to-KiCad synthetic board generation.
+- Real schematic graph and pin-map checks.
+- Custom outlines and outline-aware placement.
+- FreeRouting/SES assisted routing.
+- DRC/ERC validation.
+- Manufacturing ZIP gating.
+- Dirty-to-clean physical repair proofs.
+- Sandboxed imported-board repair proofs with source hash protection.
+- Web, KiCad plugin, and CLI alpha surfaces.
+- PoE REV_D selected candidate parts and isolation/creepage precheck.
 
-BoardForge is not yet a 90% MVP because arbitrary dense real boards, production installer polish, supplier API verification, and broader hard-board routing still need more proof.
+Current external blockers:
+
+- Supplier API keys are required for live stock and assembly verification.
+- PoE compliance requires engineering safety review.
+- BoardForge may mark a board `PCB_FAB_READY` without claiming `ASSEMBLY_READY_VERIFIED`.
+

@@ -18,6 +18,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.local.example
 
 # Generated PCB/routing artifacts and local autorouter tools
 *.kicad_pcb

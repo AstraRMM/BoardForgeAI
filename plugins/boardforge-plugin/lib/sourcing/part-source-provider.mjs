@@ -5,15 +5,28 @@ export const SOURCING_STATUSES = Object.freeze({
   NOT_CHECKED: 'NOT_CHECKED',
   OUT_OF_STOCK: 'OUT_OF_STOCK',
   OBSOLETE: 'OBSOLETE',
+  ERROR: 'ERROR',
 })
 
 export function createUnavailableProvider({ id, name, requiredEnv = [], supportedCapabilities = [] } = {}) {
-  return {
+  const provider = {
     id,
     name,
     requiredEnv,
     supportedCapabilities,
     available: false,
+    detectCredentials(env = process.env) {
+      return detectProviderCredentials({ id, name, requiredEnv }, env)
+    },
+    canVerify(env = process.env) {
+      return this.detectCredentials(env).configured
+    },
+    normalizeResult(part = {}, result = {}) {
+      return normalizePartVerification(part, result)
+    },
+    writeProviderReport(rows = []) {
+      return providerReportMarkdown({ id, name, requiredEnv, available: false, rows })
+    },
     async verifyPart(part = {}) {
       return normalizePartVerification(part, {
         provider: id,
@@ -29,15 +42,28 @@ export function createUnavailableProvider({ id, name, requiredEnv = [], supporte
       })
     },
   }
+  return provider
 }
 
 export function createManualCandidateProvider({ id = 'manual', name = 'Manual Candidate Review' } = {}) {
-  return {
+  const provider = {
     id,
     name,
     requiredEnv: [],
     supportedCapabilities: ['manual_review'],
     available: true,
+    detectCredentials() {
+      return { provider: id, name, requiredEnv: [], presentEnv: [], missingEnv: [], configured: true }
+    },
+    canVerify() {
+      return true
+    },
+    normalizeResult(part = {}, result = {}) {
+      return normalizePartVerification(part, result)
+    },
+    writeProviderReport(rows = []) {
+      return providerReportMarkdown({ id, name, requiredEnv: [], available: true, rows })
+    },
     async verifyPart(part = {}) {
       return normalizePartVerification(part, {
         provider: id,
@@ -55,6 +81,7 @@ export function createManualCandidateProvider({ id = 'manual', name = 'Manual Ca
       })
     },
   }
+  return provider
 }
 
 export async function verifyBomWithProviders(parts = [], providers = [], options = {}) {
@@ -86,12 +113,45 @@ export function normalizePartVerification(part = {}, verification = {}) {
     sourcingStatus,
     stockStatus: verification.stockStatus || statusToStockStatus(sourcingStatus),
     assemblyAvailability: verification.assemblyAvailability || 'NOT_CHECKED',
+    priceBreaks: Array.isArray(verification.priceBreaks) ? verification.priceBreaks : [],
+    minimumOrderQuantity: Number.isFinite(Number(verification.minimumOrderQuantity)) ? Number(verification.minimumOrderQuantity) : null,
+    packageMatch: verification.packageMatch || 'UNKNOWN',
     stockQty: Number.isFinite(Number(verification.stockQty)) ? Number(verification.stockQty) : null,
     supplierSku: verification.supplierSku || null,
     lifecycleStatus: verification.lifecycleStatus || lifecycleFromStatus(sourcingStatus),
     risk: verification.risk || defaultRisk(sourcingStatus),
     evidence: verification.evidence || {},
   }
+}
+
+export function detectProviderCredentials(provider = {}, env = process.env) {
+  const requiredEnv = provider.requiredEnv || []
+  const presentEnv = requiredEnv.filter((name) => Boolean(env[name]))
+  const missingEnv = requiredEnv.filter((name) => !env[name])
+  return {
+    provider: provider.id || provider.name || 'unknown',
+    name: provider.name || provider.id || 'unknown',
+    requiredEnv,
+    presentEnv,
+    missingEnv,
+    configured: missingEnv.length === 0,
+  }
+}
+
+export function providerReportMarkdown({ id, name, requiredEnv = [], available = false, rows = [] } = {}) {
+  const tableRows = rows.map((row) => `| ${row.mpn || '-'} | ${row.sourcingStatus || '-'} | ${row.stockStatus || '-'} | ${row.assemblyAvailability || '-'} | ${row.packageMatch || '-'} | ${row.risk || '-'} |`).join('\n')
+  return [
+    `# ${name || id || 'Provider'} Sourcing Report`,
+    '',
+    `- provider: ${id || 'unknown'}`,
+    `- configured: ${available ? 'yes' : 'no'}`,
+    `- required env: ${requiredEnv.join(', ') || 'none'}`,
+    '',
+    '| MPN | Sourcing | Stock | Assembly | Package | Risk |',
+    '| --- | --- | --- | --- | --- | --- |',
+    tableRows || '| - | - | - | - | - | - |',
+    '',
+  ].join('\n')
 }
 
 export function providerAvailability(provider = {}, env = process.env) {
@@ -145,5 +205,6 @@ function defaultRisk(status) {
   if (status === SOURCING_STATUSES.PLACEHOLDER) return 'placeholder_part_must_not_ship_without_review'
   if (status === SOURCING_STATUSES.OUT_OF_STOCK) return 'out_of_stock'
   if (status === SOURCING_STATUSES.OBSOLETE) return 'obsolete'
+  if (status === SOURCING_STATUSES.ERROR) return 'provider_error'
   return 'not_checked'
 }

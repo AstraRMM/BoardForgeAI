@@ -1,0 +1,8 @@
+{
+  "id": "alpha_release_docs_required_after_90_001",
+  "title": "After readiness 90, BoardForge needs release-candidate docs",
+  "rootCause": "Evidence-backed engine readiness is not enough for users to install, test, understand, or trust the alpha product.",
+  "fixSummary": "Add alpha readiness, local install, demo flow, limitations, sales positioning, supplier setup, secret handling, and next-30-days docs.",
+  "appliesTo": ["release_candidate", "docs", "demo"],
+  "tests": ["npm run test:alpha-release-docs"]
+}

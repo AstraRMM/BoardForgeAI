@@ -79,8 +79,71 @@ test('configured provider still does not claim API_VERIFIED before live query ev
   assert.equal(provider.available, true)
   const row = await provider.verifyPart({ ref: 'R1', mpn: 'RC0603FR-0710KL' })
   assert.equal(row.sourcingStatus, SOURCING_STATUSES.NOT_CHECKED)
-  assert.equal(row.stockStatus, 'API_CONFIGURED_LIVE_QUERY_NOT_RUN')
+  assert.equal(row.stockStatus, 'UNKNOWN')
   assert.notEqual(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
+})
+
+test('supplier env config exposes required keys without requiring committed secrets', () => {
+  const report = detectSourcingProviderEnv({
+    DIGIKEY_CLIENT_ID: 'present',
+    DIGIKEY_CLIENT_SECRET: 'present',
+  })
+  const digikey = report.find((provider) => provider.provider === 'digikey')
+  const mouser = report.find((provider) => provider.provider === 'mouser')
+  assert.equal(digikey.apiCallable, true)
+  assert.equal(mouser.apiCallable, false)
+  assert.ok(mouser.missingEnv.includes('MOUSER_API_KEY'))
+})
+
+test('secret handling no logs exposes key presence but never values', () => {
+  const secretEnv = {
+    DIGIKEY_CLIENT_ID: 'super-secret-client',
+    DIGIKEY_CLIENT_SECRET: 'super-secret-secret',
+  }
+  const report = detectSourcingProviderEnv(secretEnv)
+  const markdown = writeSourcingApiStatusMarkdown(report)
+  assert.match(markdown, /DIGIKEY_CLIENT_ID/)
+  assert.doesNotMatch(markdown, /super-secret-client/)
+  assert.doesNotMatch(markdown, /super-secret-secret/)
+})
+
+test('Digi-Key provider normalization maps live payload to normalized sourcing result', () => {
+  const provider = createDigikeyProvider({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret' } })
+  const row = provider.normalizeResult({ ref: 'U1', mpn: 'TPS2375PW', footprint: 'TSSOP-8' }, { stockQty: 42, priceBreaks: [{ quantity: 1, price: 1.23 }], minimumOrderQuantity: 1, packageMatch: 'PASS', apiConfigured: true })
+  assert.equal(row.provider, 'digikey')
+  assert.equal(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
+  assert.equal(row.stockStatus, 'IN_STOCK')
+  assert.equal(row.packageMatch, 'PASS')
+  assert.equal(row.minimumOrderQuantity, 1)
+})
+
+test('Mouser provider normalization maps zero stock to OUT_OF_STOCK', () => {
+  const provider = createMouserProvider({ env: { MOUSER_API_KEY: 'key' } })
+  const row = provider.normalizeResult({ ref: 'R1', mpn: 'RC0603FR-07100RL' }, { stockQty: 0, packageMatch: 'WARNING' })
+  assert.equal(row.provider, 'mouser')
+  assert.equal(row.sourcingStatus, SOURCING_STATUSES.OUT_OF_STOCK)
+  assert.equal(row.stockStatus, 'OUT_OF_STOCK')
+  assert.equal(row.packageMatch, 'WARNING')
+})
+
+test('LCSC provider normalization keeps assembly availability separate from stock', () => {
+  const provider = createLcscProvider({ env: { LCSC_API_KEY: 'key' } })
+  const row = provider.normalizeResult({ ref: 'C1', mpn: 'C12345' }, { stockQty: 1000, assemblyAvailability: 'AVAILABLE', minimumOrderQuantity: 5 })
+  assert.equal(row.provider, 'lcsc')
+  assert.equal(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
+  assert.equal(row.stockStatus, 'IN_STOCK')
+  assert.equal(row.assemblyAvailability, 'AVAILABLE')
+  assert.equal(row.minimumOrderQuantity, 5)
+})
+
+test('JLCPCB assembly provider normalization reports assembly availability', () => {
+  const provider = createJlcpcbAssemblyProvider({ env: { JLCPCB_API_KEY: 'key' } })
+  const row = provider.normalizeResult({ ref: 'U4', mpn: 'AP2112K-3.3TRG1' }, { stockQty: 500, assemblyAvailable: true, packageMatch: 'PASS' })
+  assert.equal(row.provider, 'jlcpcb_assembly')
+  assert.equal(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
+  assert.equal(row.stockStatus, 'IN_STOCK')
+  assert.equal(row.assemblyAvailability, 'AVAILABLE')
+  assert.equal(row.packageMatch, 'PASS')
 })
 
 test('sourcing env detection reports missing API keys without fake stock', () => {

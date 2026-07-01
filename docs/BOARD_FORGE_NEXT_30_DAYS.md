@@ -1,10 +1,12 @@
 # BoardForge Next 30 Days
 
-1. Turn imported-board repair suite into a one-command demo.
-2. Add more real existing-project sandbox imports.
-3. Improve local shove/rip-up beyond synthetic dirty fixtures.
-4. Add provider-backed sourcing when API keys are configured.
-5. Polish KiCad plugin panel UX.
-6. Improve web dashboard downloads and project detail pages.
-7. Add production installer packaging.
-8. Expand arbitrary prompt and hard-board fixtures.
+Highest-value work:
+
+1. Add real supplier API keys and verify live PoE REV_D parts.
+2. Improve KiCad plugin installation and panel polish.
+3. Add installer packaging for local web + CLI + plugin.
+4. Add more imported-board sandbox repair proofs.
+5. Expand provider support for JLCPCB/LCSC assembly data.
+6. Strengthen local shove/rip-up on harder customer-like boards.
+7. Add screenshots and demo video assets after GitHub repo setup.
+

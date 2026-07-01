@@ -1,0 +1,8 @@
+{
+  "id": "supplier_api_keys_are_external_blockers_not_engine_failures_001",
+  "title": "Missing supplier API keys are external blockers, not engine failures",
+  "rootCause": "Without credentials, BoardForge cannot verify live stock or assembly availability, but that should not be reported as a broken PCB engine.",
+  "fixSummary": "Return NOT_CHECKED/UNKNOWN with exact missing env vars and keep PCB_FAB_READY separate from assembly verification.",
+  "appliesTo": ["sourcing", "readiness", "release_gate"],
+  "tests": ["npm run test:poe-rev-d-sourcing-verification", "npm run report:90:quick -- --fresh"]
+}
