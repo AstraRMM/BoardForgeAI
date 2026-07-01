@@ -142,6 +142,12 @@
     ,"test:poe-rj45-magnetics-model": "node --test --test-name-pattern \"PoE RJ45 magnetics model\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:poe-isolation-honesty": "node --test --test-name-pattern \"PoE isolation honesty\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:readiness-90-depth-evidence": "node --test --test-name-pattern \"readiness 90 depth evidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"boardforge:poe-rev-d-proof": "node ./plugins/boardforge-plugin/bin/boardforge-poe-rev-d-proof.mjs"
+    ,"test:poe-real-part-selection": "node --test --test-name-pattern \"PoE REV_D part selection\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:isolation-creepage-calculator": "node --test --test-name-pattern \"isolation creepage calculator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-isolation-boundary": "node --test --test-name-pattern \"PoE isolation boundary\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-schematic-confidence-lift": "node --test --test-name-pattern \"PoE REV_D schematic confidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-rev-d-readiness": "node --test --test-name-pattern \"PoE REV_D readiness\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

@@ -1,0 +1,8 @@
+{
+  "id": "isolation_creepage_calculator_required_for_poe_001",
+  "title": "PoE fixtures need isolation and creepage precheck evidence",
+  "rootCause": "A routed PoE-style PCB can pass DRC/ERC while still lacking explicit primary/secondary boundary, clearance, creepage, and copper keepout evidence.",
+  "fixSummary": "Add an isolation/creepage calculator and safety report that estimates clearance/creepage, blocks copper crossings, and always marks final PoE compliance as engineering-review required.",
+  "appliesTo": ["poe_fixture", "safety_review", "clearance", "manufacturing_readiness"],
+  "tests": ["npm run test:isolation-creepage-calculator", "npm run test:poe-isolation-boundary"]
+}

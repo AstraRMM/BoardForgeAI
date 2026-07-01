@@ -1,0 +1,8 @@
+{
+  "id": "poe_not_compliance_certified_without_review_001",
+  "title": "Do not claim PoE compliance from PCB cleanliness",
+  "rootCause": "DRC 0 and ERC 0 are not equivalent to IEEE PoE, isolation, hipot, magnetics, or safety compliance.",
+  "fixSummary": "Separate PCB_FAB_READY from BLOCKED_COMPLIANCE_REVIEW and require explicit engineering review before any PoE compliance claim.",
+  "appliesTo": ["poe_fixture", "compliance", "manufacturing_gate"],
+  "tests": ["npm run test:poe-rev-d-readiness", "npm run test:poe-depth-honesty"]
+}

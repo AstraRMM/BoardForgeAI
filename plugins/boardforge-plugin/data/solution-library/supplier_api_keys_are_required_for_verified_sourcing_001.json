@@ -1,0 +1,8 @@
+{
+  "id": "supplier_api_keys_are_required_for_verified_sourcing_001",
+  "title": "Supplier API keys are required for verified sourcing",
+  "rootCause": "Manual candidate MPN selection improves schematic confidence, but it does not prove live stock, price, lifecycle, or assembly availability.",
+  "fixSummary": "Detect supplier API credentials and mark stock/assembly as NOT_CHECKED or UNKNOWN when keys are missing. Keep Gerber fabrication readiness separate from assembly readiness.",
+  "appliesTo": ["sourcing", "bom", "assembly_readiness", "supplier_api"],
+  "tests": ["npm run test:sourcing-api-key-path", "npm run test:sourcing-no-fake-stock"]
+}

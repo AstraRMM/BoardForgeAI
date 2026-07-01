@@ -1,0 +1,8 @@
+{
+  "id": "real_poe_part_selection_required_for_90_001",
+  "title": "Readiness 90 requires real PoE candidate part selection",
+  "rootCause": "PoE fixture readiness stalled when the board was PCB-clean but still described major blocks as generic placeholders or simplified candidates.",
+  "fixSummary": "Select explicit candidate MPN rows for RJ45/MagJack, PD controller, Ethernet interface, bridge/front-end, TVS, isolated power, regulator, and supporting passives while keeping stock and assembly unverified unless supplier APIs are configured.",
+  "appliesTo": ["poe_fixture", "readiness_90", "part_selection", "sourcing"],
+  "tests": ["npm run test:poe-real-part-selection", "npm run test:poe-rev-d-readiness"]
+}

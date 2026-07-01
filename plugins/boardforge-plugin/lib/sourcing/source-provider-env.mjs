@@ -33,9 +33,9 @@ export function writeSourcingApiStatusMarkdown(rows = []) {
     '',
     'BoardForge does not fake stock or assembly availability. Missing API keys produce NOT_CHECKED / UNKNOWN status.',
     '',
-    '| Provider | Env keys present | API callable | Verification available | Fallback behavior |',
-    '| --- | --- | --- | --- | --- |',
-    ...rows.map((row) => `| ${row.name} | ${row.envKeysPresent.join(', ') || 'none'} | ${row.apiCallable ? 'yes' : 'no'} | ${row.verificationAvailable} | ${row.fallbackBehavior.sourcingStatus}/${row.fallbackBehavior.stockStatus}/${row.fallbackBehavior.assemblyAvailability} |`),
+    '| Provider | Required env | Missing env | Env keys present | API callable | Verification available | Fallback behavior |',
+    '| --- | --- | --- | --- | --- | --- | --- |',
+    ...rows.map((row) => `| ${row.name} | ${row.requiredEnv.join(', ')} | ${row.missingEnv.join(', ') || 'none'} | ${row.envKeysPresent.join(', ') || 'none'} | ${row.apiCallable ? 'yes' : 'no'} | ${row.verificationAvailable} | ${row.fallbackBehavior.sourcingStatus}/${row.fallbackBehavior.stockStatus}/${row.fallbackBehavior.assemblyAvailability} |`),
     '',
   ].join('\n')
 }
