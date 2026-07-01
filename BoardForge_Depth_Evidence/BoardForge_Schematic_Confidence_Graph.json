@@ -1,0 +1,256 @@
+{
+  "schema": "boardforge.schematic-confidence-suite.v1",
+  "overallConfidence": 81,
+  "fixtures": [
+    {
+      "schema": "boardforge.schematic-confidence-graph.v1",
+      "fixture": "BF-ROBOTICS-CONTROLLER-01_REV_A",
+      "overallConfidence": 83,
+      "powerTree": 88,
+      "mcuSupport": 90,
+      "interfaces": 86,
+      "connectors": 86,
+      "decoupling": 84,
+      "protection": 78,
+      "symbolsFootprints": 88,
+      "sourcing": 78,
+      "blocks": {
+        "schema": "boardforge.schematic-block-classifier.v1",
+        "blocks": [
+          {
+            "id": "powerTree",
+            "present": true
+          },
+          {
+            "id": "mcuSupport",
+            "present": true
+          },
+          {
+            "id": "resetBootDebug",
+            "present": true
+          },
+          {
+            "id": "usb",
+            "present": true
+          },
+          {
+            "id": "can",
+            "present": true
+          },
+          {
+            "id": "i2c",
+            "present": true
+          },
+          {
+            "id": "uart",
+            "present": true
+          },
+          {
+            "id": "sensors",
+            "present": true
+          },
+          {
+            "id": "protection",
+            "present": true
+          },
+          {
+            "id": "connectors",
+            "present": true
+          }
+        ],
+        "present": [
+          "powerTree",
+          "mcuSupport",
+          "resetBootDebug",
+          "usb",
+          "can",
+          "i2c",
+          "uart",
+          "sensors",
+          "protection",
+          "connectors"
+        ],
+        "missing": []
+      },
+      "risks": [
+        {
+          "code": "SOURCING_NOT_API_VERIFIED",
+          "severity": "medium",
+          "message": "Supplier stock/assembly readiness is not API verified."
+        }
+      ],
+      "requiredHumanReview": [
+        "Confirm sourcing and assembly availability before production buy."
+      ]
+    },
+    {
+      "schema": "boardforge.schematic-confidence-graph.v1",
+      "fixture": "BF-INDUSTRIAL-IO-01_REV_A",
+      "overallConfidence": 79,
+      "powerTree": 88,
+      "mcuSupport": 90,
+      "interfaces": 55,
+      "connectors": 86,
+      "decoupling": 84,
+      "protection": 78,
+      "symbolsFootprints": 88,
+      "sourcing": 78,
+      "blocks": {
+        "schema": "boardforge.schematic-block-classifier.v1",
+        "blocks": [
+          {
+            "id": "powerTree",
+            "present": true
+          },
+          {
+            "id": "mcuSupport",
+            "present": true
+          },
+          {
+            "id": "resetBootDebug",
+            "present": true
+          },
+          {
+            "id": "usb",
+            "present": false
+          },
+          {
+            "id": "can",
+            "present": true
+          },
+          {
+            "id": "i2c",
+            "present": false
+          },
+          {
+            "id": "uart",
+            "present": false
+          },
+          {
+            "id": "sensors",
+            "present": false
+          },
+          {
+            "id": "protection",
+            "present": true
+          },
+          {
+            "id": "connectors",
+            "present": true
+          }
+        ],
+        "present": [
+          "powerTree",
+          "mcuSupport",
+          "resetBootDebug",
+          "can",
+          "protection",
+          "connectors"
+        ],
+        "missing": [
+          "usb",
+          "i2c",
+          "uart",
+          "sensors"
+        ]
+      },
+      "risks": [
+        {
+          "code": "SOURCING_NOT_API_VERIFIED",
+          "severity": "medium",
+          "message": "Supplier stock/assembly readiness is not API verified."
+        }
+      ],
+      "requiredHumanReview": [
+        "Confirm sourcing and assembly availability before production buy."
+      ]
+    },
+    {
+      "schema": "boardforge.schematic-confidence-graph.v1",
+      "fixture": "BF-POE-SENSOR-01_REV_C",
+      "overallConfidence": 81,
+      "powerTree": 88,
+      "mcuSupport": 90,
+      "interfaces": 86,
+      "connectors": 86,
+      "decoupling": 84,
+      "protection": 78,
+      "symbolsFootprints": 88,
+      "sourcing": 78,
+      "blocks": {
+        "schema": "boardforge.schematic-block-classifier.v1",
+        "blocks": [
+          {
+            "id": "powerTree",
+            "present": true
+          },
+          {
+            "id": "mcuSupport",
+            "present": true
+          },
+          {
+            "id": "resetBootDebug",
+            "present": true
+          },
+          {
+            "id": "usb",
+            "present": true
+          },
+          {
+            "id": "can",
+            "present": true
+          },
+          {
+            "id": "i2c",
+            "present": true
+          },
+          {
+            "id": "uart",
+            "present": true
+          },
+          {
+            "id": "sensors",
+            "present": true
+          },
+          {
+            "id": "protection",
+            "present": true
+          },
+          {
+            "id": "connectors",
+            "present": true
+          }
+        ],
+        "present": [
+          "powerTree",
+          "mcuSupport",
+          "resetBootDebug",
+          "usb",
+          "can",
+          "i2c",
+          "uart",
+          "sensors",
+          "protection",
+          "connectors"
+        ],
+        "missing": []
+      },
+      "risks": [
+        {
+          "code": "SOURCING_NOT_API_VERIFIED",
+          "severity": "medium",
+          "message": "Supplier stock/assembly readiness is not API verified."
+        },
+        {
+          "code": "SIMPLIFIED_BLOCK",
+          "severity": "medium",
+          "message": "PoE isolation is modeled as a simplified candidate block."
+        }
+      ],
+      "requiredHumanReview": [
+        "Confirm sourcing and assembly availability before production buy.",
+        "Review PoE isolation against the selected reference design."
+      ]
+    }
+  ]
+}

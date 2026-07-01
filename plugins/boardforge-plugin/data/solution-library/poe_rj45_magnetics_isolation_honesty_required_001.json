@@ -1,0 +1,19 @@
+{
+  "id": "poe_rj45_magnetics_isolation_honesty_required_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T22:20:00.000Z",
+  "rootCause": "PoE PCB cleanliness is not PoE compliance. Readiness near 90 needs better RJ45, magnetics, PD, protection, isolation, creepage, and sourcing honesty evidence.",
+  "fixSummary": "Add PoE REV_C modeling reports that separate modeled blocks from simplified blocks and explicitly refuse compliance, isolation, magnetics, and sourcing claims without verified evidence.",
+  "evidence": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_C",
+    "confidence": 82,
+    "drc": 0,
+    "erc": 0,
+    "sourcingStatus": "NOT_CHECKED",
+    "tests": [
+      "npm run test:poe-rj45-magnetics-model",
+      "npm run test:poe-isolation-honesty"
+    ]
+  }
+}

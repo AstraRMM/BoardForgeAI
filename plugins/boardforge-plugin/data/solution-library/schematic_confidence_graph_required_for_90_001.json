@@ -1,0 +1,17 @@
+{
+  "id": "schematic_confidence_graph_required_for_90_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T22:20:00.000Z",
+  "rootCause": "ERC clean evidence alone does not prove a generated schematic is high-confidence. BoardForge needed a graph that grades power tree, MCU support, interfaces, decoupling, connectors, pin-map, sourcing, and placeholder risk.",
+  "fixSummary": "Add schematic confidence graph/report modules and generate fixture confidence evidence with explicit risk and human-review rows.",
+  "evidence": {
+    "report": "BoardForge_Depth_Evidence/BoardForge_Schematic_Confidence_Report.md",
+    "graph": "BoardForge_Depth_Evidence/BoardForge_Schematic_Confidence_Graph.json",
+    "overallConfidence": 81,
+    "tests": [
+      "npm run test:schematic-confidence-graph",
+      "npm run test:schematic-confidence-report"
+    ]
+  }
+}

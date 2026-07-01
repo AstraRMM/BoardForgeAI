@@ -1,0 +1,21 @@
+{
+  "id": "endpoint_aware_reroute_proof_required_for_90_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T22:20:00.000Z",
+  "rootCause": "Endpoint-aware routing was previously planning evidence, not a transaction proof. Readiness 90 needs exact source/target endpoint resolution with validation gates.",
+  "fixSummary": "Add endpoint-aware router, validator, and proof generator that resolves a blocked endpoint, preserves the net, avoids shorts/forbidden vias, validates DRC/ERC, and writes transaction evidence.",
+  "evidence": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ENDPOINT-REROUTE-PROOF-01_REV_A",
+    "endpointBefore": "unresolved",
+    "endpointAfter": "resolved",
+    "drc": 0,
+    "erc": 0,
+    "shorts": 0,
+    "forbiddenVias": 0,
+    "tests": [
+      "npm run test:endpoint-aware-router",
+      "npm run test:endpoint-reroute-proof"
+    ]
+  }
+}

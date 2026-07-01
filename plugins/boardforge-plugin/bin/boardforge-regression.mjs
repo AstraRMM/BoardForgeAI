@@ -454,6 +454,10 @@ async function main() {
     drcGuidedRepair: true,
     categoryDepthReport: !quickMode || existsSync(path.resolve('BoardForge_Category_Depth_Evidence.json')) || existsSync(path.resolve('fixtures/prompt-breadth/BoardForge_Arbitrary_Prompt_Breadth_Report.json')),
     arbitraryPromptBreadth: existsSync(path.resolve('fixtures/prompt-breadth/BoardForge_Arbitrary_Prompt_Breadth_Report.json')),
+    schematicConfidenceGraph: existsSync(path.resolve('BoardForge_Depth_Evidence/BoardForge_Schematic_Confidence_Graph.json')),
+    threeDModelCoverage: existsSync(path.resolve('BoardForge_Depth_Evidence/BoardForge_3D_Model_Coverage.json')),
+    endpointRerouteProof: existsSync(path.resolve('C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-ENDPOINT-REROUTE-PROOF-01_REV_A/BoardForge_Endpoint_Reroute_Transactions.json')),
+    poeRevCModeling: existsSync(path.resolve('C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_C/BoardForge_PoE_REV_C_Modeling.json')),
     approvedOnlySyncArchitecture: existsSync(path.resolve('docs/BOARD_FORGE_APPROVED_ONLY_SYNC_ARCHITECTURE.md')),
     questionEngineArchitecture: existsSync(path.resolve('docs/BOARD_FORGE_QUESTION_ENGINE_ARCHITECTURE.md')),
     localEngineBridge: existsSync(path.resolve('plugins/boardforge-plugin/lib/platform/local-engine-status-reader.mjs')) &&

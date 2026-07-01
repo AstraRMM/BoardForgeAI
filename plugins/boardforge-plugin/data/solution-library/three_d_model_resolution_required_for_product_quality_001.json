@@ -1,0 +1,19 @@
+{
+  "id": "three_d_model_resolution_required_for_product_quality_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T22:20:00.000Z",
+  "rootCause": "BoardForge could validate electrical/manufacturing data while still lacking visible mechanical model coverage. Product-quality boards need explicit 3D model status per footprint.",
+  "fixSummary": "Add a 3D model resolver/checker/report path that resolves KiCad or local model paths, verifies file existence, and discloses missing or placeholder models without faking coverage.",
+  "evidence": {
+    "report": "BoardForge_Depth_Evidence/BoardForge_3D_Model_Coverage_Report.md",
+    "json": "BoardForge_Depth_Evidence/BoardForge_3D_Model_Coverage.json",
+    "coverageScore": 100,
+    "footprintsChecked": 8,
+    "modelsResolved": 8,
+    "tests": [
+      "npm run test:3d-model-resolver",
+      "npm run test:3d-model-coverage-report"
+    ]
+  }
+}

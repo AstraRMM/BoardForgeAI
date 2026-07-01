@@ -132,6 +132,16 @@
     ,"test:approved-only-sync-architecture-doc": "node --test --test-name-pattern \"approved-only sync architecture\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:question-engine-architecture-doc": "node --test --test-name-pattern \"question engine architecture\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:readiness-90-evidence-gate": "node --test --test-name-pattern \"readiness 90 evidence gate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"boardforge:depth-evidence": "node ./plugins/boardforge-plugin/bin/boardforge-depth-evidence.mjs"
+    ,"test:schematic-confidence-graph": "node --test --test-name-pattern \"schematic confidence graph\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:schematic-confidence-report": "node --test --test-name-pattern \"schematic confidence report\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:3d-model-resolver": "node --test --test-name-pattern \"3D model resolver\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:3d-model-coverage-report": "node --test --test-name-pattern \"3D model coverage report\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:endpoint-aware-router": "node --test --test-name-pattern \"endpoint-aware router\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:endpoint-reroute-proof": "node --test --test-name-pattern \"endpoint reroute proof\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-rj45-magnetics-model": "node --test --test-name-pattern \"PoE RJ45 magnetics model\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-isolation-honesty": "node --test --test-name-pattern \"PoE isolation honesty\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-90-depth-evidence": "node --test --test-name-pattern \"readiness 90 depth evidence\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

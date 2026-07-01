@@ -1,0 +1,9 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('BoardForge generated simple mechanical envelope for lqfp48-envelope'),'2;1');
+FILE_NAME('lqfp48-envelope.step','2026-07-01T00:00:00',('BoardForge'),('BoardForge'),'BoardForge','BoardForge','');
+FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));
+ENDSEC;
+DATA;
+ENDSEC;
+END-ISO-10303-21;

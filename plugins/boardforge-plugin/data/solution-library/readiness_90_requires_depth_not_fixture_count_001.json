@@ -1,0 +1,18 @@
+{
+  "id": "readiness_90_requires_depth_not_fixture_count_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T22:20:00.000Z",
+  "rootCause": "More clean fixture count no longer moves BoardForge meaningfully toward 90. The remaining blockers are depth proofs: schematic confidence, 3D models, endpoint reroute, and PoE isolation/magnetics honesty.",
+  "fixSummary": "Stop rewarding easy fixture count for readiness 90 and add explicit depth-evidence categories with tests and reports. Keep score below 90 when PoE remains candidate/simplified or sourcing is not verified.",
+  "evidence": {
+    "previousScore": 88,
+    "newScore": 89,
+    "status": "MVP_READINESS_89_EVIDENCE_BACKED_NOT_90",
+    "remaining90Blocker": "PoE still uses candidate/simplified blocks and schematic confidence is limited by NOT_CHECKED sourcing plus simplified PoE isolation.",
+    "tests": [
+      "npm run test:readiness-90-depth-evidence",
+      "npm run report:90:quick -- --fresh"
+    ]
+  }
+}

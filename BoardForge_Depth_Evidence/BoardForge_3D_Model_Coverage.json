@@ -1,0 +1,90 @@
+{
+  "schema": "boardforge.3d-model-coverage.v1",
+  "footprintsChecked": 8,
+  "modelsResolved": 8,
+  "placeholdersOrDisclosedMissing": 0,
+  "missing": 0,
+  "coverageScore": 100,
+  "rows": [
+    {
+      "ref": "U1",
+      "footprint": "Package_QFP:LQFP-48_7x7mm_P0.5mm",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\lqfp48-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\lqfp48-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "J1",
+      "footprint": "Connector_USB:USB_C_Receptacle_USB2.0",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\usb-c-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\usb-c-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "J2",
+      "footprint": "Connector_RJ:RJ45_MagJack_Generic",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\rj45-magjack-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\rj45-magjack-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "U2",
+      "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\soic8-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\soic8-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "R1",
+      "footprint": "Resistor_SMD:R_0603_1608Metric",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\r0603-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\r0603-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "D1",
+      "footprint": "LED_SMD:LED_0603_1608Metric",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\led0603-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\led0603-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "J3",
+      "footprint": "TerminalBlock:TerminalBlock_1x04",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\terminal-block-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\terminal-block-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    },
+    {
+      "ref": "MH1",
+      "footprint": "MountingHole:MountingHole_2.2mm_M2",
+      "expectedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\mounting-hole-envelope.step",
+      "resolvedModel": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Depth_Evidence\\generated-3d-models\\mounting-hole-envelope.step",
+      "modelExists": true,
+      "source": "local model",
+      "risk": "verified model path exists",
+      "status": "PASS"
+    }
+  ]
+}
