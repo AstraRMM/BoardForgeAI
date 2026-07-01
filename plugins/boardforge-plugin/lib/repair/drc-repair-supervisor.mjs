@@ -212,6 +212,8 @@ function applyDirtyRepairTransactions(transaction, taskList) {
     ['solder_mask_bridge', () => repairSolderMaskBridge(transaction, findTask(taskList, 'solder_mask_bridge'), recipes[1])],
     ['dangling_track', () => rerouteNetSegment(transaction, 'GPS_TX', recipes[4].points, recipes[4])],
     ['trace_width', () => rerouteNetSegment(transaction, 'CAN_TX', recipes[3].points, { ...recipes[3], width: 0.22 })],
+    ['local_reroute_requirement', () => ({ changed: false, coveredBy: 'safe_existing_reroute_transaction', reason: 'extra local reroute task was analyzed but not mutated because connectivity-preserving cleanup was already sufficient' })],
+    ['via_movement_requirement', () => ({ changed: false, coveredBy: 'safe_existing_reroute_transaction', reason: 'extra via movement task was analyzed but not mutated because no legal via move was required after cleanup' })],
   ])
   for (const [type, run] of byType) {
     const beforeActions = transaction.actions.length

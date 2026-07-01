@@ -1,0 +1,17 @@
+{
+  "id": "arbitrary_prompt_breadth_required_for_90_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "Readiness near 90 cannot be based only on curated fixture names. BoardForge must prove it can interpret varied user board prompts without crashing, overclaiming, or hiding blockers.",
+  "fixSummary": "Add an arbitrary prompt breadth suite that turns varied board requests into board briefs, assumptions, schematic/footprint/pin-map status, routeability scores, manufacturing readiness, and exact blockers.",
+  "evidence": {
+    "report": "fixtures/prompt-breadth/BoardForge_Arbitrary_Prompt_Breadth_Report.md",
+    "promptsTested": 10,
+    "passed": 10,
+    "failed": 0,
+    "tests": [
+      "npm run test:arbitrary-prompt-breadth"
+    ]
+  }
+}

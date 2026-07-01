@@ -1,0 +1,82 @@
+{
+  "id": "industrial-io",
+  "name": "BF-INDUSTRIAL-IO-01",
+  "revision": "REV_A",
+  "type": "industrial_io_controller",
+  "category": "industrial I/O",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-INDUSTRIAL-IO-01_REV_A",
+  "brief": "An industrial 24V input/output controller fixture with MCU, 24V field input placeholder, buck regulator placeholder, opto-isolated input placeholders, low-side output placeholders, CAN/RS485, screw terminals, TVS placeholders, SWD, and status LEDs.",
+  "difficulty": "hard",
+  "layers": 4,
+  "outline": {
+    "shape": "wide rectangular field I/O controller with terminal-block edge",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["screw-terminal field edge", "logic/control side", "isolation review corridor", "mounting holes"]
+  },
+  "boardType": "Industrial 24V input/output controller",
+  "architecture": [
+    "MCU",
+    "24V field power placeholder",
+    "buck regulator placeholder to 5V/3V3",
+    "opto-isolated digital input placeholders",
+    "low-side output driver placeholders",
+    "CAN or RS485 transceiver",
+    "screw terminal connectors",
+    "TVS/protection placeholders",
+    "status LEDs",
+    "SWD/debug"
+  ],
+  "routeabilityTargets": {
+    "preRouteShorts": 0,
+    "unconnected": 0,
+    "drc": 0,
+    "erc": 0
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "honesty": {
+    "fixtureStatus": "SIMPLIFIED_INDUSTRIAL_FIXTURE",
+    "safetyCertification": "NOT_CERTIFIED",
+    "isolation": "SIMPLIFIED_PLACEHOLDER_NOT_CERTIFIED",
+    "creepage": "REQUIRES_ENGINEERING_REVIEW",
+    "sourcing": "SOURCING_NOT_API_VERIFIED",
+    "stock": "NOT_CHECKED"
+  },
+  "expectedOutputs": [
+    "real KiCad schematic graph",
+    "pin-map checks pass",
+    "pre-route shorts zero",
+    "routeability score",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean",
+    "industrial honesty/compliance report"
+  ],
+  "knownRisks": [
+    "This fixture does not claim safety certification",
+    "Isolation and creepage are simplified and require engineering review",
+    "Field wiring surge/protection placeholders are not supplier-verified"
+  ],
+  "learningGoals": [
+    "terminal block edge placement",
+    "field-side vs logic-side separation",
+    "24V industrial routing and protection placeholders",
+    "honest compliance boundaries"
+  ],
+  "honestyBadges": [
+    "SIMPLIFIED_INDUSTRIAL_FIXTURE",
+    "SAFETY_CERTIFICATION_NOT_VERIFIED",
+    "CREEPAGE_REVIEW_REQUIRED",
+    "SOURCING_NOT_API_VERIFIED"
+  ],
+  "protectionPolicy": "synthetic_only_no_ESC_FC_paths"
+}

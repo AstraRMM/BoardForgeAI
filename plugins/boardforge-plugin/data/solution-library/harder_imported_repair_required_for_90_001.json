@@ -1,0 +1,23 @@
+{
+  "id": "harder_imported_repair_required_for_90_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "A single easy imported-board sandbox repair is not enough for 90 readiness. BoardForge must prove harder imports remain source-protected while repairs happen only in copied sandboxes.",
+  "fixSummary": "Add a fourth imported-board repair proof with a local reroute requirement, via movement requirement, edge/hole clearance issue, short, and silkscreen issue. Keep source hashes unchanged and export only the repaired sandbox when clean.",
+  "evidence": {
+    "source": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-IMPORTED-USER-BOARD-REPAIR-04_SOURCE",
+    "sandbox": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-IMPORTED-USER-BOARD-REPAIR-04_SANDBOX",
+    "sourceUntouched": true,
+    "drcBefore": 10,
+    "drcAfter": 0,
+    "shortsBefore": 1,
+    "shortsAfter": 0,
+    "transactionsAttempted": 10,
+    "transactionsCommitted": 10,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-IMPORTED-USER-BOARD-REPAIR-04_SANDBOX\\manufacturing\\BF-IMPORTED-USER-BOARD-REPAIR-04_JLCPCB.zip",
+    "tests": [
+      "npm run test:imported-board-repair-04"
+    ]
+  }
+}

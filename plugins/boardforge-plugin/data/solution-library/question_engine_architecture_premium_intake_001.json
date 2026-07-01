@@ -1,0 +1,14 @@
+{
+  "id": "question_engine_architecture_premium_intake_001",
+  "status": "active",
+  "confidence": "medium",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "A premium BoardForge intake cannot either guess everything silently or ask users to babysit every detail. It needs essential conditional questions, smart defaults, and explicit assumptions.",
+  "fixSummary": "Document a board-type question engine that asks only essential follow-ups, branches on selected features such as CAN, USB-C, PoE, custom shape, or industrial I/O, then generates a board brief for approval before build.",
+  "evidence": {
+    "doc": "docs/BOARD_FORGE_QUESTION_ENGINE_ARCHITECTURE.md",
+    "tests": [
+      "npm run test:question-engine-architecture-doc"
+    ]
+  }
+}

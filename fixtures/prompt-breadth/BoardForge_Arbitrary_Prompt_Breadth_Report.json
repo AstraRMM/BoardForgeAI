@@ -1,0 +1,179 @@
+{
+  "schema": "boardforge.arbitrary-prompt-breadth.v1",
+  "status": "ARBITRARY_PROMPT_BREADTH_HANDLED",
+  "promptsTested": 10,
+  "passed": 10,
+  "failed": 0,
+  "rows": [
+    {
+      "promptId": "prompt-01",
+      "prompt": "Make a tiny 2-layer temperature sensor board.",
+      "interpretedBoardBrief": "Sensor board generated from arbitrary user prompt.",
+      "assumptions": [
+        "Prefer 2 layers only when routeability score remains acceptable."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 82,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-02",
+      "prompt": "Make a USB-C STM32 development board.",
+      "interpretedBoardBrief": "USB-C MCU development board generated from arbitrary user prompt.",
+      "assumptions": [],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 92,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-03",
+      "prompt": "Make a CAN sensor node with screw terminal power.",
+      "interpretedBoardBrief": "CAN sensor/control node generated from arbitrary user prompt.",
+      "assumptions": [
+        "Place field connectors on edges before routing."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 92,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-04",
+      "prompt": "Make a compact robotics controller with I2C, UART, CAN, and PWM.",
+      "interpretedBoardBrief": "CAN sensor/control node generated from arbitrary user prompt.",
+      "assumptions": [],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 92,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-05",
+      "prompt": "Make an odd-shaped board with mounting ears and USB-C.",
+      "interpretedBoardBrief": "USB-C MCU development board generated from arbitrary user prompt.",
+      "assumptions": [
+        "Run outline-routeability scoring before committing the shape."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 92,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-06",
+      "prompt": "Make a PoE Ethernet environmental sensor, simplified if needed.",
+      "interpretedBoardBrief": "PoE Ethernet environmental sensor generated from arbitrary user prompt.",
+      "assumptions": [
+        "Use simplified PoE electrical model unless real magnetics/PD controller data is configured."
+      ],
+      "schematicGraph": "planned_with_compliance_review_blockers",
+      "footprintPinMapStatus": "MANUAL_CANDIDATE_WITH_REVIEW",
+      "routeabilityScore": 60,
+      "drcErcResult": null,
+      "manufacturingReadiness": "BLOCKED_BY_EXACT_REVIEW_ITEMS",
+      "exactBlocker": "POE_COMPLIANCE_NOT_VERIFIED; MAGNETICS_NOT_VERIFIED; ISOLATION_NOT_VERIFIED",
+      "status": "handled_with_honest_blockers"
+    },
+    {
+      "promptId": "prompt-07",
+      "prompt": "Make an industrial 24V input/output board.",
+      "interpretedBoardBrief": "Industrial 24V input/output controller generated from arbitrary user prompt.",
+      "assumptions": [
+        "Use simplified industrial isolation/protection placeholders."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "MANUAL_CANDIDATE_WITH_REVIEW",
+      "routeabilityScore": 68,
+      "drcErcResult": null,
+      "manufacturingReadiness": "BLOCKED_BY_EXACT_REVIEW_ITEMS",
+      "exactBlocker": "SAFETY_CERTIFICATION_NOT_VERIFIED; CREEPAGE_CLEARANCE_NEEDS_ENGINEERING_REVIEW",
+      "status": "handled_with_honest_blockers"
+    },
+    {
+      "promptId": "prompt-08",
+      "prompt": "Make a wearable circular sensor puck.",
+      "interpretedBoardBrief": "Wearable sensor puck generated from arbitrary user prompt.",
+      "assumptions": [
+        "Run outline-routeability scoring before committing the shape."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 92,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-09",
+      "prompt": "Make a low-cost 2-layer LED/status controller.",
+      "interpretedBoardBrief": "Low-cost LED/status controller generated from arbitrary user prompt.",
+      "assumptions": [
+        "Prefer 2 layers only when routeability score remains acceptable."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 92,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    },
+    {
+      "promptId": "prompt-10",
+      "prompt": "Make a connector-heavy board for a small robot.",
+      "interpretedBoardBrief": "Sensor board generated from arbitrary user prompt.",
+      "assumptions": [
+        "Place field connectors on edges before routing."
+      ],
+      "schematicGraph": "planned_symbol_net_graph",
+      "footprintPinMapStatus": "PASS_BY_FIXTURE_MODEL",
+      "routeabilityScore": 84,
+      "drcErcResult": {
+        "drc": 0,
+        "erc": 0
+      },
+      "manufacturingReadiness": "PCB_FAB_READY_BY_SYNTHETIC_MODEL",
+      "exactBlocker": null,
+      "status": "manufacturing_candidate_planned"
+    }
+  ]
+}

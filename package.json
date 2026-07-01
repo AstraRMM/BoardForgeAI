@@ -46,6 +46,7 @@
     "boardforge:dirty-repair-proof-02": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs -- --project-id BF-DIRTY-REPAIR-PROOF-02_REV_A --harder",
     "boardforge:imported-board-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs",
     "boardforge:imported-board-repair-suite": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs --suite",
+    "boardforge:arbitrary-prompt-breadth": "node ./plugins/boardforge-plugin/bin/boardforge-arbitrary-prompt-breadth.mjs",
     "boardforge:category-depth": "node ./plugins/boardforge-plugin/bin/boardforge-category-depth-evidence.mjs",
     "boardforge:dashboard-data": "node ./plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
     "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
@@ -121,6 +122,16 @@
     ,"test:web-downloads-page": "node --test --test-name-pattern \"web downloads page\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:kicad-plugin-refuses-source-mutation": "node --test --test-name-pattern \"KiCad plugin refuses source mutation\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:kicad-plugin-allows-sandbox-repair": "node --test --test-name-pattern \"KiCad plugin allows sandbox repair\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:arbitrary-prompt-breadth": "node --test --test-name-pattern \"arbitrary prompt breadth\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:industrial-io-fixture": "node --test --test-name-pattern \"industrial I/O fixture\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:poe-depth-honesty": "node --test --test-name-pattern \"PoE depth honesty\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:sourcing-api-key-path": "node --test --test-name-pattern \"sourcing API key path\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:pcb-fab-vs-assembly-readiness": "node --test --test-name-pattern \"PCB fab vs assembly readiness\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:imported-board-repair-04": "node --test --test-name-pattern \"imported-board repair 04\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:local-shove-ripup-hardcase": "node --test --test-name-pattern \"local shove ripup hardcase\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:approved-only-sync-architecture-doc": "node --test --test-name-pattern \"approved-only sync architecture\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:question-engine-architecture-doc": "node --test --test-name-pattern \"question engine architecture\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:readiness-90-evidence-gate": "node --test --test-name-pattern \"readiness 90 evidence gate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

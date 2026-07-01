@@ -1,0 +1,24 @@
+{
+  "id": "poe_honesty_not_fake_compliance_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "PoE fixtures can pass PCB DRC/ERC while still lacking real IEEE compliance, isolation, magnetics, and sourcing verification. Treating PCB cleanliness as PoE compliance would be a dangerous false claim.",
+  "fixSummary": "Model PoE fixture depth with explicit honesty statuses: electrical fixture only, compliance not verified, magnetics not verified, isolation not certified, sourcing not API verified. Export PCB manufacturing only when DRC/ERC are clean and keep compliance as a separate engineering-review gate.",
+  "evidence": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_B",
+    "drc": 0,
+    "erc": 0,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_B\\manufacturing\\BF-POE-SENSOR-01_REV_B_JLCPCB.zip",
+    "knownLimitations": [
+      "POE_COMPLIANCE_NOT_VERIFIED",
+      "MAGNETICS_NOT_VERIFIED",
+      "SIMPLIFIED_ISOLATION_PLACEHOLDER_NOT_CERTIFIED",
+      "CREEPAGE_KEEP_OUT_NOT_CERTIFIED",
+      "SOURCING_NOT_API_VERIFIED"
+    ],
+    "tests": [
+      "npm run test:poe-depth-honesty"
+    ]
+  }
+}

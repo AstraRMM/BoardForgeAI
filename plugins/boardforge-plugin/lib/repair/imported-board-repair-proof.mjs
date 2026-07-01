@@ -16,6 +16,12 @@ export const importedBoardRepairSuite = [
   { projectId: 'BF-IMPORTED-USER-BOARD-REPAIR-03', category: 'imported CAN/connector-heavy board' },
 ]
 
+export const importedBoardRepair04 = {
+  projectId: 'BF-IMPORTED-USER-BOARD-REPAIR-04',
+  category: 'harder imported board with local reroute, via movement, edge/hole clearance, short, and silkscreen defects',
+  harder: true,
+}
+
 export function importedRepairPaths(projectId = IMPORTED_REPAIR_PROJECT_ID) {
   return {
     projectId,
@@ -29,7 +35,7 @@ export async function runImportedBoardSandboxRepairProof(options = {}) {
   const defaultPaths = importedRepairPaths(projectId)
   const sourceFolder = options.sourceFolder || defaultPaths.sourceFolder
   const sandboxFolder = options.sandboxFolder || defaultPaths.sandboxFolder
-  const category = options.category || importedBoardRepairSuite.find((item) => item.projectId === projectId)?.category || 'imported KiCad board'
+  const category = options.category || importedBoardRepairSuite.find((item) => item.projectId === projectId)?.category || (projectId === importedBoardRepair04.projectId ? importedBoardRepair04.category : 'imported KiCad board')
   assertSafeFixturePath(sourceFolder)
   assertSafeFixturePath(sandboxFolder)
   createImportedUserBoardSource({ sourceFolder, projectId, category })
@@ -45,7 +51,7 @@ export async function runImportedBoardSandboxRepairProof(options = {}) {
     projectId,
     seedBoardPath,
     seedSchematicPath,
-    harder: true,
+    harder: options.harder ?? true,
   })
 
   const sourceHashAfter = hashProject(sourceFolder)

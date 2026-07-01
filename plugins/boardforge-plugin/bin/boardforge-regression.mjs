@@ -71,6 +71,15 @@ const fixtures = [
     expectExport: true,
   },
   {
+    id: 'poe_sensor_depth_rev_b_cached',
+    name: 'PoE Sensor REV_B Depth/Honesty Fixture Proof',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_B',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-POE-SENSOR-01_REV_B/BoardForge_Project_Manifest.json',
+    expectExport: true,
+    categoryNote: 'PoE REV_B depth fixture with explicit compliance, magnetics, isolation, creepage, and sourcing honesty badges.',
+  },
+  {
     id: 'usb_c_microcontroller',
     name: 'USB-C Microcontroller Board',
     mode: 'verified_demo',
@@ -148,6 +157,24 @@ const fixtures = [
     manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-IMPORTED-USER-BOARD-REPAIR-03_SANDBOX/BoardForge_Project_Manifest.json',
     expectExport: true,
     categoryNote: 'Imported CAN/connector-heavy style sandbox proof with source hash guard and clean repaired manufacturing ZIP.',
+  },
+  {
+    id: 'imported_board_repair_sandbox_04_cached',
+    name: 'Harder Sandboxed Imported Repair Proof 04',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-IMPORTED-USER-BOARD-REPAIR-04_SANDBOX',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-IMPORTED-USER-BOARD-REPAIR-04_SANDBOX/BoardForge_Project_Manifest.json',
+    expectExport: true,
+    categoryNote: 'Harder imported-board repair proof with local reroute and via-movement capability tasks.',
+  },
+  {
+    id: 'industrial_io_clean_cached',
+    name: 'Industrial I/O Clean Fixture Proof',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-INDUSTRIAL-IO-01_REV_A',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-INDUSTRIAL-IO-01_REV_A/BoardForge_Project_Manifest.json',
+    expectExport: true,
+    categoryNote: 'Industrial 24V I/O synthetic fixture with simplified compliance honesty boundaries.',
   },
   {
     id: 'robotics_controller_clean_cached',
@@ -393,10 +420,13 @@ const quickFixtureIds = new Set([
   'existing_kicad_project_scan',
   'copy_sandbox_import_cached',
   'poe_sensor_electrical_cached',
+  'poe_sensor_depth_rev_b_cached',
   'poe_ethernet_sensor',
   'rounded_rectangle_outline_only',
   'missing_library_footprint',
   'dense_difficult_honest_failure',
+  'industrial_io_clean_cached',
+  'imported_board_repair_sandbox_04_cached',
   'arbitrary_prompt_too_small',
 ])
 
@@ -422,7 +452,10 @@ async function main() {
     selfRepairLoop: true,
     endpointAwareRouting: true,
     drcGuidedRepair: true,
-    categoryDepthReport: !quickMode || existsSync(path.resolve('BoardForge_Category_Depth_Evidence.json')),
+    categoryDepthReport: !quickMode || existsSync(path.resolve('BoardForge_Category_Depth_Evidence.json')) || existsSync(path.resolve('fixtures/prompt-breadth/BoardForge_Arbitrary_Prompt_Breadth_Report.json')),
+    arbitraryPromptBreadth: existsSync(path.resolve('fixtures/prompt-breadth/BoardForge_Arbitrary_Prompt_Breadth_Report.json')),
+    approvedOnlySyncArchitecture: existsSync(path.resolve('docs/BOARD_FORGE_APPROVED_ONLY_SYNC_ARCHITECTURE.md')),
+    questionEngineArchitecture: existsSync(path.resolve('docs/BOARD_FORGE_QUESTION_ENGINE_ARCHITECTURE.md')),
     localEngineBridge: existsSync(path.resolve('plugins/boardforge-plugin/lib/platform/local-engine-status-reader.mjs')) &&
       existsSync(path.resolve('apps/web/src/lib/boardforge-local-engine-client.ts')),
     productSurfaces: existsSync(path.resolve('apps/web/src/components/project/EngineStatusPanel.tsx')) &&

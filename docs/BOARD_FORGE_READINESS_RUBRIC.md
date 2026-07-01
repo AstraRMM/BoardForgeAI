@@ -10,7 +10,7 @@ BoardForge readiness is evidence-backed. Scores must not increase from claims, p
 - 75: early alpha platform. Category coverage, safe import, manufacturing gates, and at least one dirty-to-clean physical repair proof exist.
 - 80: product alpha. Dirty repair evidence repeats, local engine status is visible through web/KiCad surfaces, import/upload workflow is sandboxed, and non-template category depth is clear.
 - 85: product alpha plus. Multiple sandboxed imported-board repair proofs pass, source hash guards prove originals untouched, web/KiCad/CLI alpha workflow is documented and tested, sourcing gates separate PCB fabrication from assembly verification, and fixture regression remains green.
-- 90: credible MVP. Repeated arbitrary-board sandbox proofs, production installer/docs, reliable regression fixtures, and strong manufacturing/export validation exist.
+- 90: credible MVP. Arbitrary prompt breadth, industrial I/O category depth, PoE honesty/isolation depth, harder imported-board sandbox repair, sourcing API key path, local shove/rip-up evidence, production installer/docs, reliable regression fixtures, and strong manufacturing/export validation exist.
 
 ## Evidence Categories
 
@@ -36,6 +36,13 @@ BoardForge readiness is evidence-backed. Scores must not increase from claims, p
 - source untouched hash guard
 - web/KiCad/CLI shared manifest workflow
 - PCB fabrication readiness vs assembly sourcing readiness
+- arbitrary prompt breadth
+- industrial I/O fixture evidence
+- PoE compliance honesty depth
+- harder imported-board repair
+- local shove/rip-up hardcase evidence
+- approved-only sync architecture
+- question engine architecture
 
 ## 85 Evidence Gate
 
@@ -57,3 +64,15 @@ Readiness 85 requires:
 Manufacturing readiness requires DRC 0, ERC errors 0, shorts 0, unconnected 0, forbidden vias 0, valid outline, valid mounting holes, Gerbers, drill, BOM, CPL, and ZIP evidence.
 
 Supplier stock may only be `API_VERIFIED` when a configured provider validates it. Otherwise it must remain `NOT_CHECKED`, `MANUAL_CANDIDATE`, or `PLACEHOLDER`.
+
+## 90 Evidence Gate
+
+Readiness 90 requires real evidence, not docs alone:
+
+- arbitrary prompt breadth suite handles varied prompts and returns exact blockers instead of crashing
+- industrial I/O synthetic fixture reaches DRC 0 / ERC 0 / unconnected 0 or produces exact compliance blockers
+- PoE fixture carries explicit compliance, magnetics, isolation, creepage, and sourcing honesty badges
+- at least one harder imported-board sandbox repair includes local reroute and via-movement capability tasks
+- sourcing API key path detects configured/missing keys and never fakes stock
+- local shove/rip-up hardcase evidence proves rollback/commit gates
+- product docs cover approved-only sync and question-engine intake without claiming full implementation

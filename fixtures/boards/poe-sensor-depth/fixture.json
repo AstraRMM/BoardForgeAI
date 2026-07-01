@@ -1,0 +1,50 @@
+{
+  "id": "poe-sensor-depth",
+  "name": "BF-POE-SENSOR-01",
+  "revision": "REV_B",
+  "type": "poe_ethernet_sensor",
+  "targetFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-POE-SENSOR-01_REV_B",
+  "brief": "A deeper PoE Ethernet sensor fixture with RJ45/MagJack candidate, PoE PD controller placeholder, TVS/protection, simplified input bridge, explicitly simplified isolated-flyback placeholder, 5V/3V3 rails, MCU/Ethernet interface placeholder, and isolation/creepage review notes.",
+  "layers": 4,
+  "outline": {
+    "shape": "PoE sensor with RJ45 edge, power-front-end zone, and low-voltage sensor zone",
+    "widthMm": 68,
+    "heightMm": 44,
+    "features": ["RJ45/MagJack edge", "PoE protection corridor", "isolation review boundary", "low-voltage sensor zone", "debug side"]
+  },
+  "constraints": {
+    "forbiddenVias": ["blind", "buried", "microvia", "via-in-pad"],
+    "preRouteShortsRequired": 0,
+    "manufacturingRequires": {
+      "shorts": 0,
+      "unconnected": 0,
+      "forbiddenVias": 0,
+      "drc": 0,
+      "erc": 0
+    }
+  },
+  "honesty": {
+    "fixtureStatus": "ELECTRICAL_FIXTURE_ONLY",
+    "poeCompliance": "POE_COMPLIANCE_NOT_VERIFIED",
+    "magnetics": "MAGNETICS_NOT_VERIFIED",
+    "isolation": "SIMPLIFIED_ISOLATION_PLACEHOLDER_NOT_CERTIFIED",
+    "creepage": "CREEPAGE_KEEP_OUT_NOT_CERTIFIED",
+    "sourcing": "SOURCING_NOT_API_VERIFIED",
+    "stock": "NOT_CHECKED"
+  },
+  "expectedOutputs": [
+    "real KiCad schematic graph",
+    "pin-map checks pass",
+    "pre-route shorts zero",
+    "routeability score",
+    "DRC/ERC reports",
+    "manufacturing ZIP only if clean",
+    "PoE compliance honesty report"
+  ],
+  "knownRisks": [
+    "No IEEE 802.3af/at compliance claim",
+    "No magnetics validation",
+    "No isolation safety certification",
+    "Supplier stock is not API verified"
+  ]
+}

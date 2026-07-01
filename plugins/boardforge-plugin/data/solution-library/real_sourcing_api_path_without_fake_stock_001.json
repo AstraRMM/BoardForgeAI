@@ -1,0 +1,22 @@
+{
+  "id": "real_sourcing_api_path_without_fake_stock_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "BoardForge can be PCB-fab ready without being assembly verified. Without supplier API credentials, claiming stock or assembly availability would fake business-critical evidence.",
+  "fixSummary": "Detect supplier API environment variables, report missing keys explicitly, return NOT_CHECKED/UNKNOWN when keys are absent, and keep PCB_FAB_READY separate from ASSEMBLY_READY_VERIFIED.",
+  "evidence": {
+    "guide": "BoardForge_Sourcing_API_Setup_Guide.md",
+    "requiredEnvironment": [
+      "DIGIKEY_CLIENT_ID",
+      "DIGIKEY_CLIENT_SECRET",
+      "MOUSER_API_KEY",
+      "LCSC_API_KEY",
+      "JLCPCB_API_KEY"
+    ],
+    "tests": [
+      "npm run test:sourcing-api-key-path",
+      "npm run test:pcb-fab-vs-assembly-readiness"
+    ]
+  }
+}

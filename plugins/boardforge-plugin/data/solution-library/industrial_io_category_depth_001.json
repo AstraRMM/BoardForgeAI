@@ -1,0 +1,19 @@
+{
+  "id": "industrial_io_category_depth_001",
+  "status": "active",
+  "confidence": "high",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "BoardForge needed proof beyond sensor/controller fixtures before claiming broad category depth. Industrial I/O boards add 24V input, terminals, field bus, protection, and compliance-honesty concerns.",
+  "fixSummary": "Add a simplified industrial 24V I/O fixture with explicit non-certification badges, DRC/ERC validation, manufacturing ZIP gating, and compliance honesty reporting.",
+  "evidence": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-INDUSTRIAL-IO-01_REV_A",
+    "drc": 0,
+    "erc": 0,
+    "shorts": 0,
+    "unconnected": 0,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-INDUSTRIAL-IO-01_REV_A\\manufacturing\\BF-INDUSTRIAL-IO-01_REV_A_JLCPCB.zip",
+    "tests": [
+      "npm run test:industrial-io-fixture"
+    ]
+  }
+}

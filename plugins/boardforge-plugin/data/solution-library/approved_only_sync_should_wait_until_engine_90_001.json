@@ -1,0 +1,14 @@
+{
+  "id": "approved_only_sync_should_wait_until_engine_90_001",
+  "status": "active",
+  "confidence": "medium",
+  "createdAt": "2026-07-01T21:30:00.000Z",
+  "rootCause": "Dashboard sync can clutter the product with failed experiments or unpublished local drafts if it is built before the engine has strong enough quality gates.",
+  "fixSummary": "Document an approved-only sync lifecycle with local_draft, local_candidate, approved_for_dashboard, dashboard_published, archived, and failed_experiment states. License/auth checks may run silently, but project publishing requires explicit user approval.",
+  "evidence": {
+    "doc": "docs/BOARD_FORGE_APPROVED_ONLY_SYNC_ARCHITECTURE.md",
+    "tests": [
+      "npm run test:approved-only-sync-architecture-doc"
+    ]
+  }
+}
