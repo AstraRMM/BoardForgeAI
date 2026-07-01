@@ -1,0 +1,20 @@
+{
+  "id": "drc_repair_task_list_to_transactional_mutation_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "DRC repair cannot remain a freeform report; each violation needs a concrete, auditable mutation plan with commit or rollback status.",
+  "fixSummary": "Represent DRC issues as structured repair tasks with issue type, objects, nets, layers, coordinates, repair strategy, before/after counts, and transaction status.",
+  "evidence": {
+    "taskList": "BoardForge_Dirty_Repair_Task_List.json",
+    "families": [
+      "track_crossing",
+      "shorting_item",
+      "hole_clearance",
+      "copper_edge_clearance",
+      "solder_mask_bridge",
+      "silkscreen_overlap",
+      "dangling_track",
+      "trace_width"
+    ]
+  }
+}

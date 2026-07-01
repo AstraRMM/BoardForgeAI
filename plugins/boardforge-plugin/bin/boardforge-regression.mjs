@@ -105,6 +105,15 @@ const fixtures = [
     expectExport: true,
   },
   {
+    id: 'dirty_repair_physical_proof_cached',
+    name: 'Dirty-to-Clean Physical Repair Proof',
+    mode: 'cached_alpha_fixture',
+    projectPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DIRTY-REPAIR-PROOF-01_REV_A',
+    manifestPath: 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DIRTY-REPAIR-PROOF-01_REV_A/BoardForge_Project_Manifest.json',
+    expectExport: true,
+    categoryNote: 'Physical mutation proof: dirty board starts with DRC/shorts, commits transactional repairs, and exports a clean manufacturing ZIP.',
+  },
+  {
     id: 'robotics_controller_clean_cached',
     name: 'Robotics Controller Clean Fixture',
     mode: 'cached_alpha_fixture',
@@ -333,6 +342,7 @@ const fixtures = [
 const quickFixtureIds = new Set([
   'golden_demo',
   'dense_control_physical_repair_cached',
+  'dirty_repair_physical_proof_cached',
   'robotics_controller_clean_cached',
   'sensor_hub_rev_d_cached',
   'usb_c_mcu_cached',

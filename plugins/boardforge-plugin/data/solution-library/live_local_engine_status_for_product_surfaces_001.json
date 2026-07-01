@@ -1,0 +1,12 @@
+{
+  "id": "live_local_engine_status_for_product_surfaces_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "Engine proofs are not product-visible until the web dashboard and KiCad plugin can show local run artifacts, replay commands, reports, and manufacturing status.",
+  "fixSummary": "Expose local artifact-based engine status to the web project detail/readiness pages and KiCad plugin control panel without pretending there is cloud execution.",
+  "evidence": {
+    "webStatusModel": "apps/web/src/lib/boardforge-engine-status.ts",
+    "webPanel": "apps/web/src/components/project/EngineStatusPanel.tsx",
+    "kicadPlugin": "kicad-plugin/boardforge_action_plugin.py"
+  }
+}

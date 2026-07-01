@@ -1,9 +1,9 @@
 {
   "schema": "boardforge.readiness-evidence.v1",
-  "score": 73,
+  "score": 75,
   "generatedAt": "2026-07-01T00:00:00.000Z",
   "summary": {
-    "manufacturingReadyProofBoards": 12,
+    "manufacturingReadyProofBoards": 13,
     "dirtyToCleanRepairProofs": 1,
     "categoryCoverage": 10,
     "safeImportProofs": 1,
@@ -29,10 +29,28 @@
     "solutionAutoApply": "plugins/boardforge-plugin/lib/solution-library/solution-auto-apply.mjs",
     "physicalBoardMutator": "plugins/boardforge-plugin/tests/kicad-board-mutator.test.mjs"
   },
+  "dirty_to_clean_physical_repair": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A",
+    "startingBoard": "BF-DIRTY-REPAIR-PROOF-01_REV_A_dirty_start.kicad_pcb",
+    "finalBoard": "BF-DIRTY-REPAIR-PROOF-01_REV_A_clean_manufacturing_candidate.kicad_pcb",
+    "drcBefore": 10,
+    "drcAfter": 0,
+    "ercErrorsBefore": 0,
+    "ercErrorsAfter": 0,
+    "shortsBefore": 1,
+    "shortsAfter": 0,
+    "unconnectedBefore": 0,
+    "unconnectedAfter": 0,
+    "transactionsAttempted": 8,
+    "transactionsCommitted": 8,
+    "transactionsRolledBack": 0,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-01_REV_A_JLCPCB.zip",
+    "status": "dirty_repair_manufacturing_candidate_generated"
+  },
   "remainingBlockers": [
     "real supplier API verification requires keys",
     "advanced arbitrary-board shove/rip-up still early",
-    "web dashboard needs live local engine bridge",
-    "KiCad plugin panel is scaffolded, not polished native UI"
+    "web dashboard uses local artifact status rather than a live daemon bridge",
+    "KiCad plugin panel is a guarded local CLI/status surface, not polished native UI"
   ]
 }

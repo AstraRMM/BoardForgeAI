@@ -1,0 +1,12 @@
+{
+  "id": "readiness_evidence_requires_dirty_to_clean_proof_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "Readiness cannot climb on clean fixture generation alone; BoardForge needs evidence that it can repair dirty boards into clean manufacturing candidates.",
+  "fixSummary": "Readiness evidence now includes dirty_to_clean_physical_repair with starting/final DRC, shorts, transactions, and manufacturing ZIP evidence.",
+  "evidence": {
+    "readinessEvidence": "BoardForge_Readiness_Evidence.json",
+    "dashboardData": "BoardForge_Readiness_Dashboard_Data.json",
+    "fixture": "BF-DIRTY-REPAIR-PROOF-01_REV_A"
+  }
+}

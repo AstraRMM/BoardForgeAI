@@ -1,0 +1,14 @@
+{
+  "id": "erc_errors_not_warnings_gate_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "ERC warnings from unresolved local table context were being treated as ERC errors, blocking otherwise valid synthetic repair proof promotion.",
+  "fixSummary": "Count ERC errors separately from ERC warnings and preserve warnings in reports without failing the manufacturing-ready error gate.",
+  "evidence": {
+    "dirtyRepairProof": "BF-DIRTY-REPAIR-PROOF-01_REV_A",
+    "ercErrorsBefore": 0,
+    "ercErrorsAfter": 0,
+    "ercWarningsBefore": 20,
+    "ercWarningsAfter": 20
+  }
+}

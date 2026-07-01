@@ -36,6 +36,7 @@ def build_boardforge_commands(board_path):
         "import_sandbox": ["npm", "run", "boardforge:import-sandbox", "--", "--source", project_dir, "--output", sandbox_dir],
         "validate": ["npm", "run", "boardforge:validate", "--", "--project", board_path],
         "route": ["npm", "run", "boardforge:route", "--", "--project", board_path],
+        "repair": ["npm", "run", "boardforge:cleanup", "--", "--project", board_path],
         "cleanup": ["npm", "run", "boardforge:cleanup", "--", "--project", board_path],
         "export": ["npm", "run", "boardforge:export", "--", "--project", board_path],
         "report": ["npm", "run", "boardforge:report", "--", "--manifest", manifest],
@@ -50,6 +51,14 @@ def manifest_path_for(board_path):
 def sandbox_path_for(project_dir):
     name = os.path.basename(os.path.abspath(str(project_dir)))
     return os.path.join("C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes", name + "_import_sandbox")
+
+
+def latest_report_path_for(board_path):
+    return os.path.join(os.path.dirname(str(board_path)), "BoardForge_User_Facing_Report.md")
+
+
+def manufacturing_folder_for(board_path):
+    return os.path.join(os.path.dirname(str(board_path)), "manufacturing")
 
 
 def is_boardforge_sandbox(path):
@@ -87,20 +96,27 @@ if pcbnew:
                 return
             commands = build_boardforge_commands(board_path)
             manifest = manifest_path_for(board_path)
+            report_path = latest_report_path_for(board_path)
+            manufacturing_path = manufacturing_folder_for(board_path)
+            sandbox = is_boardforge_sandbox(board_path)
             pcbnew.wxLogMessage("BoardForge local control panel")
+            pcbnew.wxLogMessage("Sandbox status: " + ("active sandbox/fixture" if sandbox else "not sandboxed; mutation actions disabled"))
             pcbnew.wxLogMessage("Manifest: " + manifest)
+            pcbnew.wxLogMessage("Latest report: " + report_path)
+            pcbnew.wxLogMessage("Manufacturing folder: " + manufacturing_path)
             pcbnew.wxLogMessage("Import sandbox: " + format_command(commands["import_sandbox"]))
             pcbnew.wxLogMessage("Validate: " + format_command(commands["validate"]))
-            if is_boardforge_sandbox(board_path):
+            if sandbox:
                 pcbnew.wxLogMessage("Route sandbox: " + format_command(commands["route"]))
+                pcbnew.wxLogMessage("Repair sandbox: " + format_command(commands["repair"]))
                 pcbnew.wxLogMessage("Cleanup sandbox: " + format_command(commands["cleanup"]))
+                pcbnew.wxLogMessage("Export sandbox: " + format_command(commands["export"]))
             else:
-                pcbnew.wxLogMessage("Route/Cleanup disabled on active project. Import into BoardForge sandbox first.")
-            pcbnew.wxLogMessage("Export: " + format_command(commands["export"]))
+                pcbnew.wxLogMessage("Route/Repair/Cleanup/Export disabled on active project. Import into BoardForge sandbox first.")
             pcbnew.wxLogMessage("Report: " + format_command(commands["report"]))
             pcbnew.wxLogMessage("Replay: " + format_command(commands["replay"]))
             if os.path.exists(manifest):
-                pcbnew.wxLogMessage("BoardForge manifest found. Open reports/downloads from the manifest paths.")
+                pcbnew.wxLogMessage("BoardForge manifest found. Status, DRC/ERC, unconnected, and manufacturing readiness are read from local artifacts.")
             else:
                 pcbnew.wxLogMessage("No BoardForge manifest found beside this board yet.")
 

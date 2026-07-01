@@ -1,10 +1,10 @@
 {
   "schema": "boardforge.readiness-dashboard-data.v1",
-  "score": 73,
+  "score": 75,
   "status": "early_alpha",
   "headline": "BoardForge can generate, route, repair, validate, and package multiple synthetic KiCad fixtures.",
   "metrics": [
-    { "label": "Manufacturing-ready proof boards", "value": 12 },
+    { "label": "Manufacturing-ready proof boards", "value": 13 },
     { "label": "Dirty-to-clean DRC repair proofs", "value": 1 },
     { "label": "Fixture categories covered", "value": 10 },
     { "label": "Protected real-project mutations", "value": 0 }
@@ -16,6 +16,16 @@
     "kicadPlugin": "control_panel_scaffold",
     "sourcing": "provider_scaffold_no_fake_stock",
     "manufacturing": "strict_gate_working"
+  },
+  "dirtyToCleanRepair": {
+    "fixture": "BF-DIRTY-REPAIR-PROOF-01_REV_A",
+    "status": "dirty_repair_manufacturing_candidate_generated",
+    "drc": "10 -> 0",
+    "ercErrors": "0 -> 0",
+    "shorts": "1 -> 0",
+    "unconnected": "0 -> 0",
+    "transactions": "8 attempted / 8 committed / 0 rolled back",
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-01_REV_A_JLCPCB.zip"
   },
   "links": {
     "uploadSandbox": "apps/web/src/app/upload-kicad/page.tsx",

@@ -1,0 +1,12 @@
+{
+  "id": "kicad_plugin_sandbox_repair_control_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "KiCad plugin controls must never mutate user projects directly; repair, route, cleanup, and export need sandbox gating.",
+  "fixSummary": "The KiCad plugin shows import and validation commands for safe projects, but only enables route, repair, cleanup, and export commands for BoardForge sandbox or synthetic fixture paths.",
+  "evidence": {
+    "plugin": "kicad-plugin/boardforge_action_plugin.py",
+    "docs": "docs/KICAD_PLUGIN_INSTALL.md",
+    "protectedMutations": 0
+  }
+}

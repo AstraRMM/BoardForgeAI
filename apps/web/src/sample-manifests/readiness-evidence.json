@@ -1,13 +1,23 @@
 {
   "schema": "boardforge.readiness-evidence.v1",
   "generatedAt": "2026-07-01T00:00:00.000Z",
-  "readiness": 73,
+  "readiness": 75,
   "evidence": {
-    "cleanFixtures": 12,
-    "manufacturingExports": 12,
+    "cleanFixtures": 13,
+    "manufacturingExports": 13,
     "dirtyToCleanRepairs": 1,
     "categoryCoverage": 10,
     "safeImports": 1
+  },
+  "dirtyToCleanPhysicalRepair": {
+    "fixture": "BF-DIRTY-REPAIR-PROOF-01_REV_A",
+    "status": "dirty_repair_manufacturing_candidate_generated",
+    "drc": "10 -> 0",
+    "ercErrors": "0 -> 0",
+    "shorts": "1 -> 0",
+    "unconnected": "0 -> 0",
+    "transactions": "8 attempted / 8 committed / 0 rolled back",
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-01_REV_A_JLCPCB.zip"
   },
   "knownGaps": [
     "PoE compliance, magnetics, isolation, and supplier stock are not verified",

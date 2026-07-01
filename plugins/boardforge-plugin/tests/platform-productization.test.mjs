@@ -93,7 +93,8 @@ test('KiCad plugin scaffold refuses protected paths and hands off to CLI', () =>
   assert.match(source, /FN-ESC1/)
   assert.match(source, /import_sandbox/)
   assert.match(source, /boardforge:import-sandbox/)
-  assert.match(source, /Route\/Cleanup disabled on active project/)
+  assert.match(source, /Route\/Repair\/Cleanup\/Export disabled on active project/)
+  assert.match(source, /Repair sandbox/)
   assert.match(source, /boardforge:route-finish/)
   assert.match(source, /refused protected project path/i)
 })
@@ -124,6 +125,30 @@ test('readiness evidence dashboard exposes score, gaps, and proof counts', () =>
   assert.match(page, /Readiness/)
   assert.match(page, /Known gaps/)
   assert.match(page, /Latest proof tests/)
+})
+
+test('web dashboard engine status exposes dirty-to-clean repair proof', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const statusPath = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-engine-status.ts')
+  const panelPath = path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'EngineStatusPanel.tsx')
+  const status = fs.readFileSync(statusPath, 'utf8')
+  const panel = fs.readFileSync(panelPath, 'utf8')
+  assert.match(status, /dirty_to_clean_physical_repair/)
+  assert.match(status, /BF-DIRTY-REPAIR-PROOF-01_REV_A_dirty_start/)
+  assert.match(status, /transactionsCommitted: 8/)
+  assert.match(panel, /Local engine artifact status/)
+  assert.match(panel, /Evidence/)
+})
+
+test('KiCad plugin status panel exposes sandbox repair and manufacturing status paths', () => {
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
+  const pluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
+  const source = fs.readFileSync(pluginPath, 'utf8')
+  assert.match(source, /Sandbox status/)
+  assert.match(source, /Repair sandbox/)
+  assert.match(source, /Manufacturing folder/)
+  assert.match(source, /Route\/Repair\/Cleanup\/Export disabled/)
+  assert.match(source, /local artifacts/)
 })
 
 test('canonical BoardForge CLI maps product commands to guarded engine jobs', () => {

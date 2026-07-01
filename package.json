@@ -39,6 +39,7 @@
     "boardforge:report": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs report",
     "boardforge:replay": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs replay",
     "boardforge:import-sandbox": "node ./plugins/boardforge-plugin/bin/boardforge-import-sandbox.mjs",
+    "boardforge:dirty-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs",
     "boardforge:category-depth": "node ./plugins/boardforge-plugin/bin/boardforge-category-depth-evidence.mjs",
     "boardforge:dashboard-data": "node ./plugins/boardforge-plugin/bin/boardforge-dashboard-data.mjs",
     "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
@@ -79,6 +80,17 @@
     ,"test:readiness-evidence-dashboard": "node --test --test-name-pattern \"readiness evidence dashboard\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:kicad-board-mutator": "npm --prefix ./plugins/boardforge-plugin run test:kicad-board-mutator"
     ,"test:local-shove-router-mutates-board": "npm --prefix ./plugins/boardforge-plugin run test:local-shove-router-mutates-board"
+    ,"test:dirty-repair-fixture-generation": "node --test --test-name-pattern \"dirty repair fixture generation\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:drc-repair-task-list": "node --test --test-name-pattern \"DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:dirty-to-clean-repair-proof": "node --test --test-name-pattern \"dirty-to-clean repair proof\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-dashboard-engine-status": "node --test --test-name-pattern \"web dashboard engine status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-status-panel": "node --test --test-name-pattern \"KiCad plugin status panel\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:repair-track-crossing": "node --test --test-name-pattern \"repairTrackCrossing|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:repair-shorting-item": "node --test --test-name-pattern \"repairShortingItem|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:repair-hole-clearance": "node --test --test-name-pattern \"repairHoleClearance|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:repair-copper-edge-clearance": "node --test --test-name-pattern \"repairCopperEdgeClearance|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:repair-solder-mask-bridge": "node --test --test-name-pattern \"repairSolderMaskBridge|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:repair-silkscreen-overlap": "node --test --test-name-pattern \"repairSilkscreenOverlap|DRC repair task list\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

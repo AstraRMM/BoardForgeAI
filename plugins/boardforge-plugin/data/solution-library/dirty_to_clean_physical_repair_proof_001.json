@@ -1,0 +1,22 @@
+{
+  "id": "dirty_to_clean_physical_repair_proof_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "BoardForge needed proof that it can repair a deliberately dirty KiCad board into a clean manufacturing candidate, not only generate already-clean synthetic boards.",
+  "fixSummary": "Create dirty repair fixtures with controlled DRC defects, convert each DRC issue into a transactional mutation task, commit only safe improvements, and gate manufacturing export on DRC 0, ERC errors 0, shorts 0, unconnected 0, and forbidden vias 0.",
+  "evidence": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A",
+    "drcBefore": 10,
+    "drcAfter": 0,
+    "ercErrorsBefore": 0,
+    "ercErrorsAfter": 0,
+    "shortsBefore": 1,
+    "shortsAfter": 0,
+    "unconnectedBefore": 0,
+    "unconnectedAfter": 0,
+    "transactionsAttempted": 8,
+    "transactionsCommitted": 8,
+    "transactionsRolledBack": 0,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A\\manufacturing\\BF-DIRTY-REPAIR-PROOF-01_REV_A_JLCPCB.zip"
+  }
+}
