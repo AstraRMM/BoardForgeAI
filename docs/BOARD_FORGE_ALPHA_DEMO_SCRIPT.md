@@ -21,3 +21,12 @@ BoardForge is a local-first AI PCB engineering platform for KiCad. It creates, v
 ## Close
 
 BoardForge does not claim PoE certification or fake stock. It turns vague blockers into exact next actions.
+## Premium Intake Proof
+
+1. Run `npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C."`.
+2. Confirm BoardForge writes a board brief and blocks generation until approval.
+3. Run `npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C." --approve-brief --dev`.
+4. Confirm the project is a local candidate, not dashboard-published.
+5. Confirm publish requires explicit confirmation.
+
+This proves Codex/AI can drive intake, but BoardForge owns the question tree, brief approval gate, project state, and publish gate.

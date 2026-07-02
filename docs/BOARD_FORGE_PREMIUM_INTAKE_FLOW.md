@@ -13,3 +13,12 @@ The intake engine:
 No KiCad project generation should begin until:
 - `briefApproved = true`, or
 - a development/test run uses an explicit bypass.
+
+The implemented CLI path is:
+
+```bash
+npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C."
+npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C." --approve-brief --dev
+```
+
+The first command writes the brief and blocks. The second creates a local candidate without dashboard publishing.

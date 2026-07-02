@@ -1,0 +1,6 @@
+{
+  "id": "premium_intake_flow_reduces_babysitting_001",
+  "rootCause": "A premium PCB product should not ask irrelevant questions for every board type.",
+  "fix": "Infer board type from prompt, add conditional follow-ups only when needed, and generate a concise approval brief.",
+  "appliesTo": ["intake", "ux", "product"]
+}

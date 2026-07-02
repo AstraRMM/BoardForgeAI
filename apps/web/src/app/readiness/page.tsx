@@ -1,4 +1,4 @@
-import evidence from '../../../sample-manifests/readiness-evidence.json'
+import evidence from '../../sample-manifests/readiness-evidence.json'
 import { dirtyRepairEngineStatus } from '../../lib/boardforge-engine-status'
 
 export default function ReadinessPage() {
@@ -18,7 +18,7 @@ export default function ReadinessPage() {
       </section>
       <section className="mx-auto mt-8 max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5">
         <h2 className="text-xl font-semibold">Dirty-to-clean physical repair</h2>
-        <p className="mt-2 text-sm text-slate-400">Local artifact-backed proof: DRC {dirtyRepairEngineStatus.drcBefore} -> {dirtyRepairEngineStatus.drcAfter}, shorts {dirtyRepairEngineStatus.shortsBefore} -> {dirtyRepairEngineStatus.shortsAfter}, transactions {dirtyRepairEngineStatus.transactionsCommitted}/{dirtyRepairEngineStatus.transactionsAttempted} committed.</p>
+        <p className="mt-2 text-sm text-slate-400">Local artifact-backed proof: DRC {dirtyRepairEngineStatus.drcBefore} &rarr; {dirtyRepairEngineStatus.drcAfter}, shorts {dirtyRepairEngineStatus.shortsBefore} &rarr; {dirtyRepairEngineStatus.shortsAfter}, transactions {dirtyRepairEngineStatus.transactionsCommitted}/{dirtyRepairEngineStatus.transactionsAttempted} committed.</p>
       </section>
       <section className="mx-auto mt-8 grid max-w-6xl gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-5">

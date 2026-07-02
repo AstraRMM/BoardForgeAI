@@ -1,0 +1,6 @@
+{
+  "id": "local_draft_not_dashboard_published_001",
+  "rootCause": "Generated drafts should not appear in customer dashboards automatically.",
+  "fix": "Created projects start as local drafts or local candidates with dashboardVisible false and publishApproved false.",
+  "appliesTo": ["dashboard", "sync", "privacy"]
+}

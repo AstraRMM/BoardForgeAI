@@ -115,6 +115,14 @@ async function main() {
     return
   }
 
+  if (planned.kind === 'prompt-create') {
+    const { createProjectFromPrompt } = await import('../lib/engine/create-project-from-prompt.mjs')
+    const result = await createProjectFromPrompt(planned)
+    jsonOut(result)
+    if (!result.projectCreated) process.exitCode = 2
+    return
+  }
+
   const result = await executeJob(planned.job, workspace)
   jsonOut({ command, workspace, job: planned.job, result })
   if (/BLOCKED|FAILED|NEEDS_FIX|VALIDATION_FAILED/.test(result.status || '')) process.exitCode = 2
@@ -123,6 +131,7 @@ async function main() {
 async function planCommand(name, context) {
   const { workspace, projectPath } = context
   if (name === 'init') return { kind: 'init', command: name, workspace }
+  if (name === 'create' && argValue('--prompt', '')) return planPromptCreateCommand(context)
   if (name === 'import') return planImportCommand(context)
   if (name === 'report') return planReportCommand(context)
   if (name === 'replay') return planReplayCommand()
@@ -177,6 +186,22 @@ async function planCommand(name, context) {
   const job = jobByCommand[name]
   if (!job) throw new Error(`Unknown BoardForge CLI command: ${name}`)
   return { kind: 'job', command: name, workspace, projectGuard: guarded, job }
+}
+
+function planPromptCreateCommand(context) {
+  const outputDir = path.resolve(argValue('--output', context.projectPath || path.join(context.workspace, 'BoardForge_Prompt_Project')))
+  const guarded = assertPathIsAllowed(outputDir)
+  if (!guarded.allowed) throw new Error(`Refused create output: ${guarded.reason} (${outputDir})`)
+  return {
+    kind: 'prompt-create',
+    command: 'create',
+    workspace: context.workspace,
+    outputDir,
+    prompt: argValue('--prompt', ''),
+    answers: argValue('--answers', '{}'),
+    approveBrief: hasArg('--approve-brief'),
+    devBypass: hasArg('--dev'),
+  }
 }
 
 function planPublishActionCommand(name, context) {

@@ -1,0 +1,6 @@
+{
+  "id": "question_engine_must_drive_create_flow_001",
+  "rootCause": "Question engine modules were useful but isolated from the actual project creation command.",
+  "fix": "Wire prompt intake, conditional follow-ups, board brief generation, approval gate, and local candidate creation into boardforge create.",
+  "appliesTo": ["intake", "cli", "project-generation"]
+}

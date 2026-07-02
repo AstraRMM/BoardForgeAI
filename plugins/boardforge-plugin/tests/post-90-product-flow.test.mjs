@@ -16,6 +16,7 @@ import { selectedConditionalFollowups } from '../lib/intake/conditional-followup
 import { getQuestionTree } from '../lib/intake/board-type-question-trees.mjs'
 import { generateBoardBrief, writeBoardBrief } from '../lib/intake/board-brief-generator.mjs'
 import { canBuildFromBrief } from '../lib/intake/board-brief-approval-gate.mjs'
+import { createProjectFromPrompt } from '../lib/engine/create-project-from-prompt.mjs'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
@@ -126,4 +127,77 @@ test('premium intake flow produces conditional questions, a brief, and an approv
   const gate = canBuildFromBrief(brief)
   assert.equal(gate.allowed, false)
   assert.ok(gate.blockers.includes('board_brief_requires_user_approval'))
+})
+
+test('boardforge create question flow writes a brief and local candidate after approval', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-create-flow-'))
+  const result = await createProjectFromPrompt({
+    prompt: 'Make a compact robotics controller with CAN and USB-C.',
+    outputDir: dir,
+    answers: JSON.stringify({ interfaces_needed: 'CAN USB I2C', power_input: 'USB-C', board_shape: 'rounded compact' }),
+    approveBrief: true,
+    devBypass: true,
+  })
+  assert.equal(result.status, 'BOARD_FORGE_CREATE_LOCAL_CANDIDATE')
+  assert.equal(result.questionPlan.boardType, 'robotics_controller')
+  assert.ok(result.questionPlan.conditionalFollowups.includes('can_interface'))
+  assert.ok(result.questionPlan.conditionalFollowups.includes('usb_c_mode'))
+  assert.equal(result.questionPlan.conditionalFollowups.includes('poe_isolation'), false)
+  const manifest = JSON.parse(await readFile(result.manifestPath, 'utf8'))
+  assert.equal(manifest.projectState, 'local_candidate')
+  assert.equal(manifest.dashboardVisible, false)
+  assert.equal(manifest.publishApproved, false)
+})
+
+test('create requires brief approval before project generation', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-create-blocked-'))
+  const result = await createProjectFromPrompt({
+    prompt: 'Make a compact robotics controller with CAN and USB-C.',
+    outputDir: dir,
+    answers: JSON.stringify({ interfaces_needed: 'CAN USB', power_input: 'USB-C' }),
+  })
+  assert.equal(result.status, 'BOARD_FORGE_CREATE_BLOCKED_BRIEF_APPROVAL_REQUIRED')
+  assert.equal(result.projectCreated, false)
+  assert.ok(result.blockers.includes('board_brief_requires_user_approval'))
+  assert.equal(path.basename(result.briefFiles.json), 'BoardForge_Board_Brief.json')
+})
+
+test('create conditional followups include selected CAN and USB-C but not PoE', async () => {
+  const result = await createProjectFromPrompt({
+    prompt: 'Make a compact robotics controller with CAN and USB-C.',
+    outputDir: await mkdtemp(path.join(os.tmpdir(), 'boardforge-create-followups-')),
+    answers: JSON.stringify({ interfaces_needed: 'CAN USB', power_input: 'USB-C' }),
+    approveBrief: true,
+    devBypass: true,
+  })
+  assert.ok(result.questionPlan.conditionalFollowups.includes('can_interface'))
+  assert.ok(result.questionPlan.conditionalFollowups.includes('usb_c_mode'))
+  assert.equal(result.questionPlan.conditionalFollowups.includes('poe_isolation'), false)
+})
+
+test('create local draft not published to dashboard automatically', async () => {
+  const result = await createProjectFromPrompt({
+    prompt: 'Make a compact robotics controller.',
+    outputDir: await mkdtemp(path.join(os.tmpdir(), 'boardforge-create-local-')),
+    approveBrief: true,
+    devBypass: true,
+  })
+  assert.equal(result.publish.projectState, 'local_candidate')
+  assert.equal(result.publish.dashboardVisible, false)
+  assert.equal(result.publish.publishApproved, false)
+})
+
+test('create publish requires approval and explicit confirmation', async () => {
+  const result = await createProjectFromPrompt({
+    prompt: 'Make a compact robotics controller.',
+    outputDir: await mkdtemp(path.join(os.tmpdir(), 'boardforge-create-publish-')),
+    approveBrief: true,
+    devBypass: true,
+  })
+  const blocked = canPublishToDashboard({ publish: result.publish }, { confirm: true })
+  assert.equal(blocked.allowed, false)
+  assert.ok(blocked.blockers.includes('project_not_approved_for_dashboard'))
+  const approved = approveProjectForDashboard({ publish: result.publish })
+  assert.equal(canPublishToDashboard(approved, { confirm: false }).allowed, false)
+  assert.equal(canPublishToDashboard(approved, { confirm: true }).allowed, true)
 })

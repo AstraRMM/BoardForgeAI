@@ -1,0 +1,6 @@
+{
+  "id": "brief_approval_blocks_generation_until_approved_001",
+  "rootCause": "Prompt-to-board generation can create wrong files if assumptions are not reviewed.",
+  "fix": "Create BoardForge_Board_Brief artifacts first and block KiCad project generation until approved or explicitly bypassed in dev/test mode.",
+  "appliesTo": ["intake", "approval", "project-generation"]
+}

@@ -14,6 +14,24 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         <h2 className="text-xl font-semibold">Reports</h2>
         <pre className="mt-3 overflow-auto text-xs text-slate-300">{JSON.stringify(project.reports, null, 2)}</pre>
       </section>
+      <section className="mt-6 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
+        <h2 className="text-xl font-semibold">Board Brief and Approval</h2>
+        <p className="mt-2 text-sm text-cyan-100">
+          BoardForge creates a local board brief before KiCad generation. The build is blocked until the brief is approved or an explicit dev/test bypass is used.
+        </p>
+        <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+          <div><dt className="text-cyan-300">Project state</dt><dd className="font-mono">{(project as any).projectState || (project as any).publish?.projectState || 'local_draft'}</dd></div>
+          <div><dt className="text-cyan-300">Dashboard visible</dt><dd className="font-mono">{String(Boolean((project as any).dashboardVisible || (project as any).publish?.dashboardVisible))}</dd></div>
+          <div><dt className="text-cyan-300">Publish approval</dt><dd className="font-mono">{String(Boolean((project as any).publishApproved || (project as any).publish?.publishApproved))}</dd></div>
+          <div><dt className="text-cyan-300">Sync status</dt><dd className="font-mono">{(project as any).syncStatus || (project as any).publish?.syncStatus || 'not_synced'}</dd></div>
+        </dl>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs">
+          <span className="rounded border border-cyan-400/40 px-2 py-1 text-cyan-100">Publish to Dashboard</span>
+          <span className="rounded border border-slate-600 px-2 py-1 text-slate-200">Keep Local</span>
+          <span className="rounded border border-slate-600 px-2 py-1 text-slate-200">Archive</span>
+          <span className="rounded border border-slate-600 px-2 py-1 text-slate-200">Revise / Rerun</span>
+        </div>
+      </section>
       <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Local Replay</h2>
         <p className="mt-2 text-sm text-slate-400">Run locally with BoardForge CLI. The web app does not fake cloud execution.</p>

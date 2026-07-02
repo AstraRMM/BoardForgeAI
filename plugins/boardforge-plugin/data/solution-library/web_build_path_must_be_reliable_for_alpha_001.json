@@ -1,0 +1,6 @@
+{
+  "id": "web_build_path_must_be_reliable_for_alpha_001",
+  "rootCause": "Product pages existed but the web build path was not reliable because dependencies were not installed and root routes did not compile the dashboard app.",
+  "fix": "Install declared npm dependencies, add build:web/dev:web scripts, and bridge root Next routes to the BoardForge web app pages.",
+  "appliesTo": ["web", "productization", "build"]
+}

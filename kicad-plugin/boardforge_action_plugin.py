@@ -43,6 +43,7 @@ def build_boardforge_commands(board_path):
         "report": ["npm", "run", "boardforge:report", "--", "--manifest", manifest],
         "replay": ["npm", "run", "boardforge:replay", "--", "--manifest", manifest],
         "approvals": ["npm", "run", "boardforge:approvals", "--", "--project", project_dir, "--manifest", manifest],
+        "approve_brief": ["npm", "run", "boardforge:create", "--", "--project", project_dir, "--approve-brief", "--dev"],
         "publish": ["npm", "run", "boardforge:publish", "--", "--project", project_dir, "--manifest", manifest, "--confirm"],
         "keep_local": ["npm", "run", "boardforge:keep-local", "--", "--project", project_dir, "--manifest", manifest],
         "archive": ["npm", "run", "boardforge:archive", "--", "--project", project_dir, "--manifest", manifest],
@@ -121,6 +122,8 @@ if pcbnew:
             else:
                 pcbnew.wxLogMessage("Route/Repair/Cleanup/Export disabled on active project. Import into BoardForge sandbox first.")
             pcbnew.wxLogMessage("Approval report: " + format_command(commands["approvals"]))
+            pcbnew.wxLogMessage("Approve brief: " + format_command(commands["approve_brief"]))
+            pcbnew.wxLogMessage("Open brief report: " + os.path.join(project_dir, "BoardForge_Board_Brief.md"))
             pcbnew.wxLogMessage("Publish approved project: " + format_command(commands["publish"]))
             pcbnew.wxLogMessage("Keep local only: " + format_command(commands["keep_local"]))
             pcbnew.wxLogMessage("Archive draft: " + format_command(commands["archive"]))

@@ -28,6 +28,8 @@ def read_boardforge_status(project_dir):
         "dashboardVisible": bool(publish.get("dashboardVisible") or (manifest or {}).get("dashboardVisible")),
         "syncStatus": publish.get("syncStatus") or (manifest or {}).get("syncStatus") or "not_synced",
         "approvalReport": os.path.join(project_dir, "BoardForge_Project_Approval_Report.md"),
+        "briefReport": os.path.join(project_dir, "BoardForge_Board_Brief.md"),
+        "briefApprovalRequired": not bool((manifest or {}).get("boardBrief", {}).get("approved")),
     }
 
 
