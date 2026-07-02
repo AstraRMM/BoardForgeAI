@@ -19,8 +19,14 @@ import { generateBoardBrief, writeBoardBrief } from '../lib/intake/board-brief-g
 import { canBuildFromBrief } from '../lib/intake/board-brief-approval-gate.mjs'
 import { defaultAssumptionsFor } from '../lib/intake/default-assumption-engine.mjs'
 import { createIntakeSession, writeIntakeSession } from '../lib/intake/intake-session-state.mjs'
+import { startConversationSession, writeConversationSession, writeConversationBrief } from '../lib/intake/conversation-session.mjs'
+import { applyConversationAnswers } from '../lib/intake/conversation-answer-applier.mjs'
+import { canBuildFromConversation, transitionConversation } from '../lib/intake/conversation-state-machine.mjs'
+import { summarizeConversation } from '../lib/intake/conversation-summary.mjs'
 import { createProjectFromPrompt } from '../lib/engine/create-project-from-prompt.mjs'
 import { applyProjectApprovalAction } from '../lib/platform/project-approval-actions.mjs'
+import { runApprovedSyncValidation } from '../lib/platform/approved-sync-validation.mjs'
+import { CRAZY_OUTLINE_SHAPES, runCrazyOutlineStressSuite, scoreCrazyOutlineShape } from '../lib/outline/crazy-outline-stress-suite.mjs'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
@@ -240,6 +246,70 @@ test('prompt layer approved sync integration keeps local candidates dashboard hi
   assert.equal(canPublishToDashboard({ publish: created.publish }, { confirm: true }).allowed, false)
 })
 
+test('conversation session starts from prompt and writes local state plus brief', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-conversation-'))
+  const session = startConversationSession({ prompt: 'Make a compact robotics controller with CAN and USB-C.', outputDir: dir })
+  assert.equal(session.boardType, 'robotics_controller')
+  assert.equal(session.currentStage, 'intake')
+  assert.ok(session.questionsAsked.length <= 7)
+  const written = await writeConversationSession({ session, outputDir: dir })
+  const brief = await writeConversationBrief({ session: written.session, outputDir: dir })
+  assert.equal(path.basename(written.file), 'BoardForge_Conversation_Session.json')
+  assert.equal(path.basename(brief.files.markdown), 'BoardForge_Board_Brief.md')
+})
+
+test('conversation answer applier triggers followups and updates assumptions', () => {
+  const session = startConversationSession({ prompt: 'Make a compact robotics controller.' })
+  const next = applyConversationAnswers(session, { interfaces_needed: 'CAN USB PWM', power_input: 'USB-C' })
+  assert.ok(next.conditionalFollowupsTriggered.includes('can_interface'))
+  assert.ok(next.conditionalFollowupsTriggered.includes('usb_c_mode'))
+  assert.ok(next.conditionalFollowupsTriggered.includes('pwm_servo_outputs'))
+})
+
+test('conversation state machine blocks build before approval then allows it', () => {
+  const session = startConversationSession({ prompt: 'Make a compact robotics controller.' })
+  assert.equal(canBuildFromConversation(session).allowed, false)
+  const approved = transitionConversation(session, 'approve')
+  assert.equal(canBuildFromConversation(approved).allowed, true)
+  const summary = summarizeConversation(approved)
+  assert.equal(summary.buildBlocked, false)
+})
+
+test('CLI live intake flow writes conversation session and supports answer update', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-cli-live-'))
+  const intake = JSON.parse(execFileSync(process.execPath, [cliPath, 'intake', '--prompt', 'Make a compact robotics controller with CAN and USB-C.', '--output', dir], { encoding: 'utf8' }))
+  assert.equal(path.basename(intake.file), 'BoardForge_Conversation_Session.json')
+  const answered = JSON.parse(execFileSync(process.execPath, [cliPath, 'answer', '--session', intake.file, '--output', dir, '--answers', '{"interfaces_needed":"CAN USB PWM"}'], { encoding: 'utf8' }))
+  assert.ok(answered.session.conditionalFollowupsTriggered.includes('pwm_servo_outputs'))
+})
+
+test('approved sync validation proves hidden drafts candidates and confirm-only publish', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-sync-validation-'))
+  const validation = await runApprovedSyncValidation({ outputDir: dir })
+  assert.equal(validation.result.localDraftHidden, true)
+  assert.equal(validation.result.localCandidateHidden, true)
+  assert.equal(validation.result.publishBlockedWithoutConfirm, true)
+  assert.equal(validation.result.publishWithConfirm, true)
+  assert.equal(validation.result.rejectedFailedHidden, true)
+})
+
+test('crazy outline stress suite scores shapes and exports only good candidates', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-crazy-outline-'))
+  const summary = await runCrazyOutlineStressSuite({ rootDir: dir })
+  assert.equal(summary.shapesTested, CRAZY_OUTLINE_SHAPES.length)
+  assert.ok(summary.passed > 0)
+  assert.ok(summary.failed > 0)
+  assert.ok(summary.manufacturingExports > 0)
+})
+
+test('routeability scoring crazy shapes filters weak candidates', () => {
+  const strong = scoreCrazyOutlineShape('BF-CRAZY-OUTLINE-ROUND-01')
+  const weak = scoreCrazyOutlineShape('BF-CRAZY-OUTLINE-CUSTOM-POLYGON-01')
+  assert.equal(strong.recommended, true)
+  assert.equal(weak.recommended, false)
+  assert.equal(weak.risk, 'high')
+})
+
 test('create requires brief approval before project generation', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-create-blocked-'))
   const result = await createProjectFromPrompt({
@@ -354,6 +424,24 @@ test('web intake UI exposes questions brief preview and local artifact truth', a
   assert.match(intakeLib, /robotics_controller/)
   assert.match(questionList, /Minimum useful questions/)
   assert.match(briefPanel, /blocked_before_approval/)
+})
+
+test('web live intake UI exposes conversation panels and artifact-backed outline generator', async () => {
+  const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  const outlinePage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
+  const outlineExport = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'outline-export.ts'), 'utf8')
+  assert.match(newBoardPage, /IntakeQuestionList/)
+  assert.match(outlinePage, /OutlineValidationPanel/)
+  assert.match(outlineExport, /BoardForge_Custom_Outline_Project_Seed|DRC_ERC_CONNECTIVITY/)
+})
+
+test('custom outline generator has presets validation and seed export components', async () => {
+  const picker = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlinePresetPicker.tsx'), 'utf8')
+  const editor = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlineEditor.tsx'), 'utf8')
+  const validation = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlineValidationPanel.tsx'), 'utf8')
+  assert.match(picker, /mounting ears/)
+  assert.match(editor, /BoardForge_Mechanical_Constraints/)
+  assert.match(validation, /Edge.Cuts closed/)
 })
 
 test('KiCad plugin brief approval status exposes approval actions', async () => {

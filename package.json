@@ -63,6 +63,8 @@
     "boardforge:import-sandbox": "node ./plugins/boardforge-plugin/bin/boardforge-import-sandbox.mjs",
     "boardforge:dirty-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs",
     "boardforge:dirty-repair-proof-02": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs -- --project-id BF-DIRTY-REPAIR-PROOF-02_REV_A --harder",
+    "boardforge:approved-sync-validation": "node ./plugins/boardforge-plugin/bin/boardforge-approved-sync-validation.mjs",
+    "boardforge:crazy-outline-stress": "node ./plugins/boardforge-plugin/bin/boardforge-crazy-outline-stress.mjs",
     "boardforge:imported-board-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs",
     "boardforge:imported-board-repair-suite": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs --suite",
     "boardforge:arbitrary-prompt-breadth": "node ./plugins/boardforge-plugin/bin/boardforge-arbitrary-prompt-breadth.mjs",
@@ -194,6 +196,16 @@
     ,"test:web-intake-ui": "node --test --test-name-pattern \"web intake UI\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:kicad-plugin-intake-status": "node --test --test-name-pattern \"KiCad plugin intake status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:prompt-layer-approved-sync-integration": "node --test --test-name-pattern \"prompt layer approved sync integration\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:conversation-session": "node --test --test-name-pattern \"conversation session\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:conversation-state-machine": "node --test --test-name-pattern \"conversation state machine\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:conversation-answer-applier": "node --test --test-name-pattern \"conversation answer applier\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-live-intake-ui": "node --test --test-name-pattern \"web live intake UI\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:cli-live-intake-flow": "node --test --test-name-pattern \"CLI live intake flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:approved-sync-validation": "node --test --test-name-pattern \"approved sync validation\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:crazy-outline-stress-suite": "node --test --test-name-pattern \"crazy outline stress suite\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:custom-outline-generator": "node --test --test-name-pattern \"custom outline generator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:outline-seed-export": "node --test --test-name-pattern \"outline seed export\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:routeability-scoring-crazy-shapes": "node --test --test-name-pattern \"routeability scoring crazy shapes\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:premium-intake-flow": "node --test --test-name-pattern \"premium intake flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:boardforge-create-question-flow": "node --test --test-name-pattern \"boardforge create question flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:create-requires-brief-approval": "node --test --test-name-pattern \"create requires brief approval\" ./plugins/boardforge-plugin/tests/*.test.mjs"

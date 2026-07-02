@@ -1,3 +1,7 @@
+import { OutlineEditor } from '../../components/outline/OutlineEditor'
+import { OutlinePresetPicker } from '../../components/outline/OutlinePresetPicker'
+import { OutlineValidationPanel } from '../../components/outline/OutlineValidationPanel'
+
 export default function CustomBoardGeneratorPage() {
   const shapes = ['rounded rectangle', 'mounting ears', 'octagonal', 'L-shaped', 'tabbed connector', 'circular puck', 'notched board', 'internal cutout']
   return (
@@ -17,6 +21,11 @@ export default function CustomBoardGeneratorPage() {
             <p className="mt-2 text-sm text-slate-400">Planned for crazy-outline regression after the prompt/conversation layer foundation.</p>
           </div>
         ))}
+      </section>
+      <section className="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-3">
+        <OutlinePresetPicker />
+        <OutlineEditor />
+        <OutlineValidationPanel />
       </section>
       <section className="mx-auto mt-8 max-w-5xl rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
         <p className="text-sm text-amber-100">No fake outline success: failed shapes must report exact Edge.Cuts, DRC/ERC, routeability, or manufacturing blockers.</p>

@@ -8,13 +8,14 @@ import { generateBoardBrief, writeBoardBrief } from '../intake/board-brief-gener
 import { canBuildFromBrief } from '../intake/board-brief-approval-gate.mjs'
 
 export async function createProjectFromPrompt(options = {}) {
-  const prompt = options.prompt || ''
+  const session = options.sessionPath ? await readConversationForCreate(options.sessionPath) : null
+  const prompt = options.prompt || session?.originalPrompt || ''
   if (!prompt.trim()) throw new Error('prompt is required')
   const outputDir = path.resolve(options.outputDir || options.projectPath || path.join(process.cwd(), 'BoardForge_Prompt_Project'))
   const guard = assertPathIsAllowed(outputDir)
   if (!guard.allowed) throw new Error(`Refused create output: ${guard.reason} (${outputDir})`)
 
-  const answers = parseAnswers(options.answers)
+  const answers = session ? Object.fromEntries((session.answers || []).map((entry) => [entry.field, entry.value])) : parseAnswers(options.answers)
   const questionPlan = runQuestionEngine({ prompt, boardType: options.boardType || null, answers })
   const brief = generateBoardBrief({ prompt, plan: questionPlan })
   const briefGate = canBuildFromBrief(brief, { briefApproved: Boolean(options.approveBrief), devBypass: Boolean(options.devBypass) })
@@ -72,6 +73,14 @@ export async function createProjectFromPrompt(options = {}) {
     manifestPath,
     approvalReport: approval.files.markdown,
     publish,
+  }
+}
+
+async function readConversationForCreate(sessionPath) {
+  try {
+    return JSON.parse(await readFile(sessionPath, 'utf8'))
+  } catch {
+    return null
   }
 }
 

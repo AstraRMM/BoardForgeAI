@@ -1,0 +1,6 @@
+{
+  "id": "routeability_scoring_must_filter_bad_shapes_001",
+  "rootCause": "Routing obviously bad odd shapes wastes time and produces noisy failure states.",
+  "fix": "Score corridor, connector, mounting-hole, component-fit, and ratsnest risk before routing and block weak candidates with exact reasons.",
+  "appliesTo": ["routeability", "outline", "router-selection"]
+}

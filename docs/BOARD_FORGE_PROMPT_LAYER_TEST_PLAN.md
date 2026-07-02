@@ -25,3 +25,17 @@ For each prompt, verify:
 - approved-only sync rules are preserved.
 
 Manufacturing completion is not required for every prompt-layer proof. This sprint proves the conversation and approval contract before build.
+
+## Live Session Evidence
+
+The next-level tests require:
+
+- `BoardForge_Conversation_Session.json`
+- answer application that changes follow-ups
+- build blocked until approval
+- local candidate hidden from dashboard
+- publish blocked without confirmation
+
+## Crazy Outline Follow-On
+
+Prompt-layer custom-shape requests feed the crazy-outline stress suite. The first stress suite scores shapes and blocks weak candidates before routing.

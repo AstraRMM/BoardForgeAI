@@ -1,0 +1,6 @@
+{
+  "id": "live_conversation_session_required_after_prompt_scaffold_001",
+  "rootCause": "One-shot prompt parsing does not prove a paid conversational product workflow.",
+  "fix": "Persist a conversation session with questions, answers, follow-ups, assumptions, risks, brief path, approval status, and project state.",
+  "appliesTo": ["conversation", "intake", "product-flow"]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "custom_outline_generator_seed_export_001",
+  "rootCause": "Web outline controls need a concrete local-engine handoff artifact instead of pretending to edit KiCad in the browser.",
+  "fix": "Export outline seed, mechanical constraints, and validation report artifacts for the local BoardForge engine.",
+  "appliesTo": ["web", "outline", "local-engine"]
+}

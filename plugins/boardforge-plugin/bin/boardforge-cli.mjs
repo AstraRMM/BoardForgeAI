@@ -141,17 +141,20 @@ async function main() {
   }
 
   if (planned.kind === 'intake-session') {
-    const { createIntakeSession, writeIntakeSession, readIntakeSession } = await import('../lib/intake/intake-session-state.mjs')
+    const { startConversationSession, writeConversationSession, readConversationSession, writeConversationBrief } = await import('../lib/intake/conversation-session.mjs')
+    const { applyConversationAnswers } = await import('../lib/intake/conversation-answer-applier.mjs')
     let prompt = planned.prompt
     let answers = planned.answers
+    let conversation
     if (planned.command === 'answer') {
-      const existing = await readIntakeSession(planned.sessionPath)
-      prompt = existing.prompt
-      answers = { ...(existing.answers || {}), ...answers }
+      const existing = await readConversationSession(planned.sessionPath)
+      conversation = applyConversationAnswers(existing, answers)
+    } else {
+      conversation = startConversationSession({ prompt, answers, outputDir: planned.outputDir })
     }
-    const session = createIntakeSession({ prompt, answers, outputDir: planned.outputDir })
-    const written = await writeIntakeSession({ session, outputDir: planned.outputDir })
-    jsonOut({ status: 'BOARD_FORGE_INTAKE_SESSION_WRITTEN', session: written.session, file: written.file })
+    const written = await writeConversationSession({ session: conversation, outputDir: planned.outputDir })
+    const brief = await writeConversationBrief({ session: written.session, outputDir: planned.outputDir })
+    jsonOut({ status: 'BOARD_FORGE_CONVERSATION_SESSION_WRITTEN', session: brief.session, file: written.file, briefFiles: brief.files })
     return
   }
 
@@ -243,12 +246,14 @@ function planPromptCreateCommand(context) {
   const outputDir = path.resolve(argValue('--output', context.projectPath || path.join(context.workspace, 'BoardForge_Prompt_Project')))
   const guarded = assertPathIsAllowed(outputDir)
   if (!guarded.allowed) throw new Error(`Refused create output: ${guarded.reason} (${outputDir})`)
+  const session = argValue('--session', null)
   return {
     kind: 'prompt-create',
     command: context.forceBriefOnly ? 'brief' : 'create',
     workspace: context.workspace,
     outputDir,
     prompt: argValue('--prompt', ''),
+    sessionPath: session ? path.resolve(session) : null,
     answers: argValue('--answers', '{}'),
     approveBrief: hasArg('--approve-brief'),
     devBypass: hasArg('--dev') && !context.forceBriefOnly,
@@ -256,6 +261,19 @@ function planPromptCreateCommand(context) {
 }
 
 function planPublishActionCommand(name, context) {
+  const sessionPath = argValue('--session', null)
+  if (sessionPath) {
+    const projectDir = path.dirname(path.resolve(sessionPath))
+    return {
+      kind: 'publish-action',
+      command: name,
+      workspace: context.workspace,
+      projectDir,
+      manifestPath: path.join(projectDir, 'BoardForge_Project_Manifest.json'),
+      sessionPath: path.resolve(sessionPath),
+      confirm: hasArg('--confirm'),
+    }
+  }
   const manifestPath = path.resolve(argValue('--manifest', context.projectPath ? path.join(context.projectPath, 'BoardForge_Project_Manifest.json') : ''))
   const projectDir = path.resolve(argValue('--project', context.projectPath || path.dirname(manifestPath)))
   const guarded = assertPathIsAllowed(projectDir)

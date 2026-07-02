@@ -1,0 +1,6 @@
+{
+  "id": "approved_sync_must_be_validated_before_cloud_sync_001",
+  "rootCause": "Cloud sync can clutter dashboards if drafts, rejected briefs, or failed experiments are published automatically.",
+  "fix": "Validate approved-only sync locally before production sync: drafts and candidates hidden, publish blocked without confirm, rejected and failed hidden.",
+  "appliesTo": ["sync", "dashboard", "approval-gate"]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "crazy_outline_stress_tests_required_for_shape_engine_001",
+  "rootCause": "Custom outline generation can create visually interesting boards that are mechanically valid but difficult or impossible to route.",
+  "fix": "Stress test outline families with Edge.Cuts checks, mounting-hole scoring, connector access, component fit, routeability, DRC/ERC, and exact blockers.",
+  "appliesTo": ["outline", "routeability", "fixtures"]
+}

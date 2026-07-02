@@ -1,0 +1,6 @@
+{
+  "id": "dashboard_must_not_show_unapproved_drafts_001",
+  "rootCause": "Showing every local experiment on the dashboard makes BoardForge feel chaotic and unprofessional.",
+  "fix": "Main dashboard filters to dashboard_published only; drafts, candidates, rejected briefs, archived projects, and failed experiments stay hidden unless explicitly opened.",
+  "appliesTo": ["dashboard", "sync", "project-state"]
+}

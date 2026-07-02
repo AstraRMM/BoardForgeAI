@@ -39,3 +39,14 @@ Use the persistent proof folder:
 10. Run the same publish command with `--confirm` on a temp copy to prove explicit publish works without cluttering the real local candidate.
 
 This proves Codex/AI can drive intake, but BoardForge owns the question tree, brief approval gate, project state, and publish gate.
+
+## Live Conversation and Odd-Shape Follow-On
+
+1. Run `npm run boardforge:intake -- --prompt "Make a compact robotics controller with CAN and USB-C" --output "<demo-folder>"`.
+2. Confirm `BoardForge_Conversation_Session.json` exists.
+3. Run `npm run boardforge:answer -- --session "<demo-folder>\BoardForge_Conversation_Session.json" --answers "{\"interfaces_needed\":\"CAN USB PWM\"}"`.
+4. Confirm conditional follow-ups update and the brief regenerates.
+5. Run `npm run boardforge:approved-sync-validation -- --output "<demo-folder>"`.
+6. Confirm drafts/candidates stay hidden and publish requires confirmation.
+7. Run `npm run boardforge:crazy-outline-stress`.
+8. Confirm weak shapes are blocked by routeability score instead of being routed blindly.
