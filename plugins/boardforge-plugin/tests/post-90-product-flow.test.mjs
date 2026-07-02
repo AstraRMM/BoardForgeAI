@@ -25,6 +25,7 @@ const demoPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boa
 const kicadPluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
 const kicadBridgePath = path.join(repoRoot, 'kicad-plugin', 'boardforge_status_bridge.py')
 const launcherDir = path.join(repoRoot, 'tools', 'boardforge-launcher')
+const installerDir = path.join(repoRoot, 'tools', 'boardforge-installer')
 
 test('project publish state defaults to local draft and dashboard hidden', () => {
   const state = defaultPublishState()
@@ -272,9 +273,21 @@ test('alpha launcher scripts expose environment dashboard and demo flow', async 
   const demo = await readFile(path.join(launcherDir, 'BoardForge_Run_Demo.cmd'), 'utf8')
   assert.match(start, /BoardForge_Check_Environment/)
   assert.match(start, /npm run dev:web/)
+  assert.match(check, /Git/)
+  assert.match(check, /KiCad CLI/)
   assert.match(check, /DIGIKEY_CLIENT_ID/)
   assert.match(check, /FreeRouting jar/)
   assert.match(demo, /npm run boardforge:demo/)
+})
+
+test('alpha installer scripts package unsigned local alpha honestly', async () => {
+  const build = await readFile(path.join(installerDir, 'Build_BoardForge_Local_Alpha_Package.ps1'), 'utf8')
+  const install = await readFile(path.join(installerDir, 'BoardForge_Local_Alpha_Install.ps1'), 'utf8')
+  const uninstall = await readFile(path.join(installerDir, 'BoardForge_Local_Alpha_Uninstall.ps1'), 'utf8')
+  assert.match(build, /UNSIGNED_LOCAL_ALPHA_PACKAGE/)
+  assert.match(build, /CodeSigningCert/)
+  assert.match(install, /local development workspace/)
+  assert.match(uninstall, /does not delete project fixtures/)
 })
 
 test('alpha demo runner completes and writes product-facing reports', async () => {
@@ -291,10 +304,21 @@ test('web dashboard demo data labels local artifact status and demo command', as
   const dashboardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'dashboard', 'page.tsx'), 'utf8')
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
   const uploadPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'upload-kicad', 'page.tsx'), 'utf8')
+  const demoPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'demo', 'page.tsx'), 'utf8')
+  const customPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
   assert.match(dashboardPage, /Local engine artifact/)
   assert.match(dashboardPage, /npm run boardforge:demo/)
   assert.match(newBoardPage, /Premium intake flow/)
   assert.match(uploadPage, /Local-only import/)
+  assert.match(demoPage, /BoardForge local alpha demo/)
+  assert.match(customPage, /Custom Board Generator/)
+})
+
+test('downloads page shows PCB fab assembly and blocked manufacturing states', async () => {
+  const downloadsPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
+  assert.match(downloadsPage, /PCB_FAB_READY/)
+  assert.match(downloadsPage, /ASSEMBLY_READY_NOT_VERIFIED/)
+  assert.match(downloadsPage, /BLOCKED_COMPLIANCE_REVIEW/)
 })
 
 test('KiCad plugin install docs mention helper and no forced install', async () => {
@@ -317,10 +341,13 @@ test('CLI help lists alpha demo and approval examples', () => {
 test('local alpha docs describe launcher demo and external blockers', async () => {
   const quickstart = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_LOCAL_ALPHA_QUICKSTART.md'), 'utf8')
   const current = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_CURRENT_STATE.md'), 'utf8')
+  const dependencies = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_DEPENDENCY_SETUP.md'), 'utf8')
   assert.match(quickstart, /BoardForge_Start_Local_Alpha/)
   assert.match(quickstart, /npm run boardforge:demo/)
   assert.match(current, /supplier API keys/i)
   assert.match(current, /PoE compliance/i)
+  assert.match(dependencies, /kicad-cli/)
+  assert.match(dependencies, /FreeRouting/)
 })
 
 test('alpha release candidate report is honest about local alpha status', async () => {
@@ -331,4 +358,12 @@ test('alpha release candidate report is honest about local alpha status', async 
   assert.match(report, /Supplier API credentials/)
   assert.match(checklist, /publish succeeds with `--confirm`/)
   assert.match(surface, /Launcher/)
+})
+
+test('crazy outline test plan prepares future shape fixtures without claiming completion', async () => {
+  const plan = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_CRAZY_OUTLINE_TEST_PLAN.md'), 'utf8')
+  const generator = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_CUSTOM_OUTLINE_GENERATOR_PLAN.md'), 'utf8')
+  assert.match(plan, /internal cutout/)
+  assert.match(plan, /BF-CRAZY-OUTLINE-DRONE-STACK-01/)
+  assert.match(generator, /Reject shapes with likely routing collapse/)
 })

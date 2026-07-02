@@ -1,0 +1,7 @@
+{
+  "id": "crazy_outline_testing_should_follow_prompt_layer_001",
+  "title": "Crazy outline testing should follow prompt layer stability",
+  "rootCause": "Odd outlines stress placement, connector access, Edge.Cuts, DRC, routeability, and manufacturing; they should be driven by approved briefs.",
+  "fix": "Prepare crazy-outline test plans and placeholder fixtures now, then run routing/manufacturing stress after the conversation layer reliably produces approved board briefs.",
+  "appliesTo": ["outline_engine", "fixture_strategy", "routeability"]
+}

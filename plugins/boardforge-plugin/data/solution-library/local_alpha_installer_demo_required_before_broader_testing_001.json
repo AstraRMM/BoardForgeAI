@@ -1,0 +1,7 @@
+{
+  "id": "local_alpha_installer_demo_required_before_broader_testing_001",
+  "title": "Local alpha installer and demo are required before broader testing",
+  "rootCause": "A product cannot be evaluated easily if setup, environment checks, demo launch, and status reports are scattered.",
+  "fix": "Provide launcher and installer scripts that check dependencies, launch the dashboard, run the demo, and report unsigned/package status honestly.",
+  "appliesTo": ["installer", "launcher", "demo", "alpha_release"]
+}

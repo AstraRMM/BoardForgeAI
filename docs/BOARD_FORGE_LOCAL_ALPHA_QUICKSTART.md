@@ -28,6 +28,15 @@ The demo writes artifacts to:
 
 It proves prompt intake, conditional questions, board brief generation, revision, approval, local candidate state, publish confirmation, sourcing honesty, and local artifact-backed status.
 
+## Package / Install Reports
+
+```powershell
+npm run boardforge:package-alpha
+npm run boardforge:install-alpha
+```
+
+The package script writes `BoardForge_Code_Signing_Status_Report.md`. If no certificate exists, the status remains `UNSIGNED_LOCAL_ALPHA_PACKAGE`.
+
 ## Safety
 
 BoardForge must not touch ESC/FC projects. Existing user projects should be imported into a sandbox before any route, repair, cleanup, or export action.

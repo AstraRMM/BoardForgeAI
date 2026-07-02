@@ -1,0 +1,7 @@
+{
+  "id": "web_kicad_cli_must_share_same_project_state_001",
+  "title": "Web, KiCad, and CLI must share the same project state",
+  "rootCause": "Separate product surfaces can disagree unless they read the same manifest and publish-state artifacts.",
+  "fix": "Use shared projectState, briefApprovalStatus, dashboardVisible, syncStatus, manufacturing, sourcing, and replay fields across web, KiCad plugin, and CLI outputs.",
+  "appliesTo": ["web_dashboard", "kicad_plugin", "cli", "manifest"]
+}

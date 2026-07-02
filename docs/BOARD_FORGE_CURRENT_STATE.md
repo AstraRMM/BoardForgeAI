@@ -16,6 +16,7 @@ Current label:
 - Synthetic board generation, routeability scoring, FreeRouting/SES workflow, DRC/ERC validation, and manufacturing ZIP gating.
 - Dirty-to-clean and imported-board repair proofs.
 - Web, KiCad plugin, CLI, manifest, dashboard-data, and replay surfaces.
+- Local launcher, package, install, environment, and demo scripts.
 
 ## Current Alpha Demo
 
@@ -33,3 +34,9 @@ This demo proves prompt intake, CAN/USB-C conditional followups, brief v1, revis
 - KiCad plugin UX is still a guarded CLI/status surface.
 - Web dashboard uses local artifacts rather than a hosted live engine.
 - Hard arbitrary customer boards still need broader repair/routing evidence.
+
+## Next Sequence
+
+1. Finish and keep alpha foundation stable.
+2. Build the full prompt/conversation layer on top of the existing question engine and brief approval gate.
+3. Stress custom/crazy outline generation after the conversation flow can produce approved board briefs reliably.

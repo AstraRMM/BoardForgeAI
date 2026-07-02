@@ -1,0 +1,7 @@
+{
+  "id": "alpha_foundation_must_finish_before_conversation_layer_001",
+  "title": "Finish alpha foundation before expanding conversation layer",
+  "rootCause": "A premium prompt layer depends on stable launcher, CLI, web, KiCad, approval, project state, and reporting infrastructure.",
+  "fix": "Harden local alpha installer, launcher, dashboard, KiCad plugin, CLI, approval gates, manufacturing downloads, readiness docs, and tests before broad conversation work.",
+  "appliesTo": ["alpha_foundation", "prompt_layer", "product_sequence"]
+}

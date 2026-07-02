@@ -1,0 +1,7 @@
+{
+  "id": "prompt_layer_requires_brief_approval_gate_001",
+  "title": "Prompt layer requires board brief approval gate",
+  "rootCause": "Conversational board generation can produce wrong assumptions if it builds before user approval.",
+  "fix": "Keep prompt intake tied to conditional questions, explicit assumptions, board brief generation, revision history, and build blocking until approval.",
+  "appliesTo": ["question_engine", "board_brief", "create_flow"]
+}

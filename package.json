@@ -34,6 +34,8 @@
     "boardforge": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs",
     "boardforge:help": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs help",
     "boardforge:demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo.mjs",
+    "boardforge:package-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/Build_BoardForge_Local_Alpha_Package.ps1",
+    "boardforge:install-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/BoardForge_Local_Alpha_Install.ps1",
     "boardforge:init": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs init",
     "boardforge:create": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs create",
     "boardforge:brief": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs brief",
