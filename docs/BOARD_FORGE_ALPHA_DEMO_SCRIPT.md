@@ -23,10 +23,19 @@ BoardForge is a local-first AI PCB engineering platform for KiCad. It creates, v
 BoardForge does not claim PoE certification or fake stock. It turns vague blockers into exact next actions.
 ## Premium Intake Proof
 
-1. Run `npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C."`.
-2. Confirm BoardForge writes a board brief and blocks generation until approval.
-3. Run `npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C." --approve-brief --dev`.
-4. Confirm the project is a local candidate, not dashboard-published.
-5. Confirm publish requires explicit confirmation.
+Use the persistent proof folder:
+
+`C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-ALPHA-DEMO-ROBOTICS-CONTROLLER-01`
+
+1. Run `npm run boardforge:brief -- --prompt "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM." --output "<demo-folder>"`.
+2. Confirm BoardForge writes `BoardForge_Board_Brief.md/json`, `BoardForge_Board_Brief_v1.md`, and blocks generation until approval.
+3. Run `npm run boardforge:request-revision -- --project "<demo-folder>" --note "Add PWM/servo current assumption and edge connector labeling before build."`.
+4. Confirm `BoardForge_Board_Brief_v2.md` and `BoardForge_Brief_Revision_History.json` exist.
+5. Run `npm run boardforge:approve-brief -- --project "<demo-folder>"`.
+6. Run `npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM." --output "<demo-folder>" --approve-brief --dev`.
+7. Confirm the project is `local_candidate`, `dashboardVisible = false`, and manufacturing is blocked until validation runs.
+8. Run `npm run boardforge:publish -- --project "<demo-folder>" --manifest "<demo-folder>\BoardForge_Project_Manifest.json"` with `BOARDFORGE_DEV_LICENSE=true`.
+9. Confirm publish is blocked without `--confirm`.
+10. Run the same publish command with `--confirm` on a temp copy to prove explicit publish works without cluttering the real local candidate.
 
 This proves Codex/AI can drive intake, but BoardForge owns the question tree, brief approval gate, project state, and publish gate.

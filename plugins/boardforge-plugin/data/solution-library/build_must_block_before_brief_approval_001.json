@@ -1,0 +1,7 @@
+{
+  "id": "build_must_block_before_brief_approval_001",
+  "title": "Build must block before brief approval",
+  "rootCause": "Prompt-to-board generation can waste time or create misleading artifacts if BoardForge builds before the user approves the interpreted brief.",
+  "fix": "Create the brief and manifest in brief_pending_approval state, then block KiCad generation until briefApproved is true or an explicit dev/test bypass is used.",
+  "appliesTo": ["create_flow", "board_brief", "project_state"]
+}

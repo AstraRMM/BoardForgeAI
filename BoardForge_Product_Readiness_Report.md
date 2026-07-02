@@ -1,35 +1,51 @@
 # BoardForge Product Readiness Report
 
-## What Works
+## Current State
 
-- Local BoardForge engine/CLI modules.
-- Manifest-driven web dashboard pages.
-- KiCad plugin command surface.
-- Synthetic fixture runner.
-- Dense-control physical KiCad mutation repair.
-- Manufacturing ZIP gate for clean fixtures.
-- Solution-library lesson capture.
+`MVP_READINESS_90_EVIDENCE_BACKED_WITH_EXACT_SOURCING_SECRET_BLOCKER`
 
-## What Failed Or Is Blocked
+BoardForge is now an evidence-backed local alpha platform. It is no longer just a Codex-driven script: the repo contains a local engine, CLI, web dashboard surfaces, KiCad plugin control surface, project manifests, manufacturing gates, fixture proofs, sourcing gates, approval-only publish workflow, and a premium intake/brief approval flow.
 
-- GitHub push is blocked because the safe dev repo has no `origin` remote.
-- Large groups of legacy scaffold files remain untracked and need chunked review.
-- `report:90:quick` completed but explicitly hit total budget on later fixtures.
+## Evidence-Backed Capabilities
 
-## Product-Ready
+- Prompt intake through a conditional question engine.
+- Board brief generation with revision history.
+- Build blocked until brief approval.
+- Local candidate state that stays hidden from the main dashboard.
+- Publish blocked without explicit confirmation.
+- Synthetic board generation, routing, validation, and manufacturing export.
+- Dirty-to-clean physical repair proofs.
+- Sandboxed imported-board repair proofs with source hash protection.
+- Supplier provider path that refuses fake stock and reports `NOT_CHECKED` without keys.
 
-- Dense-control fixture repair proof.
-- Odd-shape fixture manufacturing candidate.
-- Local dashboard evidence cards.
-- CLI replay/report/export command model.
+## Alpha Demo Artifact
 
-## Prototype
+`C:\Users\luifi\Desktop\BoardForge_New_Board_Fixtures\BF-ALPHA-DEMO-ROBOTICS-CONTROLLER-01`
 
-- Arbitrary-board local shove/rip-up beyond synthetic proof.
-- Native KiCad panel UX.
-- Supplier API verification without keys.
-- Browser-driven local execution flow.
+The demo proves:
+
+- prompt intake
+- conditional CAN/USB-C followups
+- brief v1
+- revision request to brief v2
+- brief approval
+- local candidate creation
+- dashboard visibility remains false
+- publish without confirm is blocked
+- publish with confirm works on a temp copy
+- CLI/KiCad/web artifacts are generated
+
+## External Blockers
+
+- Supplier API credentials are required for live stock and assembly verification.
+- PoE compliance/isolation/safety review requires real engineering validation.
+
+## Remaining Product Blockers
+
+- KiCad plugin UX is still a CLI/status control surface, not a polished native panel.
+- Web execution is local artifact backed, not a hosted cloud run system.
+- Arbitrary dense customer-board shove/rip-up needs broader real-world evidence.
 
 ## Next Highest-Value Task
 
-Configure the GitHub remote, push the committed engine proof, then promote reviewed product scaffold chunks in small commits.
+Turn the alpha demo into a guided installer/demo flow and polish the KiCad/web UX around sandbox import, approval, repair, export, and publish.

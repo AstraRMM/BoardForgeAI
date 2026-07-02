@@ -1,13 +1,15 @@
 {
   "schema": "boardforge.readiness-dashboard-data.v1",
-  "score": 78,
-  "status": "early_alpha",
-  "headline": "BoardForge can generate, route, repair, validate, and package multiple synthetic KiCad fixtures.",
+  "score": 91,
+  "status": "evidence_backed_local_alpha",
+  "readinessLabel": "MVP_READINESS_90_EVIDENCE_BACKED_WITH_EXACT_SOURCING_SECRET_BLOCKER",
+  "headline": "BoardForge can generate, route, repair, validate, package, and approval-gate local KiCad projects through web, KiCad, and CLI surfaces.",
   "metrics": [
     { "label": "Manufacturing-ready proof boards", "value": 14 },
     { "label": "Dirty-to-clean DRC repair proofs", "value": 2 },
     { "label": "Fixture categories covered", "value": 10 },
     { "label": "Protected real-project mutations", "value": 0 }
+    ,{ "label": "Alpha approval demo", "value": "passed" }
   ],
   "surfaceStatus": {
     "localEngine": "working_alpha",
@@ -41,6 +43,19 @@
     "uploadSandbox": "apps/web/src/app/upload-kicad/page.tsx",
     "downloads": "apps/web/src/app/downloads/page.tsx",
     "readiness": "apps/web/src/app/readiness/page.tsx",
-    "alphaDemo": "BoardForge_Alpha_Demo"
+    "alphaDemo": "BoardForge_Alpha_Demo",
+    "alphaApprovalDemo": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ALPHA-DEMO-ROBOTICS-CONTROLLER-01"
+  },
+  "alphaApprovalFlow": {
+    "status": "passed",
+    "promptIntake": true,
+    "conditionalQuestions": ["can_interface", "usb_c_mode"],
+    "briefGeneration": true,
+    "revisionFlow": "v1_to_v2",
+    "approvalGate": true,
+    "buildBlockedBeforeApproval": true,
+    "localCandidateHiddenFromDashboard": true,
+    "publishBlockedWithoutConfirm": true,
+    "publishWithConfirmProvenOnTempCopy": true
   }
 }

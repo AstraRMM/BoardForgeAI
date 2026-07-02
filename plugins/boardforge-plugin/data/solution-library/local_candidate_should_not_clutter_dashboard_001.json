@@ -1,0 +1,7 @@
+{
+  "id": "local_candidate_should_not_clutter_dashboard_001",
+  "title": "Local candidates should not clutter the main dashboard",
+  "rootCause": "Generated local candidates are review artifacts, not user-approved published projects.",
+  "fix": "Set dashboardVisible false for local_candidate and show only dashboard_published projects on the main dashboard.",
+  "appliesTo": ["project_manifest", "dashboard_filter", "approved_only_sync"]
+}

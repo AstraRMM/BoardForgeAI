@@ -1,0 +1,7 @@
+{
+  "id": "publish_must_require_explicit_confirm_001",
+  "title": "Publish must require explicit confirmation",
+  "rootCause": "Automatically publishing local candidates can clutter dashboards with drafts, failed experiments, or unreviewed boards.",
+  "fix": "Block publish without --confirm and keep local candidates dashboardHidden until explicit publish approval is recorded.",
+  "appliesTo": ["approved_only_sync", "cli", "web_dashboard", "project_publish_gate"]
+}

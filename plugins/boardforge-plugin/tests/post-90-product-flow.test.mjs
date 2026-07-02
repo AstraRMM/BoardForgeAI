@@ -17,6 +17,7 @@ import { getQuestionTree } from '../lib/intake/board-type-question-trees.mjs'
 import { generateBoardBrief, writeBoardBrief } from '../lib/intake/board-brief-generator.mjs'
 import { canBuildFromBrief } from '../lib/intake/board-brief-approval-gate.mjs'
 import { createProjectFromPrompt } from '../lib/engine/create-project-from-prompt.mjs'
+import { applyProjectApprovalAction } from '../lib/platform/project-approval-actions.mjs'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
@@ -200,4 +201,65 @@ test('create publish requires approval and explicit confirmation', async () => {
   const approved = approveProjectForDashboard({ publish: result.publish })
   assert.equal(canPublishToDashboard(approved, { confirm: false }).allowed, false)
   assert.equal(canPublishToDashboard(approved, { confirm: true }).allowed, true)
+})
+
+test('approval action handlers approve reject and request revision', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-approval-actions-'))
+  const blocked = await createProjectFromPrompt({ prompt: 'Make a compact robotics controller with CAN and USB-C.', outputDir: dir })
+  assert.equal(blocked.status, 'BOARD_FORGE_CREATE_BLOCKED_BRIEF_APPROVAL_REQUIRED')
+  const approved = await applyProjectApprovalAction({ projectDir: dir, action: 'approve-brief', note: 'looks good' })
+  assert.equal(approved.manifest.projectState, 'brief_approved')
+  assert.equal(approved.manifest.briefApproved, true)
+  const revision = await applyProjectApprovalAction({ projectDir: dir, action: 'request-revision', note: 'move CAN connector to edge' })
+  assert.equal(revision.manifest.projectState, 'revision_requested')
+  assert.ok(revision.manifest.revision.latestBrief.endsWith('BoardForge_Board_Brief_v2.md'))
+  const rejected = await applyProjectApprovalAction({ projectDir: dir, action: 'reject-brief', note: 'wrong shape' })
+  assert.equal(rejected.manifest.projectState, 'brief_rejected')
+})
+
+test('CLI brief approval commands create approval state transitions', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-cli-approval-'))
+  execFileSync(process.execPath, [cliPath, 'brief', '--prompt', 'Make a compact robotics controller with CAN and USB-C.', '--output', dir], { encoding: 'utf8' })
+  const approved = JSON.parse(execFileSync(process.execPath, [cliPath, 'approve-brief', '--project', dir], { encoding: 'utf8' }))
+  assert.equal(approved.manifest.projectState, 'brief_approved')
+  const revision = JSON.parse(execFileSync(process.execPath, [cliPath, 'request-revision', '--project', dir, '--note', 'add PWM labels'], { encoding: 'utf8' }))
+  assert.equal(revision.manifest.projectState, 'revision_requested')
+})
+
+test('brief revision flow creates v2 brief and history file', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-brief-revision-'))
+  await createProjectFromPrompt({ prompt: 'Make a compact robotics controller.', outputDir: dir })
+  const revision = await applyProjectApprovalAction({ projectDir: dir, action: 'request-revision', note: 'use mounting ears' })
+  const history = JSON.parse(await readFile(revision.manifest.revision.historyPath, 'utf8'))
+  assert.equal(history.at(-1).version, 2)
+  assert.match(history.at(-1).note, /mounting ears/)
+})
+
+test('question flow approval e2e blocks build then approves candidate and publish gate', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-e2e-'))
+  const pending = await createProjectFromPrompt({ prompt: 'Make a compact robotics controller with CAN and USB-C.', outputDir: dir })
+  assert.equal(pending.projectCreated, false)
+  assert.equal(pending.publish.projectState, 'brief_pending_approval')
+  await applyProjectApprovalAction({ projectDir: dir, action: 'approve-brief' })
+  const created = await createProjectFromPrompt({ prompt: 'Make a compact robotics controller with CAN and USB-C.', outputDir: dir, approveBrief: true, devBypass: true })
+  assert.equal(created.publish.projectState, 'local_candidate')
+  assert.equal(created.publish.dashboardVisible, false)
+  assert.equal(canPublishToDashboard({ publish: created.publish }, { confirm: true }).allowed, false)
+})
+
+test('web brief approval UI exposes approve reject revise and publish controls', async () => {
+  const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
+  assert.match(projectPage, /Board Brief and Approval/)
+  assert.match(projectPage, /Publish to Dashboard/)
+  assert.match(projectPage, /Archive/)
+  assert.match(projectPage, /Revise \/ Rerun/)
+})
+
+test('KiCad plugin brief approval status exposes approval actions', async () => {
+  const plugin = await readFile(kicadPluginPath, 'utf8')
+  const bridge = await readFile(kicadBridgePath, 'utf8')
+  assert.match(plugin, /approve_brief/)
+  assert.match(plugin, /reject_brief|request_revision|request-revision/)
+  assert.match(bridge, /briefApprovalRequired/)
+  assert.match(bridge, /briefReport/)
 })

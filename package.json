@@ -34,6 +34,10 @@
     "boardforge": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs",
     "boardforge:init": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs init",
     "boardforge:create": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs create",
+    "boardforge:brief": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs brief",
+    "boardforge:approve-brief": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs approve-brief",
+    "boardforge:reject-brief": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs reject-brief",
+    "boardforge:request-revision": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs request-revision",
     "boardforge:import": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs import",
     "boardforge:validate": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs validate",
     "boardforge:route": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs route",
@@ -183,6 +187,12 @@
     ,"test:create-conditional-followups": "node --test --test-name-pattern \"create conditional followups\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:create-local-draft-not-published": "node --test --test-name-pattern \"create local draft not published\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:create-publish-requires-approval": "node --test --test-name-pattern \"create publish requires approval\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-brief-approval-ui": "node --test --test-name-pattern \"web brief approval UI\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:approval-action-handlers": "node --test --test-name-pattern \"approval action handlers\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-brief-approval-status": "node --test --test-name-pattern \"KiCad plugin brief approval status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:cli-brief-approval-commands": "node --test --test-name-pattern \"CLI brief approval commands\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:brief-revision-flow": "node --test --test-name-pattern \"brief revision flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:question-flow-approval-e2e": "node --test --test-name-pattern \"question flow approval e2e\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

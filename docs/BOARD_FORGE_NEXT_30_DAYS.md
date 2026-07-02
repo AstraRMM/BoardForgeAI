@@ -9,4 +9,6 @@ Highest-value work:
 5. Expand provider support for JLCPCB/LCSC assembly data.
 6. Strengthen local shove/rip-up on harder customer-like boards.
 7. Add screenshots and demo video assets after GitHub repo setup.
-
+8. Turn the brief approval and publish-gate demo into an interactive local web/KiCad guided flow.
+9. Add signed local release packaging and a one-command demo launcher.
+10. Add artifact retention controls for drafts, archived projects, and failed experiments.

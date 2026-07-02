@@ -1,0 +1,7 @@
+{
+  "id": "real_web_kicad_brief_approval_required_001",
+  "title": "Web and KiCad surfaces must expose real brief approval state",
+  "rootCause": "A premium product flow is not complete if the engine has a brief gate but the web and KiCad surfaces do not show approval status or actions.",
+  "fix": "Surface board brief status, approve/reject/revise actions, local candidate state, publish state, report paths, and CLI replay commands through web and KiCad product layers.",
+  "appliesTo": ["web_dashboard", "kicad_plugin", "project_manifest", "premium_intake"]
+}

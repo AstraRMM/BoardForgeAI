@@ -28,6 +28,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           <span className="rounded border border-cyan-400/40 px-2 py-1 text-cyan-100">Publish to Dashboard</span>
           <span className="rounded border border-slate-600 px-2 py-1 text-slate-200">Keep Local</span>
+          <span className="rounded border border-red-400/40 px-2 py-1 text-red-100">Reject Brief</span>
           <span className="rounded border border-slate-600 px-2 py-1 text-slate-200">Archive</span>
           <span className="rounded border border-slate-600 px-2 py-1 text-slate-200">Revise / Rerun</span>
         </div>

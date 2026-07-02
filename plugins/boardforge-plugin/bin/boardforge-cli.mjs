@@ -22,10 +22,14 @@ function jsonOut(value) {
 function usage() {
   return {
     status: 'BOARD_FORGE_CLI_HELP',
-    usage: 'boardforge <init|create|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals> [options]',
+    usage: 'boardforge <init|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals> [options]',
     commands: {
       init: 'Create a safe BoardForge workspace marker.',
       create: 'Create a KiCad project from a controlled BoardForge template.',
+      brief: 'Generate a BoardForge board brief from a prompt without building.',
+      'approve-brief': 'Record brief approval for a local project.',
+      'reject-brief': 'Record brief rejection for a local project.',
+      'request-revision': 'Record a brief revision request and create a new brief version.',
       import: 'Copy an existing KiCad project into a BoardForge sandbox without mutating the source.',
       validate: 'Run preflight/manufacturing validation planning for a project.',
       route: 'Run the routed-board workflow entrypoint for a project.',
@@ -119,7 +123,7 @@ async function main() {
     const { createProjectFromPrompt } = await import('../lib/engine/create-project-from-prompt.mjs')
     const result = await createProjectFromPrompt(planned)
     jsonOut(result)
-    if (!result.projectCreated) process.exitCode = 2
+    if (!result.projectCreated && planned.command !== 'brief') process.exitCode = 2
     return
   }
 
@@ -138,7 +142,8 @@ async function planCommand(name, context) {
   if (name === 'status') return planStatusCommand(context)
   if (name === 'login') return { kind: 'auth-status', command: name, workspace, action: null }
   if (name === 'license') return { kind: 'auth-status', command: name, workspace, action: argValue('--action', null) }
-  if (['publish', 'archive', 'keep-local', 'sync', 'approvals'].includes(name)) return planPublishActionCommand(name, context)
+  if (name === 'brief') return planPromptCreateCommand({ ...context, forceBriefOnly: true })
+  if (['publish', 'archive', 'keep-local', 'sync', 'approvals', 'approve-brief', 'reject-brief', 'request-revision'].includes(name)) return planPublishActionCommand(name, context)
 
   const guarded = guardProjectPath(projectPath, name)
   const projectName = argValue('--name', path.basename(projectPath || 'boardforge-project'))
@@ -194,13 +199,13 @@ function planPromptCreateCommand(context) {
   if (!guarded.allowed) throw new Error(`Refused create output: ${guarded.reason} (${outputDir})`)
   return {
     kind: 'prompt-create',
-    command: 'create',
+    command: context.forceBriefOnly ? 'brief' : 'create',
     workspace: context.workspace,
     outputDir,
     prompt: argValue('--prompt', ''),
     answers: argValue('--answers', '{}'),
     approveBrief: hasArg('--approve-brief'),
-    devBypass: hasArg('--dev'),
+    devBypass: hasArg('--dev') && !context.forceBriefOnly,
   }
 }
 
@@ -237,6 +242,11 @@ async function executePublishAction(planned) {
   if (planned.command === 'approvals') {
     const report = await writeProjectApprovalReport({ project: manifest, outputDir: planned.projectDir })
     return { status: 'BOARD_FORGE_APPROVAL_REPORT_WRITTEN', ...report.files, projectState: report.state.projectState }
+  }
+
+  if (['approve-brief', 'reject-brief', 'request-revision'].includes(planned.command)) {
+    const { applyProjectApprovalAction } = await import('../lib/platform/project-approval-actions.mjs')
+    return applyProjectApprovalAction({ projectDir: planned.projectDir, manifestPath: planned.manifestPath, action: planned.command, actor: 'cli', note: argValue('--note', '') })
   }
 
   const syncGate = canRunPremiumAction('sync_project_to_dashboard')

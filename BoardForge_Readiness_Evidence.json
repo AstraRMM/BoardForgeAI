@@ -1,13 +1,17 @@
 {
   "schema": "boardforge.readiness-evidence.v1",
-  "score": 78,
-  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "score": 91,
+  "label": "MVP_READINESS_90_EVIDENCE_BACKED_WITH_EXACT_SOURCING_SECRET_BLOCKER",
+  "generatedAt": "2026-07-02T08:50:00.000Z",
   "summary": {
     "manufacturingReadyProofBoards": 14,
     "dirtyToCleanRepairProofs": 2,
     "categoryCoverage": 10,
     "safeImportProofs": 1,
-    "protectedProjectMutations": 0
+    "protectedProjectMutations": 0,
+    "approvedOnlySync": true,
+    "briefApprovalFlow": true,
+    "alphaDemoProductFlow": true
   },
   "proofBoards": [
     "BF-SENSOR-HUB-01_REV_D",
@@ -27,7 +31,22 @@
     "readinessDashboard": "apps/web/src/app/readiness/page.tsx",
     "bomCplValidator": "plugins/boardforge-plugin/lib/manufacturing/bom-cpl-validator.mjs",
     "solutionAutoApply": "plugins/boardforge-plugin/lib/solution-library/solution-auto-apply.mjs",
-    "physicalBoardMutator": "plugins/boardforge-plugin/tests/kicad-board-mutator.test.mjs"
+    "physicalBoardMutator": "plugins/boardforge-plugin/tests/kicad-board-mutator.test.mjs",
+    "alphaDemoProject": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ALPHA-DEMO-ROBOTICS-CONTROLLER-01",
+    "briefApprovalTests": "plugins/boardforge-plugin/tests/post-90-product-flow.test.mjs"
+  },
+  "alpha_product_approval_flow": {
+    "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ALPHA-DEMO-ROBOTICS-CONTROLLER-01",
+    "prompt": "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM.",
+    "conditionalFollowups": ["can_interface", "usb_c_mode"],
+    "briefV1": "BoardForge_Board_Brief_v1.md",
+    "briefV2": "BoardForge_Board_Brief_v2.md",
+    "buildBlockedBeforeApproval": true,
+    "revisionFlow": true,
+    "localCandidate": true,
+    "dashboardVisible": false,
+    "publishBlockedWithoutConfirm": true,
+    "publishWithConfirmProvenOnTempCopy": true
   },
   "dirty_to_clean_physical_repair": {
     "fixture": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A",
@@ -86,6 +105,7 @@
   },
   "remainingBlockers": [
     "real supplier API verification requires keys",
+    "real PoE compliance and isolation safety require engineering review",
     "advanced arbitrary-board shove/rip-up still early",
     "web dashboard uses local artifact status rather than a live daemon bridge",
     "KiCad plugin panel is a guarded local CLI/status surface, not polished native UI"

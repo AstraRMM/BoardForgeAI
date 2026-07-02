@@ -1,0 +1,7 @@
+{
+  "id": "brief_revision_loop_required_for_premium_flow_001",
+  "title": "Premium intake needs a revision loop before build",
+  "rootCause": "A generated board brief may need user correction before any KiCad files are produced.",
+  "fix": "Support request-revision actions, versioned BoardForge_Board_Brief_vN.md files, and BoardForge_Brief_Revision_History.json before build approval.",
+  "appliesTo": ["question_engine", "board_brief", "approval_gate", "cli"]
+}

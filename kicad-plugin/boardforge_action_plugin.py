@@ -43,7 +43,9 @@ def build_boardforge_commands(board_path):
         "report": ["npm", "run", "boardforge:report", "--", "--manifest", manifest],
         "replay": ["npm", "run", "boardforge:replay", "--", "--manifest", manifest],
         "approvals": ["npm", "run", "boardforge:approvals", "--", "--project", project_dir, "--manifest", manifest],
-        "approve_brief": ["npm", "run", "boardforge:create", "--", "--project", project_dir, "--approve-brief", "--dev"],
+        "approve_brief": ["npm", "run", "boardforge:approve-brief", "--", "--project", project_dir, "--manifest", manifest],
+        "reject_brief": ["npm", "run", "boardforge:reject-brief", "--", "--project", project_dir, "--manifest", manifest],
+        "request_revision": ["npm", "run", "boardforge:request-revision", "--", "--project", project_dir, "--manifest", manifest],
         "publish": ["npm", "run", "boardforge:publish", "--", "--project", project_dir, "--manifest", manifest, "--confirm"],
         "keep_local": ["npm", "run", "boardforge:keep-local", "--", "--project", project_dir, "--manifest", manifest],
         "archive": ["npm", "run", "boardforge:archive", "--", "--project", project_dir, "--manifest", manifest],
@@ -102,6 +104,7 @@ if pcbnew:
                 pcbnew.wxLogMessage("BoardForge refused protected project path. Use an approved synthetic or copied workspace.")
                 return
             commands = build_boardforge_commands(board_path)
+            project_dir = os.path.dirname(board_path)
             manifest = manifest_path_for(board_path)
             report_path = latest_report_path_for(board_path)
             manufacturing_path = manufacturing_folder_for(board_path)
@@ -123,6 +126,8 @@ if pcbnew:
                 pcbnew.wxLogMessage("Route/Repair/Cleanup/Export disabled on active project. Import into BoardForge sandbox first.")
             pcbnew.wxLogMessage("Approval report: " + format_command(commands["approvals"]))
             pcbnew.wxLogMessage("Approve brief: " + format_command(commands["approve_brief"]))
+            pcbnew.wxLogMessage("Reject brief: " + format_command(commands["reject_brief"]))
+            pcbnew.wxLogMessage("Request revision: " + format_command(commands["request_revision"]))
             pcbnew.wxLogMessage("Open brief report: " + os.path.join(project_dir, "BoardForge_Board_Brief.md"))
             pcbnew.wxLogMessage("Publish approved project: " + format_command(commands["publish"]))
             pcbnew.wxLogMessage("Keep local only: " + format_command(commands["keep_local"]))

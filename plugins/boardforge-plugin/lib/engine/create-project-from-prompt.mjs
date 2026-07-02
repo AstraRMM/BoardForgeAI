@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises'
 import path from 'node:path'
 import { assertPathIsAllowed } from '../platform/protected-path-guard.mjs'
 import { defaultPublishState, transitionPublishState } from '../platform/project-publish-state.mjs'
@@ -21,8 +21,22 @@ export async function createProjectFromPrompt(options = {}) {
 
   await mkdir(outputDir, { recursive: true })
   const briefFiles = await writeBoardBrief({ brief: { ...brief, briefApproved: Boolean(options.approveBrief) }, outputDir })
+  await writeBriefVersionArtifacts({ outputDir, briefMarkdown: briefFiles.files.markdown, version: 1, note: 'initial prompt intake brief' })
 
   if (!briefGate.allowed) {
+    const publish = transitionPublishState(defaultPublishState(), 'mark_brief_pending', { actor: options.actor || 'boardforge-create', note: 'brief generated; build blocked pending approval' })
+    const manifestPath = await writeCreateManifest({
+      outputDir,
+      projectName: path.basename(outputDir),
+      prompt,
+      questionPlan,
+      briefFiles,
+      publish,
+      status: 'BRIEF_PENDING_APPROVAL_BUILD_BLOCKED',
+      projectFiles: null,
+      briefApproved: false,
+    })
+    await writeProjectApprovalReport({ project: JSON.parse(await import('node:fs/promises').then((fs) => fs.readFile(manifestPath, 'utf8'))), outputDir })
     return {
       status: 'BOARD_FORGE_CREATE_BLOCKED_BRIEF_APPROVAL_REQUIRED',
       projectCreated: false,
@@ -30,6 +44,8 @@ export async function createProjectFromPrompt(options = {}) {
       questionPlan,
       brief: { ...brief, briefApproved: false },
       briefFiles: briefFiles.files,
+      manifestPath,
+      publish,
       blockers: briefGate.blockers,
     }
   }
@@ -40,49 +56,10 @@ export async function createProjectFromPrompt(options = {}) {
     actor: options.actor || 'boardforge-create',
     note: 'prompt brief approved; project created as local candidate',
   })
-  const manifest = {
-    schema: 'boardforge.project-manifest.v1',
-    projectId: projectName,
-    projectName,
-    status: 'LOCAL_CANDIDATE_CREATED_FROM_APPROVED_BRIEF',
-    prompt,
-    questionPlan,
-    boardBrief: {
-      json: briefFiles.files.json,
-      markdown: briefFiles.files.markdown,
-      approved: true,
-    },
-    boardPath: projectFiles.pcb,
-    schematicPath: projectFiles.sch,
-    projectPath: projectFiles.pro,
-    validation: {
-      status: 'not_run',
-      shorts: null,
-      unconnected: null,
-      forbiddenVias: null,
-      drcViolations: null,
-      ercViolations: null,
-    },
-    manufacturing: {
-      ready: false,
-      zip: null,
-      blockedReason: 'validation_not_run',
-    },
-    reports: {
-      boardBrief: briefFiles.files.markdown,
-    },
-    replay: {
-      command: `npm run boardforge:create -- --prompt "${escapeCli(prompt)}" --output "${outputDir}" --approve-brief --dev`,
-    },
-    publish,
-    projectState: publish.projectState,
-    publishApproved: publish.publishApproved,
-    dashboardVisible: publish.dashboardVisible,
-    syncStatus: publish.syncStatus,
-  }
-  const manifestPath = path.join(outputDir, 'BoardForge_Project_Manifest.json')
-  await writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8')
+  const manifestPath = await writeCreateManifest({ outputDir, projectName, prompt, questionPlan, briefFiles, publish, status: 'LOCAL_CANDIDATE_CREATED_FROM_APPROVED_BRIEF', projectFiles, briefApproved: true })
+  const manifest = JSON.parse(await import('node:fs/promises').then((fs) => fs.readFile(manifestPath, 'utf8')))
   const approval = await writeProjectApprovalReport({ project: manifest, outputDir })
+  await writeAuxiliaryProductArtifacts({ outputDir, manifest, approvalReport: approval.files.markdown })
 
   return {
     status: 'BOARD_FORGE_CREATE_LOCAL_CANDIDATE',
@@ -96,6 +73,59 @@ export async function createProjectFromPrompt(options = {}) {
     approvalReport: approval.files.markdown,
     publish,
   }
+}
+
+async function writeCreateManifest({ outputDir, projectName, prompt, questionPlan, briefFiles, publish, status, projectFiles, briefApproved }) {
+  const manifest = {
+    schema: 'boardforge.project-manifest.v1',
+    projectId: projectName,
+    projectName,
+    status,
+    prompt,
+    questionPlan,
+    boardBrief: { json: briefFiles.files.json, markdown: briefFiles.files.markdown, approved: briefApproved, version: 1 },
+    boardPath: projectFiles?.pcb || null,
+    schematicPath: projectFiles?.sch || null,
+    projectPath: projectFiles?.pro || null,
+    validation: { status: 'not_run', shorts: null, unconnected: null, forbiddenVias: null, drcViolations: null, ercViolations: null },
+    manufacturing: { ready: false, zip: null, blockedReason: 'validation_not_run' },
+    reports: { boardBrief: briefFiles.files.markdown },
+    replay: { command: `npm run boardforge:create -- --prompt "${escapeCli(prompt)}" --output "${outputDir}" --approve-brief --dev` },
+    publish,
+    projectState: publish.projectState,
+    briefApproved: publish.briefApproved,
+    publishApproved: publish.publishApproved,
+    dashboardVisible: publish.dashboardVisible,
+    syncStatus: publish.syncStatus,
+  }
+  const manifestPath = path.join(outputDir, 'BoardForge_Project_Manifest.json')
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8')
+  return manifestPath
+}
+
+async function writeBriefVersionArtifacts({ outputDir, briefMarkdown, version, note }) {
+  const versioned = path.join(outputDir, `BoardForge_Board_Brief_v${version}.md`)
+  await copyFile(briefMarkdown, versioned)
+  const historyPath = path.join(outputDir, 'BoardForge_Brief_Revision_History.json')
+  let history = []
+  try {
+    history = JSON.parse(await readFile(historyPath, 'utf8'))
+  } catch {
+    history = []
+  }
+  const nextEntry = { version, action: 'created', note, file: versioned, at: new Date().toISOString() }
+  const existingIndex = history.findIndex((entry) => entry.version === version)
+  if (existingIndex === -1) history.push(nextEntry)
+  else history[existingIndex] = { ...history[existingIndex], ...nextEntry }
+  history.sort((a, b) => a.version - b.version)
+  await writeFile(historyPath, JSON.stringify(history, null, 2), 'utf8')
+}
+
+async function writeAuxiliaryProductArtifacts({ outputDir, manifest, approvalReport }) {
+  await writeFile(path.join(outputDir, 'BoardForge_Engine_Run_Log.json'), JSON.stringify({ schema: 'boardforge.engine-run-log.v1', status: manifest.status, projectState: manifest.projectState, latestAction: 'create_from_prompt', at: new Date().toISOString() }, null, 2), 'utf8')
+  await writeFile(path.join(outputDir, 'BoardForge_Web_Project_Card.json'), JSON.stringify({ schema: 'boardforge.web-project-card.v1', projectId: manifest.projectId, projectName: manifest.projectName, projectState: manifest.projectState, dashboardVisible: manifest.dashboardVisible, approvalReport }, null, 2), 'utf8')
+  await writeFile(path.join(outputDir, 'BoardForge_KiCad_Plugin_Action_Log.json'), JSON.stringify([{ action: 'create_from_prompt', status: manifest.status, projectState: manifest.projectState, at: new Date().toISOString() }], null, 2), 'utf8')
+  await writeFile(path.join(outputDir, 'BoardForge_CLI_Replay_Command.txt'), manifest.replay.command, 'utf8')
 }
 
 function parseAnswers(value) {
