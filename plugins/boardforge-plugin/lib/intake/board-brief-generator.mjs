@@ -18,7 +18,9 @@ export function generateBoardBrief(input = {}) {
     connectorPlan: connectorPlanFor(plan),
     powerPlan: powerPlanFor(plan),
     routingRisk: plan.riskQuestions,
-    sourcingRisk: ['supplier_api_keys_required_for_stock_verification', 'assembly_availability_not_verified_without_provider_keys'],
+    routingRisks: plan.routingRisks || [],
+    sourcingRisk: ['supplier_api_keys_required_for_stock_verification', 'assembly_availability_not_verified_without_provider_keys', ...(plan.sourcingRisks || [])],
+    manufacturingRisks: plan.manufacturingRisks || [],
     manufacturingTarget: plan.answers?.manufacturing_target || 'generic_gerber_jlcpcb_candidate',
     questionPlan: plan,
   }
@@ -38,6 +40,8 @@ export async function writeBoardBrief({ brief, outputDir }) {
 function architectureFor(plan) {
   if (plan.boardType === 'poe_environment_sensor') return ['RJ45/MagJack candidate', 'PoE PD candidate', 'MCU', 'environment sensor', '3V3 rail']
   if (plan.boardType === 'industrial_io_board') return ['MCU', '24V input placeholder', 'buck regulator', 'isolated input placeholders', 'fieldbus transceiver']
+  if (plan.boardType === 'imported_project_repair') return ['Sandbox copy', 'source hash guard', 'read-only validation', 'transactional DRC/routing repair plan']
+  if (plan.boardType === 'odd_shape_robot_board') return ['MCU', 'USB-C', 'CAN/UART/I2C/PWM connectors', 'custom outline routeability gate', 'SWD']
   if (plan.boardType === 'robotics_controller') return ['MCU', 'USB-C', '3V3 regulator', 'CAN/UART/I2C/PWM connectors', 'SWD']
   return ['MCU', 'power input', 'sensor/interface block', 'debug connector']
 }
@@ -76,6 +80,12 @@ ${brief.assumptions.map((item) => `- ${item}`).join('\n')}
 
 ## Risks
 ${brief.routingRisk.map((item) => `- ${item}`).join('\n')}
+
+## Sourcing Risk
+${brief.sourcingRisk.map((item) => `- ${item}`).join('\n')}
+
+## Manufacturing Risk
+${brief.manufacturingRisks.map((item) => `- ${item}`).join('\n')}
 
 BoardForge must not create KiCad files until this brief is approved or an explicit dev/test bypass is used.
 `

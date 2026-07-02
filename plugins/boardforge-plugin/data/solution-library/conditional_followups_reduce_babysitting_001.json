@@ -1,0 +1,6 @@
+{
+  "id": "conditional_followups_reduce_babysitting_001",
+  "rootCause": "Generic follow-up questions make BoardForge feel like a form rather than an engineering assistant.",
+  "fix": "Trigger follow-ups only when selected interfaces, power modes, compliance constraints, or outline choices change the design.",
+  "appliesTo": ["intake", "conditional-followups"]
+}

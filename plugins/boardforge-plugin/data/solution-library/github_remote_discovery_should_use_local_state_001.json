@@ -1,0 +1,6 @@
+{
+  "id": "github_remote_discovery_should_use_local_state_001",
+  "rootCause": "The safe dev repo can lose its origin remote even though nearby local repos and GitHub CLI know the correct BoardForge repository.",
+  "fix": "Discover remotes from git config, package metadata, docs, and gh auth/repo list before asking the user for a repository name.",
+  "appliesTo": ["repo", "github", "release-flow"]
+}

@@ -21,6 +21,13 @@ The question engine is the premium intake layer. It asks only questions that cha
 - `tiny_2layer_sensor`
 - `wearable_sensor_puck`
 - `connector_heavy_robot_board`
+- `odd_shape_robot_board`
+- `imported_project_repair`
+
+Every tree defines intent keywords, required questions, conditional questions, default assumptions, sourcing risks, manufacturing risks, routing risks, and brief sections.
+
+## Minimum Question Mode
+BoardForge ranks candidate questions and asks only the highest-impact set, normally no more than seven questions up front. Questions are included only when they affect schematic structure, placement, routing, sourcing, compliance, or manufacturing. Lower-risk questions become recorded assumptions or deferred questions.
 
 ## Example
 Prompt: “Make me a compact robotics controller.”
@@ -34,10 +41,26 @@ BoardForge asks:
 
 If CAN is selected, CAN questions appear. If CAN is not selected, they do not. If custom outline is selected, mechanical follow-ups appear.
 
+Prompt: "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM."
+
+BoardForge should ask roughly:
+- controller preference
+- USB-C power/data mode
+- CAN connector/termination preference
+- PWM output count and powered-vs-logic mode
+- power input
+- shape preference
+- manufacturing target
+
+It should not ask PoE questions unless PoE is requested.
+
 ## Implementation
 - `lib/intake/question-engine.mjs`
 - `lib/intake/board-type-question-trees.mjs`
 - `lib/intake/conditional-followups.mjs`
 - `lib/intake/default-assumption-engine.mjs`
+- `lib/intake/question-priority-ranker.mjs`
+- `lib/intake/intake-session-state.mjs`
+- `lib/intake/intake-answer-validator.mjs`
 - `lib/intake/board-brief-generator.mjs`
 - `lib/intake/board-brief-approval-gate.mjs`

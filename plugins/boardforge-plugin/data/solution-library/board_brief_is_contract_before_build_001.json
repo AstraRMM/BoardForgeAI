@@ -1,0 +1,6 @@
+{
+  "id": "board_brief_is_contract_before_build_001",
+  "rootCause": "Generating KiCad files before user-visible agreement creates chaotic drafts and unclear expectations.",
+  "fix": "Generate a board brief with assumptions, architecture, risks, and approval status before any build starts.",
+  "appliesTo": ["board-brief", "approval-gate", "create-flow"]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "revision_loop_preserves_user_control_001",
+  "rootCause": "Users need to change shape, connectors, or architecture without losing the design history.",
+  "fix": "Preserve prior brief versions and write revision history whenever the user requests a change.",
+  "appliesTo": ["brief-revision", "approval-flow"]
+}

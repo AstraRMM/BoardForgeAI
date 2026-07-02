@@ -6,6 +6,7 @@ def read_boardforge_status(project_dir):
     kind = project_kind(project_dir)
     run_log = _read_json(os.path.join(project_dir, "BoardForge_Engine_Run_Log.json"))
     manifest = _read_json(os.path.join(project_dir, "BoardForge_Project_Manifest.json"))
+    intake = _read_json(os.path.join(project_dir, "BoardForge_Intake_Session.json"))
     publish = ((manifest or {}).get("publish") or {})
     license_status = _license_status()
     return {
@@ -29,6 +30,13 @@ def read_boardforge_status(project_dir):
         "syncStatus": publish.get("syncStatus") or (manifest or {}).get("syncStatus") or "not_synced",
         "approvalReport": os.path.join(project_dir, "BoardForge_Project_Approval_Report.md"),
         "briefReport": os.path.join(project_dir, "BoardForge_Board_Brief.md"),
+        "intakeSession": os.path.join(project_dir, "BoardForge_Intake_Session.json"),
+        "intakeStatus": (intake or {}).get("status") or "not_started",
+        "inferredBoardType": (intake or {}).get("boardType") or ((manifest or {}).get("questionPlan") or {}).get("boardType"),
+        "questionsToAsk": (intake or {}).get("questionsToAsk") or ((manifest or {}).get("questionPlan") or {}).get("questionsToAsk") or [],
+        "revisionStatus": ((manifest or {}).get("revision") or {}).get("status") or "none",
+        "buildAllowed": bool((manifest or {}).get("briefApproved")),
+        "publishAllowed": bool(publish.get("publishApproved") or (manifest or {}).get("publishApproved")),
         "briefApprovalRequired": not bool((manifest or {}).get("boardBrief", {}).get("approved")),
     }
 

@@ -22,9 +22,11 @@ function jsonOut(value) {
 function usage() {
   return {
     status: 'BOARD_FORGE_CLI_HELP',
-    usage: 'boardforge <init|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals|demo> [options]',
+    usage: 'boardforge <init|intake|answer|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals|demo> [options]',
     commands: {
       init: 'Create a safe BoardForge workspace marker.',
+      intake: 'Start a premium prompt intake session and ask the minimum useful question set.',
+      answer: 'Merge answers into an intake session and regenerate the question plan.',
       create: 'Create a KiCad project from a controlled BoardForge template.',
       brief: 'Generate a BoardForge board brief from a prompt without building.',
       'approve-brief': 'Record brief approval for a local project.',
@@ -49,6 +51,8 @@ function usage() {
       demo: 'Run npm run boardforge:demo for the guided local alpha demo runner.',
     },
     examples: [
+      'npm run boardforge:intake -- --prompt "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM." --output ./demo',
+      'npm run boardforge:answer -- --session ./demo/BoardForge_Intake_Session.json --answers "{\\"manufacturing_target\\":\\"JLCPCB\\"}"',
       'npm run boardforge:brief -- --prompt "Make a compact robotics controller with CAN and USB-C." --output ./demo',
       'npm run boardforge:import -- --source "<existing-kicad-project>" --output "C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes\\project_sandbox"',
       'npm run boardforge:dirty-repair-proof',
@@ -136,6 +140,21 @@ async function main() {
     return
   }
 
+  if (planned.kind === 'intake-session') {
+    const { createIntakeSession, writeIntakeSession, readIntakeSession } = await import('../lib/intake/intake-session-state.mjs')
+    let prompt = planned.prompt
+    let answers = planned.answers
+    if (planned.command === 'answer') {
+      const existing = await readIntakeSession(planned.sessionPath)
+      prompt = existing.prompt
+      answers = { ...(existing.answers || {}), ...answers }
+    }
+    const session = createIntakeSession({ prompt, answers, outputDir: planned.outputDir })
+    const written = await writeIntakeSession({ session, outputDir: planned.outputDir })
+    jsonOut({ status: 'BOARD_FORGE_INTAKE_SESSION_WRITTEN', session: written.session, file: written.file })
+    return
+  }
+
   const result = await executeJob(planned.job, workspace)
   jsonOut({ command, workspace, job: planned.job, result })
   if (/BLOCKED|FAILED|NEEDS_FIX|VALIDATION_FAILED/.test(result.status || '')) process.exitCode = 2
@@ -144,6 +163,8 @@ async function main() {
 async function planCommand(name, context) {
   const { workspace, projectPath } = context
   if (name === 'init') return { kind: 'init', command: name, workspace }
+  if (name === 'intake') return planIntakeCommand(name, context)
+  if (name === 'answer') return planIntakeCommand(name, context)
   if (name === 'create' && argValue('--prompt', '')) return planPromptCreateCommand(context)
   if (name === 'import') return planImportCommand(context)
   if (name === 'report') return planReportCommand(context)
@@ -200,6 +221,22 @@ async function planCommand(name, context) {
   const job = jobByCommand[name]
   if (!job) throw new Error(`Unknown BoardForge CLI command: ${name}`)
   return { kind: 'job', command: name, workspace, projectGuard: guarded, job }
+}
+
+function planIntakeCommand(name, context) {
+  const outputDir = path.resolve(argValue('--output', context.projectPath || path.join(context.workspace, 'BoardForge_Intake_Project')))
+  const guarded = assertPathIsAllowed(outputDir)
+  if (!guarded.allowed) throw new Error(`Refused intake output: ${guarded.reason} (${outputDir})`)
+  const sessionPath = path.resolve(argValue('--session', path.join(outputDir, 'BoardForge_Intake_Session.json')))
+  return {
+    kind: 'intake-session',
+    command: name,
+    workspace: context.workspace,
+    outputDir,
+    sessionPath,
+    prompt: argValue('--prompt', ''),
+    answers: parseJsonArg('--answers'),
+  }
 }
 
 function planPromptCreateCommand(context) {
@@ -347,6 +384,15 @@ function valuesAfter(name) {
     if (process.argv[index] === name && process.argv[index + 1]) values.push(process.argv[index + 1])
   }
   return values
+}
+
+function parseJsonArg(name) {
+  const value = argValue(name, '{}')
+  try {
+    return JSON.parse(value)
+  } catch {
+    return {}
+  }
 }
 
 main().catch((error) => {

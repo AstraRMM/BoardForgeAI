@@ -37,6 +37,8 @@
     "boardforge:package-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/Build_BoardForge_Local_Alpha_Package.ps1",
     "boardforge:install-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/BoardForge_Local_Alpha_Install.ps1",
     "boardforge:init": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs init",
+    "boardforge:intake": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs intake",
+    "boardforge:answer": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs answer",
     "boardforge:create": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs create",
     "boardforge:brief": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs brief",
     "boardforge:approve-brief": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs approve-brief",
@@ -182,9 +184,16 @@
     ,"test:kicad-plugin-publish-status": "node --test --test-name-pattern \"KiCad plugin publish status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:cli-publish-confirmation": "node --test --test-name-pattern \"CLI publish requires\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:question-engine": "node --test --test-name-pattern \"question engine\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:board-type-question-trees": "node --test --test-name-pattern \"board type question trees\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:conditional-followups": "node --test --test-name-pattern \"conditional followups\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:minimum-question-mode": "node --test --test-name-pattern \"minimum question mode\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:default-assumption-engine": "node --test --test-name-pattern \"default assumption engine\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:board-brief-generator": "node --test --test-name-pattern \"board brief generator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:board-brief-approval-gate": "node --test --test-name-pattern \"board brief approval gate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:prompt-layer-test-matrix": "node --test --test-name-pattern \"prompt layer test matrix\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-intake-ui": "node --test --test-name-pattern \"web intake UI\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-intake-status": "node --test --test-name-pattern \"KiCad plugin intake status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:prompt-layer-approved-sync-integration": "node --test --test-name-pattern \"prompt layer approved sync integration\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:premium-intake-flow": "node --test --test-name-pattern \"premium intake flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:boardforge-create-question-flow": "node --test --test-name-pattern \"boardforge create question flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:create-requires-brief-approval": "node --test --test-name-pattern \"create requires brief approval\" ./plugins/boardforge-plugin/tests/*.test.mjs"

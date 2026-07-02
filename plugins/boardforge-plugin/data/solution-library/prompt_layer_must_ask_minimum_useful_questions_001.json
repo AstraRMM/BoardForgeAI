@@ -1,0 +1,6 @@
+{
+  "id": "prompt_layer_must_ask_minimum_useful_questions_001",
+  "rootCause": "A paid PCB intake flow loses trust if it asks a long generic questionnaire instead of the decisions that affect the board.",
+  "fix": "Rank intake questions and ask only the highest-impact set while recording deferred questions and assumptions.",
+  "appliesTo": ["intake", "question-engine", "paid-product-flow"]
+}

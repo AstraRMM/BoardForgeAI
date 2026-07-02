@@ -12,10 +12,13 @@ import { syncProjectToDashboard } from '../lib/platform/project-sync-client.mjs'
 import { checkBoardForgeLicense } from '../lib/auth/license-checker.mjs'
 import { canRunPremiumAction } from '../lib/auth/entitlement-gate.mjs'
 import { runQuestionEngine } from '../lib/intake/question-engine.mjs'
+import { BOARD_TYPE_QUESTION_TREES } from '../lib/intake/board-type-question-trees.mjs'
 import { selectedConditionalFollowups } from '../lib/intake/conditional-followups.mjs'
 import { getQuestionTree } from '../lib/intake/board-type-question-trees.mjs'
 import { generateBoardBrief, writeBoardBrief } from '../lib/intake/board-brief-generator.mjs'
 import { canBuildFromBrief } from '../lib/intake/board-brief-approval-gate.mjs'
+import { defaultAssumptionsFor } from '../lib/intake/default-assumption-engine.mjs'
+import { createIntakeSession, writeIntakeSession } from '../lib/intake/intake-session-state.mjs'
 import { createProjectFromPrompt } from '../lib/engine/create-project-from-prompt.mjs'
 import { applyProjectApprovalAction } from '../lib/platform/project-approval-actions.mjs'
 
@@ -94,6 +97,46 @@ test('question engine asks essential robotics questions and no irrelevant CAN fo
   assert.equal(plan.conditionalFollowups.includes('can_interface'), false)
 })
 
+test('board type question trees cover prompt layer board families with risk metadata', () => {
+  const expected = [
+    'robotics_controller',
+    'usb_c_mcu_board',
+    'can_sensor_node',
+    'poe_environment_sensor',
+    'industrial_io_board',
+    'custom_outline_board',
+    'tiny_2layer_sensor',
+    'wearable_sensor_puck',
+    'connector_heavy_robot_board',
+    'odd_shape_robot_board',
+    'imported_project_repair',
+  ]
+  for (const boardType of expected) {
+    const tree = BOARD_TYPE_QUESTION_TREES[boardType]
+    assert.ok(tree, `${boardType} tree exists`)
+    assert.ok(tree.intentKeywords.length > 0, `${boardType} has keywords`)
+    assert.ok(tree.sourcingRisks.length > 0, `${boardType} has sourcing risks`)
+    assert.ok(tree.manufacturingRisks.length > 0, `${boardType} has manufacturing risks`)
+    assert.ok(tree.routingRisks.length > 0, `${boardType} has routing risks`)
+  }
+})
+
+test('minimum question mode limits robotics intake to useful questions and skips PoE', () => {
+  const plan = runQuestionEngine({ prompt: 'Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM.' })
+  assert.equal(plan.minimumQuestionMode, true)
+  assert.ok(plan.questionsToAsk.length <= 7)
+  assert.ok(plan.conditionalFollowups.includes('can_interface'))
+  assert.ok(plan.conditionalFollowups.includes('usb_c_mode'))
+  assert.ok(plan.conditionalFollowups.includes('pwm_servo_outputs'))
+  assert.equal(plan.conditionalFollowups.includes('poe_isolation'), false)
+  assert.ok(plan.questionsToAsk.includes('controller_preference'))
+})
+
+test('default assumption engine records PoE and imported project safety assumptions', () => {
+  assert.ok(defaultAssumptionsFor('poe_environment_sensor', {}).includes('poe_safety_compliance_requires_engineering_review'))
+  assert.ok(defaultAssumptionsFor('imported_project_repair', {}).includes('source_project_is_never_mutated_before_sandbox_copy'))
+})
+
 test('conditional followups appear only when answers change the design', () => {
   const tree = getQuestionTree('robotics_controller')
   assert.deepEqual(selectedConditionalFollowups(tree, { interfaces_needed: 'I2C UART', board_shape: 'rectangle' }), [])
@@ -151,6 +194,50 @@ test('boardforge create question flow writes a brief and local candidate after a
   assert.equal(manifest.projectState, 'local_candidate')
   assert.equal(manifest.dashboardVisible, false)
   assert.equal(manifest.publishApproved, false)
+})
+
+test('CLI intake and answer commands write local intake session artifacts', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-cli-intake-'))
+  const intake = JSON.parse(execFileSync(process.execPath, [cliPath, 'intake', '--prompt', 'Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM.', '--output', dir], { encoding: 'utf8' }))
+  assert.equal(intake.status, 'BOARD_FORGE_INTAKE_SESSION_WRITTEN')
+  assert.equal(intake.session.boardType, 'robotics_controller')
+  assert.ok(intake.session.questionsToAsk.length <= 7)
+  const answered = JSON.parse(execFileSync(process.execPath, [cliPath, 'answer', '--session', intake.file, '--output', dir, '--answers', '{"manufacturing_target":"JLCPCB"}'], { encoding: 'utf8' }))
+  assert.equal(answered.session.answers.manufacturing_target, 'JLCPCB')
+})
+
+test('prompt layer test matrix infers board types and keeps builds approval-gated', () => {
+  const matrix = [
+    ['Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM.', 'robotics_controller'],
+    ['Make a tiny 2-layer temperature sensor board.', 'tiny_2layer_sensor'],
+    ['Make a PoE environmental sensor.', 'poe_environment_sensor'],
+    ['Make an industrial 24V input/output board.', 'industrial_io_board'],
+    ['Make a wearable circular sensor puck.', 'wearable_sensor_puck'],
+    ['Make an odd-shaped board with mounting ears.', 'custom_outline_board'],
+    ['Make a connector-heavy robot board.', 'connector_heavy_robot_board'],
+    ['Import and repair an existing KiCad project.', 'imported_project_repair'],
+    ['Make a USB-C STM32 development board.', 'usb_c_mcu_board'],
+    ['Make a CAN sensor node with screw terminal power.', 'can_sensor_node'],
+  ]
+  for (const [prompt, expectedType] of matrix) {
+    const plan = runQuestionEngine({ prompt })
+    const brief = generateBoardBrief({ prompt, plan })
+    const gate = canBuildFromBrief(brief)
+    assert.equal(plan.boardType, expectedType, prompt)
+    assert.ok(plan.questionsToAsk.length <= 7, prompt)
+    assert.equal(gate.allowed, false, prompt)
+  }
+})
+
+test('prompt layer approved sync integration keeps local candidates dashboard hidden', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-prompt-sync-'))
+  const session = createIntakeSession({ prompt: 'Make an odd-shaped board with mounting ears.', outputDir: dir })
+  const written = await writeIntakeSession({ session, outputDir: dir })
+  assert.equal(written.session.status, 'brief_pending_approval')
+  const created = await createProjectFromPrompt({ prompt: session.prompt, outputDir: dir, approveBrief: true, devBypass: true })
+  assert.equal(created.publish.projectState, 'local_candidate')
+  assert.equal(created.publish.dashboardVisible, false)
+  assert.equal(canPublishToDashboard({ publish: created.publish }, { confirm: true }).allowed, false)
 })
 
 test('create requires brief approval before project generation', async () => {
@@ -258,6 +345,17 @@ test('web brief approval UI exposes approve reject revise and publish controls',
   assert.match(projectPage, /Revise \/ Rerun/)
 })
 
+test('web intake UI exposes questions brief preview and local artifact truth', async () => {
+  const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  const intakeLib = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-intake.ts'), 'utf8')
+  const questionList = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'IntakeQuestionList.tsx'), 'utf8')
+  const briefPanel = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'BoardBriefPanel.tsx'), 'utf8')
+  assert.match(newBoardPage, /BoardBriefApprovalActions/)
+  assert.match(intakeLib, /robotics_controller/)
+  assert.match(questionList, /Minimum useful questions/)
+  assert.match(briefPanel, /blocked_before_approval/)
+})
+
 test('KiCad plugin brief approval status exposes approval actions', async () => {
   const plugin = await readFile(kicadPluginPath, 'utf8')
   const bridge = await readFile(kicadBridgePath, 'utf8')
@@ -265,6 +363,15 @@ test('KiCad plugin brief approval status exposes approval actions', async () => 
   assert.match(plugin, /reject_brief|request_revision|request-revision/)
   assert.match(bridge, /briefApprovalRequired/)
   assert.match(bridge, /briefReport/)
+})
+
+test('KiCad plugin intake status exposes build and publish gates', async () => {
+  const plugin = await readFile(kicadPluginPath, 'utf8')
+  const bridge = await readFile(kicadBridgePath, 'utf8')
+  assert.match(plugin, /Prompt intake session/)
+  assert.match(plugin, /Build gate: blocked until board brief approval/)
+  assert.match(bridge, /intakeStatus/)
+  assert.match(bridge, /publishAllowed/)
 })
 
 test('alpha launcher scripts expose environment dashboard and demo flow', async () => {

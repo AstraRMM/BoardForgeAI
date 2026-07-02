@@ -17,8 +17,16 @@ No KiCad project generation should begin until:
 The implemented CLI path is:
 
 ```bash
+npm run boardforge:intake -- --prompt "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM." --output ./demo
+npm run boardforge:answer -- --session ./demo/BoardForge_Intake_Session.json --answers "{\"manufacturing_target\":\"JLCPCB\"}"
 npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C."
 npm run boardforge:create -- --prompt "Make a compact robotics controller with CAN and USB-C." --approve-brief --dev
 ```
 
 The first command writes the brief and blocks. The second creates a local candidate without dashboard publishing.
+
+The publish/sync layer remains approved-only:
+- new prompt starts as `brief_pending_approval`,
+- approved build becomes `local_candidate`,
+- `local_candidate` remains `dashboardVisible = false`,
+- dashboard publishing requires explicit publish approval and confirmation.

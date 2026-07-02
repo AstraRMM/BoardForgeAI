@@ -1,0 +1,6 @@
+{
+  "id": "prompt_layer_must_respect_approved_only_sync_001",
+  "rootCause": "Prompt-generated drafts should not pollute the user dashboard or sync failed experiments automatically.",
+  "fix": "Create prompt outputs as local drafts or local candidates and require explicit publish approval with confirmation.",
+  "appliesTo": ["prompt-layer", "approved-only-sync", "dashboard"]
+}

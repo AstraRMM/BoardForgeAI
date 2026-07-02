@@ -43,6 +43,9 @@ def build_boardforge_commands(board_path):
         "report": ["npm", "run", "boardforge:report", "--", "--manifest", manifest],
         "replay": ["npm", "run", "boardforge:replay", "--", "--manifest", manifest],
         "approvals": ["npm", "run", "boardforge:approvals", "--", "--project", project_dir, "--manifest", manifest],
+        "intake": ["npm", "run", "boardforge:intake", "--", "--prompt", "Make a compact robotics controller with CAN and USB-C.", "--output", project_dir],
+        "answer": ["npm", "run", "boardforge:answer", "--", "--session", os.path.join(project_dir, "BoardForge_Intake_Session.json")],
+        "brief": ["npm", "run", "boardforge:brief", "--", "--prompt", "Make a compact robotics controller with CAN and USB-C.", "--output", project_dir],
         "approve_brief": ["npm", "run", "boardforge:approve-brief", "--", "--project", project_dir, "--manifest", manifest],
         "reject_brief": ["npm", "run", "boardforge:reject-brief", "--", "--project", project_dir, "--manifest", manifest],
         "request_revision": ["npm", "run", "boardforge:request-revision", "--", "--project", project_dir, "--manifest", manifest],
@@ -125,10 +128,15 @@ if pcbnew:
             else:
                 pcbnew.wxLogMessage("Route/Repair/Cleanup/Export disabled on active project. Import into BoardForge sandbox first.")
             pcbnew.wxLogMessage("Approval report: " + format_command(commands["approvals"]))
+            pcbnew.wxLogMessage("Prompt intake session: " + format_command(commands["intake"]))
+            pcbnew.wxLogMessage("Answer intake session: " + format_command(commands["answer"]))
+            pcbnew.wxLogMessage("Board brief: " + format_command(commands["brief"]))
             pcbnew.wxLogMessage("Approve brief: " + format_command(commands["approve_brief"]))
             pcbnew.wxLogMessage("Reject brief: " + format_command(commands["reject_brief"]))
             pcbnew.wxLogMessage("Request revision: " + format_command(commands["request_revision"]))
             pcbnew.wxLogMessage("Open brief report: " + os.path.join(project_dir, "BoardForge_Board_Brief.md"))
+            pcbnew.wxLogMessage("Build gate: blocked until board brief approval unless explicit dev/test bypass is used.")
+            pcbnew.wxLogMessage("Publish gate: local candidate stays dashboard hidden until publish approval and confirmation.")
             pcbnew.wxLogMessage("Publish approved project: " + format_command(commands["publish"]))
             pcbnew.wxLogMessage("Keep local only: " + format_command(commands["keep_local"]))
             pcbnew.wxLogMessage("Archive draft: " + format_command(commands["archive"]))
