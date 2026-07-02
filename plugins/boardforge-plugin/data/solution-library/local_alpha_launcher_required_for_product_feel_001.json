@@ -1,0 +1,7 @@
+{
+  "id": "local_alpha_launcher_required_for_product_feel_001",
+  "title": "A local alpha needs a launcher, not only npm scripts",
+  "rootCause": "Engine proofs are hard to demo when users must discover many scripts manually.",
+  "fix": "Provide environment checks, start scripts, dashboard launcher, demo launcher, and clear reports from a dedicated launcher folder.",
+  "appliesTo": ["launcher", "local_alpha", "product_ux"]
+}

@@ -23,6 +23,14 @@ npm run test:plugin
 
 Supplier verification is optional. Without keys, sourcing reports remain honest and return `NOT_CHECKED`.
 
+Launcher scripts:
+
+```powershell
+.\tools\boardforge-launcher\BoardForge_Check_Environment.ps1
+.\tools\boardforge-launcher\BoardForge_Start_Local_Alpha.ps1
+.\tools\boardforge-launcher\BoardForge_Install_KiCad_Plugin.ps1
+```
+
 Development license mode:
 
 ```bash

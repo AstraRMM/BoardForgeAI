@@ -22,7 +22,7 @@ function jsonOut(value) {
 function usage() {
   return {
     status: 'BOARD_FORGE_CLI_HELP',
-    usage: 'boardforge <init|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals> [options]',
+    usage: 'boardforge <init|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals|demo> [options]',
     commands: {
       init: 'Create a safe BoardForge workspace marker.',
       create: 'Create a KiCad project from a controlled BoardForge template.',
@@ -46,7 +46,16 @@ function usage() {
       'keep-local': 'Mark a project local-only and not dashboard visible.',
       sync: 'Run approved-only local sync scaffold.',
       approvals: 'Write or inspect the project approval report/state.',
+      demo: 'Run npm run boardforge:demo for the guided local alpha demo runner.',
     },
+    examples: [
+      'npm run boardforge:brief -- --prompt "Make a compact robotics controller with CAN and USB-C." --output ./demo',
+      'npm run boardforge:import -- --source "<existing-kicad-project>" --output "C:\\Users\\luifi\\Desktop\\BoardForge_Sandboxes\\project_sandbox"',
+      'npm run boardforge:dirty-repair-proof',
+      'npm run boardforge:export -- --project "<sandbox-project>"',
+      'npm run boardforge:publish -- --project "<project>" --manifest "<project>\\BoardForge_Project_Manifest.json" --confirm',
+      'npm run boardforge:demo',
+    ],
     options: [
       '--workspace <path>',
       '--project <path>',

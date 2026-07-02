@@ -7,6 +7,14 @@ This is the current BoardForge action-plugin scaffold. It is a control surface f
 3. Open a non-protected project.
 4. Run `BoardForge Route/Validate`.
 
+Helper:
+
+```powershell
+.\tools\boardforge-launcher\BoardForge_Install_KiCad_Plugin.ps1
+```
+
+The helper detects likely KiCad plugin folders and writes `BoardForge_KiCad_Plugin_Install_Report.md`. It copies the plugin only when a folder is detected and `--demo` is supplied.
+
 The plugin currently refuses protected ESC/FC paths and logs the local command handoff. Board mutation remains in the guarded local engine. Route, repair, cleanup, and export commands are only shown as enabled for BoardForge sandbox or synthetic fixture projects.
 
 ## Commands Shown In KiCad
@@ -34,5 +42,7 @@ The alpha plugin surface reports:
 - validate/import commands for any safe project
 - route/repair/cleanup/export commands only for sandboxed projects
 - replay command for reproducing the local engine run
+- board brief approval, rejection, and revision commands
+- publish, keep-local, archive, and local artifact sync commands
 
 If KiCad native UI support is limited, BoardForge logs these paths and commands through KiCad messages so the local engine remains the single source of truth.

@@ -1,0 +1,7 @@
+{
+  "id": "web_dashboard_must_show_local_artifact_truth_001",
+  "title": "Web dashboard must identify local artifact-backed status",
+  "rootCause": "Alpha dashboards can accidentally imply live cloud execution when they are reading local files.",
+  "fix": "Label local-engine artifact data clearly and avoid fake cloud-run controls.",
+  "appliesTo": ["web_dashboard", "local_engine", "product_honesty"]
+}

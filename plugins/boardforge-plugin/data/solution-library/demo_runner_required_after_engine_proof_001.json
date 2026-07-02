@@ -1,0 +1,7 @@
+{
+  "id": "demo_runner_required_after_engine_proof_001",
+  "title": "After engine proof, add a guided demo runner",
+  "rootCause": "A strong engine can still feel unfinished if the user cannot replay the proof easily.",
+  "fix": "Add npm run boardforge:demo that emits run logs, status JSON, and user-facing reports from safe fixtures.",
+  "appliesTo": ["demo", "cli", "reports"]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "alpha_release_candidate_not_production_ready_001",
+  "title": "Alpha release candidate is not production-ready",
+  "rootCause": "Evidence-backed local alpha can still lack supplier credentials, compliance review, signed installers, and polished UX.",
+  "fix": "Report local alpha release-candidate status honestly with external and internal blockers.",
+  "appliesTo": ["release_report", "readiness", "product_positioning"]
+}

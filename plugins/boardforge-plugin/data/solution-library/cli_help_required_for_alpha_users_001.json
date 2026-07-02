@@ -1,0 +1,7 @@
+{
+  "id": "cli_help_required_for_alpha_users_001",
+  "title": "CLI help is required for alpha users",
+  "rootCause": "Users cannot evaluate an alpha product if command discovery lives only in package.json.",
+  "fix": "Expose boardforge help with examples for create, import, repair, export, publish, and demo.",
+  "appliesTo": ["cli", "docs", "alpha"]
+}

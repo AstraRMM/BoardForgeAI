@@ -25,7 +25,7 @@ This demo proves prompt intake, CAN/USB-C conditional followups, brief v1, revis
 
 ## External Blockers
 
-- Supplier verification needs real API keys.
+- Supplier verification needs real supplier API keys.
 - PoE compliance and isolation safety need real engineering review.
 
 ## Product Blockers

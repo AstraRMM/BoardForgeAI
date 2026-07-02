@@ -21,8 +21,10 @@ import { applyProjectApprovalAction } from '../lib/platform/project-approval-act
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
+const demoPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-alpha-demo.mjs')
 const kicadPluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
 const kicadBridgePath = path.join(repoRoot, 'kicad-plugin', 'boardforge_status_bridge.py')
+const launcherDir = path.join(repoRoot, 'tools', 'boardforge-launcher')
 
 test('project publish state defaults to local draft and dashboard hidden', () => {
   const state = defaultPublishState()
@@ -262,4 +264,71 @@ test('KiCad plugin brief approval status exposes approval actions', async () => 
   assert.match(plugin, /reject_brief|request_revision|request-revision/)
   assert.match(bridge, /briefApprovalRequired/)
   assert.match(bridge, /briefReport/)
+})
+
+test('alpha launcher scripts expose environment dashboard and demo flow', async () => {
+  const start = await readFile(path.join(launcherDir, 'BoardForge_Start_Local_Alpha.ps1'), 'utf8')
+  const check = await readFile(path.join(launcherDir, 'BoardForge_Check_Environment.ps1'), 'utf8')
+  const demo = await readFile(path.join(launcherDir, 'BoardForge_Run_Demo.cmd'), 'utf8')
+  assert.match(start, /BoardForge_Check_Environment/)
+  assert.match(start, /npm run dev:web/)
+  assert.match(check, /DIGIKEY_CLIENT_ID/)
+  assert.match(check, /FreeRouting jar/)
+  assert.match(demo, /npm run boardforge:demo/)
+})
+
+test('alpha demo runner completes and writes product-facing reports', async () => {
+  const output = JSON.parse(execFileSync(process.execPath, [demoPath], { encoding: 'utf8', env: { ...process.env, BOARDFORGE_DEV_LICENSE: 'true' } }))
+  assert.equal(output.status, 'BOARD_FORGE_ALPHA_DEMO_COMPLETED')
+  const status = JSON.parse(await readFile(output.reports.status, 'utf8'))
+  assert.equal(status.localArtifactBased, true)
+  assert.equal(status.noFakeCloudExecution, true)
+  assert.ok(status.steps.some((step) => step.step === 'publish_without_confirm'))
+  assert.ok(status.steps.some((step) => step.step === 'publish_with_confirm_temp_copy'))
+})
+
+test('web dashboard demo data labels local artifact status and demo command', async () => {
+  const dashboardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'dashboard', 'page.tsx'), 'utf8')
+  const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  const uploadPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'upload-kicad', 'page.tsx'), 'utf8')
+  assert.match(dashboardPage, /Local engine artifact/)
+  assert.match(dashboardPage, /npm run boardforge:demo/)
+  assert.match(newBoardPage, /Premium intake flow/)
+  assert.match(uploadPage, /Local-only import/)
+})
+
+test('KiCad plugin install docs mention helper and no forced install', async () => {
+  const installDoc = await readFile(path.join(repoRoot, 'docs', 'KICAD_PLUGIN_INSTALL.md'), 'utf8')
+  const helper = await readFile(path.join(launcherDir, 'BoardForge_Install_KiCad_Plugin.ps1'), 'utf8')
+  assert.match(installDoc, /BoardForge_Install_KiCad_Plugin/)
+  assert.match(installDoc, /copies the plugin only/)
+  assert.match(helper, /--demo/)
+  assert.match(helper, /BoardForge_KiCad_Plugin_Install_Report/)
+})
+
+test('CLI help lists alpha demo and approval examples', () => {
+  const help = JSON.parse(execFileSync(process.execPath, [cliPath, 'help'], { encoding: 'utf8' }))
+  assert.match(help.usage, /demo/)
+  assert.equal(help.commands.demo.includes('guided local alpha demo'), true)
+  assert.ok(help.examples.some((example) => example.includes('boardforge:demo')))
+  assert.ok(help.examples.some((example) => example.includes('boardforge:brief')))
+})
+
+test('local alpha docs describe launcher demo and external blockers', async () => {
+  const quickstart = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_LOCAL_ALPHA_QUICKSTART.md'), 'utf8')
+  const current = await readFile(path.join(repoRoot, 'docs', 'BOARD_FORGE_CURRENT_STATE.md'), 'utf8')
+  assert.match(quickstart, /BoardForge_Start_Local_Alpha/)
+  assert.match(quickstart, /npm run boardforge:demo/)
+  assert.match(current, /supplier API keys/i)
+  assert.match(current, /PoE compliance/i)
+})
+
+test('alpha release candidate report is honest about local alpha status', async () => {
+  const report = await readFile(path.join(repoRoot, 'BoardForge_Alpha_Release_Candidate_Report.md'), 'utf8')
+  const checklist = await readFile(path.join(repoRoot, 'BoardForge_Alpha_Demo_Checklist.md'), 'utf8')
+  const surface = await readFile(path.join(repoRoot, 'BoardForge_Product_Surface_Status.md'), 'utf8')
+  assert.match(report, /local alpha release candidate/)
+  assert.match(report, /Supplier API credentials/)
+  assert.match(checklist, /publish succeeds with `--confirm`/)
+  assert.match(surface, /Launcher/)
 })

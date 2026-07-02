@@ -1,0 +1,7 @@
+{
+  "id": "kicad_plugin_install_needs_guided_setup_001",
+  "title": "KiCad plugin install needs guided setup",
+  "rootCause": "Manual plugin copy instructions are fragile across Windows KiCad installs.",
+  "fix": "Provide a helper that detects likely plugin folders, prints install paths, and copies only with an explicit demo flag.",
+  "appliesTo": ["kicad_plugin", "installer", "docs"]
+}
