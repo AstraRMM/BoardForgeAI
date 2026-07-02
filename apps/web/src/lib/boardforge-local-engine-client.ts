@@ -1,4 +1,5 @@
 import { dirtyRepairEngineStatus } from './boardforge-engine-status'
+import { localArtifactApiContract } from './boardforge-local-artifact-client'
 
 export type LocalEngineBridgeStatus = {
   schema: 'boardforge.local-engine-status.v1'
@@ -17,6 +18,18 @@ export type LocalEngineBridgeStatus = {
   latestReport: string | null
   cliReplayCommand: string | null
   blockedReason: string | null
+}
+
+export const localEngineOfflineMessage =
+  'BoardForge Local Engine is offline. Start it to generate, route, repair, or export boards.'
+
+export function getLocalEngineStatusCopy() {
+  return {
+    status: 'local_engine_required',
+    message: localEngineOfflineMessage || localArtifactApiContract.offlineMessage,
+    artifactBacked: true,
+    noFakeCloudExecution: true,
+  }
 }
 
 export function getLocalEngineBridgeStatus(): LocalEngineBridgeStatus {

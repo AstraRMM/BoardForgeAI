@@ -1,0 +1,6 @@
+{
+  "id": "approved_only_sync_after_generated_board_001",
+  "rootCause": "Generated projects should not appear on the dashboard without explicit user approval.",
+  "fix": "Keep generated boards as local candidates, block publish without confirmation, and publish only after explicit approval.",
+  "appliesTo": ["sync", "generated-projects"]
+}

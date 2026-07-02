@@ -1,0 +1,6 @@
+{
+  "id": "live_web_intake_must_call_local_artifact_api_001",
+  "rootCause": "A web intake demo is not product-real unless it maps to local engine artifacts and status.",
+  "fix": "Use a local artifact API contract for intake, answers, brief generation, project create, publish, downloads, and reports.",
+  "appliesTo": ["web", "local-engine", "artifact-api"]
+}

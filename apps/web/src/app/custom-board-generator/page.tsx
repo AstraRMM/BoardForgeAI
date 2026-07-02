@@ -1,6 +1,7 @@
 import { OutlineEditor } from '../../components/outline/OutlineEditor'
 import { OutlinePresetPicker } from '../../components/outline/OutlinePresetPicker'
 import { OutlineValidationPanel } from '../../components/outline/OutlineValidationPanel'
+import { localArtifactApiContract } from '../../lib/boardforge-local-artifact-client'
 
 export default function CustomBoardGeneratorPage() {
   const shapes = ['rounded rectangle', 'mounting ears', 'octagonal', 'L-shaped', 'tabbed connector', 'circular puck', 'notched board', 'internal cutout']
@@ -13,6 +14,7 @@ export default function CustomBoardGeneratorPage() {
           BoardForge custom outlines are generated locally, scored for routeability, and must pass Edge.Cuts, mounting-hole,
           connector-access, DRC/ERC, and manufacturing checks before export.
         </p>
+        <p className="mt-3 text-sm text-amber-200">{localArtifactApiContract.offlineMessage}</p>
       </section>
       <section className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-2">
         {shapes.map((shape) => (

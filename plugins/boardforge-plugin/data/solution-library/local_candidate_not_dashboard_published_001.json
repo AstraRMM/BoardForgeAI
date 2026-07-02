@@ -1,0 +1,6 @@
+{
+  "id": "local_candidate_not_dashboard_published_001",
+  "rootCause": "Local candidates are review objects, not account dashboard projects.",
+  "fix": "Set dashboardVisible=false until projectState becomes dashboard_published.",
+  "appliesTo": ["project-state", "dashboard"]
+}

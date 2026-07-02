@@ -65,6 +65,7 @@
     "boardforge:dirty-repair-proof-02": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs -- --project-id BF-DIRTY-REPAIR-PROOF-02_REV_A --harder",
     "boardforge:approved-sync-validation": "node ./plugins/boardforge-plugin/bin/boardforge-approved-sync-validation.mjs",
     "boardforge:crazy-outline-stress": "node ./plugins/boardforge-plugin/bin/boardforge-crazy-outline-stress.mjs",
+    "boardforge:odd-shape-web-proof": "node ./plugins/boardforge-plugin/bin/boardforge-odd-shape-web-proof.mjs",
     "boardforge:imported-board-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs",
     "boardforge:imported-board-repair-suite": "node ./plugins/boardforge-plugin/bin/boardforge-imported-board-repair-proof.mjs --suite",
     "boardforge:arbitrary-prompt-breadth": "node ./plugins/boardforge-plugin/bin/boardforge-arbitrary-prompt-breadth.mjs",
@@ -206,6 +207,19 @@
     ,"test:custom-outline-generator": "node --test --test-name-pattern \"custom outline generator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:outline-seed-export": "node --test --test-name-pattern \"outline seed export\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:routeability-scoring-crazy-shapes": "node --test --test-name-pattern \"routeability scoring crazy shapes\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:local-artifact-api": "node --test --test-name-pattern \"local artifact API\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-intake-local-artifact-client": "node --test --test-name-pattern \"web intake local artifact client\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:intake-session-web-flow": "node --test --test-name-pattern \"intake session web flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:custom-outline-seed-export": "node --test --test-name-pattern \"custom outline seed export\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:custom-outline-to-kicad-project": "node --test --test-name-pattern \"custom outline to kicad project\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:web-odd-shape-generated-board": "node --test --test-name-pattern \"web odd shape generated board\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:brief-approval-to-create-flow": "node --test --test-name-pattern \"brief approval to create flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:generated-project-not-autopublished": "node --test --test-name-pattern \"generated project not autopublished\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:publish-confirm-required": "node --test --test-name-pattern \"publish confirm required\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-generated-project-status": "node --test --test-name-pattern \"kicad plugin generated project status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:cli-end-to-end-replay": "node --test --test-name-pattern \"cli end to end replay\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:board-preview-generator": "node --test --test-name-pattern \"board preview generator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:downloads-center": "node --test --test-name-pattern \"downloads center\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:premium-intake-flow": "node --test --test-name-pattern \"premium intake flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:boardforge-create-question-flow": "node --test --test-name-pattern \"boardforge create question flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:create-requires-brief-approval": "node --test --test-name-pattern \"create requires brief approval\" ./plugins/boardforge-plugin/tests/*.test.mjs"

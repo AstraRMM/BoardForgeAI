@@ -27,6 +27,10 @@ import { createProjectFromPrompt } from '../lib/engine/create-project-from-promp
 import { applyProjectApprovalAction } from '../lib/platform/project-approval-actions.mjs'
 import { runApprovedSyncValidation } from '../lib/platform/approved-sync-validation.mjs'
 import { CRAZY_OUTLINE_SHAPES, runCrazyOutlineStressSuite, scoreCrazyOutlineShape } from '../lib/outline/crazy-outline-stress-suite.mjs'
+import { createLocalArtifactApi } from '../lib/platform/local-artifact-api.mjs'
+import { exportCustomOutlineSeed } from '../lib/outline/custom-outline-seed-export.mjs'
+import { runOddShapeWebFlowProof } from '../lib/engine/odd-shape-web-flow-proof.mjs'
+import { writeBoardPreview } from '../lib/preview/board-preview-generator.mjs'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
@@ -291,6 +295,85 @@ test('approved sync validation proves hidden drafts candidates and confirm-only 
   assert.equal(validation.result.publishBlockedWithoutConfirm, true)
   assert.equal(validation.result.publishWithConfirm, true)
   assert.equal(validation.result.rejectedFailedHidden, true)
+})
+
+test('local artifact API runs intake answer approve create and project status', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'boardforge-local-api-'))
+  const api = createLocalArtifactApi({ rootDir: root })
+  assert.equal((await api.status()).mode, 'artifact-backed')
+  const intake = await api.startIntake({ prompt: 'Make a compact robotics controller with USB-C and CAN.', projectId: 'api-project' })
+  const answered = await api.answerIntake({ sessionFile: intake.sessionFile, answers: { interfaces_needed: 'USB CAN PWM', manufacturing_target: 'JLCPCB' } })
+  const approved = await api.approveBrief({ sessionFile: answered.sessionFile })
+  const created = await api.createProject({ sessionFile: approved.sessionFile, devBypass: true })
+  assert.equal(created.status, 'BOARD_FORGE_CREATE_LOCAL_CANDIDATE')
+  const status = await api.projectStatus({ projectDir: path.dirname(approved.sessionFile) })
+  assert.equal(status.projectState, 'local_candidate')
+})
+
+test('custom outline seed export writes outline seed and outline-only KiCad project', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-outline-seed-'))
+  const seed = await exportCustomOutlineSeed({ projectDir: dir, preset: 'mounting ears' })
+  assert.equal(seed.seed.edgeCutsValid, true)
+  assert.match(await readFile(seed.files.outlinePcb, 'utf8'), /Edge.Cuts/)
+})
+
+test('custom outline to kicad project creates odd-shape generated board artifacts', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-odd-shape-'))
+  const result = await runOddShapeWebFlowProof({ projectDir: dir })
+  assert.equal(result.validation.drc, 0)
+  assert.equal(result.validation.erc, 0)
+  assert.equal(result.validation.unconnected, 0)
+  assert.ok(result.manufacturing.zip.endsWith('_JLCPCB.zip'))
+})
+
+test('web odd shape generated board is local candidate and not autopublished', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-odd-shape-state-'))
+  await runOddShapeWebFlowProof({ projectDir: dir })
+  const manifest = JSON.parse(await readFile(path.join(dir, 'BoardForge_Project_Manifest.json'), 'utf8'))
+  assert.equal(manifest.projectState, 'local_candidate')
+  assert.equal(manifest.dashboardVisible, false)
+  assert.equal(manifest.publishApproved, false)
+})
+
+test('publish confirm required before generated project can publish', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-publish-confirm-'))
+  await runOddShapeWebFlowProof({ projectDir: dir })
+  const api = createLocalArtifactApi({ rootDir: path.dirname(dir) })
+  const blocked = await api.publishProject({ projectDir: dir, confirm: false })
+  assert.equal(blocked.status, 'BOARD_FORGE_PUBLISH_BLOCKED_CONFIRM_REQUIRED')
+  const published = await api.publishProject({ projectDir: dir, confirm: true })
+  assert.equal(published.manifest.dashboardVisible, true)
+})
+
+test('board preview generator writes SVG and JSON card inputs', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-preview-'))
+  const preview = await writeBoardPreview({ projectDir: dir, projectName: 'preview', outline: [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 }], components: [{ ref: 'U1', x: 10, y: 10 }], connectors: [{ ref: 'J1', x: 2, y: 10 }], status: { drc: 0, erc: 0 } })
+  assert.match(await readFile(preview.svg, 'utf8'), /<svg/)
+  assert.equal(JSON.parse(await readFile(preview.json, 'utf8')).projectName, 'preview')
+})
+
+test('downloads center and web local artifact client expose manufacturing and offline behavior', async () => {
+  const downloadsPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
+  const artifactClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-artifact-client.ts'), 'utf8')
+  const engineClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-engine-client.ts'), 'utf8')
+  assert.match(downloadsPage, /Gerbers, drill files, BOM, CPL/)
+  assert.ok(artifactClient.includes('POST /intake/start'))
+  assert.match(engineClient, /Local Engine is offline/)
+})
+
+test('kicad plugin generated project status exposes preview and dashboard page', async () => {
+  const plugin = await readFile(kicadPluginPath, 'utf8')
+  const bridge = await readFile(kicadBridgePath, 'utf8')
+  assert.match(plugin, /Generated odd-shape project status/)
+  assert.match(bridge, /previewSvg/)
+  assert.match(bridge, /dashboardProjectPage/)
+})
+
+test('cli end to end replay command is written by odd-shape proof', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-cli-replay-'))
+  await runOddShapeWebFlowProof({ projectDir: dir })
+  const replay = await readFile(path.join(dir, 'BoardForge_CLI_Replay_Command.txt'), 'utf8')
+  assert.match(replay, /boardforge:odd-shape-web-proof/)
 })
 
 test('crazy outline stress suite scores shapes and exports only good candidates', async () => {

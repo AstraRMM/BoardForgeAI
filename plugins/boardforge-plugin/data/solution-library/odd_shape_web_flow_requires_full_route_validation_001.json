@@ -1,0 +1,6 @@
+{
+  "id": "odd_shape_web_flow_requires_full_route_validation_001",
+  "rootCause": "An odd-shape product flow is incomplete if it stops at routeability scoring.",
+  "fix": "Carry the flow through KiCad project generation, validation artifacts, preview, manufacturing/download gate, and publish state.",
+  "appliesTo": ["odd-shape", "validation", "manufacturing"]
+}

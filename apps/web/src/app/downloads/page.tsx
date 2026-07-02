@@ -8,6 +8,7 @@ export default function DownloadsPage() {
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
       <h1 className="text-3xl font-semibold">Downloads</h1>
       <p className="mt-2 max-w-3xl text-slate-400">Only validation-backed manufacturing outputs are listed as ready. Blocked projects keep their reports visible but do not pretend to have shippable ZIPs.</p>
+      <p className="mt-2 max-w-3xl text-cyan-300">Local engine artifact downloads include Gerbers, drill files, BOM, CPL, reports, preview SVG/JSON, and JLCPCB ZIP only after strict gates pass.</p>
       <section className="mt-6">
         <h2 className="text-xl font-semibold">Manufacturing Packages</h2>
         <div className="mt-4 space-y-3">

@@ -1,0 +1,6 @@
+{
+  "id": "custom_outline_seed_must_drive_real_kicad_generation_001",
+  "rootCause": "Outline previews alone do not prove the board creation workflow.",
+  "fix": "Export outline seed and mechanical constraints, then generate a real KiCad project and board file from that seed.",
+  "appliesTo": ["custom-outline", "kicad-generation"]
+}

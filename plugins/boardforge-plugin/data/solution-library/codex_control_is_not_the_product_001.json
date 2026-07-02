@@ -1,0 +1,6 @@
+{
+  "id": "codex_control_is_not_the_product_001",
+  "rootCause": "BoardForge should not depend on Codex as the product UI or execution owner.",
+  "fix": "Make web, CLI, KiCad plugin, local engine, artifacts, and reports first-class product surfaces.",
+  "appliesTo": ["platform", "productization"]
+}

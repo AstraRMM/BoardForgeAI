@@ -1,0 +1,6 @@
+{
+  "id": "board_preview_required_for_product_feel_001",
+  "rootCause": "A PCB platform feels abstract without a visual preview on project cards.",
+  "fix": "Generate SVG/JSON preview artifacts from outline, component, connector, validation, and manufacturing state.",
+  "appliesTo": ["preview", "web-dashboard"]
+}

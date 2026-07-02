@@ -50,3 +50,11 @@ This proves Codex/AI can drive intake, but BoardForge owns the question tree, br
 6. Confirm drafts/candidates stay hidden and publish requires confirmation.
 7. Run `npm run boardforge:crazy-outline-stress`.
 8. Confirm weak shapes are blocked by routeability score instead of being routed blindly.
+
+## Web Odd-Shape Generated Board Proof
+
+1. Run `npm run boardforge:odd-shape-web-proof`.
+2. Open `BF-WEB-ODD-SHAPE-GENERATED-01_REV_A`.
+3. Show outline seed, generated KiCad files, board preview SVG/JSON, manufacturing folders, JLCPCB ZIP, project manifest, and CLI replay command.
+4. Confirm project state is `local_candidate` and `dashboardVisible = false`.
+5. Confirm publish without confirmation is blocked and publish with confirmation is explicit.

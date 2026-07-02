@@ -23,6 +23,8 @@ def read_boardforge_status(project_dir):
         "unconnected": ((run_log or {}).get("validation") or {}).get("unconnected") or ((manifest or {}).get("validation") or {}).get("unconnected"),
         "manufacturingReady": bool(((run_log or {}).get("manufacturing") or {}).get("ready") or ((manifest or {}).get("manufacturing") or {}).get("ready")),
         "manufacturingZip": ((run_log or {}).get("manufacturing") or {}).get("zip") or ((manifest or {}).get("manufacturing") or {}).get("zip"),
+        "previewSvg": os.path.join(project_dir, "BoardForge_Board_Preview.svg"),
+        "dashboardProjectPage": "local web dashboard project page reads BoardForge_Web_Project_Card.json",
         "licenseStatus": license_status,
         "projectState": publish.get("projectState") or (manifest or {}).get("projectState") or "local_draft",
         "publishApproved": bool(publish.get("publishApproved") or (manifest or {}).get("publishApproved")),

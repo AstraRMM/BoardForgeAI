@@ -53,6 +53,7 @@ def build_boardforge_commands(board_path):
         "keep_local": ["npm", "run", "boardforge:keep-local", "--", "--project", project_dir, "--manifest", manifest],
         "archive": ["npm", "run", "boardforge:archive", "--", "--project", project_dir, "--manifest", manifest],
         "sync": ["npm", "run", "boardforge:sync", "--", "--project", project_dir, "--manifest", manifest],
+        "odd_shape_web_proof": ["npm", "run", "boardforge:odd-shape-web-proof", "--", "--project", project_dir],
     }
 
 
@@ -141,6 +142,8 @@ if pcbnew:
             pcbnew.wxLogMessage("Keep local only: " + format_command(commands["keep_local"]))
             pcbnew.wxLogMessage("Archive draft: " + format_command(commands["archive"]))
             pcbnew.wxLogMessage("Sync status: local artifact sync only; publish requires explicit CLI/plugin confirmation.")
+            pcbnew.wxLogMessage("Dashboard/project page: local web dashboard reads BoardForge manifest and preview artifacts.")
+            pcbnew.wxLogMessage("Generated odd-shape project status: " + format_command(commands["odd_shape_web_proof"]))
             pcbnew.wxLogMessage("Report: " + format_command(commands["report"]))
             pcbnew.wxLogMessage("Replay: " + format_command(commands["replay"]))
             if os.path.exists(manifest):

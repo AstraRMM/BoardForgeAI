@@ -1,0 +1,6 @@
+{
+  "id": "downloads_center_required_for_product_workflow_001",
+  "rootCause": "Users need a clear place to retrieve manufacturing ZIPs, Gerbers, drill, BOM, CPL, reports, and blocked reasons.",
+  "fix": "Expose downloads through web artifacts and a downloads manifest gated by strict manufacturing readiness.",
+  "appliesTo": ["downloads", "manufacturing"]
+}
