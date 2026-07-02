@@ -1,0 +1,6 @@
+{
+  "id": "premium_question_engine_required_for_paid_product_001",
+  "rootCause": "A paid PCB product cannot rely on raw prompts alone for design intent.",
+  "fix": "Add board-type question trees, conditional follow-ups, defaults, and a board brief generator.",
+  "appliesTo": ["intake", "product"]
+}

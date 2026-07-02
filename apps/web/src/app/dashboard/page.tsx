@@ -1,7 +1,10 @@
 import dashboard from '../../sample-manifests/project-dashboard.json'
 import { ProjectStatusCard } from '../../components/ProjectStatusCard'
+import { filterDashboardPublishedProjects, filterLocalDraftProjects } from '../../lib/boardforge-manifest'
 
 export default function DashboardPage() {
+  const publishedProjects = filterDashboardPublishedProjects(dashboard.projects as any)
+  const localDrafts = filterLocalDraftProjects(dashboard.projects as any)
   return (
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
       <header className="mx-auto max-w-6xl">
@@ -22,7 +25,15 @@ export default function DashboardPage() {
         </p>
       </section>
       <section className="mx-auto mt-6 grid max-w-6xl gap-4 lg:grid-cols-2">
-        {dashboard.projects.map((project) => <ProjectStatusCard key={project.projectId} project={project as any} />)}
+        {(publishedProjects.length ? publishedProjects : dashboard.projects).map((project) => <ProjectStatusCard key={project.projectId} project={project as any} />)}
+      </section>
+      <section className="mx-auto mt-6 max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-4">
+        <p className="text-sm uppercase tracking-wide text-slate-400">Approved-only sync</p>
+        <h2 className="mt-1 text-xl font-semibold">Main dashboard shows published projects only</h2>
+        <p className="mt-2 text-sm text-slate-300">
+          Local drafts, failed experiments, and candidates stay in local review until a user explicitly approves publish.
+          Current local/draft artifacts detected: {localDrafts.length}.
+        </p>
       </section>
     </main>
   )

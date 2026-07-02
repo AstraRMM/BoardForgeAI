@@ -41,6 +41,13 @@
     "boardforge:status": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs status",
     "boardforge:report": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs report",
     "boardforge:replay": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs replay",
+    "boardforge:login": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs login",
+    "boardforge:license": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs license",
+    "boardforge:publish": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs publish",
+    "boardforge:archive": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs archive",
+    "boardforge:keep-local": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs keep-local",
+    "boardforge:sync": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs sync",
+    "boardforge:approvals": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs approvals",
     "boardforge:import-sandbox": "node ./plugins/boardforge-plugin/bin/boardforge-import-sandbox.mjs",
     "boardforge:dirty-repair-proof": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs",
     "boardforge:dirty-repair-proof-02": "node ./plugins/boardforge-plugin/bin/boardforge-dirty-repair-proof.mjs -- --project-id BF-DIRTY-REPAIR-PROOF-02_REV_A --harder",
@@ -157,6 +164,18 @@
     ,"test:jlcpcb-assembly-provider-normalization": "node --test --test-name-pattern \"JLCPCB assembly provider normalization\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:poe-rev-d-sourcing-verification": "node --test --test-name-pattern \"PoE REV_D sourcing verification\" ./plugins/boardforge-plugin/tests/*.test.mjs"
     ,"test:alpha-release-docs": "node --test --test-name-pattern \"alpha release docs\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:project-publish-state": "node --test --test-name-pattern \"project publish state\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:approved-only-sync-gate": "node --test --test-name-pattern \"approved-only sync gate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:dashboard-published-only": "node --test --test-name-pattern \"dashboard published only\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:license-entitlement-gate": "node --test --test-name-pattern \"license entitlement gate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:dev-license-mode": "node --test --test-name-pattern \"dev license mode\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:kicad-plugin-publish-status": "node --test --test-name-pattern \"KiCad plugin publish status\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:cli-publish-confirmation": "node --test --test-name-pattern \"CLI publish requires\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:question-engine": "node --test --test-name-pattern \"question engine\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:conditional-followups": "node --test --test-name-pattern \"conditional followups\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:board-brief-generator": "node --test --test-name-pattern \"board brief generator\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:board-brief-approval-gate": "node --test --test-name-pattern \"board brief approval gate\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    ,"test:premium-intake-flow": "node --test --test-name-pattern \"premium intake flow\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

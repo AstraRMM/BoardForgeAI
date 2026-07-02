@@ -19,6 +19,34 @@ export type BoardForgeManifest = {
   replay: {
     command: string | null
   }
+  publish?: BoardForgePublishState
+  projectState?: BoardForgeProjectState
+  publishApproved?: boolean
+  dashboardVisible?: boolean
+  syncStatus?: string
+}
+
+export type BoardForgeProjectState =
+  | 'local_draft'
+  | 'local_candidate'
+  | 'approved_for_dashboard'
+  | 'dashboard_published'
+  | 'archived'
+  | 'failed_experiment'
+
+export type BoardForgePublishState = {
+  schema?: 'boardforge.project-publish-state.v1'
+  projectState: BoardForgeProjectState
+  publishApproved: boolean
+  dashboardVisible: boolean
+  syncStatus: string
+  userApprovalRequired: boolean
+  approvalHistory: Array<{
+    action: string
+    at: string
+    actor: string
+    note?: string
+  }>
 }
 
 export type BoardForgeReadiness = 'ready' | 'blocked' | 'review'
@@ -59,6 +87,12 @@ export type BoardForgeDashboardCard = {
     originalUntouched: boolean
     report: string
   }
+  publish?: BoardForgePublishState
+  projectState?: BoardForgeProjectState
+  publishApproved?: boolean
+  dashboardVisible?: boolean
+  syncStatus?: string
+  localOnly?: boolean
 }
 
 export type BoardForgeDashboardData = {
@@ -92,6 +126,33 @@ export function dashboardSummaryLabel(data: BoardForgeDashboardData): 'all-ready
   if (data.summary.blocked > 0 || data.projects.some((project) => dashboardCardLabel(project) === 'blocked')) return 'blocked'
   if (data.summary.manufacturingReady === data.summary.totalProjects && data.summary.totalProjects > 0) return 'all-ready'
   return 'review'
+}
+
+export function normalizePublishState(input?: Partial<BoardForgePublishState> | BoardForgeManifest | BoardForgeDashboardCard): BoardForgePublishState {
+  const publish = ('publish' in (input || {}) ? (input as BoardForgeManifest | BoardForgeDashboardCard).publish : input) as Partial<BoardForgePublishState> | undefined
+  const projectState = publish?.projectState || (input as BoardForgeManifest | BoardForgeDashboardCard | undefined)?.projectState || 'local_draft'
+  const dashboardVisible = projectState === 'dashboard_published'
+  return {
+    schema: 'boardforge.project-publish-state.v1',
+    projectState,
+    publishApproved: Boolean(publish?.publishApproved || (input as BoardForgeManifest | BoardForgeDashboardCard | undefined)?.publishApproved || projectState === 'approved_for_dashboard' || projectState === 'dashboard_published'),
+    dashboardVisible,
+    syncStatus: publish?.syncStatus || (input as BoardForgeManifest | BoardForgeDashboardCard | undefined)?.syncStatus || (dashboardVisible ? 'synced' : 'not_synced'),
+    userApprovalRequired: projectState !== 'dashboard_published',
+    approvalHistory: publish?.approvalHistory || [],
+  }
+}
+
+export function isDashboardPublished(project: BoardForgeManifest | BoardForgeDashboardCard): boolean {
+  return normalizePublishState(project).projectState === 'dashboard_published'
+}
+
+export function filterDashboardPublishedProjects<T extends BoardForgeManifest | BoardForgeDashboardCard>(projects: T[]): T[] {
+  return projects.filter((project) => isDashboardPublished(project))
+}
+
+export function filterLocalDraftProjects<T extends BoardForgeManifest | BoardForgeDashboardCard>(projects: T[]): T[] {
+  return projects.filter((project) => !isDashboardPublished(project))
 }
 
 export type BoardForgeReadinessEvidence = {

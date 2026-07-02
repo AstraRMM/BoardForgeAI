@@ -1,0 +1,6 @@
+{
+  "id": "conditional_questions_reduce_babysitting_001",
+  "rootCause": "Asking every possible PCB question makes the product feel tedious and low-trust.",
+  "fix": "Ask conditional follow-ups only when prior answers change the electrical, mechanical, sourcing, or manufacturing design.",
+  "appliesTo": ["intake", "ux"]
+}

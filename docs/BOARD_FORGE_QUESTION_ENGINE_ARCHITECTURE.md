@@ -1,24 +1,43 @@
 # BoardForge Question Engine Architecture
 
-BoardForge should ask only the questions needed to turn a prompt into an engineering brief, then stop asking and build.
+The question engine is the premium intake layer. It asks only questions that change the design, applies safe defaults, and generates a board brief for approval before KiCad files are created. Its product goal is to avoid babysitting while still collecting the decisions that actually affect electrical, mechanical, sourcing, or manufacturing outcomes.
 
 ## Flow
+1. User gives a board prompt.
+2. BoardForge infers a board type.
+3. Required questions are selected.
+4. Conditional follow-ups are added only when answers trigger them.
+5. Safe defaults and assumptions are recorded.
+6. BoardForge generates `BoardForge_Board_Brief.md` and `.json`.
+7. Build is blocked until the brief is approved or an explicit dev/test bypass is used.
 
-1. Classify board type.
-2. Apply smart defaults.
-3. Ask only missing critical questions.
-4. Use conditional follow-ups.
-5. Generate a board brief.
-6. Request approval before build.
-7. Execute locally and report exact assumptions.
+## Supported Board Types
+- `robotics_controller`
+- `usb_c_mcu_board`
+- `can_sensor_node`
+- `poe_environment_sensor`
+- `industrial_io_board`
+- `custom_outline_board`
+- `tiny_2layer_sensor`
+- `wearable_sensor_puck`
+- `connector_heavy_robot_board`
 
-## Examples
+## Example
+Prompt: “Make me a compact robotics controller.”
 
-- Robotics controller: ask power input, motor/servo count, CAN/UART/I2C needs, approximate size.
-- CAN selected: ask connector style, termination, isolation requirement.
-- USB-C selected: ask power-only vs USB data.
-- Custom shape selected: ask approximate size, mounting holes, connector edges.
-- PoE selected: ask whether this is an electrical fixture or compliance-targeted design.
+BoardForge asks:
+- controller preference
+- power input
+- interfaces
+- board shape
+- manufacturing target
 
-The question engine should avoid babysitting. Once essential unknowns are resolved, BoardForge proceeds with explicit assumptions.
+If CAN is selected, CAN questions appear. If CAN is not selected, they do not. If custom outline is selected, mechanical follow-ups appear.
 
+## Implementation
+- `lib/intake/question-engine.mjs`
+- `lib/intake/board-type-question-trees.mjs`
+- `lib/intake/conditional-followups.mjs`
+- `lib/intake/default-assumption-engine.mjs`
+- `lib/intake/board-brief-generator.mjs`
+- `lib/intake/board-brief-approval-gate.mjs`

@@ -1,0 +1,6 @@
+{
+  "id": "board_brief_approval_before_generation_001",
+  "rootCause": "Generating KiCad files before the user approves assumptions can create wrong projects quickly.",
+  "fix": "Block project generation until BoardForge_Board_Brief is approved or an explicit dev/test bypass is used.",
+  "appliesTo": ["intake", "project-generation"]
+}

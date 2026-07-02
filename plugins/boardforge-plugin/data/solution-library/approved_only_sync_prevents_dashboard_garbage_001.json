@@ -1,0 +1,6 @@
+{
+  "id": "approved_only_sync_prevents_dashboard_garbage_001",
+  "rootCause": "Board generators can create many drafts, failed experiments, and local candidates that should not clutter a customer dashboard.",
+  "fix": "Use explicit project states and only show dashboard_published projects on the main dashboard.",
+  "appliesTo": ["platform", "dashboard", "sync"]
+}

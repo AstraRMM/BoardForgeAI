@@ -1,0 +1,6 @@
+{
+  "id": "dashboard_published_only_after_user_approval_001",
+  "rootCause": "Auto-publishing generated boards risks exposing failed experiments and private local drafts.",
+  "fix": "Require approval_for_dashboard plus explicit publish confirmation before dashboard_published.",
+  "appliesTo": ["dashboard", "privacy", "sync"]
+}

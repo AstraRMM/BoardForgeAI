@@ -1,0 +1,6 @@
+{
+  "id": "license_auth_separate_from_project_publish_001",
+  "rootCause": "License checks and project publishing have different privacy semantics.",
+  "fix": "Allow silent license checks for engine access, but require explicit approval before dashboard publishing.",
+  "appliesTo": ["auth", "billing", "sync"]
+}

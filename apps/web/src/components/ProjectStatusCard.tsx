@@ -1,6 +1,8 @@
 import type { BoardForgeDashboardCard } from '../lib/boardforge-manifest'
+import { normalizePublishState } from '../lib/boardforge-manifest'
 
 export function ProjectStatusCard({ project }: { project: BoardForgeDashboardCard }) {
+  const publish = normalizePublishState(project)
   return (
     <article className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-slate-100">
       <div className="flex items-start justify-between gap-4">
@@ -22,6 +24,8 @@ export function ProjectStatusCard({ project }: { project: BoardForgeDashboardCar
         <p>Manufacturing: {project.manufacturing.ready ? 'ready' : project.manufacturing.blockedReason || 'blocked'}</p>
         <p>ZIP: {project.manufacturing.zip || 'not exported'}</p>
         <p>Sourcing: {project.validation.schematicGraphStatus || 'manifest evidence required'}</p>
+        <p>Publish: {publish.projectState} / {publish.dashboardVisible ? 'dashboard visible' : 'local only'}</p>
+        <p>Sync: {publish.syncStatus}</p>
         <p>Next: {project.nextAction}</p>
         {project.criticalBlockers.length > 0 && (
           <ul className="mt-2 space-y-1 text-xs text-red-300">

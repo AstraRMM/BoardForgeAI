@@ -34,6 +34,7 @@ def build_boardforge_commands(board_path):
     sandbox_dir = sandbox_path_for(project_dir)
     return {
         "import_sandbox": ["npm", "run", "boardforge:import-sandbox", "--", "--source", project_dir, "--output", sandbox_dir],
+        "license": ["npm", "run", "boardforge:license", "--", "--action", "repair_drc"],
         "validate": ["npm", "run", "boardforge:validate", "--", "--project", board_path],
         "route": ["npm", "run", "boardforge:route", "--", "--project", board_path],
         "repair": ["npm", "run", "boardforge:cleanup", "--", "--project", board_path],
@@ -41,6 +42,11 @@ def build_boardforge_commands(board_path):
         "export": ["npm", "run", "boardforge:export", "--", "--project", board_path],
         "report": ["npm", "run", "boardforge:report", "--", "--manifest", manifest],
         "replay": ["npm", "run", "boardforge:replay", "--", "--manifest", manifest],
+        "approvals": ["npm", "run", "boardforge:approvals", "--", "--project", project_dir, "--manifest", manifest],
+        "publish": ["npm", "run", "boardforge:publish", "--", "--project", project_dir, "--manifest", manifest, "--confirm"],
+        "keep_local": ["npm", "run", "boardforge:keep-local", "--", "--project", project_dir, "--manifest", manifest],
+        "archive": ["npm", "run", "boardforge:archive", "--", "--project", project_dir, "--manifest", manifest],
+        "sync": ["npm", "run", "boardforge:sync", "--", "--project", project_dir, "--manifest", manifest],
     }
 
 
@@ -101,6 +107,7 @@ if pcbnew:
             sandbox = is_boardforge_sandbox(board_path)
             pcbnew.wxLogMessage("BoardForge local control panel")
             pcbnew.wxLogMessage("Sandbox status: " + ("active sandbox/fixture" if sandbox else "not sandboxed; mutation actions disabled"))
+            pcbnew.wxLogMessage("License status: " + format_command(commands["license"]))
             pcbnew.wxLogMessage("Manifest: " + manifest)
             pcbnew.wxLogMessage("Latest report: " + report_path)
             pcbnew.wxLogMessage("Manufacturing folder: " + manufacturing_path)
@@ -113,6 +120,11 @@ if pcbnew:
                 pcbnew.wxLogMessage("Export sandbox: " + format_command(commands["export"]))
             else:
                 pcbnew.wxLogMessage("Route/Repair/Cleanup/Export disabled on active project. Import into BoardForge sandbox first.")
+            pcbnew.wxLogMessage("Approval report: " + format_command(commands["approvals"]))
+            pcbnew.wxLogMessage("Publish approved project: " + format_command(commands["publish"]))
+            pcbnew.wxLogMessage("Keep local only: " + format_command(commands["keep_local"]))
+            pcbnew.wxLogMessage("Archive draft: " + format_command(commands["archive"]))
+            pcbnew.wxLogMessage("Sync status: local artifact sync only; publish requires explicit CLI/plugin confirmation.")
             pcbnew.wxLogMessage("Report: " + format_command(commands["report"]))
             pcbnew.wxLogMessage("Replay: " + format_command(commands["replay"]))
             if os.path.exists(manifest):

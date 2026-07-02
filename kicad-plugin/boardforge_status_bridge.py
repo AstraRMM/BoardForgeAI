@@ -6,6 +6,8 @@ def read_boardforge_status(project_dir):
     kind = project_kind(project_dir)
     run_log = _read_json(os.path.join(project_dir, "BoardForge_Engine_Run_Log.json"))
     manifest = _read_json(os.path.join(project_dir, "BoardForge_Project_Manifest.json"))
+    publish = ((manifest or {}).get("publish") or {})
+    license_status = _license_status()
     return {
         "schema": "boardforge.kicad-status-bridge.v1",
         "source": "local_artifact_polling",
@@ -20,6 +22,12 @@ def read_boardforge_status(project_dir):
         "unconnected": ((run_log or {}).get("validation") or {}).get("unconnected") or ((manifest or {}).get("validation") or {}).get("unconnected"),
         "manufacturingReady": bool(((run_log or {}).get("manufacturing") or {}).get("ready") or ((manifest or {}).get("manufacturing") or {}).get("ready")),
         "manufacturingZip": ((run_log or {}).get("manufacturing") or {}).get("zip") or ((manifest or {}).get("manufacturing") or {}).get("zip"),
+        "licenseStatus": license_status,
+        "projectState": publish.get("projectState") or (manifest or {}).get("projectState") or "local_draft",
+        "publishApproved": bool(publish.get("publishApproved") or (manifest or {}).get("publishApproved")),
+        "dashboardVisible": bool(publish.get("dashboardVisible") or (manifest or {}).get("dashboardVisible")),
+        "syncStatus": publish.get("syncStatus") or (manifest or {}).get("syncStatus") or "not_synced",
+        "approvalReport": os.path.join(project_dir, "BoardForge_Project_Approval_Report.md"),
     }
 
 
@@ -35,3 +43,11 @@ def _read_json(path):
         return None
     with open(path, "r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def _license_status():
+    if str(os.environ.get("BOARDFORGE_DEV_LICENSE", "")).lower() == "true":
+        return {"licensed": True, "source": "BOARDFORGE_DEV_LICENSE", "devMode": True}
+    if os.environ.get("BOARDFORGE_LICENSE_KEY"):
+        return {"licensed": True, "source": "BOARDFORGE_LICENSE_KEY", "devMode": False}
+    return {"licensed": False, "source": "none", "devMode": False}

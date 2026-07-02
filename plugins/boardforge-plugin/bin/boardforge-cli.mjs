@@ -22,7 +22,7 @@ function jsonOut(value) {
 function usage() {
   return {
     status: 'BOARD_FORGE_CLI_HELP',
-    usage: 'boardforge <init|create|import|validate|route|repair|cleanup|export|status|report|replay> [options]',
+    usage: 'boardforge <init|create|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals> [options]',
     commands: {
       init: 'Create a safe BoardForge workspace marker.',
       create: 'Create a KiCad project from a controlled BoardForge template.',
@@ -35,6 +35,13 @@ function usage() {
       status: 'Read local BoardForge status artifacts for a sandbox/project.',
       report: 'Generate dashboard data from BoardForge manifests.',
       replay: 'Print or execute a manifest replay command.',
+      login: 'Show local auth/login scaffold status.',
+      license: 'Check local BoardForge license and entitlement state.',
+      publish: 'Publish an approved project to dashboard artifacts only when --confirm is present.',
+      archive: 'Mark a local project draft archived.',
+      'keep-local': 'Mark a project local-only and not dashboard visible.',
+      sync: 'Run approved-only local sync scaffold.',
+      approvals: 'Write or inspect the project approval report/state.',
     },
     options: [
       '--workspace <path>',
@@ -96,6 +103,18 @@ async function main() {
     return
   }
 
+  if (planned.kind === 'auth-status') {
+    const { readLocalAuthContext } = await import('../lib/auth/boardforge-auth-client.mjs')
+    const { checkBoardForgeLicense } = await import('../lib/auth/license-checker.mjs')
+    jsonOut({ status: 'BOARD_FORGE_AUTH_STATUS', auth: readLocalAuthContext(), license: checkBoardForgeLicense({ action: planned.action || null }) })
+    return
+  }
+
+  if (planned.kind === 'publish-action') {
+    jsonOut(await executePublishAction(planned))
+    return
+  }
+
   const result = await executeJob(planned.job, workspace)
   jsonOut({ command, workspace, job: planned.job, result })
   if (/BLOCKED|FAILED|NEEDS_FIX|VALIDATION_FAILED/.test(result.status || '')) process.exitCode = 2
@@ -108,6 +127,9 @@ async function planCommand(name, context) {
   if (name === 'report') return planReportCommand(context)
   if (name === 'replay') return planReplayCommand()
   if (name === 'status') return planStatusCommand(context)
+  if (name === 'login') return { kind: 'auth-status', command: name, workspace, action: null }
+  if (name === 'license') return { kind: 'auth-status', command: name, workspace, action: argValue('--action', null) }
+  if (['publish', 'archive', 'keep-local', 'sync', 'approvals'].includes(name)) return planPublishActionCommand(name, context)
 
   const guarded = guardProjectPath(projectPath, name)
   const projectName = argValue('--name', path.basename(projectPath || 'boardforge-project'))
@@ -155,6 +177,66 @@ async function planCommand(name, context) {
   const job = jobByCommand[name]
   if (!job) throw new Error(`Unknown BoardForge CLI command: ${name}`)
   return { kind: 'job', command: name, workspace, projectGuard: guarded, job }
+}
+
+function planPublishActionCommand(name, context) {
+  const manifestPath = path.resolve(argValue('--manifest', context.projectPath ? path.join(context.projectPath, 'BoardForge_Project_Manifest.json') : ''))
+  const projectDir = path.resolve(argValue('--project', context.projectPath || path.dirname(manifestPath)))
+  const guarded = assertPathIsAllowed(projectDir)
+  if (!guarded.allowed) throw new Error(`Refused ${name}: ${guarded.reason} (${projectDir || 'missing project path'})`)
+  return {
+    kind: 'publish-action',
+    command: name,
+    workspace: context.workspace,
+    projectDir,
+    manifestPath,
+    confirm: hasArg('--confirm'),
+  }
+}
+
+async function executePublishAction(planned) {
+  const { readFile, writeFile } = await import('node:fs/promises')
+  const { defaultPublishState, transitionPublishState } = await import('../lib/platform/project-publish-state.mjs')
+  const { approveProjectForDashboard } = await import('../lib/platform/project-publish-gate.mjs')
+  const { syncProjectToDashboard } = await import('../lib/platform/project-sync-client.mjs')
+  const { writeProjectApprovalReport } = await import('../lib/platform/project-approval-report.mjs')
+  const { canRunPremiumAction } = await import('../lib/auth/entitlement-gate.mjs')
+
+  let manifest = { projectId: path.basename(planned.projectDir), projectName: path.basename(planned.projectDir), publish: defaultPublishState() }
+  try {
+    manifest = JSON.parse(await readFile(planned.manifestPath, 'utf8'))
+  } catch {
+    manifest.publish = defaultPublishState(manifest.publish)
+  }
+
+  if (planned.command === 'approvals') {
+    const report = await writeProjectApprovalReport({ project: manifest, outputDir: planned.projectDir })
+    return { status: 'BOARD_FORGE_APPROVAL_REPORT_WRITTEN', ...report.files, projectState: report.state.projectState }
+  }
+
+  const syncGate = canRunPremiumAction('sync_project_to_dashboard')
+  if (['publish', 'sync'].includes(planned.command) && !syncGate.allowed) {
+    return { status: 'BOARD_FORGE_LICENSE_BLOCKED', command: planned.command, blockers: syncGate.blockers }
+  }
+
+  if (planned.command === 'publish') {
+    if (!planned.confirm) return { status: 'BOARD_FORGE_PUBLISH_BLOCKED_CONFIRM_REQUIRED', synced: false, blockers: ['publish_requires_explicit_confirm'] }
+    manifest = approveProjectForDashboard(manifest, { actor: 'cli', note: 'CLI publish confirmation received' })
+    const result = syncProjectToDashboard(manifest, { confirm: true, actor: 'cli' })
+    await writeFile(planned.manifestPath, JSON.stringify({ ...manifest, publish: result.manifest }, null, 2), 'utf8')
+    return { status: result.status, synced: result.synced, manifest: result.manifest }
+  }
+
+  if (planned.command === 'sync') {
+    const result = syncProjectToDashboard(manifest, { confirm: planned.confirm, actor: 'cli' })
+    return { status: result.status, synced: result.synced, blockers: result.blockers, manifest: result.manifest }
+  }
+
+  const actionByCommand = { archive: 'archive', 'keep-local': 'keep_local' }
+  const publish = transitionPublishState(manifest.publish || manifest, actionByCommand[planned.command], { actor: 'cli' })
+  const nextManifest = { ...manifest, publish, projectState: publish.projectState, publishApproved: publish.publishApproved, dashboardVisible: publish.dashboardVisible, syncStatus: publish.syncStatus }
+  await writeFile(planned.manifestPath, JSON.stringify(nextManifest, null, 2), 'utf8')
+  return { status: `BOARD_FORGE_${planned.command.toUpperCase().replace('-', '_')}_RECORDED`, publish }
 }
 
 function guardProjectPath(projectPath, commandName) {
