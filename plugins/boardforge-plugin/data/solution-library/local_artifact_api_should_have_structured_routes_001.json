@@ -1,0 +1,5 @@
+{
+  "id": "local_artifact_api_should_have_structured_routes_001",
+  "rootCause": "Raw route return values and stack traces are not acceptable product-facing API behavior.",
+  "fix": "Wrap local engine routes in a stable JSON envelope with ok/status/data/errors/warnings/artifactPaths."
+}

@@ -58,3 +58,14 @@ This proves Codex/AI can drive intake, but BoardForge owns the question tree, br
 3. Show outline seed, generated KiCad files, board preview SVG/JSON, manufacturing folders, JLCPCB ZIP, project manifest, and CLI replay command.
 4. Confirm project state is `local_candidate` and `dashboardVisible = false`.
 5. Confirm publish without confirmation is blocked and publish with confirmation is explicit.
+
+## Localhost Engine Service Demo
+
+1. Run `npm run boardforge:local-server`.
+2. In another shell run `npm run boardforge:local-health` and `npm run boardforge:local-status`.
+3. Run `npm run boardforge:localhost-service-demo`.
+4. Open `BF-LOCALHOST-SERVICE-DEMO-01_REV_A`.
+5. Show `BoardForge_Localhost_Service_Demo_Report.md`, `BoardForge_Localhost_Service_Run_Log.json`, and `BoardForge_Localhost_Service_API_Trace.json`.
+6. Confirm the service drove intake, brief approval, project creation, status, downloads, and publish gating through localhost HTTP routes.
+
+This proves the web/KiCad/CLI product surfaces can talk to a real local BoardForge engine service instead of only reading mock contracts.

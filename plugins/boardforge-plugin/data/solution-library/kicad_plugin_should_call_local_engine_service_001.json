@@ -1,0 +1,5 @@
+{
+  "id": "kicad_plugin_should_call_local_engine_service_001",
+  "rootCause": "Putting engine logic inside the KiCad plugin would fragment BoardForge into multiple engines.",
+  "fix": "Keep KiCad as a control surface that checks and calls the local BoardForge engine service."
+}

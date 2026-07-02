@@ -28,6 +28,7 @@ import { applyProjectApprovalAction } from '../lib/platform/project-approval-act
 import { runApprovedSyncValidation } from '../lib/platform/approved-sync-validation.mjs'
 import { CRAZY_OUTLINE_SHAPES, runCrazyOutlineStressSuite, scoreCrazyOutlineShape } from '../lib/outline/crazy-outline-stress-suite.mjs'
 import { createLocalArtifactApi } from '../lib/platform/local-artifact-api.mjs'
+import { startBoardForgeLocalServer } from '../lib/platform/local-server/http-server.mjs'
 import { exportCustomOutlineSeed } from '../lib/outline/custom-outline-seed-export.mjs'
 import { runOddShapeWebFlowProof } from '../lib/engine/odd-shape-web-flow-proof.mjs'
 import { writeBoardPreview } from '../lib/preview/board-preview-generator.mjs'
@@ -35,6 +36,7 @@ import { writeBoardPreview } from '../lib/preview/board-preview-generator.mjs'
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
 const demoPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-alpha-demo.mjs')
+const localhostDemoPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-localhost-service-demo.mjs')
 const kicadPluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
 const kicadBridgePath = path.join(repoRoot, 'kicad-plugin', 'boardforge_status_bridge.py')
 const launcherDir = path.join(repoRoot, 'tools', 'boardforge-launcher')
@@ -645,3 +647,123 @@ test('crazy outline test plan prepares future shape fixtures without claiming co
   assert.match(plan, /BF-CRAZY-OUTLINE-DRONE-STACK-01/)
   assert.match(generator, /Reject shapes with likely routing collapse/)
 })
+
+test('local server health and status return structured JSON', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-local-server-health-'))
+  const { server, baseUrl } = await startTestLocalServer(rootDir)
+  try {
+    const health = await localFetch(baseUrl, '/health')
+    const status = await localFetch(baseUrl, '/status')
+    assert.equal(health.ok, true)
+    assert.equal(health.status, 'BOARD_FORGE_LOCAL_SERVER_HEALTHY')
+    assert.equal(status.ok, true)
+    assert.equal(status.data.noFakeCloudExecution, true)
+  } finally {
+    server.close()
+  }
+})
+
+test('local server intake flow and brief approval work through HTTP', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-local-server-intake-'))
+  const { server, baseUrl } = await startTestLocalServer(rootDir)
+  try {
+    const intake = await localFetch(baseUrl, '/intake/start', 'POST', { projectId: 'demo', prompt: 'Make a compact robotics controller with CAN and USB-C.' })
+    const answered = await localFetch(baseUrl, '/intake/answer', 'POST', { sessionFile: intake.data.sessionFile, answers: { usb_c: 'power + data', can: 'default termination' } })
+    const approved = await localFetch(baseUrl, '/brief/approve', 'POST', { sessionFile: answered.data.sessionFile })
+    assert.equal(intake.ok, true)
+    assert.equal(answered.ok, true)
+    assert.equal(approved.status, 'BOARD_FORGE_BRIEF_APPROVED')
+  } finally {
+    server.close()
+  }
+})
+
+test('local server create project generates odd-shape candidate and project status', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-local-server-create-'))
+  const projectDir = path.join(rootDir, 'odd')
+  const { server, baseUrl } = await startTestLocalServer(rootDir)
+  try {
+    const created = await localFetch(baseUrl, '/project/create', 'POST', { projectId: 'odd', projectDir, oddShapeProof: true })
+    const status = await localFetch(baseUrl, `/project/odd/status?projectDir=${encodeURIComponent(projectDir)}`)
+    assert.equal(created.ok, true)
+    assert.equal(created.data.validation.drc, 0)
+    assert.equal(status.data.projectState, 'local_candidate')
+    assert.equal(status.data.dashboardVisible, false)
+  } finally {
+    server.close()
+  }
+})
+
+test('local server publish confirm and protected path guard are enforced', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-local-server-publish-'))
+  const projectDir = path.join(rootDir, 'odd')
+  const { server, baseUrl } = await startTestLocalServer(rootDir)
+  try {
+    await localFetch(baseUrl, '/project/create', 'POST', { projectId: 'odd', projectDir, oddShapeProof: true })
+    const blocked = await localFetch(baseUrl, '/project/odd/publish', 'POST', { projectDir }, false)
+    const published = await localFetch(baseUrl, '/project/odd/publish', 'POST', { projectDir, confirm: true })
+    const protectedRefused = await localFetch(baseUrl, `/project/protected/status?projectDir=${encodeURIComponent('C:\\Users\\luifi\\Desktop\\FN-ESC1\\SomeBoard')}`, 'GET', null, false)
+    assert.equal(blocked.ok, false)
+    assert.equal(blocked.status, 'BOARD_FORGE_PUBLISH_BLOCKED_CONFIRM_REQUIRED')
+    assert.equal(published.ok, true)
+    assert.equal(protectedRefused.ok, false)
+    assert.equal(protectedRefused.status, 'BOARD_FORGE_PROJECT_PATH_REFUSED')
+  } finally {
+    server.close()
+  }
+})
+
+test('web localhost engine client exposes service URL offline copy and fetch client', async () => {
+  const artifactClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-artifact-client.ts'), 'utf8')
+  const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  assert.match(artifactClient, /127\.0\.0\.1:38991/)
+  assert.match(artifactClient, /callBoardForgeLocalEngine/)
+  assert.match(artifactClient, /npm run boardforge:local-server/)
+  assert.match(newBoardPage, /Local Engine Service/)
+})
+
+test('KiCad plugin localhost status advertises health and guarded service actions', async () => {
+  const plugin = await readFile(kicadPluginPath, 'utf8')
+  const bridge = await readFile(kicadBridgePath, 'utf8')
+  assert.match(plugin, /boardforge:local-health/)
+  assert.match(plugin, /boardforge:local-server/)
+  assert.match(bridge, /127\.0\.0\.1:38991/)
+  assert.match(bridge, /GET \/health/)
+})
+
+test('CLI local client includes health status intake publish and downloads commands', async () => {
+  const client = await readFile(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-local-client.mjs'), 'utf8')
+  const pkg = await readFile(path.join(repoRoot, 'package.json'), 'utf8')
+  assert.match(client, /start-intake/)
+  assert.match(client, /approve-brief/)
+  assert.match(client, /downloads/)
+  assert.match(pkg, /boardforge:local-server/)
+  assert.match(pkg, /boardforge:local-health/)
+})
+
+test('localhost service demo creates board through local service and writes trace', () => {
+  const rootDir = path.join(os.tmpdir(), `boardforge-localhost-demo-${Date.now()}`)
+  const output = JSON.parse(execFileSync(process.execPath, [localhostDemoPath, '--root', rootDir, '--port', '38993'], { encoding: 'utf8' }))
+  assert.equal(output.status, 'BOARD_FORGE_LOCALHOST_SERVICE_DEMO_COMPLETED')
+  assert.equal(output.validation.drc, 0)
+  assert.equal(output.validation.erc, 0)
+  assert.match(output.manufacturingZip, /JLCPCB\.zip/)
+})
+
+async function startTestLocalServer(rootDir) {
+  const server = startBoardForgeLocalServer({ rootDir, port: 0 })
+  await new Promise((resolve) => server.once('listening', resolve))
+  const address = server.address()
+  return { server, baseUrl: `http://127.0.0.1:${address.port}` }
+}
+
+async function localFetch(baseUrl, route, method = 'GET', body = null, throwOnError = true) {
+  const response = await fetch(`${baseUrl}${route}`, {
+    method,
+    headers: body ? { 'content-type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  const json = await response.json()
+  if (throwOnError && !json.ok) throw new Error(JSON.stringify(json))
+  return json
+}

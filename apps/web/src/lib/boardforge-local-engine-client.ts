@@ -21,7 +21,7 @@ export type LocalEngineBridgeStatus = {
 }
 
 export const localEngineOfflineMessage =
-  'BoardForge Local Engine is offline. Start it to generate, route, repair, or export boards.'
+  'BoardForge Local Engine is offline. Start it with: npm run boardforge:local-server'
 
 export function getLocalEngineStatusCopy() {
   return {

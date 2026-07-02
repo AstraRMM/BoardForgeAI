@@ -1,0 +1,5 @@
+{
+  "id": "web_must_not_fake_local_engine_status_001",
+  "rootCause": "A web UI can accidentally imply cloud execution or live engine status when it only has static artifacts.",
+  "fix": "Detect the localhost engine explicitly and show the start command when offline."
+}

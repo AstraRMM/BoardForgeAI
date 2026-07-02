@@ -1,0 +1,5 @@
+{
+  "id": "local_server_must_enforce_sandbox_and_publish_gates_001",
+  "rootCause": "A local service can become dangerous if it bypasses the same safety gates as CLI and artifact workflows.",
+  "fix": "Route every mutation through protected-path, sandbox, license/dev, and publish-confirm checks."
+}

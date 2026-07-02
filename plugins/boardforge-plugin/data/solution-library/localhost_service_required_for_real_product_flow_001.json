@@ -1,0 +1,5 @@
+{
+  "id": "localhost_service_required_for_real_product_flow_001",
+  "rootCause": "Artifact-only API contracts make the web and KiCad surfaces look product-like without proving a real local engine boundary.",
+  "fix": "Expose BoardForge engine actions through a localhost-only service with structured routes, logs, and shared local artifacts."
+}

@@ -11,7 +11,10 @@ def read_boardforge_status(project_dir):
     license_status = _license_status()
     return {
         "schema": "boardforge.kicad-status-bridge.v1",
-        "source": "local_artifact_polling",
+        "source": "localhost_service_or_local_artifact_polling",
+        "localServiceUrl": "http://127.0.0.1:38991",
+        "localServiceHealth": "GET /health",
+        "localServiceStartCommand": "npm run boardforge:local-server",
         "projectKind": kind,
         "repairEnabled": kind == "sandbox",
         "projectDir": project_dir,

@@ -15,6 +15,7 @@ export default function CustomBoardGeneratorPage() {
           connector-access, DRC/ERC, and manufacturing checks before export.
         </p>
         <p className="mt-3 text-sm text-amber-200">{localArtifactApiContract.offlineMessage}</p>
+        <p className="mt-2 text-sm text-slate-400">When online, this page uses localhost routes for intake, brief approval, project creation, downloads, and publish gates.</p>
       </section>
       <section className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-2">
         {shapes.map((shape) => (
