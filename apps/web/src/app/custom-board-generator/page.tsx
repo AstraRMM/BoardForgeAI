@@ -1,6 +1,8 @@
 import { OutlineEditor } from '../../components/outline/OutlineEditor'
 import { OutlinePresetPicker } from '../../components/outline/OutlinePresetPicker'
 import { OutlineValidationPanel } from '../../components/outline/OutlineValidationPanel'
+import { LocalEngineStatusBar } from '../../components/project/LocalEngineStatusBar'
+import { ProjectActionPanel } from '../../components/project/ProjectActionPanel'
 import { localArtifactApiContract } from '../../lib/boardforge-local-artifact-client'
 
 export default function CustomBoardGeneratorPage() {
@@ -16,6 +18,9 @@ export default function CustomBoardGeneratorPage() {
         </p>
         <p className="mt-3 text-sm text-amber-200">{localArtifactApiContract.offlineMessage}</p>
         <p className="mt-2 text-sm text-slate-400">When online, this page uses localhost routes for intake, brief approval, project creation, downloads, and publish gates.</p>
+        <div className="mt-6">
+          <LocalEngineStatusBar />
+        </div>
       </section>
       <section className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-2">
         {shapes.map((shape) => (
@@ -29,6 +34,9 @@ export default function CustomBoardGeneratorPage() {
         <OutlinePresetPicker />
         <OutlineEditor />
         <OutlineValidationPanel />
+      </section>
+      <section className="mx-auto mt-8 max-w-5xl">
+        <ProjectActionPanel />
       </section>
       <section className="mx-auto mt-8 max-w-5xl rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
         <p className="text-sm text-amber-100">No fake outline success: failed shapes must report exact Edge.Cuts, DRC/ERC, routeability, or manufacturing blockers.</p>

@@ -14,7 +14,16 @@ cd "C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai"
 npm install
 npm run fixtures:run
 npm run report:90:quick -- --fresh
+npm run boardforge:local-server
 ```
+
+Open the web app separately with:
+
+```powershell
+npm run dev:web
+```
+
+The web app talks to the local engine service on `http://127.0.0.1:38991`.
 
 ## Optional API Keys
 

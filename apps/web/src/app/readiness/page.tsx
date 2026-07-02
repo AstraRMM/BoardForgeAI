@@ -1,5 +1,6 @@
 import evidence from '../../sample-manifests/readiness-evidence.json'
 import { dirtyRepairEngineStatus } from '../../lib/boardforge-engine-status'
+import { LocalEngineStatusBar } from '../../components/project/LocalEngineStatusBar'
 
 export default function ReadinessPage() {
   return (
@@ -8,6 +9,9 @@ export default function ReadinessPage() {
         <p className="text-sm uppercase text-cyan-300">Evidence-backed alpha score</p>
         <h1 className="mt-2 text-3xl font-semibold">BoardForge Readiness</h1>
         <p className="mt-2 max-w-3xl text-slate-400">This dashboard reports what BoardForge has proven locally. It does not inflate readiness for unverified sourcing, compliance, or arbitrary dense-board autonomy.</p>
+        <div className="mt-6">
+          <LocalEngineStatusBar />
+        </div>
       </header>
       <section className="mx-auto mt-6 grid max-w-6xl gap-4 md:grid-cols-5">
         <Metric label="Score" value={evidence.readiness} />

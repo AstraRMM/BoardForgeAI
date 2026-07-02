@@ -1,0 +1,5 @@
+{
+  "id": "interactive_new_board_flow_requires_local_service_001",
+  "rootCause": "Prompt intake feels unfinished if the new-board page does not expose the same engine route sequence as CLI/KiCad.",
+  "fix": "Show local service status, intake, brief approval, project creation, and publish-gated actions together."
+}

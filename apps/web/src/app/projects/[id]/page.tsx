@@ -1,6 +1,9 @@
 import dashboard from '../../../sample-manifests/project-dashboard.json'
 import { ProjectStatusCard } from '../../../components/ProjectStatusCard'
 import { EngineStatusPanel } from '../../../components/project/EngineStatusPanel'
+import { LocalEngineStatusBar } from '../../../components/project/LocalEngineStatusBar'
+import { ProjectActionPanel } from '../../../components/project/ProjectActionPanel'
+import { ManufacturingReadinessBadge, ProjectStateBadge, SourcingStatusBadge } from '../../../components/project/StatusBadges'
 import { getBoardForgeEngineStatus } from '../../../lib/boardforge-engine-status'
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
@@ -8,8 +11,17 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   const engineStatus = getBoardForgeEngineStatus(params.id)
   return (
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
+      <LocalEngineStatusBar />
+      <div className="mt-4 flex flex-wrap gap-2">
+        <ProjectStateBadge state={(project as any).projectState || (project as any).publish?.projectState || 'local_draft'} />
+        <ManufacturingReadinessBadge state={project.manufacturing.ready ? 'PCB_FAB_READY' : 'BLOCKED_DRC'} />
+        <SourcingStatusBadge state="NOT_CHECKED" />
+      </div>
       <ProjectStatusCard project={project as any} />
       <EngineStatusPanel status={engineStatus} />
+      <div className="mt-6">
+        <ProjectActionPanel />
+      </div>
       <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Reports</h2>
         <pre className="mt-3 overflow-auto text-xs text-slate-300">{JSON.stringify(project.reports, null, 2)}</pre>

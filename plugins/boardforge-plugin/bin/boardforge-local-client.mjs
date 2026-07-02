@@ -17,6 +17,9 @@ const baseUrl = argValue('--url', `http://127.0.0.1:${DEFAULT_LOCAL_SERVER_PORT}
 const routeMap = {
   health: ['GET', '/health'],
   status: ['GET', '/status'],
+  readiness: ['GET', '/readiness'],
+  fixtures: ['GET', '/fixtures'],
+  sourcing: ['GET', '/sourcing/status'],
   'start-intake': ['POST', '/intake/start'],
   answer: ['POST', '/intake/answer'],
   'generate-brief': ['POST', '/brief/generate'],
@@ -28,6 +31,10 @@ const routeMap = {
   'keep-local': ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/keep-local`],
   downloads: ['GET', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/downloads`],
   reports: ['GET', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/reports`],
+  validate: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/validate`],
+  route: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/route`],
+  repair: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/repair`],
+  export: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/export`],
 }
 
 const [method, pathname] = routeMap[command] || routeMap.status

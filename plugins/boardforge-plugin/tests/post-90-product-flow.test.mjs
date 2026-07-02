@@ -750,6 +750,65 @@ test('localhost service demo creates board through local service and writes trac
   assert.match(output.manufacturingZip, /JLCPCB\.zip/)
 })
 
+test('web UI local engine actions expose status bar badges and action routes', async () => {
+  const statusBar = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'LocalEngineStatusBar.tsx'), 'utf8')
+  const badges = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'StatusBadges.tsx'), 'utf8')
+  const actions = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectActionPanel.tsx'), 'utf8')
+  assert.match(statusBar, /boardforge:local-server/)
+  assert.match(badges, /ManufacturingReadinessBadge/)
+  assert.match(actions, /POST \/project\/:id\/publish with confirm=true/)
+  assert.match(actions, /local route wired/)
+})
+
+test('web new board interactive flow shows local service intake and brief approval', async () => {
+  const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  assert.match(newBoardPage, /LocalEngineStatusBar/)
+  assert.match(newBoardPage, /ProjectActionPanel/)
+  assert.match(newBoardPage, /BoardBriefApprovalActions/)
+  assert.match(newBoardPage, /Local Engine Service/)
+})
+
+test('web custom outline interactive flow connects outline presets to local service actions', async () => {
+  const customPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
+  assert.match(customPage, /OutlinePresetPicker/)
+  assert.match(customPage, /OutlineEditor/)
+  assert.match(customPage, /OutlineValidationPanel/)
+  assert.match(customPage, /ProjectActionPanel/)
+})
+
+test('web project action buttons and downloads local service parity are visible', async () => {
+  const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
+  const downloadsPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
+  assert.match(projectPage, /ProjectActionPanel/)
+  assert.match(projectPage, /ProjectStateBadge/)
+  assert.match(downloadsPage, /ManufacturingReadinessBadge/)
+  assert.match(downloadsPage, /SourcingStatusBadge/)
+})
+
+test('web readiness page shows local service status', async () => {
+  const readinessPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'readiness', 'page.tsx'), 'utf8')
+  assert.match(readinessPage, /LocalEngineStatusBar/)
+  assert.match(readinessPage, /Evidence-backed alpha score/)
+})
+
+test('KiCad plugin action parity advertises local service and sandbox gates', async () => {
+  const plugin = await readFile(kicadPluginPath, 'utf8')
+  assert.match(plugin, /Local Engine Service/)
+  assert.match(plugin, /Route\/Repair\/Cleanup\/Export disabled on active project/)
+  assert.match(plugin, /Publish approved project/)
+})
+
+test('CLI web action parity includes local server readiness fixtures sourcing and action routes', async () => {
+  const localClient = await readFile(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-local-client.mjs'), 'utf8')
+  const pkg = await readFile(path.join(repoRoot, 'package.json'), 'utf8')
+  assert.match(localClient, /readiness/)
+  assert.match(localClient, /fixtures/)
+  assert.match(localClient, /sourcing/)
+  assert.match(localClient, /validate/)
+  assert.match(pkg, /boardforge:local-readiness/)
+  assert.match(pkg, /test:web-project-action-buttons/)
+})
+
 async function startTestLocalServer(rootDir) {
   const server = startBoardForgeLocalServer({ rootDir, port: 0 })
   await new Promise((resolve) => server.once('listening', resolve))

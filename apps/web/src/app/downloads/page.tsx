@@ -1,4 +1,5 @@
 import dashboard from '../../sample-manifests/project-dashboard.json'
+import { ManufacturingReadinessBadge, SourcingStatusBadge } from '../../components/project/StatusBadges'
 
 export default function DownloadsPage() {
   const ready = dashboard.projects.filter((project) => project.manufacturing.ready)
@@ -15,6 +16,10 @@ export default function DownloadsPage() {
         {ready.map((project) => (
           <div key={project.projectId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
             <p className="font-semibold">{project.projectName}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <ManufacturingReadinessBadge state="PCB_FAB_READY" />
+              <SourcingStatusBadge state="NOT_CHECKED" />
+            </div>
             <p className="mt-1 text-sm text-slate-400">Readiness: {project.readiness}</p>
             <p className="mt-1 text-sm text-slate-400">Manufacturing ZIP: {project.manufacturing.zip || 'not exported'}</p>
             <p className="text-sm text-slate-400">Gerbers / drill / BOM / CPL / JLCPCB ZIP: gated by local manufacturing validator</p>

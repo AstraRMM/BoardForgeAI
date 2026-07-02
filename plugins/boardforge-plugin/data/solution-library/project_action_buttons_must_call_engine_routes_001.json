@@ -1,0 +1,5 @@
+{
+  "id": "project_action_buttons_must_call_engine_routes_001",
+  "rootCause": "Product action buttons become misleading if they are not mapped to real engine routes or clearly labeled as unavailable.",
+  "fix": "Represent validate, route, repair, export, publish, archive, and keep-local as localhost service routes."
+}

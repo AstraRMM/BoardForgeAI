@@ -254,7 +254,18 @@
     "test:kicad-plugin-localhost-status": "node --test --test-name-pattern \"KiCad plugin localhost status\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:cli-local-client": "node --test --test-name-pattern \"CLI local client\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:localhost-service-demo": "node --test --test-name-pattern \"localhost service demo\" ./plugins/boardforge-plugin/tests/*.test.mjs",
-    "boardforge:localhost-service-demo": "node plugins/boardforge-plugin/bin/boardforge-localhost-service-demo.mjs"
+    "boardforge:localhost-service-demo": "node plugins/boardforge-plugin/bin/boardforge-localhost-service-demo.mjs",
+    "boardforge:local-readiness": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs readiness",
+    "boardforge:local-fixtures": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs fixtures",
+    "boardforge:local-sourcing": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs sourcing",
+    "test:web-ui-local-engine-actions": "node --test --test-name-pattern \"web UI local engine actions\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-new-board-interactive-flow": "node --test --test-name-pattern \"web new board interactive flow\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-custom-outline-interactive-flow": "node --test --test-name-pattern \"web custom outline interactive flow\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-project-action-buttons": "node --test --test-name-pattern \"web project action buttons\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-downloads-local-service": "node --test --test-name-pattern \"web downloads local service\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-readiness-local-service": "node --test --test-name-pattern \"web readiness local service\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:kicad-plugin-action-parity": "node --test --test-name-pattern \"KiCad plugin action parity\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:cli-web-action-parity": "node --test --test-name-pattern \"CLI web action parity\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

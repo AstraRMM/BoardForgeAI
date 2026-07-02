@@ -1,0 +1,5 @@
+{
+  "id": "web_ui_must_call_local_engine_not_mock_001",
+  "rootCause": "Static web copy can imply BoardForge is interactive while bypassing the actual local engine service.",
+  "fix": "Expose local engine status, route-backed actions, and offline start commands in the web UI."
+}

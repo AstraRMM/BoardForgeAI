@@ -1,0 +1,5 @@
+{
+  "id": "installer_and_demo_docs_required_for_alpha_001",
+  "rootCause": "A strong engine still feels like a development pile if users cannot launch, demo, and understand the local workflow.",
+  "fix": "Keep demo scripts, local engine docs, KiCad plugin docs, and release blockers current with the product surface."
+}
