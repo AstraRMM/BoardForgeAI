@@ -5,11 +5,14 @@ import { assertLocalhostRequest, DEFAULT_LOCAL_SERVER_HOST, DEFAULT_LOCAL_SERVER
 import { errorResponse } from './response-schema.mjs'
 import { appendRequestLog } from './request-log.mjs'
 import { appendAuditLog } from './audit-log.mjs'
+import { createLocalEngineAuth } from '../security/local-engine-auth.mjs'
+import { allowedOriginsFromEnv } from '../security/origin-allowlist.mjs'
 
 export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVER_PORT, host = DEFAULT_LOCAL_SERVER_HOST, logDir = null } = {}) {
   if (!rootDir) throw new Error('rootDir is required')
   const effectiveLogDir = logDir || path.join(rootDir, '.boardforge-local-server')
-  const router = createLocalServerRouter({ rootDir, logDir: effectiveLogDir })
+  const auth = createLocalEngineAuth({ allowedOrigins: allowedOriginsFromEnv() })
+  const router = createLocalServerRouter({ rootDir, logDir: effectiveLogDir, auth })
   const server = http.createServer(async (req, res) => {
     const route = req.url || '/'
     let response
@@ -18,6 +21,15 @@ export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVE
       const body = await readBody(req)
       const payload = body ? JSON.parse(body) : {}
       const url = new URL(req.url || '/', `http://${host}:${port || DEFAULT_LOCAL_SERVER_PORT}`)
+      const authResult = auth.requireToken({
+        method: req.method,
+        token: req.headers['x-boardforge-token'] || payload.pairingToken,
+        origin: req.headers.origin,
+      })
+      const publicPost = ['/pairing/verify', '/pairing/revoke'].includes(url.pathname)
+      if (!authResult.allowed && req.method !== 'OPTIONS' && !publicPost) {
+        throw Object.assign(new Error(authResult.reason), { status: 'BOARD_FORGE_LOCAL_ENGINE_AUTH_REQUIRED' })
+      }
       response = await router({ method: req.method, pathname: url.pathname, payload, query: url.searchParams })
       await appendAuditLog({
         logDir: effectiveLogDir,
@@ -44,7 +56,7 @@ export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVE
       'content-type': 'application/json',
       'access-control-allow-origin': 'http://localhost:3000',
       'access-control-allow-methods': 'GET,POST,OPTIONS',
-      'access-control-allow-headers': 'content-type',
+      'access-control-allow-headers': 'content-type,x-boardforge-token',
     })
     res.end(JSON.stringify(response, null, 2))
   })

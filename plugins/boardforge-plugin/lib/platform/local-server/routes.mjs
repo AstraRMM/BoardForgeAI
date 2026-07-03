@@ -15,13 +15,24 @@ import { writeProjectDiffReport } from '../../diff/project-version-diff.mjs'
 import { writeBoardPreview } from '../../preview/board-preview-generator.mjs'
 import { writeBlockerReport } from '../../blockers/blocker-report.mjs'
 import { writeAppliedLessonsReport } from '../../solution-library/applied-lessons-report.mjs'
+import { routePairingRequest } from './pairing-routes.mjs'
+import { checkFirstRunSetup } from '../setup/setup-status.mjs'
+import { writeVariantComparisonReport } from '../../variants/variant-report.mjs'
+import { runMakeManufacturableWorkflow } from '../../workflows/make-manufacturable-workflow.mjs'
+import { writeProjectTimeline } from '../../timeline/project-timeline.mjs'
+import { runImportWizard } from '../../import/import-wizard.mjs'
+import { writeEvidenceIndex } from '../../evidence/evidence-index.mjs'
+import { writeAlphaLaunchReport } from '../../launch/alpha-launch-report.mjs'
 
-export function createLocalServerRouter({ rootDir, logDir } = {}) {
+export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
   const api = createLocalArtifactApi({ rootDir })
   const jobs = createJobQueue({ rootDir, api })
 
   return async function routeLocalServer({ method, pathname, payload = {}, query = new URLSearchParams() }) {
     try {
+      const pairingResponse = await routePairingRequest({ method, pathname, payload, auth })
+      if (pairingResponse) return pairingResponse
+
       const jobResponse = await routeJobRequest({ method, pathname, payload, query, rootDir, jobs })
       if (jobResponse) return jobResponse
 
@@ -39,6 +50,21 @@ export function createLocalServerRouter({ rootDir, logDir } = {}) {
       }
       if (method === 'GET' && pathname === '/sourcing/status') {
         return okResponse({ status: 'BOARD_FORGE_SOURCING_STATUS', data: { sourcingStatus: 'NOT_CHECKED', stockStatus: 'UNKNOWN', assemblyAvailability: 'UNKNOWN', missingEnv: ['DIGIKEY_CLIENT_ID', 'DIGIKEY_CLIENT_SECRET', 'MOUSER_API_KEY', 'LCSC_API_KEY', 'JLCPCB_API_KEY'], noFakeStock: true } })
+      }
+      if (method === 'GET' && pathname === '/setup/status') {
+        return okResponse({ status: 'BOARD_FORGE_FIRST_RUN_SETUP_STATUS', data: checkFirstRunSetup() })
+      }
+      if (method === 'GET' && pathname === '/evidence') {
+        const result = await writeEvidenceIndex({ rootDir })
+        return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+      }
+      if (method === 'GET' && pathname === '/alpha/launch-gate') {
+        const result = await writeAlphaLaunchReport({ rootDir })
+        return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+      }
+      if (method === 'POST' && pathname === '/import/wizard') {
+        const result = await runImportWizard({ sourceDir: payload.sourceDir, sandboxDir: payload.sandboxDir })
+        return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
       }
       if (method === 'POST' && pathname === '/intake/start') {
         const result = await api.startIntake(payload)
@@ -134,6 +160,19 @@ export function createLocalServerRouter({ rootDir, logDir } = {}) {
         }
         if (method === 'POST' && action === 'blockers') {
           const result = await writeBlockerReport({ projectDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'variants') {
+          const result = await writeVariantComparisonReport({ projectDir, projectId })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'make-manufacturable') {
+          const status = await api.projectStatus({ projectDir })
+          const result = await runMakeManufacturableWorkflow({ projectDir, status: status.validation || {} })
+          return okResponse({ status: result.status, data: result, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'timeline') {
+          const result = await writeProjectTimeline({ projectDir, events: payload.events || [] })
           return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
         }
       }

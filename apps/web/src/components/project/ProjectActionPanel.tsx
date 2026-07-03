@@ -13,10 +13,17 @@ const actions = [
   { label: 'Generate Preview', route: 'POST /jobs/start type=generate_preview', implemented: true },
   { label: 'Applied Lessons', route: 'POST /jobs/start type=lessons', implemented: true },
   { label: 'Generate Blocker Report', route: 'POST /jobs/start type=blockers', implemented: true },
+  { label: 'Generate Variant Ranking', route: 'POST /jobs/start type=variants', implemented: true },
+  { label: 'Make Manufacturable', route: 'POST /jobs/start type=make-manufacturable', implemented: true },
+  { label: 'Generate Timeline', route: 'POST /jobs/start type=timeline', implemented: true },
   { label: 'Refresh Project Status', route: 'GET /project/:id/status', implemented: true },
   { label: 'Publish', route: 'POST /project/:id/publish confirm=true', implemented: true },
   { label: 'Archive', route: 'POST /project/:id/archive', implemented: true },
   { label: 'Keep Local', route: 'POST /project/:id/keep-local', implemented: true },
+  { label: 'Pair Local Engine', route: 'GET /pairing/code then POST /pairing/verify', implemented: true },
+  { label: 'First Run Setup', route: 'GET /setup/status', implemented: true },
+  { label: 'Evidence Dashboard', route: 'GET /evidence', implemented: true },
+  { label: 'Alpha Launch Gate', route: 'GET /alpha/launch-gate', implemented: true },
 ]
 
 export function ProjectActionPanel() {

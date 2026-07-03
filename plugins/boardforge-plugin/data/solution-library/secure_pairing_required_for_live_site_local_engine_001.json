@@ -1,0 +1,1 @@
+{"id":"secure_pairing_required_for_live_site_local_engine_001","lesson":"Live website actions must pair to the installed local engine with a one-time code and local session token before browser-origin mutations are allowed."}

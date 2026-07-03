@@ -18,3 +18,15 @@ Key differentiators:
 - Strict PCB fab vs assembly readiness separation
 - Live website connected to an installed local BoardForge engine bridge
 - Local-first source protection with approved-only publish
+
+Public-alpha moat features:
+
+- Secure live-site-to-local-engine pairing
+- First-run setup wizard
+- One-click demo mode without fake sourcing
+- Multi-variant board generation and ranking
+- Make Manufacturable repair workflow
+- Engineering timeline/audit trail
+- Import sandbox wizard with source hash proof
+- Evidence dashboard
+- Launch gate that refuses fake readiness

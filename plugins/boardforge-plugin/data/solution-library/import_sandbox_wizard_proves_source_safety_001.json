@@ -1,0 +1,1 @@
+{"id":"import_sandbox_wizard_proves_source_safety_001","lesson":"Existing KiCad imports must hash the source before and after sandbox copy to prove the original project was untouched."}

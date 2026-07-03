@@ -8,6 +8,9 @@ import { writeProjectDiffReport } from '../../diff/project-version-diff.mjs'
 import { writeBoardPreview } from '../../preview/board-preview-generator.mjs'
 import { writeBlockerReport } from '../../blockers/blocker-report.mjs'
 import { writeAppliedLessonsReport } from '../../solution-library/applied-lessons-report.mjs'
+import { writeVariantComparisonReport } from '../../variants/variant-report.mjs'
+import { runMakeManufacturableWorkflow } from '../../workflows/make-manufacturable-workflow.mjs'
+import { writeProjectTimeline } from '../../timeline/project-timeline.mjs'
 
 export async function runJob({ store, api, type, projectId, payload = {} }) {
   const job = createJobRecord({ jobId: randomUUID(), projectId, type, payload })
@@ -79,6 +82,9 @@ async function runJobType({ api, job }) {
   if (['generate_preview', 'preview'].includes(job.type)) return writeBoardPreview({ projectDir, projectName: job.projectId })
   if (['applied_lessons', 'lessons'].includes(job.type)) return writeAppliedLessonsReport({ projectDir })
   if (['blocker_report', 'blockers'].includes(job.type)) return writeBlockerReport({ projectDir })
+  if (['variant_generation', 'variants'].includes(job.type)) return writeVariantComparisonReport({ projectDir, projectId: job.projectId })
+  if (['make_manufacturable', 'make-manufacturable'].includes(job.type)) return runMakeManufacturableWorkflow({ projectDir, status: job.payload.status || {} })
+  if (['project_timeline', 'timeline'].includes(job.type)) return writeProjectTimeline({ projectDir, events: job.payload.events || [] })
   if (['run_readiness_report', 'readiness'].includes(job.type)) return { status: 'BOARD_FORGE_READINESS_JOB_RECORDED', artifactPaths: [] }
   if (['run_fixture', 'fixtures'].includes(job.type)) return { status: 'BOARD_FORGE_FIXTURE_JOB_RECORDED', artifactPaths: [] }
   if (job.type === 'custom_outline_validate') return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_VALIDATION_JOB_RECORDED', artifactPaths: [] }

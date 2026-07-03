@@ -1,3 +1,6 @@
+import { DemoProjectGallery } from '../../components/demo/DemoProjectGallery'
+import { OneClickDemoButton } from '../../components/demo/OneClickDemoButton'
+
 export default function DemoPage() {
   const demoFolder = 'C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ALPHA-DEMO-ROBOTICS-CONTROLLER-01'
   return (
@@ -13,6 +16,12 @@ export default function DemoPage() {
         <h2 className="text-xl font-semibold">Command</h2>
         <pre className="mt-4 overflow-auto rounded bg-slate-950 p-4 text-sm text-emerald-300">npm run boardforge:demo</pre>
         <p className="mt-4 text-sm text-slate-400">Demo folder: {demoFolder}</p>
+      </section>
+      <section className="mx-auto mt-8 max-w-5xl">
+        <OneClickDemoButton />
+      </section>
+      <section className="mx-auto mt-8 max-w-5xl">
+        <DemoProjectGallery />
       </section>
       <section className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-2">
         {['prompt intake', 'conditional questions', 'brief v1/v2', 'approval gate', 'local candidate', 'publish confirm gate', 'manufacturing example', 'sourcing NOT_CHECKED when keys are missing'].map((step) => (

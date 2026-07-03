@@ -19,3 +19,6 @@ BoardForge is not just a Codex plugin. It is a live website, KiCad plugin, CLI, 
 
 FreeRouting handles bulk routing. BoardForge provides the review, repair, explanation, versioning, packaging, and approved-publish layer around the PCB workflow.
 
+Launch narrative:
+
+BoardForge is not “AI made a board.” BoardForge creates variants, ranks them, reviews risk, repairs blockers, tracks the engineering timeline, protects source projects in sandboxes, and packages validated manufacturing outputs only when the evidence supports it.

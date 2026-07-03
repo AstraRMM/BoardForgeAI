@@ -19,6 +19,24 @@ export const localJobRoutes = {
   projectJobs: 'GET /projects/:id/jobs',
 }
 
+export const publicAlphaJobTypes = [
+  'validate',
+  'route',
+  'repair',
+  'export',
+  'review',
+  'health',
+  'risk',
+  'routeability',
+  'diff',
+  'preview',
+  'blockers',
+  'lessons',
+  'variants',
+  'make-manufacturable',
+  'timeline',
+]
+
 const DEFAULT_ENGINE = 'http://127.0.0.1:38991'
 
 export async function startBoardForgeJob({ type, projectId, projectDir, baseUrl = DEFAULT_ENGINE }: { type: string; projectId: string; projectDir?: string; baseUrl?: string }) {
