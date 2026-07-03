@@ -1,0 +1,1 @@
+{"id":"project_health_score_required_for_user_trust_001","rootCause":"Raw DRC/ERC numbers are hard for users to interpret quickly.","fix":"Create a per-project health score with clear readiness labels and exact deductions."}

@@ -1,0 +1,1 @@
+{"id":"routeability_explainer_makes_ai_decisions_understandable_001","rootCause":"A numeric routeability score alone does not explain why BoardForge prefers a placement or outline.","fix":"Write routeability explanations for congestion, ratsnest density, corridors, outline tightness, and power/ground quality."}

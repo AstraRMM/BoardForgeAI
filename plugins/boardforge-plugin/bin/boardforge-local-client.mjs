@@ -35,6 +35,18 @@ const routeMap = {
   route: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/route`],
   repair: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/repair`],
   export: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/export`],
+  review: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/review`],
+  health: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/health`],
+  risk: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/risk`],
+  routeability: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/routeability`],
+  diff: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/diff`],
+  lessons: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/lessons`],
+  preview: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/preview`],
+  blockers: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/blockers`],
+  'start-job': ['POST', '/jobs/start'],
+  'job-status': ['GET', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}`],
+  'job-log': ['GET', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}/log`],
+  'cancel-job': ['POST', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}/cancel`],
 }
 
 const [method, pathname] = routeMap[command] || routeMap.status
@@ -45,6 +57,8 @@ const payload = {
   sessionFile: argValue('--session', undefined),
   oddShapeProof: hasFlag('--odd-shape-proof') || undefined,
   confirm: hasFlag('--confirm') || undefined,
+  type: argValue('--type', undefined),
+  compareToDir: argValue('--compare-to-dir', undefined),
 }
 
 const response = await fetch(`${baseUrl}${pathname}`, {

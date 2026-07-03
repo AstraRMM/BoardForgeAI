@@ -43,6 +43,13 @@ def read_boardforge_status(project_dir):
         "buildAllowed": bool((manifest or {}).get("briefApproved")),
         "publishAllowed": bool(publish.get("publishApproved") or (manifest or {}).get("publishApproved")),
         "briefApprovalRequired": not bool((manifest or {}).get("boardBrief", {}).get("approved")),
+        "boardReviewReport": os.path.join(project_dir, "BoardForge_Board_Review_Report.md"),
+        "projectHealthScore": os.path.join(project_dir, "BoardForge_Project_Health_Score.json"),
+        "manufacturingRiskReport": os.path.join(project_dir, "BoardForge_Manufacturing_Risk_Report.md"),
+        "routeabilityExplanation": os.path.join(project_dir, "BoardForge_Routeability_Explanation.md"),
+        "projectDiffReport": os.path.join(project_dir, "BoardForge_Project_Diff_Report.md"),
+        "appliedLessonsReport": os.path.join(project_dir, "BoardForge_Applied_Lessons_Report.md"),
+        "blockerReport": os.path.join(project_dir, "BoardForge_Blocker_Report.md"),
     }
 
 

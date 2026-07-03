@@ -5,12 +5,26 @@ import { runOddShapeWebFlowProof } from '../../engine/odd-shape-web-flow-proof.m
 import { canRunPremiumAction } from '../../auth/entitlement-gate.mjs'
 import { okResponse, errorResponse, routeNotFound } from './response-schema.mjs'
 import { requirePublishConfirm, validateProjectPath } from './request-validator.mjs'
+import { createJobQueue } from '../jobs/job-queue.mjs'
+import { routeJobRequest } from './job-routes.mjs'
+import { writeBoardReviewReports } from '../../review/board-review-engine.mjs'
+import { writeProjectHealthScore } from '../project-health-score.mjs'
+import { writeManufacturingRiskReport } from '../../manufacturing/manufacturability-risk-score.mjs'
+import { writeRouteabilityExplanation } from '../../routeability/routeability-explainer.mjs'
+import { writeProjectDiffReport } from '../../diff/project-version-diff.mjs'
+import { writeBoardPreview } from '../../preview/board-preview-generator.mjs'
+import { writeBlockerReport } from '../../blockers/blocker-report.mjs'
+import { writeAppliedLessonsReport } from '../../solution-library/applied-lessons-report.mjs'
 
 export function createLocalServerRouter({ rootDir, logDir } = {}) {
   const api = createLocalArtifactApi({ rootDir })
+  const jobs = createJobQueue({ rootDir, api })
 
   return async function routeLocalServer({ method, pathname, payload = {}, query = new URLSearchParams() }) {
     try {
+      const jobResponse = await routeJobRequest({ method, pathname, payload, query, rootDir, jobs })
+      if (jobResponse) return jobResponse
+
       if (method === 'GET' && pathname === '/health') {
         return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_HEALTHY', data: { service: 'BoardForge Local Engine Service', rootDir, localhostOnly: true } })
       }
@@ -88,6 +102,39 @@ export function createLocalServerRouter({ rootDir, logDir } = {}) {
             data: { action, projectDir, projectStatus: status, sandboxRequired: true, noFakeCloudExecution: true, entitlement },
             warnings: [`${action} is local-engine guarded; this alpha route records the action and reads local validation artifacts.`, ...(entitlement.allowed ? [] : entitlement.blockers)],
           })
+        }
+        if (method === 'POST' && action === 'review') {
+          const result = await writeBoardReviewReports({ projectDir })
+          return okResponse({ status: result.status, data: result.review, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'health') {
+          const result = await writeProjectHealthScore({ projectDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'risk') {
+          const result = await writeManufacturingRiskReport({ projectDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'routeability') {
+          const result = await writeRouteabilityExplanation({ projectDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'diff') {
+          const result = await writeProjectDiffReport({ projectDir, compareToDir: payload.compareToDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'preview') {
+          const status = await api.projectStatus({ projectDir })
+          const result = await writeBoardPreview({ projectDir, projectName: projectId, status: { drc: status.validation?.drc, erc: status.validation?.erc, manufacturing: status.manufacturing?.state } })
+          return okResponse({ status: 'BOARD_FORGE_BOARD_PREVIEW_WRITTEN', data: result.preview, artifactPaths: [result.json, result.svg] })
+        }
+        if (method === 'POST' && action === 'lessons') {
+          const result = await writeAppliedLessonsReport({ projectDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'blockers') {
+          const result = await writeBlockerReport({ projectDir })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
         }
       }
 

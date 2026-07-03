@@ -22,7 +22,7 @@ function jsonOut(value) {
 function usage() {
   return {
     status: 'BOARD_FORGE_CLI_HELP',
-    usage: 'boardforge <init|intake|answer|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals|demo> [options]',
+    usage: 'boardforge <init|intake|answer|create|brief|approve-brief|reject-brief|request-revision|import|validate|route|repair|cleanup|export|status|report|replay|login|license|publish|archive|keep-local|sync|approvals|demo|review|health|risk|routeability|diff|lessons|preview|blockers> [options]',
     commands: {
       init: 'Create a safe BoardForge workspace marker.',
       intake: 'Start a premium prompt intake session and ask the minimum useful question set.',
@@ -49,6 +49,14 @@ function usage() {
       sync: 'Run approved-only local sync scaffold.',
       approvals: 'Write or inspect the project approval report/state.',
       demo: 'Run npm run boardforge:demo for the guided local alpha demo runner.',
+      review: 'Generate BoardForge Engineering Review through the local service client.',
+      health: 'Generate/read project health score through the local service client.',
+      risk: 'Generate manufacturability risk report through the local service client.',
+      routeability: 'Generate routeability explanation through the local service client.',
+      diff: 'Generate project version diff through the local service client.',
+      lessons: 'Generate applied solution-library lessons report through the local service client.',
+      preview: 'Generate board preview artifact through the local service client.',
+      blockers: 'Generate exact blocker report through the local service client.',
     },
     examples: [
       'npm run boardforge:intake -- --prompt "Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM." --output ./demo',

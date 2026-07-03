@@ -1,0 +1,1 @@
+{"id":"board_diff_required_for_revision_confidence_001","rootCause":"Users need to know what changed between dirty, repaired, candidate, and published board states.","fix":"Generate project diff reports covering validation, readiness, state, and artifact changes."}

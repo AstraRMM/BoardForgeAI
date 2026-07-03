@@ -1,0 +1,1 @@
+{"id":"job_queue_required_for_real_app_actions_001","rootCause":"Product actions felt like static route contracts instead of real local engine operations.","fix":"Use a localhost job queue with pollable status, logs, artifacts, cancel state, and project job history."}

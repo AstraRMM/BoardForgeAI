@@ -5,6 +5,16 @@ import { LocalEngineStatusBar } from '../../../components/project/LocalEngineSta
 import { ProjectActionPanel } from '../../../components/project/ProjectActionPanel'
 import { ManufacturingReadinessBadge, ProjectStateBadge, SourcingStatusBadge } from '../../../components/project/StatusBadges'
 import { getBoardForgeEngineStatus } from '../../../lib/boardforge-engine-status'
+import { JobStatusPanel } from '../../../components/jobs/JobStatusPanel'
+import { ProjectHealthScoreCard } from '../../../components/project/ProjectHealthScoreCard'
+import { BoardReviewPanel } from '../../../components/project/BoardReviewPanel'
+import { ManufacturingRiskPanel } from '../../../components/project/ManufacturingRiskPanel'
+import { RouteabilityPanel } from '../../../components/project/RouteabilityPanel'
+import { ProjectDiffPanel } from '../../../components/project/ProjectDiffPanel'
+import { AppliedLessonsPanel } from '../../../components/project/AppliedLessonsPanel'
+import { DownloadsPanel } from '../../../components/project/DownloadsPanel'
+import { ApprovalPublishPanel } from '../../../components/project/ApprovalPublishPanel'
+import { BoardPreviewCard } from '../../../components/project/BoardPreviewCard'
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const project = dashboard.projects.find((item) => item.projectId === params.id) || dashboard.projects[0]
@@ -21,6 +31,24 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       <EngineStatusPanel status={engineStatus} />
       <div className="mt-6">
         <ProjectActionPanel />
+      </div>
+      <div className="mt-6">
+        <JobStatusPanel />
+      </div>
+      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+        <ProjectHealthScoreCard />
+        <BoardReviewPanel />
+        <ManufacturingRiskPanel />
+        <RouteabilityPanel />
+        <ProjectDiffPanel />
+        <AppliedLessonsPanel />
+      </div>
+      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+        <BoardPreviewCard previewPath={(project as any).preview || 'BoardForge_Board_Preview.svg'} projectState={(project as any).projectState || (project as any).publish?.projectState || 'local_draft'} manufacturingZip={project.manufacturing.zip || ''} />
+        <DownloadsPanel zip={project.manufacturing.zip || undefined} />
+      </div>
+      <div className="mt-6">
+        <ApprovalPublishPanel />
       </div>
       <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Reports</h2>

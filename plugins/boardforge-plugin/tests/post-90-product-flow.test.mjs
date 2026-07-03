@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
 import { execFileSync } from 'node:child_process'
@@ -30,13 +30,22 @@ import { CRAZY_OUTLINE_SHAPES, runCrazyOutlineStressSuite, scoreCrazyOutlineShap
 import { createLocalArtifactApi } from '../lib/platform/local-artifact-api.mjs'
 import { startBoardForgeLocalServer } from '../lib/platform/local-server/http-server.mjs'
 import { exportCustomOutlineSeed } from '../lib/outline/custom-outline-seed-export.mjs'
-import { runOddShapeWebFlowProof } from '../lib/engine/odd-shape-web-flow-proof.mjs'
 import { writeBoardPreview } from '../lib/preview/board-preview-generator.mjs'
+import { createJobQueue } from '../lib/platform/jobs/job-queue.mjs'
+import { writeBoardReviewReports } from '../lib/review/board-review-engine.mjs'
+import { writeProjectHealthScore } from '../lib/platform/project-health-score.mjs'
+import { writeManufacturingRiskReport } from '../lib/manufacturing/manufacturability-risk-score.mjs'
+import { writeRouteabilityExplanation } from '../lib/routeability/routeability-explainer.mjs'
+import { writeProjectDiffReport } from '../lib/diff/project-version-diff.mjs'
+import { writeBlockerReport } from '../lib/blockers/blocker-report.mjs'
+import { writeAppliedLessonsReport } from '../lib/solution-library/applied-lessons-report.mjs'
+import { runOddShapeWebFlowProof } from '../lib/engine/odd-shape-web-flow-proof.mjs'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-cli.mjs')
 const demoPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-alpha-demo.mjs')
 const localhostDemoPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-localhost-service-demo.mjs')
+const productDemoReviewPath = path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-product-demo-review.mjs')
 const kicadPluginPath = path.join(repoRoot, 'kicad-plugin', 'boardforge_action_plugin.py')
 const kicadBridgePath = path.join(repoRoot, 'kicad-plugin', 'boardforge_status_bridge.py')
 const launcherDir = path.join(repoRoot, 'tools', 'boardforge-launcher')
@@ -756,8 +765,8 @@ test('web UI local engine actions expose status bar badges and action routes', a
   const actions = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectActionPanel.tsx'), 'utf8')
   assert.match(statusBar, /boardforge:local-server/)
   assert.match(badges, /ManufacturingReadinessBadge/)
-  assert.match(actions, /POST \/project\/:id\/publish with confirm=true/)
-  assert.match(actions, /local route wired/)
+  assert.match(actions, /POST \/project\/:id\/publish confirm=true/)
+  assert.match(actions, /job-backed local route wired/)
 })
 
 test('web new board interactive flow shows local service intake and brief approval', async () => {
@@ -809,11 +818,173 @@ test('CLI web action parity includes local server readiness fixtures sourcing an
   assert.match(pkg, /test:web-project-action-buttons/)
 })
 
+test('job queue runs board review jobs and writes pollable status', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-jobs-'))
+  const projectDir = path.join(rootDir, 'BF-JOB-PROOF')
+  await writeCleanManifest(projectDir)
+  const api = createLocalArtifactApi({ rootDir })
+  const queue = createJobQueue({ rootDir, api })
+  const job = await queue.start({ type: 'run_board_review', projectId: 'BF-JOB-PROOF', payload: { projectDir } })
+  assert.equal(job.status, 'succeeded')
+  assert.equal(job.progress, 100)
+  assert.ok(job.artifactPaths.some((file) => file.endsWith('BoardForge_Board_Review_Report.md')))
+  const fetched = await queue.get(job.jobId)
+  assert.equal(fetched.stage, 'complete')
+})
+
+test('board review engine writes engineering review report without claiming certification', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-review-'))
+  await writeCleanManifest(projectDir)
+  const result = await writeBoardReviewReports({ projectDir })
+  assert.equal(result.review.title, 'BoardForge Engineering Review')
+  assert.match(result.review.caveat, /not a certification/)
+  assert.ok(result.artifactPaths.some((file) => file.endsWith('.json')))
+})
+
+test('project health score labels clean fab-ready board as assembly not verified', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-health-'))
+  await writeCleanManifest(projectDir)
+  const result = await writeProjectHealthScore({ projectDir })
+  assert.equal(result.report.score, 92)
+  assert.equal(result.report.label, 'Assembly Not Verified')
+})
+
+test('manufacturability risk score keeps sourcing risk separate from DRC', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-risk-'))
+  await writeCleanManifest(projectDir)
+  const result = await writeManufacturingRiskReport({ projectDir })
+  assert.equal(result.report.riskLevel, 'low')
+  assert.ok(result.report.risks.some((risk) => risk.issue === 'Assembly not supplier verified'))
+})
+
+test('routeability explainer creates factor-level explanation', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-routeability-'))
+  await writeCleanManifest(projectDir)
+  const result = await writeRouteabilityExplanation({ projectDir })
+  assert.ok(result.report.estimatedRouteability >= 80)
+  assert.ok(result.report.explanations.some((factor) => factor.name === 'ratsnest_crossing_density'))
+})
+
+test('board diff engine reports DRC and readiness changes', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'boardforge-diff-'))
+  const before = path.join(root, 'before')
+  const after = path.join(root, 'after')
+  await writeCleanManifest(before, { validation: { drc: 4, erc: 0, shorts: 0, unconnected: 2, forbiddenVias: 0 }, manufacturing: { ready: false, state: 'BLOCKED_DRC' } })
+  await writeCleanManifest(after)
+  const result = await writeProjectDiffReport({ projectDir: after, compareToDir: before })
+  assert.equal(result.report.drcChange.before, 4)
+  assert.equal(result.report.drcChange.after, 0)
+  assert.equal(result.report.manufacturingReadinessChange.after, 'PCB_FAB_READY')
+})
+
+test('board preview generator writes SVG metadata badges', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-preview-'))
+  const result = await writeBoardPreview({ projectDir, projectName: 'BF-PREVIEW', status: { drc: 0, erc: 0, manufacturing: 'PCB_FAB_READY' } })
+  assert.equal(result.preview.metadata.previewType, 'svg_approximation_from_local_artifacts')
+  const svg = await readFile(result.svg, 'utf8')
+  assert.match(svg, /PCB_FAB_READY/)
+})
+
+test('blocker report gives exact next action instead of vague failure', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-blockers-'))
+  await writeCleanManifest(projectDir, { validation: { drc: 2, erc: 0, shorts: 1, unconnected: 0, forbiddenVias: 0 }, manufacturing: { ready: false, state: 'BLOCKED_DRC' } })
+  const result = await writeBlockerReport({ projectDir })
+  assert.ok(result.report.blockers.some((blocker) => blocker.blockerId === 'shorts_present'))
+  assert.match(result.report.nextAction, /repair/)
+})
+
+test('applied lessons report makes solution library visible', async () => {
+  const projectDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-lessons-'))
+  const result = await writeAppliedLessonsReport({ projectDir })
+  assert.ok(result.report.lessonsFound >= 0)
+  assert.ok(result.artifactPaths.some((file) => file.endsWith('BoardForge_Applied_Lessons_Report.md')))
+})
+
+test('product demo review fixture generates clean board and differentiator reports', () => {
+  const projectDir = path.join(os.tmpdir(), `BF-PRODUCT-DEMO-REVIEW-${Date.now()}`)
+  const output = JSON.parse(execFileSync(process.execPath, [productDemoReviewPath, '--project-dir', projectDir], { encoding: 'utf8' }))
+  assert.equal(output.status, 'BOARD_FORGE_PRODUCT_DEMO_REVIEW_COMPLETED')
+  assert.equal(output.validation.drc, 0)
+  assert.equal(output.validation.erc, 0)
+  assert.match(output.manufacturingZip, /JLCPCB\.zip/)
+  assert.ok(output.reportsGenerated.some((file) => file.endsWith('BoardForge_Project_Health_Score.json')))
+})
+
+test('web project review panels expose command center surface', async () => {
+  const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
+  assert.match(projectPage, /JobStatusPanel/)
+  assert.match(projectPage, /ProjectHealthScoreCard/)
+  assert.match(projectPage, /BoardReviewPanel/)
+  assert.match(projectPage, /ManufacturingRiskPanel/)
+  assert.match(projectPage, /RouteabilityPanel/)
+  assert.match(projectPage, /ProjectDiffPanel/)
+  assert.match(projectPage, /AppliedLessonsPanel/)
+})
+
+test('web job polling panel exposes localhost job routes and honest local status', async () => {
+  const panel = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'jobs', 'JobStatusPanel.tsx'), 'utf8')
+  const client = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-job-client.ts'), 'utf8')
+  assert.match(panel, /poll status/)
+  assert.match(panel, /not cloud execution/)
+  assert.match(client, /POST \/jobs\/start/)
+  assert.match(client, /GET \/jobs\/:id\/log/)
+})
+
+test('local server job routes start and return pollable jobs', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-job-server-'))
+  const projectDir = path.join(rootDir, 'BF-JOB-SERVER')
+  await writeCleanManifest(projectDir)
+  const { server, baseUrl } = await startTestLocalServer(rootDir)
+  try {
+    const started = await localFetch(baseUrl, '/jobs/start', 'POST', { type: 'run_board_review', projectId: 'BF-JOB-SERVER', projectDir })
+    assert.equal(started.status, 'BOARD_FORGE_JOB_STARTED')
+    assert.equal(started.data.status, 'succeeded')
+    const polled = await localFetch(baseUrl, `/jobs/${started.data.jobId}`)
+    assert.equal(polled.data.stage, 'complete')
+  } finally {
+    server.close()
+  }
+})
+
+test('CLI review parity lists differentiator commands', async () => {
+  const cli = await readFile(cliPath, 'utf8')
+  const localClient = await readFile(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-local-client.mjs'), 'utf8')
+  assert.match(cli, /review\|health\|risk\|routeability\|diff\|lessons\|preview\|blockers/)
+  assert.match(localClient, /review/)
+  assert.match(localClient, /blockers/)
+})
+
+test('KiCad plugin review parity exposes report paths', async () => {
+  const plugin = await readFile(kicadPluginPath, 'utf8')
+  const bridge = await readFile(kicadBridgePath, 'utf8')
+  assert.match(plugin, /Board review report/)
+  assert.match(plugin, /Manufacturability risk/)
+  assert.match(bridge, /boardReviewReport/)
+  assert.match(bridge, /blockerReport/)
+})
+
 async function startTestLocalServer(rootDir) {
   const server = startBoardForgeLocalServer({ rootDir, port: 0 })
   await new Promise((resolve) => server.once('listening', resolve))
   const address = server.address()
   return { server, baseUrl: `http://127.0.0.1:${address.port}` }
+}
+
+async function writeCleanManifest(projectDir, overrides = {}) {
+  await mkdir(projectDir, { recursive: true })
+  const manifest = {
+    projectId: path.basename(projectDir),
+    projectState: 'local_candidate',
+    dashboardVisible: false,
+    validation: { drc: 0, erc: 0, shorts: 0, unconnected: 0, forbiddenVias: 0, ...(overrides.validation || {}) },
+    manufacturing: { ready: true, state: 'PCB_FAB_READY', zip: path.join(projectDir, 'manufacturing', `${path.basename(projectDir)}_JLCPCB.zip`), ...(overrides.manufacturing || {}) },
+    sourcing: { state: 'ASSEMBLY_READY_NOT_VERIFIED', reason: 'supplier_api_keys_missing', ...(overrides.sourcing || {}) },
+    publish: { projectState: 'local_candidate', publishApproved: false, dashboardVisible: false, syncStatus: 'not_synced' },
+    reports: {},
+    ...Object.fromEntries(Object.entries(overrides).filter(([key]) => !['validation', 'manufacturing', 'sourcing'].includes(key))),
+  }
+  await writeFile(path.join(projectDir, 'BoardForge_Project_Manifest.json'), JSON.stringify(manifest, null, 2), 'utf8')
+  return manifest
 }
 
 async function localFetch(baseUrl, route, method = 'GET', body = null, throwOnError = true) {

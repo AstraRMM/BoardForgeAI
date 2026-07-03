@@ -1,0 +1,1 @@
+{"id":"blocker_reports_must_replace_vague_failure_001","rootCause":"Vague failure states are not actionable.","fix":"Classify exact blockers, explain why they blocked progress, and recommend the next safe action."}

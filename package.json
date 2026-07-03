@@ -265,7 +265,21 @@
     "test:web-downloads-local-service": "node --test --test-name-pattern \"web downloads local service\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:web-readiness-local-service": "node --test --test-name-pattern \"web readiness local service\" ./plugins/boardforge-plugin/tests/*.test.mjs",
     "test:kicad-plugin-action-parity": "node --test --test-name-pattern \"KiCad plugin action parity\" ./plugins/boardforge-plugin/tests/*.test.mjs",
-    "test:cli-web-action-parity": "node --test --test-name-pattern \"CLI web action parity\" ./plugins/boardforge-plugin/tests/*.test.mjs"
+    "test:cli-web-action-parity": "node --test --test-name-pattern \"CLI web action parity\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "boardforge:product-demo-review": "node plugins/boardforge-plugin/bin/boardforge-product-demo-review.mjs",
+    "test:job-queue": "node --test --test-name-pattern \"job queue\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-job-polling": "node --test --test-name-pattern \"web job polling\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:board-review-engine": "node --test --test-name-pattern \"board review engine\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:project-health-score": "node --test --test-name-pattern \"project health score\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:manufacturability-risk-score": "node --test --test-name-pattern \"manufacturability risk score\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:routeability-explainer": "node --test --test-name-pattern \"routeability explainer\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:board-diff-engine": "node --test --test-name-pattern \"board diff engine\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:blocker-report": "node --test --test-name-pattern \"blocker report\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:applied-lessons-report": "node --test --test-name-pattern \"applied lessons report\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:product-demo-review-fixture": "node --test --test-name-pattern \"product demo review fixture\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:web-project-review-panels": "node --test --test-name-pattern \"web project review panels\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:cli-review-parity": "node --test --test-name-pattern \"CLI review parity\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+    "test:kicad-plugin-review-parity": "node --test --test-name-pattern \"KiCad plugin review parity\" ./plugins/boardforge-plugin/tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

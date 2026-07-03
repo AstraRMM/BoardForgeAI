@@ -1,0 +1,1 @@
+{"id":"manufacturability_risk_beyond_drc_001","rootCause":"DRC clean boards can still carry sourcing, assembly, or compliance risk.","fix":"Report manufacturability risk separately from KiCad DRC and separate PCB_FAB_READY from assembly verification."}

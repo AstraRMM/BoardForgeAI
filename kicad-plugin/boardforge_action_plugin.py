@@ -54,6 +54,14 @@ def build_boardforge_commands(board_path):
         "archive": ["npm", "run", "boardforge:archive", "--", "--project", project_dir, "--manifest", manifest],
         "sync": ["npm", "run", "boardforge:sync", "--", "--project", project_dir, "--manifest", manifest],
         "odd_shape_web_proof": ["npm", "run", "boardforge:odd-shape-web-proof", "--", "--project", project_dir],
+        "review": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "health": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "risk": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "routeability": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "diff": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "lessons": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "preview": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "blockers": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
     }
 
 
@@ -147,6 +155,14 @@ if pcbnew:
             pcbnew.wxLogMessage("Sync status: local artifact sync only; publish requires explicit CLI/plugin confirmation.")
             pcbnew.wxLogMessage("Dashboard/project page: local web dashboard reads BoardForge manifest and preview artifacts.")
             pcbnew.wxLogMessage("Generated odd-shape project status: " + format_command(commands["odd_shape_web_proof"]))
+            pcbnew.wxLogMessage("Board review report: " + os.path.join(project_dir, "BoardForge_Board_Review_Report.md"))
+            pcbnew.wxLogMessage("Project health score: " + os.path.join(project_dir, "BoardForge_Project_Health_Score.md"))
+            pcbnew.wxLogMessage("Manufacturability risk: " + os.path.join(project_dir, "BoardForge_Manufacturing_Risk_Report.md"))
+            pcbnew.wxLogMessage("Routeability explanation: " + os.path.join(project_dir, "BoardForge_Routeability_Explanation.md"))
+            pcbnew.wxLogMessage("Version diff: " + os.path.join(project_dir, "BoardForge_Project_Diff_Report.md"))
+            pcbnew.wxLogMessage("Applied lessons: " + os.path.join(project_dir, "BoardForge_Applied_Lessons_Report.md"))
+            pcbnew.wxLogMessage("Blocker report: " + os.path.join(project_dir, "BoardForge_Blocker_Report.md"))
+            pcbnew.wxLogMessage("Board preview: " + os.path.join(project_dir, "BoardForge_Board_Preview.svg"))
             pcbnew.wxLogMessage("Report: " + format_command(commands["report"]))
             pcbnew.wxLogMessage("Replay: " + format_command(commands["replay"]))
             if os.path.exists(manifest):
