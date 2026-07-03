@@ -1,0 +1,1 @@
+{"id":"job_polling_required_for_real_user_actions_001","rootCause":"Static action panels do not feel like real product operations.","fix":"Start local engine jobs, poll status/logs, support cancel/retry, and expose artifacts or blocker reports."}

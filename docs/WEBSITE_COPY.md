@@ -39,3 +39,8 @@ Generate schematics, create board outlines, place components, route with FreeRou
 ## Honesty Line
 
 BoardForge does not fake routing, validation, sourcing, or manufacturing readiness. Advanced dense boards may require supervised workflows or exact design relaxations.
+## Live Website + Local Engine
+
+BoardForge AI is a live website connected to an installed local BoardForge engine. The website is the product surface; the local engine bridge controls KiCad, FreeRouting, board files, reviews, repairs, reports, and manufacturing exports on the user's machine.
+
+Projects stay local unless the user explicitly approves dashboard publishing.

@@ -1,0 +1,1 @@
+{"id":"approved_publish_must_be_consistent_everywhere_001","rootCause":"Drafts and failed experiments can clutter dashboards if publish rules differ by surface.","fix":"Enforce local draft/candidate hidden state, publish confirmation, archive, and keep-local behavior in web, CLI, KiCad plugin, manifests, and local service."}

@@ -1,0 +1,1 @@
+{"id":"dev_launcher_required_before_public_alpha_001","rootCause":"Public alpha users need to start and diagnose the local engine bridge without reading source code.","fix":"Provide environment checker, dev launcher, install docs, missing dependency report, and signing blocker report."}

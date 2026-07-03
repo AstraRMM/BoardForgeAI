@@ -16,3 +16,5 @@ Key differentiators:
 - Exact blocker reports instead of vague failure states
 - Visible solution-library lessons
 - Strict PCB fab vs assembly readiness separation
+- Live website connected to an installed local BoardForge engine bridge
+- Local-first source protection with approved-only publish

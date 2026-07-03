@@ -69,3 +69,14 @@ This proves Codex/AI can drive intake, but BoardForge owns the question tree, br
 6. Confirm the service drove intake, brief approval, project creation, status, downloads, and publish gating through localhost HTTP routes.
 
 This proves the web/KiCad/CLI product surfaces can talk to a real local BoardForge engine service instead of only reading mock contracts.
+## Public Alpha Demo
+
+1. Start the installed local BoardForge engine bridge with `npm run boardforge:local-server`.
+2. Open the live BoardForge website.
+3. Confirm the live website sees the local engine online.
+4. Run premium intake for an odd-shaped robotics controller.
+5. Approve the board brief.
+6. Generate the local candidate and custom outline.
+7. Run review, health, risk, routeability, preview, blocker, and downloads jobs.
+8. Export manufacturing only after strict validation.
+9. Publish only with explicit confirmation.

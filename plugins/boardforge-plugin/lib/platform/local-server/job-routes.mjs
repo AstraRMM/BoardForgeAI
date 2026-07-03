@@ -19,6 +19,7 @@ export async function routeJobRequest({ method, pathname, payload = {}, query = 
     if (method === 'GET' && action === 'status') return okResponse({ status: 'BOARD_FORGE_JOB_STATUS', data: await jobs.get(jobId) })
     if (method === 'GET' && action === 'log') return okResponse({ status: 'BOARD_FORGE_JOB_LOG', data: await jobs.log(jobId) })
     if (method === 'POST' && action === 'cancel') return okResponse({ status: 'BOARD_FORGE_JOB_CANCELED', data: await jobs.cancel(jobId) })
+    if (method === 'POST' && action === 'retry') return okResponse({ status: 'BOARD_FORGE_JOB_RETRIED', data: await jobs.retry(jobId) })
   }
 
   const projectJobs = pathname.match(/^\/projects\/([^/]+)\/jobs$/)

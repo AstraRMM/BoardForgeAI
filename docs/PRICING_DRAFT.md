@@ -31,3 +31,6 @@ No free tier for production use. The product handles manufacturing files and sho
 - Custom sourcing integrations
 - NDA/security review
 - Dedicated manufacturing workflows
+## Alpha Packaging Notes
+
+Paid tiers should gate premium local-engine actions such as project creation, repair, export, sourcing verification, and dashboard publishing. Supplier verification remains unavailable until users configure their own supplier API keys or BoardForge offers hosted provider credentials.

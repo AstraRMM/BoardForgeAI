@@ -1,0 +1,1 @@
+{"id":"fixture_runner_must_exit_cleanly_001","rootCause":"A report-writing fixture runner that hangs erodes confidence in regression automation.","fix":"Ensure fixtures:run reports lifecycle as clean_exit_after_report, supports serial mode, and exits without stale processes."}

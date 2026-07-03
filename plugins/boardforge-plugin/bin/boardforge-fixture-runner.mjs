@@ -777,7 +777,7 @@ if (args.has('--list')) {
     })),
   }
   fs.writeFileSync(out, JSON.stringify(runReport, null, 2))
-  console.log(JSON.stringify({ status: 'FIXTURE_RUN_COMPLETED', report: out, fixtures: runReport.fixtures.length, projects: created.map((item) => item.target) }, null, 2))
+  console.log(JSON.stringify({ status: 'FIXTURE_RUN_COMPLETED', lifecycle: 'clean_exit_after_report', serialMode: true, report: out, fixtures: runReport.fixtures.length, projects: created.map((item) => item.target) }, null, 2))
 } else if (args.has('--golden') || args.has('--report')) {
   const outDir = path.join(repoRoot, 'tmp', 'fixture-runner')
   fs.mkdirSync(outDir, { recursive: true })
@@ -785,5 +785,5 @@ if (args.has('--list')) {
   fs.writeFileSync(out, JSON.stringify(report, null, 2))
   console.log(JSON.stringify({ status: 'FIXTURE_REPORT_WRITTEN', report: out, fixtures: report.fixtures.length }, null, 2))
 } else {
-  console.log(JSON.stringify({ usage: 'boardforge-fixture-runner --list|--run|--golden|--report' }, null, 2))
+  console.log(JSON.stringify({ usage: 'boardforge-fixture-runner --list|--run|--golden|--report|--serial', lifecycle: 'exits_after_report' }, null, 2))
 }

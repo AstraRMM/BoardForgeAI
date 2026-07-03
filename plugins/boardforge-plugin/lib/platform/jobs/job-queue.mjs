@@ -23,6 +23,10 @@ export function createJobQueue({ rootDir, api }) {
       await store.write(canceled)
       return publicJobRecord(canceled)
     },
+    async retry(jobId) {
+      const job = await store.read(jobId)
+      return this.start({ type: job.type, projectId: job.projectId, payload: job.payload || {} })
+    },
     async listForProject(projectId) {
       return (await store.listForProject(projectId)).map(publicJobRecord)
     },

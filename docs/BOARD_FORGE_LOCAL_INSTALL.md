@@ -31,6 +31,16 @@ Launcher scripts:
 .\tools\boardforge-launcher\BoardForge_Install_KiCad_Plugin.ps1
 ```
 
+Live website bridge:
+
+```powershell
+node scripts/boardforge-check-environment.mjs
+node scripts/boardforge-dev-launcher.mjs
+npm run boardforge:local-server
+```
+
+The live BoardForge website connects to the installed local BoardForge engine bridge at `http://127.0.0.1:38991`. The bridge is local-first and controls KiCad, FreeRouting, project files, reports, downloads, and manufacturing exports on the user's machine.
+
 Development license mode:
 
 ```bash

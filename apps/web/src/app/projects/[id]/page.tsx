@@ -15,6 +15,7 @@ import { AppliedLessonsPanel } from '../../../components/project/AppliedLessonsP
 import { DownloadsPanel } from '../../../components/project/DownloadsPanel'
 import { ApprovalPublishPanel } from '../../../components/project/ApprovalPublishPanel'
 import { BoardPreviewCard } from '../../../components/project/BoardPreviewCard'
+import { BlockerReportPanel } from '../../../components/project/BlockerReportPanel'
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const project = dashboard.projects.find((item) => item.projectId === params.id) || dashboard.projects[0]
@@ -42,6 +43,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         <RouteabilityPanel />
         <ProjectDiffPanel />
         <AppliedLessonsPanel />
+        <BlockerReportPanel />
       </div>
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
         <BoardPreviewCard previewPath={(project as any).preview || 'BoardForge_Board_Preview.svg'} projectState={(project as any).projectState || (project as any).publish?.projectState || 'local_draft'} manufacturingZip={project.manufacturing.zip || ''} />

@@ -912,6 +912,7 @@ test('product demo review fixture generates clean board and differentiator repor
 
 test('web project review panels expose command center surface', async () => {
   const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
+  const actions = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectActionPanel.tsx'), 'utf8')
   assert.match(projectPage, /JobStatusPanel/)
   assert.match(projectPage, /ProjectHealthScoreCard/)
   assert.match(projectPage, /BoardReviewPanel/)
@@ -919,6 +920,12 @@ test('web project review panels expose command center surface', async () => {
   assert.match(projectPage, /RouteabilityPanel/)
   assert.match(projectPage, /ProjectDiffPanel/)
   assert.match(projectPage, /AppliedLessonsPanel/)
+  assert.match(projectPage, /BlockerReportPanel/)
+  assert.match(actions, /Run Health Score/)
+  assert.match(actions, /Run Manufacturability Risk/)
+  assert.match(actions, /Generate Board Diff/)
+  assert.match(actions, /Archive/)
+  assert.match(actions, /Keep Local/)
 })
 
 test('web job polling panel exposes localhost job routes and honest local status', async () => {
@@ -928,6 +935,7 @@ test('web job polling panel exposes localhost job routes and honest local status
   assert.match(panel, /not cloud execution/)
   assert.match(client, /POST \/jobs\/start/)
   assert.match(client, /GET \/jobs\/:id\/log/)
+  assert.match(client, /POST \/jobs\/:id\/retry/)
 })
 
 test('local server job routes start and return pollable jobs', async () => {
@@ -941,6 +949,8 @@ test('local server job routes start and return pollable jobs', async () => {
     assert.equal(started.data.status, 'succeeded')
     const polled = await localFetch(baseUrl, `/jobs/${started.data.jobId}`)
     assert.equal(polled.data.stage, 'complete')
+    const retried = await localFetch(baseUrl, `/jobs/${started.data.jobId}/retry`, 'POST')
+    assert.equal(retried.status, 'BOARD_FORGE_JOB_RETRIED')
   } finally {
     server.close()
   }
@@ -961,6 +971,31 @@ test('KiCad plugin review parity exposes report paths', async () => {
   assert.match(plugin, /Manufacturability risk/)
   assert.match(bridge, /boardReviewReport/)
   assert.match(bridge, /blockerReport/)
+})
+
+test('dev launcher environment checker documents live website to local engine bridge', async () => {
+  const checker = await readFile(path.join(repoRoot, 'scripts', 'boardforge-check-environment.mjs'), 'utf8')
+  const launcher = await readFile(path.join(repoRoot, 'scripts', 'boardforge-dev-launcher.mjs'), 'utf8')
+  assert.match(checker, /protectedPathGuard/)
+  assert.match(checker, /supplierApiKeys/)
+  assert.match(launcher, /live BoardForge website/)
+  assert.match(launcher, /installed local engine bridge/)
+})
+
+test('public demo product flow script targets public launch fixture and writes reports', () => {
+  const projectDir = path.join(os.tmpdir(), `BF-PUBLIC-DEMO-PRODUCT-FLOW-${Date.now()}`)
+  const output = JSON.parse(execFileSync(process.execPath, [productDemoReviewPath, '--project-dir', projectDir], { encoding: 'utf8' }))
+  assert.equal(output.status, 'BOARD_FORGE_PRODUCT_DEMO_REVIEW_COMPLETED')
+  assert.equal(output.validation.drc, 0)
+  assert.equal(output.validation.erc, 0)
+  assert.ok(output.reportsGenerated.some((file) => file.endsWith('BoardForge_Board_Review_Report.md')))
+})
+
+test('fixture runner lifecycle reports clean exit and serial mode', async () => {
+  const runner = await readFile(path.join(repoRoot, 'plugins', 'boardforge-plugin', 'bin', 'boardforge-fixture-runner.mjs'), 'utf8')
+  assert.match(runner, /clean_exit_after_report/)
+  assert.match(runner, /serialMode/)
+  assert.match(runner, /--serial/)
 })
 
 async function startTestLocalServer(rootDir) {

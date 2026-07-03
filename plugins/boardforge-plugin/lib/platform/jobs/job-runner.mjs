@@ -42,6 +42,13 @@ export async function executeJob({ store, api, job }) {
     await store.write(succeeded)
     return succeeded
   } catch (error) {
+    let blockerArtifacts = []
+    if (job.payload?.projectDir) {
+      try {
+        const blockers = await writeBlockerReport({ projectDir: job.payload.projectDir })
+        blockerArtifacts = blockers.artifactPaths || []
+      } catch {}
+    }
     const finishedAt = new Date().toISOString()
     const failed = {
       ...running,
@@ -50,6 +57,7 @@ export async function executeJob({ store, api, job }) {
       stage: 'failed',
       finishedAt,
       logs: [...running.logs, { timestamp: finishedAt, message: `Failed ${job.type}: ${error.message}` }],
+      artifactPaths: blockerArtifacts,
       error: { message: error.message },
     }
     await store.write(failed)
@@ -63,16 +71,18 @@ async function runJobType({ api, job }) {
     const status = await api.projectStatus({ projectDir })
     return { status: `BOARD_FORGE_${job.type.toUpperCase()}_JOB_RECORDED`, data: status, artifactPaths: [] }
   }
-  if (job.type === 'run_board_review') return writeBoardReviewReports({ projectDir })
-  if (job.type === 'project_health') return writeProjectHealthScore({ projectDir })
-  if (job.type === 'manufacturing_risk') return writeManufacturingRiskReport({ projectDir })
-  if (job.type === 'routeability_explanation') return writeRouteabilityExplanation({ projectDir })
-  if (job.type === 'board_diff') return writeProjectDiffReport({ projectDir, compareToDir: job.payload.compareToDir })
-  if (job.type === 'generate_preview') return writeBoardPreview({ projectDir, projectName: job.projectId })
-  if (job.type === 'applied_lessons') return writeAppliedLessonsReport({ projectDir })
-  if (job.type === 'blocker_report') return writeBlockerReport({ projectDir })
-  if (job.type === 'run_readiness_report') return { status: 'BOARD_FORGE_READINESS_JOB_RECORDED', artifactPaths: [] }
-  if (job.type === 'run_fixture') return { status: 'BOARD_FORGE_FIXTURE_JOB_RECORDED', artifactPaths: [] }
+  if (['run_board_review', 'review'].includes(job.type)) return writeBoardReviewReports({ projectDir })
+  if (['project_health', 'health'].includes(job.type)) return writeProjectHealthScore({ projectDir })
+  if (['manufacturing_risk', 'risk'].includes(job.type)) return writeManufacturingRiskReport({ projectDir })
+  if (['routeability_explanation', 'routeability'].includes(job.type)) return writeRouteabilityExplanation({ projectDir })
+  if (['board_diff', 'diff'].includes(job.type)) return writeProjectDiffReport({ projectDir, compareToDir: job.payload.compareToDir })
+  if (['generate_preview', 'preview'].includes(job.type)) return writeBoardPreview({ projectDir, projectName: job.projectId })
+  if (['applied_lessons', 'lessons'].includes(job.type)) return writeAppliedLessonsReport({ projectDir })
+  if (['blocker_report', 'blockers'].includes(job.type)) return writeBlockerReport({ projectDir })
+  if (['run_readiness_report', 'readiness'].includes(job.type)) return { status: 'BOARD_FORGE_READINESS_JOB_RECORDED', artifactPaths: [] }
+  if (['run_fixture', 'fixtures'].includes(job.type)) return { status: 'BOARD_FORGE_FIXTURE_JOB_RECORDED', artifactPaths: [] }
+  if (job.type === 'custom_outline_validate') return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_VALIDATION_JOB_RECORDED', artifactPaths: [] }
+  if (job.type === 'custom_outline_seed') return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_SEED_JOB_RECORDED', artifactPaths: [] }
   if (job.type === 'create_project') return api.createProject(job.payload)
   throw new Error(`unsupported_job_type:${job.type}`)
 }

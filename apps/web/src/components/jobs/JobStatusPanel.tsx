@@ -1,4 +1,5 @@
 import { demoJobStatus, localJobRoutes } from '../../lib/boardforge-job-client'
+import { JobLogViewer } from './JobLogViewer'
 
 export function JobStatusPanel() {
   const job = demoJobStatus()
@@ -7,7 +8,7 @@ export function JobStatusPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-indigo-100">Local Job Queue</h2>
-          <p className="mt-1 text-sm text-indigo-100/80">Actions start localhost jobs and poll status. This is local engine artifact state, not cloud execution.</p>
+          <p className="mt-1 text-sm text-indigo-100/80">The live website starts jobs through the installed local BoardForge engine bridge and poll status updates. This is local engine artifact state, not cloud execution.</p>
         </div>
         <span className="rounded border border-indigo-300/50 px-2 py-1 text-xs font-semibold text-indigo-100">{job.status} · {job.progress}%</span>
       </div>
@@ -15,6 +16,9 @@ export function JobStatusPanel() {
         {Object.entries(localJobRoutes).map(([name, route]) => (
           <div key={name} className="rounded bg-slate-950/40 px-2 py-1 font-mono">{name}: {route}</div>
         ))}
+      </div>
+      <div className="mt-3">
+        <JobLogViewer job={job} />
       </div>
     </section>
   )

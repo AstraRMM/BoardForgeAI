@@ -47,6 +47,7 @@ const routeMap = {
   'job-status': ['GET', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}`],
   'job-log': ['GET', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}/log`],
   'cancel-job': ['POST', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}/cancel`],
+  'retry-job': ['POST', `/jobs/${encodeURIComponent(argValue('--job-id', 'missing-job'))}/retry`],
 }
 
 const [method, pathname] = routeMap[command] || routeMap.status

@@ -1,0 +1,1 @@
+{"id":"live_site_to_local_engine_product_flow_001","rootCause":"Users test the live BoardForge website, not a local-only website scaffold.","fix":"Describe and implement the product as live website connected to an installed local BoardForge engine bridge controlling KiCad and local artifacts."}
