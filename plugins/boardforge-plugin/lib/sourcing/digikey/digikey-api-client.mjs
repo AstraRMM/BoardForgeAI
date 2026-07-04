@@ -1,7 +1,8 @@
 import { redactSecrets } from '../../config/secret-redactor.mjs'
+import { loadBoardForgeEnv } from '../../config/env-loader.mjs'
 import { DigiKeyError } from './digikey-errors.mjs'
 
-export function createDigiKeyApiClient({ env = process.env, fetchImpl = globalThis.fetch, authClient, baseUrl = 'https://api.digikey.com' } = {}) {
+export function createDigiKeyApiClient({ env = loadBoardForgeEnv().env, fetchImpl = globalThis.fetch, authClient, baseUrl = 'https://api.digikey.com' } = {}) {
   return {
     async request(pathname, { method = 'GET', body, timeoutMs = 15000 } = {}) {
       const token = authClient?.getCachedToken?.()

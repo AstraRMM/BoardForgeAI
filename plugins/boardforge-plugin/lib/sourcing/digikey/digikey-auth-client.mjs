@@ -1,4 +1,5 @@
 import { getProviderConfig } from '../../config/provider-config.mjs'
+import { loadBoardForgeEnv } from '../../config/env-loader.mjs'
 import { redactSecrets } from '../../config/secret-redactor.mjs'
 import { createDigiKeyTokenStore } from './digikey-token-store.mjs'
 import { DigiKeyError, normalizeDigiKeyError } from './digikey-errors.mjs'
@@ -6,7 +7,7 @@ import { DigiKeyError, normalizeDigiKeyError } from './digikey-errors.mjs'
 const AUTH_BASE = 'https://api.digikey.com/v1/oauth2/authorize'
 const TOKEN_URL = 'https://api.digikey.com/v1/oauth2/token'
 
-export function createDigiKeyAuthClient({ env = process.env, fetchImpl = globalThis.fetch, tokenStore = createDigiKeyTokenStore() } = {}) {
+export function createDigiKeyAuthClient({ env = loadBoardForgeEnv().env, fetchImpl = globalThis.fetch, tokenStore = createDigiKeyTokenStore() } = {}) {
   const providerConfig = getProviderConfig({ env }).providers.digikey
   const clientId = env.DIGIKEY_CLIENT_ID
   const clientSecret = env.DIGIKEY_CLIENT_SECRET

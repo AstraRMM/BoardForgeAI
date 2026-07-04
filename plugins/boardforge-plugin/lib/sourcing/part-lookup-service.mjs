@@ -1,11 +1,12 @@
 import { getProviderConfig } from '../config/provider-config.mjs'
+import { loadBoardForgeEnv } from '../config/env-loader.mjs'
 import { createDigiKeyAuthClient } from './digikey/digikey-auth-client.mjs'
 import { createDigiKeyApiClient } from './digikey/digikey-api-client.mjs'
 import { lookupDigiKeyProductInfoV4 } from './digikey/digikey-product-info-v4.mjs'
 import { PART_LOOKUP_STATUSES } from './normalized-part-result.mjs'
 import { normalizeDigiKeyError } from './digikey/digikey-errors.mjs'
 
-export function createPartLookupService({ env = process.env, fetchImpl = globalThis.fetch, mockResponses = {} } = {}) {
+export function createPartLookupService({ env = loadBoardForgeEnv().env, fetchImpl = globalThis.fetch, mockResponses = {} } = {}) {
   const config = getProviderConfig({ env })
   const authClient = createDigiKeyAuthClient({ env, fetchImpl })
   const apiClient = createDigiKeyApiClient({ env, fetchImpl, authClient })
