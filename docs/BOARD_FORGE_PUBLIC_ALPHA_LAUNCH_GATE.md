@@ -21,3 +21,8 @@ Current external blockers:
 - public installer signing certificate
 
 Do not mark production-ready until those are resolved.
+## Sourcing Gate
+
+The public alpha launch gate now includes DigiKey configuration, provider health, live sourcing verification, quote readiness, honest Mouser `NOT_CONFIGURED` status, demo artifact authenticity, source protection, approved publish, local engine pairing/security, and E2E status.
+
+Do not mark full public alpha ready if live browser E2E or required external compliance/signing evidence is missing.

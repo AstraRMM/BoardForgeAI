@@ -11,6 +11,13 @@ import { writeAppliedLessonsReport } from '../../solution-library/applied-lesson
 import { writeVariantComparisonReport } from '../../variants/variant-report.mjs'
 import { runMakeManufacturableWorkflow } from '../../workflows/make-manufacturable-workflow.mjs'
 import { writeProjectTimeline } from '../../timeline/project-timeline.mjs'
+import { verifyBomSourcing } from '../../sourcing/bom-sourcing-verifier.mjs'
+import { writeQuoteReadinessReport } from '../../sourcing/quote-readiness-report.mjs'
+import { writeAlternativePartReport } from '../../sourcing/alternative-part-report.mjs'
+import { writeSupplierMatrix } from '../../sourcing/provider-matrix.mjs'
+import { runMakeSourcableWorkflow } from '../../workflows/make-sourcable-workflow.mjs'
+import { createPartLookupService } from '../../sourcing/part-lookup-service.mjs'
+import { getProviderConfig } from '../../config/provider-config.mjs'
 
 export async function runJob({ store, api, type, projectId, payload = {} }) {
   const job = createJobRecord({ jobId: randomUUID(), projectId, type, payload })
@@ -84,6 +91,15 @@ async function runJobType({ api, job }) {
   if (['blocker_report', 'blockers'].includes(job.type)) return writeBlockerReport({ projectDir })
   if (['variant_generation', 'variants'].includes(job.type)) return writeVariantComparisonReport({ projectDir, projectId: job.projectId })
   if (['make_manufacturable', 'make-manufacturable'].includes(job.type)) return runMakeManufacturableWorkflow({ projectDir, status: job.payload.status || {} })
+  if (job.type === 'sourcing_verify') return verifyBomSourcing({ projectDir, rows: job.payload.rows })
+  if (job.type === 'quote_readiness') {
+    const config = getProviderConfig()
+    return writeQuoteReadinessReport({ projectDir, rows: job.payload.rows || [], providerConfigured: config.providers.digikey.configured, buildQuantity: job.payload.buildQuantity || 10 })
+  }
+  if (job.type === 'make_sourcable') return runMakeSourcableWorkflow({ projectDir, rows: job.payload.rows })
+  if (job.type === 'alternative_parts') return writeAlternativePartReport({ projectDir, rows: job.payload.rows || [], lookupService: createPartLookupService() })
+  if (job.type === 'supplier_matrix') return writeSupplierMatrix({ projectDir, rows: job.payload.rows || [] })
+  if (job.type === 'digikey_lookup') return { status: 'BOARD_FORGE_DIGIKEY_LOOKUP_JOB_COMPLETE', data: await createPartLookupService().lookup({ mpn: job.payload.mpn, keyword: job.payload.keyword }), artifactPaths: [] }
   if (['project_timeline', 'timeline'].includes(job.type)) return writeProjectTimeline({ projectDir, events: job.payload.events || [] })
   if (['run_readiness_report', 'readiness'].includes(job.type)) return { status: 'BOARD_FORGE_READINESS_JOB_RECORDED', artifactPaths: [] }
   if (['run_fixture', 'fixtures'].includes(job.type)) return { status: 'BOARD_FORGE_FIXTURE_JOB_RECORDED', artifactPaths: [] }

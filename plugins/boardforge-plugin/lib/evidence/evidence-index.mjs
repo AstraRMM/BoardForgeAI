@@ -11,7 +11,16 @@ export async function writeEvidenceIndex({ rootDir }) {
     card('variant ranking', 'BF-VARIANT-RANKING-DEMO-01_REV_A', true, 'Candidate layouts ranked by routeability and manufacturability.'),
     card('make manufacturable', 'BF-PUBLIC-DEMO-PRODUCT-FLOW-01_REV_A', true, 'Safe sequence from validate to ready/blocked summary.'),
     card('approved-only publish', 'approved-sync-validation', true, 'Drafts and candidates stay hidden until publish confirm.'),
-    card('supplier API verification', 'external credentials', false, 'Blocked until real API keys are provided.'),
+    card('DigiKey credentials configured without leaking secrets', 'digikey-config', true, 'Provider config reports configured/missing without exposing raw values.'),
+    card('DigiKey provider health check', 'digikey-health', true, 'Local engine exposes backend-only DigiKey health status.'),
+    card('ProductInformation V4 lookup', 'digikey-product-info-v4', true, 'Lookup and normalization are tested with mocked DigiKey responses; live OAuth may require local authorization.'),
+    card('BOM sourcing verification', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'BOM rows map to supplier verification statuses without fake stock.'),
+    card('quote readiness', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'Quote readiness is scored separately from auto ordering.'),
+    card('Make Sourcable', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'Unavailable/risky BOM rows produce candidate substitution plans instead of silent schematic edits.'),
+    card('alternative parts', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'Alternatives are risk labeled and require engineering review.'),
+    card('supply-chain-aware variant ranking', 'BF-VARIANT-RANKING-DEMO-01_REV_A', true, 'Variants can be ranked by sourcing, quote, manufacturing, and engineering scores.'),
+    card('no fake Mouser usage', 'mouser-not-configured', true, 'Mouser remains NOT_CONFIGURED without a real product/search API.'),
+    card('secret redaction', 'secret-redaction', true, 'Secrets are redacted from errors, reports, and public provider status.'),
   ]
   const report = { status: 'BOARD_FORGE_EVIDENCE_INDEX_WRITTEN', generatedAt: new Date().toISOString(), cards }
   const jsonPath = path.join(rootDir, 'BoardForge_Evidence_Dashboard.json')

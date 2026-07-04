@@ -7,11 +7,17 @@ export async function writeVariantComparisonReport({ projectDir, boardBrief = {}
   await mkdir(projectDir, { recursive: true })
   const variants = generateBoardVariants({ boardBrief, projectId }).map(scoreVariant).sort((a, b) => b.score - a.score)
   const winner = variants[0]
+  const bestEngineeringVariant = [...variants].sort((a, b) => b.engineeringScore - a.engineeringScore)[0]
+  const bestSourcingVariant = [...variants].sort((a, b) => b.sourcingScore - a.sourcingScore)[0]
+  const bestManufacturingVariant = [...variants].sort((a, b) => b.manufacturingScore - a.manufacturingScore)[0]
   const report = {
     status: 'BOARD_FORGE_VARIANT_COMPARISON_WRITTEN',
     projectDir,
     variants,
     winner,
+    bestEngineeringVariant,
+    bestSourcingVariant,
+    bestManufacturingVariant,
     selectionReason: `${winner.name} scored highest on routeability, manufacturability, connector access, and clean export readiness.`,
   }
   const jsonPath = path.join(projectDir, 'BoardForge_Variant_Comparison_Report.json')
@@ -26,6 +32,9 @@ function renderVariantMarkdown(report) {
     '# BoardForge Variant Comparison Report',
     '',
     `Winner: ${report.winner.name}`,
+    `Best engineering variant: ${report.bestEngineeringVariant.name}`,
+    `Best sourcing variant: ${report.bestSourcingVariant.name}`,
+    `Best manufacturing variant: ${report.bestManufacturingVariant.name}`,
     '',
     ...report.variants.map((variant) => `- ${variant.name}: ${variant.score}/100; pros: ${variant.pros.join(', ')}; cons: ${variant.cons.join(', ')}`),
     '',

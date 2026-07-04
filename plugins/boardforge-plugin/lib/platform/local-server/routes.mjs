@@ -23,6 +23,13 @@ import { writeProjectTimeline } from '../../timeline/project-timeline.mjs'
 import { runImportWizard } from '../../import/import-wizard.mjs'
 import { writeEvidenceIndex } from '../../evidence/evidence-index.mjs'
 import { writeAlphaLaunchReport } from '../../launch/alpha-launch-report.mjs'
+import { publicProviderConfig } from '../../config/provider-config.mjs'
+import { createDigiKeyAuthClient } from '../../sourcing/digikey/digikey-auth-client.mjs'
+import { createPartLookupService } from '../../sourcing/part-lookup-service.mjs'
+import { verifyBomSourcing } from '../../sourcing/bom-sourcing-verifier.mjs'
+import { writeQuoteReadinessReport } from '../../sourcing/quote-readiness-report.mjs'
+import { writeAlternativePartReport } from '../../sourcing/alternative-part-report.mjs'
+import { runMakeSourcableWorkflow } from '../../workflows/make-sourcable-workflow.mjs'
 
 export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
   const api = createLocalArtifactApi({ rootDir })
@@ -49,7 +56,19 @@ export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
         return okResponse({ status: 'BOARD_FORGE_FIXTURE_STATUS', data: { fixtureRoot: rootDir, fixturesCommand: 'npm run fixtures:run', reportCommand: 'npm run report:90:quick -- --fresh' } })
       }
       if (method === 'GET' && pathname === '/sourcing/status') {
-        return okResponse({ status: 'BOARD_FORGE_SOURCING_STATUS', data: { sourcingStatus: 'NOT_CHECKED', stockStatus: 'UNKNOWN', assemblyAvailability: 'UNKNOWN', missingEnv: ['DIGIKEY_CLIENT_ID', 'DIGIKEY_CLIENT_SECRET', 'MOUSER_API_KEY', 'LCSC_API_KEY', 'JLCPCB_API_KEY'], noFakeStock: true } })
+        return okResponse({ status: 'BOARD_FORGE_SOURCING_STATUS', data: { ...publicProviderConfig(), sourcingStatus: 'NOT_CHECKED', stockStatus: 'UNKNOWN', assemblyAvailability: 'UNKNOWN', noFakeStock: true } })
+      }
+      if (method === 'GET' && pathname === '/integrations/digikey/status') {
+        const authClient = createDigiKeyAuthClient()
+        return okResponse({ status: 'BOARD_FORGE_DIGIKEY_STATUS', data: await authClient.healthCheck() })
+      }
+      if (method === 'POST' && pathname === '/integrations/digikey/test') {
+        const authClient = createDigiKeyAuthClient()
+        return okResponse({ status: 'BOARD_FORGE_DIGIKEY_TEST', data: await authClient.healthCheck() })
+      }
+      if (method === 'POST' && pathname === '/integrations/digikey/lookup') {
+        const lookup = await createPartLookupService().lookup({ mpn: payload.mpn, digiKeyPartNumber: payload.digiKeyPartNumber, keyword: payload.keyword })
+        return okResponse({ status: 'BOARD_FORGE_DIGIKEY_LOOKUP', data: lookup })
       }
       if (method === 'GET' && pathname === '/setup/status') {
         return okResponse({ status: 'BOARD_FORGE_FIRST_RUN_SETUP_STATUS', data: checkFirstRunSetup() })
@@ -170,6 +189,22 @@ export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
           const status = await api.projectStatus({ projectDir })
           const result = await runMakeManufacturableWorkflow({ projectDir, status: status.validation || {} })
           return okResponse({ status: result.status, data: result, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'sourcing-verify') {
+          const result = await verifyBomSourcing({ projectDir, rows: payload.rows })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'quote-readiness') {
+          const result = await writeQuoteReadinessReport({ projectDir, rows: payload.rows || [], providerConfigured: publicProviderConfig().providers.digikey.configured })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'alternatives') {
+          const result = await writeAlternativePartReport({ projectDir, rows: payload.rows || [], lookupService: createPartLookupService() })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        }
+        if (method === 'POST' && action === 'make-sourcable') {
+          const result = await runMakeSourcableWorkflow({ projectDir, rows: payload.rows })
+          return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
         }
         if (method === 'POST' && action === 'timeline') {
           const result = await writeProjectTimeline({ projectDir, events: payload.events || [] })

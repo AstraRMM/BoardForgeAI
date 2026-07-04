@@ -1,0 +1,1 @@
+{"id":"real_sourcing_verification_replaces_fake_stock_001","lesson":"Use real provider lookup statuses or honest NOT_CONFIGURED/VERIFY_FAILED states; never invent stock.","appliesTo":["sourcing","bom","supplier"],"savedAt":"2026-07-04"}

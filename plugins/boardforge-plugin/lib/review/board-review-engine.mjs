@@ -12,6 +12,7 @@ export async function runBoardReview({ projectDir }) {
   const layout = reviewLayoutQuality({ health })
   const manufacturing = reviewManufacturability({ health })
   const risks = analyzeDesignRisk({ health })
+  const sourcing = reviewSourcing({ health })
   const score = Math.round((schematic.score + layout.score + manufacturing.score + health.score) / 4)
   return {
     title: 'BoardForge Engineering Review',
@@ -22,15 +23,34 @@ export async function runBoardReview({ projectDir }) {
       placement: layout.placement,
       routing: layout.routing,
       manufacturing: manufacturing.score,
-      sourcing: health.inputs.sourcing?.state === 'ASSEMBLY_READY_VERIFIED' ? 95 : 62,
+      sourcing: sourcing.score,
       mechanical: layout.mechanical,
       documentation: 82,
     },
     risks,
+    sourcing,
     recommendedFixes: risks.filter((risk) => risk.severity !== 'info').map((risk) => risk.recommendation),
     blockingIssues: risks.filter((risk) => risk.blocking),
     caveat: 'BoardForge Engineering Review is an AI/local-engine design critique, not a certification or compliance approval.',
     generatedAt: new Date().toISOString(),
+  }
+}
+
+function reviewSourcing({ health }) {
+  const sourcing = health.inputs.sourcing || {}
+  const verified = sourcing.state === 'ASSEMBLY_READY_VERIFIED' || sourcing.quoteReadiness === 'QUOTE_READY'
+  return {
+    score: verified ? 95 : sourcing.provider === 'digikey' ? 72 : 55,
+    pcbFabReadiness: health.inputs.manufacturing?.ready ? 'PCB_FAB_READY' : 'NOT_READY',
+    assemblyReadiness: verified ? 'ASSEMBLY_READY_VERIFIED' : 'ASSEMBLY_READY_NOT_VERIFIED',
+    providerStatus: sourcing.providerStatus || 'NOT_CHECKED',
+    bomVerificationCoverage: sourcing.bomVerificationCoverage ?? 0,
+    quoteReadiness: sourcing.quoteReadiness || 'NOT_CHECKED',
+    stockRisk: sourcing.stockRisk || 'UNKNOWN',
+    lifecycleRisk: sourcing.lifecycleRisk || 'UNKNOWN',
+    datasheetCoverage: sourcing.datasheetCoverage ?? 0,
+    alternatePartRecommendations: sourcing.alternativePartRecommendations || [],
+    noFakeStock: true,
   }
 }
 

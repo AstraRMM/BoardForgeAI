@@ -10,16 +10,26 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
     manufacturingExportReadiness: checks.manufacturingExportReadiness ?? true,
     sourceProtectionReadiness: checks.sourceProtectionReadiness ?? true,
     documentationReadiness: checks.documentationReadiness ?? true,
+    digikeyConfigured: checks.digikeyConfigured ?? false,
+    digikeyProviderHealth: checks.digikeyProviderHealth ?? false,
+    liveSourcingVerification: checks.liveSourcingVerification ?? false,
+    quoteReadiness: checks.quoteReadiness ?? true,
+    mouserNotConfiguredHonestly: checks.mouserNotConfiguredHonestly ?? true,
+    demoArtifactAuthenticity: checks.demoArtifactAuthenticity ?? true,
+    e2eStatus: checks.e2eStatus ?? true,
     supplierApiKeys: checks.supplierApiKeys ?? false,
     poeComplianceReview: checks.poeComplianceReview ?? false,
     installerSigning: checks.installerSigning ?? false,
   }
-  const coreReady = Object.entries(categories).filter(([key]) => !['supplierApiKeys', 'poeComplianceReview', 'installerSigning'].includes(key)).every(([, value]) => value)
-  const status = coreReady ? 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS' : 'BLOCKED'
+  const nonCore = ['supplierApiKeys', 'poeComplianceReview', 'installerSigning', 'digikeyConfigured', 'digikeyProviderHealth', 'liveSourcingVerification']
+  const coreReady = Object.entries(categories).filter(([key]) => !nonCore.includes(key)).every(([, value]) => value)
+  const privateReady = coreReady && categories.demoArtifactAuthenticity && categories.mouserNotConfiguredHonestly
+  const publicReady = privateReady && categories.e2eStatus && categories.localEnginePairingSecurity
+  const status = publicReady ? 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS' : privateReady ? 'READY_FOR_PRIVATE_ALPHA' : 'BLOCKED'
   return {
     status,
     categories,
-    externalBlockers: ['supplier API keys', 'real PoE compliance/safety review', 'public installer signing certificate'],
+    externalBlockers: ['DigiKey OAuth/live credential completion if not configured locally', 'real PoE compliance/safety review', 'public installer signing certificate'],
     limitations: ['Public alpha is local-first and evidence-backed; sourcing and compliance are not faked.'],
   }
 }

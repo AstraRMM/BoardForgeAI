@@ -62,6 +62,12 @@ def build_boardforge_commands(board_path):
         "lessons": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
         "preview": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
         "blockers": ["npm", "run", "boardforge:local-status", "--", "--project-id", os.path.basename(project_dir)],
+        "sourcing_status": ["node", "plugins/boardforge-plugin/bin/boardforge-local-client.mjs", "sourcing-status"],
+        "digikey_lookup": ["node", "plugins/boardforge-plugin/bin/boardforge-local-client.mjs", "sourcing-lookup", "--mpn", "<MPN>"],
+        "sourcing_verify": ["node", "plugins/boardforge-plugin/bin/boardforge-local-client.mjs", "sourcing-verify", "--project-id", os.path.basename(project_dir)],
+        "quote_readiness": ["node", "plugins/boardforge-plugin/bin/boardforge-local-client.mjs", "quote-readiness", "--project-id", os.path.basename(project_dir)],
+        "make_sourcable": ["node", "plugins/boardforge-plugin/bin/boardforge-local-client.mjs", "make-sourcable", "--project-id", os.path.basename(project_dir)],
+        "alternative_parts": ["node", "plugins/boardforge-plugin/bin/boardforge-local-client.mjs", "alternatives", "--project-id", os.path.basename(project_dir)],
     }
 
 
@@ -163,6 +169,13 @@ if pcbnew:
             pcbnew.wxLogMessage("Applied lessons: " + os.path.join(project_dir, "BoardForge_Applied_Lessons_Report.md"))
             pcbnew.wxLogMessage("Blocker report: " + os.path.join(project_dir, "BoardForge_Blocker_Report.md"))
             pcbnew.wxLogMessage("Board preview: " + os.path.join(project_dir, "BoardForge_Board_Preview.svg"))
+            pcbnew.wxLogMessage("Sourcing status: " + format_command(commands["sourcing_status"]))
+            pcbnew.wxLogMessage("DigiKey lookup: " + format_command(commands["digikey_lookup"]))
+            pcbnew.wxLogMessage("BOM sourcing verification: " + format_command(commands["sourcing_verify"]))
+            pcbnew.wxLogMessage("Quote readiness: " + format_command(commands["quote_readiness"]))
+            pcbnew.wxLogMessage("Make Sourcable: " + format_command(commands["make_sourcable"]))
+            pcbnew.wxLogMessage("Alternative parts: " + format_command(commands["alternative_parts"]))
+            pcbnew.wxLogMessage("Sourcing reports stay local; supplier secrets are never printed or exposed to the live website.")
             pcbnew.wxLogMessage("Report: " + format_command(commands["report"]))
             pcbnew.wxLogMessage("Replay: " + format_command(commands["replay"]))
             if os.path.exists(manifest):

@@ -46,6 +46,12 @@ const routeMap = {
   variants: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/variants`],
   'make-manufacturable': ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/make-manufacturable`],
   timeline: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/timeline`],
+  'sourcing-status': ['GET', '/sourcing/status'],
+  'sourcing-lookup': ['POST', '/integrations/digikey/lookup'],
+  'sourcing-verify': ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/sourcing-verify`],
+  'quote-readiness': ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/quote-readiness`],
+  'make-sourcable': ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/make-sourcable`],
+  alternatives: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/alternatives`],
   'pairing-code': ['GET', '/pairing/code'],
   'pairing-status': ['GET', '/pairing/status'],
   'setup-status': ['GET', '/setup/status'],
@@ -68,6 +74,8 @@ const payload = {
   oddShapeProof: hasFlag('--odd-shape-proof') || undefined,
   confirm: hasFlag('--confirm') || undefined,
   type: argValue('--type', undefined),
+  mpn: argValue('--mpn', undefined),
+  keyword: argValue('--keyword', undefined),
   compareToDir: argValue('--compare-to-dir', undefined),
 }
 

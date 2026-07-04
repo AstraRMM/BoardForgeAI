@@ -44,3 +44,8 @@ BoardForge does not fake routing, validation, sourcing, or manufacturing readine
 BoardForge AI is a live website connected to an installed local BoardForge engine. The website is the product surface; the local engine bridge controls KiCad, FreeRouting, board files, reviews, repairs, reports, and manufacturing exports on the user's machine.
 
 Projects stay local unless the user explicitly approves dashboard publishing.
+## Sourcing Command Center Copy
+
+Verify BOM risk before assembly. BoardForge checks supplier availability through the installed local engine, keeps credentials off the live website, and distinguishes fab-ready boards from assembly-verified builds.
+
+Make Sourcable identifies unavailable or risky BOM rows, searches candidate alternatives, and creates an approval-required substitution plan. BoardForge never silently swaps parts or claims fake stock.

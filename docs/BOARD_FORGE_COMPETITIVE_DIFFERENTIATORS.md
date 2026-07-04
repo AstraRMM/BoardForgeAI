@@ -30,3 +30,8 @@ Public-alpha moat features:
 - Import sandbox wizard with source hash proof
 - Evidence dashboard
 - Launch gate that refuses fake readiness
+## Supply-Chain-Aware PCB Engineering
+
+BoardForge is not just AI PCB generation. It combines KiCad-native generation, DRC/ERC validation, FreeRouting integration, repair workflows, manufacturability risk scoring, live DigiKey BOM verification, quote readiness, candidate alternative parts, supply-chain-aware variant ranking, Make Manufacturable, Make Sourcable, an evidence dashboard, and local-first source protection.
+
+Public copy should avoid aggressive competitor callouts. Internally, these features are meant to stand out from generic AI PCB tools by making BoardForge explain, grade, repair, source-check, package, and document the board instead of only producing files.

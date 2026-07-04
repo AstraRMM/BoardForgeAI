@@ -14,6 +14,8 @@ export async function calculateProjectHealthScore({ projectDir }) {
   if ((validation.unconnected ?? 0) > 0) deductions.push({ reason: 'unconnected_items', points: 20 })
   if (!manufacturing.ready) deductions.push({ reason: 'manufacturing_package_missing', points: 15 })
   if (sourcing.state !== 'ASSEMBLY_READY_VERIFIED') deductions.push({ reason: 'assembly_sourcing_not_api_verified', points: 8 })
+  if (sourcing.provider === 'digikey' && sourcing.status === 'BLOCKED_SUPPLIER_API') deductions.push({ reason: 'digikey_supplier_api_blocked', points: 10 })
+  if ((sourcing.bomRiskCount ?? 0) > 0) deductions.push({ reason: 'bom_sourcing_risk', points: Math.min(20, sourcing.bomRiskCount * 4) })
 
   const score = Math.max(0, 100 - deductions.reduce((sum, item) => sum + item.points, 0))
   return {
@@ -21,6 +23,12 @@ export async function calculateProjectHealthScore({ projectDir }) {
     score,
     label: labelFor(score, validation, manufacturing, sourcing),
     inputs: { validation, manufacturing, sourcing },
+    sourcingReadiness: {
+      provider: sourcing.provider || 'digikey',
+      bomVerificationCoverage: sourcing.bomVerificationCoverage ?? 0,
+      quoteReadiness: sourcing.quoteReadiness || 'NOT_CHECKED',
+      noFakeStock: true,
+    },
     deductions,
     generatedAt: new Date().toISOString(),
   }

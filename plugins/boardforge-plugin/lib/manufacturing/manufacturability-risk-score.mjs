@@ -9,6 +9,8 @@ export async function scoreManufacturabilityRisk({ projectDir }) {
   if ((validation.forbiddenVias ?? 0) > 0) risks.push(risk('Forbidden vias', 'critical', 'Remove blind/buried/micro/via-in-pad usage.'))
   if (!manifest.manufacturing?.ready) risks.push(risk('Manufacturing package missing', 'high', 'Generate Gerbers, drill, BOM, CPL, and ZIP after validation.'))
   if (manifest.sourcing?.state !== 'ASSEMBLY_READY_VERIFIED') risks.push(risk('Assembly not supplier verified', 'medium', 'PCB fab can be ready while assembly stock remains NOT_CHECKED.'))
+  if (manifest.sourcing?.quoteReadiness?.startsWith?.('BLOCKED')) risks.push(risk('Quote readiness blocked', 'high', 'Run Make Sourcable and resolve missing/unavailable/ambiguous BOM rows.'))
+  if ((manifest.sourcing?.bomRiskCount ?? 0) > 0) risks.push(risk('BOM sourcing risk', 'medium', 'Review BOM risk report before assembly release.'))
   const score = Math.max(0, 100 - risks.reduce((sum, item) => sum + item.points, 0))
   return { projectId: manifest.projectId || path.basename(projectDir), score, riskLevel: score >= 85 ? 'low' : score >= 65 ? 'medium' : 'high', risks, generatedAt: new Date().toISOString() }
 }

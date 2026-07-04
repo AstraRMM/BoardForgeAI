@@ -1,6 +1,6 @@
 export const sourcingProviderEnvSpec = [
-  { id: 'digikey', name: 'Digi-Key', env: ['DIGIKEY_CLIENT_ID', 'DIGIKEY_CLIENT_SECRET'] },
-  { id: 'mouser', name: 'Mouser', env: ['MOUSER_API_KEY'] },
+  { id: 'digikey', name: 'DigiKey', env: ['DIGIKEY_CLIENT_ID', 'DIGIKEY_CLIENT_SECRET'], callbackEnv: 'DIGIKEY_CALLBACK_URL' },
+  { id: 'mouser', name: 'Mouser', env: ['MOUSER_PRODUCT_API_KEY'], forcedStatus: 'NOT_CONFIGURED', limitation: 'Mouser order/cart/history APIs are not sourcing verification APIs.' },
   { id: 'lcsc', name: 'LCSC', env: ['LCSC_API_KEY'] },
   { id: 'jlcpcb', name: 'JLCPCB Assembly', env: ['JLCPCB_API_KEY'] },
 ]
@@ -15,8 +15,9 @@ export function detectSourcingProviderEnv(env = process.env) {
       requiredEnv: provider.env,
       envKeysPresent: present,
       missingEnv: missing,
-      apiCallable: missing.length === 0,
-      verificationAvailable: missing.length === 0 ? 'configured_not_called' : 'not_configured',
+      apiCallable: provider.forcedStatus ? false : missing.length === 0,
+      verificationAvailable: provider.forcedStatus ? 'not_configured' : missing.length === 0 ? 'configured_not_called' : 'not_configured',
+      limitation: provider.limitation || null,
       fallbackBehavior: {
         sourcingStatus: 'NOT_CHECKED',
         stockStatus: 'UNKNOWN',

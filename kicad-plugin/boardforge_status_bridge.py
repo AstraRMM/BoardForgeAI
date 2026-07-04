@@ -50,6 +50,12 @@ def read_boardforge_status(project_dir):
         "projectDiffReport": os.path.join(project_dir, "BoardForge_Project_Diff_Report.md"),
         "appliedLessonsReport": os.path.join(project_dir, "BoardForge_Applied_Lessons_Report.md"),
         "blockerReport": os.path.join(project_dir, "BoardForge_Blocker_Report.md"),
+        "sourcingStatus": "GET /sourcing/status",
+        "digikeyStatus": "GET /integrations/digikey/status",
+        "bomSourcingReport": os.path.join(project_dir, "BoardForge_BOM_Sourcing_Report.md"),
+        "quoteReadinessReport": os.path.join(project_dir, "BoardForge_Quote_Readiness_Report.md"),
+        "makeSourcableReport": os.path.join(project_dir, "BoardForge_Make_Sourcable_Report.md"),
+        "alternativePartsReport": os.path.join(project_dir, "BoardForge_Alternative_Parts_Report.md"),
     }
 
 

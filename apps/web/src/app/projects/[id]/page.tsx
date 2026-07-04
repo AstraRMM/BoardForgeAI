@@ -19,6 +19,7 @@ import { BlockerReportPanel } from '../../../components/project/BlockerReportPan
 import { VariantComparisonPanel } from '../../../components/project/VariantComparisonPanel'
 import { MakeManufacturableReportPanel } from '../../../components/project/MakeManufacturableReportPanel'
 import { ProjectTimelinePanel } from '../../../components/project/ProjectTimelinePanel'
+import { SourcingCommandCenter } from '../../../components/project/SourcingCommandCenter'
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const project = dashboard.projects.find((item) => item.projectId === params.id) || dashboard.projects[0]
@@ -50,6 +51,9 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         <VariantComparisonPanel />
         <MakeManufacturableReportPanel />
         <ProjectTimelinePanel />
+      </div>
+      <div className="mt-6">
+        <SourcingCommandCenter project={project as any} />
       </div>
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
         <BoardPreviewCard previewPath={(project as any).preview || 'BoardForge_Board_Preview.svg'} projectState={(project as any).projectState || (project as any).publish?.projectState || 'local_draft'} manufacturingZip={project.manufacturing.zip || ''} />
