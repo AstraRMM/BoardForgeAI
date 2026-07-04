@@ -12,6 +12,9 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
     documentationReadiness: checks.documentationReadiness ?? true,
     digikeyConfigured: checks.digikeyConfigured ?? false,
     digikeyProviderHealth: checks.digikeyProviderHealth ?? false,
+    digikeyOAuthToken: checks.digikeyOAuthToken ?? false,
+    liveProductInformationV4Lookup: checks.liveProductInformationV4Lookup ?? false,
+    liveBomSourcingProof: checks.liveBomSourcingProof ?? false,
     liveSourcingVerification: checks.liveSourcingVerification ?? false,
     quoteReadiness: checks.quoteReadiness ?? true,
     mouserNotConfiguredHonestly: checks.mouserNotConfiguredHonestly ?? true,
@@ -21,7 +24,7 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
     poeComplianceReview: checks.poeComplianceReview ?? false,
     installerSigning: checks.installerSigning ?? false,
   }
-  const nonCore = ['supplierApiKeys', 'poeComplianceReview', 'installerSigning', 'digikeyConfigured', 'digikeyProviderHealth', 'liveSourcingVerification']
+  const nonCore = ['supplierApiKeys', 'poeComplianceReview', 'installerSigning', 'digikeyConfigured', 'digikeyProviderHealth', 'digikeyOAuthToken', 'liveProductInformationV4Lookup', 'liveBomSourcingProof', 'liveSourcingVerification']
   const coreReady = Object.entries(categories).filter(([key]) => !nonCore.includes(key)).every(([, value]) => value)
   const privateReady = coreReady && categories.demoArtifactAuthenticity && categories.mouserNotConfiguredHonestly
   const publicReady = privateReady && categories.e2eStatus && categories.localEnginePairingSecurity

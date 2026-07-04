@@ -47,6 +47,25 @@ export function createDigiKeyAuthClient({ env = loadBoardForgeEnv().env, fetchIm
       tokenStore.write(token)
       return { authenticated: true, expiresAt: token.expiresAt }
     },
+    async exchangeClientCredentialsForToken() {
+      if (!this.isConfigured()) throw new DigiKeyError('DigiKey credentials are missing.', { status: 'DIGIKEY_NOT_CONFIGURED' })
+      const body = new URLSearchParams({ grant_type: 'client_credentials' })
+      const response = await fetchImpl(TOKEN_URL, {
+        method: 'POST',
+        headers: { authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`, 'content-type': 'application/x-www-form-urlencoded' },
+        body,
+      })
+      if (!response.ok) throw new DigiKeyError('DigiKey client-credentials token request failed.', { status: 'DIGIKEY_CLIENT_CREDENTIALS_FAILED', details: { status: response.status, body: await safeText(response) } })
+      const payload = await response.json()
+      const token = {
+        accessToken: payload.access_token,
+        refreshToken: payload.refresh_token,
+        tokenType: payload.token_type || 'Bearer',
+        expiresAt: new Date(Date.now() + Number(payload.expires_in || 1800) * 1000).toISOString(),
+      }
+      tokenStore.write(token)
+      return { authenticated: true, method: 'client_credentials', expiresAt: token.expiresAt }
+    },
     getCachedToken() {
       return tokenStore.read()
     },
@@ -56,8 +75,10 @@ export function createDigiKeyAuthClient({ env = loadBoardForgeEnv().env, fetchIm
         return {
           configured: this.isConfigured(),
           authenticated: Boolean(token?.accessToken),
+          tokenPresent: Boolean(token?.accessToken),
+          tokenExpired: false,
           enabledApis: providerConfig.enabledApis,
-          callbackUrl,
+          callbackUrlConfigured: Boolean(callbackUrl),
           lastCheckTime: new Date().toISOString(),
           error: null,
         }

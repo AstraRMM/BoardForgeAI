@@ -50,11 +50,35 @@ test('provider config marks DigiKey configured only when id and secret exist and
 })
 
 test('DigiKey auth client reports configured health without exposing secrets', async () => {
-  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret', DIGIKEY_CALLBACK_URL: 'https://www.boardforge-ai.com/api/integrations/digikey/callback' } })
+  const tokenStore = { read: () => null, write: () => {} }
+  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret', DIGIKEY_CALLBACK_URL: 'https://www.boardforge-ai.com/api/integrations/digikey/callback' }, tokenStore })
   const health = await auth.healthCheck()
   assert.equal(health.configured, true)
   assert.equal(health.authenticated, false)
+  assert.equal(health.callbackUrlConfigured, true)
   assert.doesNotMatch(JSON.stringify(health), /secret/)
+})
+
+test('DigiKey client credentials token flow stores local token without exposing credentials', async () => {
+  const stored = []
+  const fetchImpl = async (_url, request) => {
+    assert.match(String(request.body), /grant_type=client_credentials/)
+    assert.match(request.headers.authorization, /^Basic /)
+    return {
+      ok: true,
+      json: async () => ({ access_token: 'token-redacted-in-reports', token_type: 'Bearer', expires_in: 600 }),
+    }
+  }
+  const tokenStore = {
+    read: () => stored.at(-1) || null,
+    write: (token) => stored.push(token),
+  }
+  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret' }, fetchImpl, tokenStore })
+  const result = await auth.exchangeClientCredentialsForToken()
+  assert.equal(result.method, 'client_credentials')
+  assert.equal(result.authenticated, true)
+  assert.equal(stored[0].accessToken, 'token-redacted-in-reports')
+  assert.doesNotMatch(JSON.stringify(result), /secret/)
 })
 
 test('DigiKey ProductInformation V4 lookup normalizes mocked exact MPN response', async () => {

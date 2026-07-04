@@ -330,7 +330,14 @@
     "boardforge:quote-readiness": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs quote-readiness",
     "boardforge:make-sourcable": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs make-sourcable",
     "boardforge:alternatives": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs alternatives",
-    "boardforge:supplier-matrix": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs supplier-matrix"
+    "boardforge:supplier-matrix": "node plugins/boardforge-plugin/bin/boardforge-local-client.mjs supplier-matrix",
+    "boardforge:digikey-auth-start": "node plugins/boardforge-plugin/bin/boardforge-digikey-auth-start.mjs",
+    "boardforge:digikey-auth-complete": "node plugins/boardforge-plugin/bin/boardforge-digikey-auth-complete.mjs",
+    "boardforge:digikey-auth-status": "node plugins/boardforge-plugin/bin/boardforge-digikey-auth-status.mjs",
+    "boardforge:digikey-token-test": "node plugins/boardforge-plugin/bin/boardforge-digikey-token-test.mjs",
+    "boardforge:digikey-provider-health": "node plugins/boardforge-plugin/bin/boardforge-digikey-provider-health.mjs",
+    "boardforge:digikey-live-lookup": "node plugins/boardforge-plugin/bin/boardforge-digikey-live-lookup.mjs",
+    "boardforge:digikey-live-sourcing-proof": "node plugins/boardforge-plugin/bin/boardforge-digikey-live-sourcing-proof.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

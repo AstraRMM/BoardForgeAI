@@ -1,1 +1,1 @@
-{"id":"make_sourcable_is_core_competitive_moat_001","lesson":"Make Sourcable should identify BOM risk, recommend candidate substitutions, and require approval before schematic/PCB changes.","appliesTo":["workflow","sourcing"],"savedAt":"2026-07-04"}
+{"id":"make_sourcable_is_core_competitive_moat_001","lesson":"Make Sourcable is core product value: verify BOM rows, identify unavailable or risky parts, suggest candidate alternatives, and require engineering approval before schematic or PCB changes.","appliesTo":["sourcing","make-sourcable","product"],"savedAt":"2026-07-04"}

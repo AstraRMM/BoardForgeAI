@@ -1,1 +1,1 @@
-{"id":"public_alpha_gate_must_include_sourcing_truth_001","lesson":"Public alpha readiness must include sourcing truth, credential status, no fake Mouser usage, and live OAuth blockers.","appliesTo":["launch","readiness"],"savedAt":"2026-07-04"}
+{"id":"public_alpha_gate_must_include_sourcing_truth_001","lesson":"The public alpha gate must distinguish live sourcing proof from external compliance blockers and must never mark supplier or PoE readiness as complete without evidence.","appliesTo":["launch-gate","sourcing","readiness"],"savedAt":"2026-07-04"}

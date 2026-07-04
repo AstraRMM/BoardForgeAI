@@ -20,8 +20,10 @@ export function SourcingCommandCenter({ project }: { project?: any }) {
           <span className="sr-only">Make Sourcable</span>
         </div>
       </div>
-      <dl className="mt-4 grid gap-2 text-xs md:grid-cols-4">
+      <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey</dt><dd className="font-mono">{sourcing.digikeyStatus || 'CONFIGURED_IF_LOCAL_ENV_PRESENT'}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey Auth</dt><dd className="font-mono">{sourcing.digikeyAuthenticated ? 'AUTHENTICATED_LOCAL_ENGINE' : 'LOCAL_TOKEN_REQUIRED'}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Live Lookup</dt><dd className="font-mono">{sourcing.liveLookupStatus || 'RUN_VERIFICATION'}</dd></div>
         <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Mouser</dt><dd className="font-mono">NOT_CONFIGURED</dd></div>
         <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Quote</dt><dd className="font-mono">{sourcing.quoteReadiness || 'NOT_CHECKED'}</dd></div>
         <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Assembly</dt><dd className="font-mono">{sourcing.state || 'ASSEMBLY_READY_NOT_VERIFIED'}</dd></div>

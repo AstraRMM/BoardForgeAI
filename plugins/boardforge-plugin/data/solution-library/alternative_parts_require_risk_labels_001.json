@@ -1,1 +1,1 @@
-{"id":"alternative_parts_require_risk_labels_001","lesson":"Alternative parts are candidates and need risk labels plus engineering review language.","appliesTo":["alternatives","bom"],"savedAt":"2026-07-04"}
+{"id":"alternative_parts_require_risk_labels_001","lesson":"Alternative parts must be labeled as candidates with substitution risk; do not claim drop-in safety unless exact equivalence is proven and reviewed.","appliesTo":["sourcing","alternatives","risk"],"savedAt":"2026-07-04"}

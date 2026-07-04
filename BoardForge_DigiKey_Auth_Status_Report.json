@@ -1,0 +1,15 @@
+{
+  "status": "BOARD_FORGE_DIGIKEY_AUTH_STATUS",
+  "configured": true,
+  "tokenPresent": true,
+  "authenticated": true,
+  "tokenExpired": false,
+  "enabledApis": [
+    "ProductInformationV4",
+    "Quote",
+    "SupplyChainAPI"
+  ],
+  "callbackUrlConfigured": true,
+  "lastCheckTime": "2026-07-04T17:28:25.893Z",
+  "noSecretsPrinted": true
+}

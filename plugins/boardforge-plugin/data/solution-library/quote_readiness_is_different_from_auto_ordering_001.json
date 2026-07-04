@@ -1,1 +1,1 @@
-{"id":"quote_readiness_is_different_from_auto_ordering_001","lesson":"Quote readiness checks BOM quote viability but must not place orders automatically.","appliesTo":["quote","bom","sourcing"],"savedAt":"2026-07-04"}
+{"id":"quote_readiness_is_different_from_auto_ordering_001","lesson":"Quote readiness should prove that a BOM is ready to quote, but BoardForge must not automatically buy or order parts without explicit user approval.","appliesTo":["sourcing","quote-readiness","approval"],"savedAt":"2026-07-04"}
