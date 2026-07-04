@@ -6,6 +6,7 @@ import { verifyBomSourcing } from '../lib/sourcing/bom-sourcing-verifier.mjs'
 import { writeQuoteReadinessReport } from '../lib/sourcing/quote-readiness-report.mjs'
 import { writeAlternativePartReport } from '../lib/sourcing/alternative-part-report.mjs'
 import { runMakeSourcableWorkflow } from '../lib/workflows/make-sourcable-workflow.mjs'
+import { loadBoardForgeEnv } from '../lib/config/env-loader.mjs'
 
 const projectDir = value('--project-dir') || 'C:/Users/luifi/Desktop/BoardForge_New_Board_Fixtures/BF-DIGIKEY-LIVE-SOURCING-PROOF-01_REV_A'
 await mkdir(projectDir, { recursive: true })
@@ -18,13 +19,14 @@ const rows = [
 await writeFile(path.join(projectDir, 'BoardForge_BOM.csv'), ['Ref,MPN,Manufacturer,Footprint,Qty', ...rows.map((row) => `${row.Ref},${row.MPN},${row.Manufacturer},${row.Footprint},${row.Qty}`)].join('\n'), 'utf8')
 
 const lookupService = createPartLookupService()
+const { env } = loadBoardForgeEnv()
 const status = await lookupService.status()
 let result
 if (status.digikey.authenticated) {
-  const sourcing = await verifyBomSourcing({ projectDir, rows, lookupService })
+  const sourcing = await verifyBomSourcing({ projectDir, rows, env, lookupService })
   const quote = await writeQuoteReadinessReport({ projectDir, rows: sourcing.report.rows, providerConfigured: true })
   const alternatives = await writeAlternativePartReport({ projectDir, rows: sourcing.report.rows, lookupService })
-  const sourcable = await runMakeSourcableWorkflow({ projectDir, rows, lookupService })
+  const sourcable = await runMakeSourcableWorkflow({ projectDir, rows, env, lookupService })
   result = {
     status: 'DIGIKEY_LIVE_SOURCING_PROOF_COMPLETE',
     liveMockStatus: 'LIVE_DIGIKEY_RESULT',
