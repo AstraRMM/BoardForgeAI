@@ -1,7 +1,7 @@
 {
     "name": "boardforge-ai",
     "private": true,
-    "version": "0.0.0",
+    "version": "0.1.0-alpha.1",
     "type": "module",
     "scripts": {
         "dev": "next dev",
@@ -34,7 +34,8 @@
         "boardforge": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs",
         "boardforge:help": "node ./plugins/boardforge-plugin/bin/boardforge-cli.mjs help",
         "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
-        "boardforge:package-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/Build_BoardForge_Local_Alpha_Package.ps1",
+        "boardforge:package-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/Build_BoardForge_Local_Alpha_Package.ps1 && node scripts/boardforge-build-microsoft-store-package.mjs",
+        "boardforge:microsoft-store-package": "node scripts/boardforge-build-microsoft-store-package.mjs",
         "boardforge:installer-check": "node scripts/boardforge-installer-check.mjs",
         "boardforge:launcher-smoke-test": "node scripts/boardforge-launcher-smoke-test.mjs",
         "boardforge:setup-routing": "node scripts/boardforge-routing-setup.mjs",

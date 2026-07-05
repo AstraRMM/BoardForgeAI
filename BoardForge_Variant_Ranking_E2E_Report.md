@@ -2,7 +2,7 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_Variant_Ranking_E2E_Report
-- generatedAt: 2026-07-05T14:45:00.045Z
+- generatedAt: 2026-07-05T19:44:27.961Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /projects/BF-DENSE-CONTROL-01_REV_A
 - proves: variant ranking panel visible; 2-4 variant options visible; engineering/manufacturing scoring intent visible

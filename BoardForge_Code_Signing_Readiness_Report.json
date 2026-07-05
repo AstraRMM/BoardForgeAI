@@ -1,0 +1,7 @@
+{
+  "status": "SIGNING_BLOCKED_CERT_REQUIRED",
+  "signed": false,
+  "certificateDetected": false,
+  "signtoolDetected": false,
+  "nextStep": "Obtain a CA-trusted Authenticode code-signing certificate or configure Microsoft Trusted Signing / Azure Trusted Signing, then sign the installer and rerun package validation."
+}

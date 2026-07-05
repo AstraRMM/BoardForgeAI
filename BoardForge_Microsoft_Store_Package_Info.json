@@ -1,0 +1,13 @@
+{
+  "packageUrl": "https://www.boardforge-ai.com/downloads/BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe",
+  "packageType": "EXE",
+  "architecture": "x64",
+  "language": "en-us",
+  "version": "0.1.0-alpha.1",
+  "sha256": "0248270a648e81a4056c000a3334b53c226db88b771b9face1798494f9128a29",
+  "installerParameters": "/S",
+  "silentInstallCommand": "BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe /S",
+  "silentUninstallCommand": "BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe /S /uninstall",
+  "signingStatus": "SIGNING_BLOCKED_CERT_REQUIRED",
+  "launchGateStatus": "INSTALLER_READY_UNSIGNED_CERT_REQUIRED"
+}

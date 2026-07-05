@@ -25,7 +25,7 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
     browserSecretLeakGuard: checks.browserSecretLeakGuard ?? true,
     supplierApiKeys: checks.supplierApiKeys ?? false,
     routingJarWorkflow: checks.routingJarWorkflow ?? 'ROUTING_JAR_OPTIONAL_MISSING_WITH_SETUP_STEPS',
-    installerPackage: checks.installerPackage ?? 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA',
+    installerPackage: checks.installerPackage ?? 'INSTALLER_READY_UNSIGNED_CERT_REQUIRED',
     installerSigning: checks.installerSigning ?? false,
     poeComplianceReview: checks.poeComplianceReview ?? 'POE_COMPLIANCE_REVIEW_PACKAGE_READY_HUMAN_REVIEW_REQUIRED',
     digikeyQuoteApi: checks.digikeyQuoteApi ?? 'DIGIKEY_QUOTE_API_BLOCKED_OR_NOT_ENABLED',
@@ -54,7 +54,7 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
   const privateReady = coreReady && categories.demoArtifactAuthenticity
   const publicReady = privateReady && categories.e2eStatus && categories.localEnginePairingSecurity
   const softwareClean = publicReady
-    && categories.installerPackage === 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA'
+    && ['INSTALLER_READY_UNSIGNED_CERT_REQUIRED', 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA', 'INSTALLER_SIGNED_READY'].includes(categories.installerPackage)
     && String(categories.poeComplianceReview).startsWith('POE_COMPLIANCE_REVIEW_PACKAGE_READY')
   const status = softwareClean
     ? 'PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING'

@@ -2,7 +2,7 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_Make_Manufacturable_E2E_Report
-- generatedAt: 2026-07-05T14:44:55.202Z
+- generatedAt: 2026-07-05T19:44:20.805Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /projects/BF-DENSE-CONTROL-01_REV_A
 - proves: Make Manufacturable UI visible; risk and review panels visible; downloads/reports visible; local execution limitation visible

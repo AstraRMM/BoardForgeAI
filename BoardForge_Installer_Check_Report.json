@@ -1,6 +1,7 @@
 {
-  "status": "INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA",
+  "status": "INSTALLER_READY_UNSIGNED_CERT_REQUIRED",
   "packageDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\dist\\BoardForge_Local_Alpha",
+  "microsoftPackageDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Public_Alpha_Demo_Package\\microsoft-store-package",
   "required": [
     {
       "file": "tools/boardforge-launcher/BoardForge_Start_Local_Alpha.cmd",
@@ -39,11 +40,22 @@
       "exists": true
     }
   ],
+  "microsoftStorePackage": {
+    "ready": true,
+    "manifestExists": true,
+    "installerExists": true,
+    "checksumExists": true,
+    "silentPassed": true,
+    "status": "INSTALLER_READY_UNSIGNED_CERT_REQUIRED",
+    "installerFileName": "BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe",
+    "packageUrl": "https://www.boardforge-ai.com/downloads/BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe",
+    "installerParameters": "/S"
+  },
   "secretScan": {
     "status": "NO_SECRET_PATTERN_FOUND",
     "files": []
   },
   "signed": false,
-  "signingBlocker": "No code-signing certificate is bundled or assumed.",
-  "generatedAt": "2026-07-05T14:41:02.163Z"
+  "signingBlocker": "No code-signing certificate is bundled or assumed. Microsoft Store package is unsigned until a trusted Authenticode certificate or Microsoft Trusted Signing is configured.",
+  "generatedAt": "2026-07-05T18:23:00.807Z"
 }
