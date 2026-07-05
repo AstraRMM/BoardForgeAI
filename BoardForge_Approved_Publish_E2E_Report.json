@@ -1,7 +1,7 @@
 {
   "schema": "boardforge.browser-e2e-report.v1",
   "name": "BoardForge_Approved_Publish_E2E_Report",
-  "generatedAt": "2026-07-05T13:21:33.870Z",
+  "generatedAt": "2026-07-05T13:55:39.318Z",
   "title": "BoardForge Approved Publish E2E Report",
   "status": "PASSED_WITH_LIMITATIONS",
   "route": "/projects/BF-DENSE-CONTROL-01_REV_A",

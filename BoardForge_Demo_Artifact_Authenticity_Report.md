@@ -8,8 +8,8 @@ Status: BOARD_FORGE_DEMO_ARTIFACT_AUTHENTICITY_REVIEWED
 - No ESC/FC/protected hardware project is included.
 
 ## Artifacts
-- FOUND: BoardForge_DigiKey_Live_Lookup_Report.json (356 bytes, NO_SECRET_PATTERN_FOUND)
-- FOUND: BoardForge_DigiKey_Live_Lookup_Report.md (300 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_DigiKey_Live_Lookup_Report.json (19204 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_DigiKey_Live_Lookup_Report.md (160 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Mouser_Live_Lookup_Report.json (1380 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Mouser_Live_Lookup_Report.md (175 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Live_Supplier_Sourcing_E2E_Report.json (856 bytes, NO_SECRET_PATTERN_FOUND)

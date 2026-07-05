@@ -2,7 +2,7 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_Import_Sandbox_E2E_Report
-- generatedAt: 2026-07-05T13:21:29.960Z
+- generatedAt: 2026-07-05T13:55:35.500Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /import
 - proves: import page loads; sandbox copy language visible; source hash protection language visible

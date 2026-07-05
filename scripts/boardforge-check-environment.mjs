@@ -3,13 +3,40 @@ import { access, writeFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
+loadLocalEnvFile('.env.local')
+
 function commandVersion(command, args = ['--version']) {
-  if (process.platform === 'win32') {
-    const result = spawnSync(`${command} ${args.join(' ')}`, { encoding: 'utf8', shell: true })
-    return { available: result.status === 0, output: (result.stdout || result.stderr || '').trim().split(/\r?\n/)[0] || null }
-  }
-  const result = spawnSync(command, args, { encoding: 'utf8' })
+  const result = process.platform === 'win32' && /\.(cmd|bat)$/i.test(command)
+    ? spawnSync('cmd.exe', ['/c', command, ...args], { encoding: 'utf8' })
+    : spawnSync(command, args, { encoding: 'utf8' })
   return { available: result.status === 0, output: (result.stdout || result.stderr || '').trim().split(/\r?\n/)[0] || null }
+}
+
+function firstAvailableCommand(candidates, args = ['--version']) {
+  for (const candidate of candidates.filter(Boolean)) {
+    const result = commandVersion(candidate, args)
+    if (result.available) return { ...result, path: candidate }
+  }
+  const result = commandVersion(candidates[candidates.length - 1], args)
+  return { ...result, path: null }
+}
+
+function loadLocalEnvFile(file) {
+  try {
+    const body = spawnSync(process.execPath, ['-e', `
+      const fs = require('fs');
+      const file = process.argv[1];
+      if (!fs.existsSync(file)) process.exit(0);
+      process.stdout.write(fs.readFileSync(file, 'utf8'));
+    `, file], { encoding: 'utf8' }).stdout || ''
+    for (const line of body.split(/\r?\n/)) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/)
+      if (!match || process.env[match[1]]) continue
+      process.env[match[1]] = match[2].replace(/^["']|["']$/g, '')
+    }
+  } catch {}
 }
 
 async function exists(file) {
@@ -23,9 +50,16 @@ async function exists(file) {
 
 const checks = {
   node: commandVersion('node'),
-  npm: commandVersion('npm', ['--version']),
+  npm: firstAvailableCommand([process.env.npm_execpath, process.platform === 'win32' ? 'C:\\Program Files\\nodejs\\npm.cmd' : null, process.platform === 'win32' ? 'npm.cmd' : 'npm', 'npm'], ['--version']),
   git: commandVersion('git', ['--version']),
-  kicadCli: commandVersion('kicad-cli'),
+  kicadCli: firstAvailableCommand([
+    process.env.BOARDFORGE_KICAD_CLI,
+    'C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe',
+    'C:\\Program Files\\KiCad\\10\\bin\\kicad-cli.exe',
+    'C:\\Program Files\\KiCad\\9.0\\bin\\kicad-cli.exe',
+    'C:\\Program Files\\KiCad\\8.0\\bin\\kicad-cli.exe',
+    'kicad-cli',
+  ], ['version']),
   java: commandVersion('java', ['-version']),
   localEngineBridge: { expected: '127.0.0.1:38991', startCommand: 'npm run boardforge:local-server' },
   webBuild: { available: await exists(path.resolve('.next')) },
@@ -33,7 +67,7 @@ const checks = {
   supplierApiKeys: {
     DIGIKEY_CLIENT_ID: Boolean(process.env.DIGIKEY_CLIENT_ID),
     DIGIKEY_CLIENT_SECRET: Boolean(process.env.DIGIKEY_CLIENT_SECRET),
-    MOUSER_API_KEY: Boolean(process.env.MOUSER_API_KEY),
+    MOUSER_API_KEY: Boolean(process.env.MOUSER_API_KEY || process.env.MOUSER_SEARCH_API_KEY || process.env.MOUSER_PRODUCT_API_KEY),
     LCSC_API_KEY: Boolean(process.env.LCSC_API_KEY),
     JLCPCB_API_KEY: Boolean(process.env.JLCPCB_API_KEY),
   },

@@ -1,7 +1,7 @@
 {
   "schema": "boardforge.browser-e2e-report.v1",
   "name": "BoardForge_One_Click_Demo_E2E_Report",
-  "generatedAt": "2026-07-05T13:21:33.264Z",
+  "generatedAt": "2026-07-05T13:55:38.635Z",
   "title": "BoardForge One Click Demo E2E Report",
   "status": "PASSED_WITH_LIMITATIONS",
   "route": "/demo",

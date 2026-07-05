@@ -1,6 +1,6 @@
 {
   "status": "BOARD_FORGE_DEMO_ARTIFACT_AUTHENTICITY_REVIEWED",
-  "generatedAt": "2026-07-05T13:21:56.379Z",
+  "generatedAt": "2026-07-05T14:08:54.458Z",
   "noEnvLocalIncluded": true,
   "noTokenStoreIncluded": true,
   "noProtectedEscFcProjectsIncluded": true,
@@ -10,13 +10,13 @@
     {
       "file": "BoardForge_DigiKey_Live_Lookup_Report.json",
       "exists": true,
-      "bytes": 356,
+      "bytes": 19204,
       "secretScan": "NO_SECRET_PATTERN_FOUND"
     },
     {
       "file": "BoardForge_DigiKey_Live_Lookup_Report.md",
       "exists": true,
-      "bytes": 300,
+      "bytes": 160,
       "secretScan": "NO_SECRET_PATTERN_FOUND"
     },
     {

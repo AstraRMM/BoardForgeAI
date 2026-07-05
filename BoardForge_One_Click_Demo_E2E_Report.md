@@ -2,7 +2,7 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_One_Click_Demo_E2E_Report
-- generatedAt: 2026-07-05T13:21:33.264Z
+- generatedAt: 2026-07-05T13:55:38.635Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /demo
 - proves: demo page loads; demo command visible; demo package limitation visible; project gallery visible; no browser-visible secrets

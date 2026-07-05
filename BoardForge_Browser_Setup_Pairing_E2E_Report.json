@@ -1,7 +1,7 @@
 {
   "schema": "boardforge.browser-e2e-report.v1",
   "name": "BoardForge_Browser_Setup_Pairing_E2E_Report",
-  "generatedAt": "2026-07-05T13:21:34.640Z",
+  "generatedAt": "2026-07-05T13:55:40.147Z",
   "title": "BoardForge Browser Setup Pairing E2E Report",
   "status": "PASSED_WITH_LIMITATIONS",
   "route": "/setup",

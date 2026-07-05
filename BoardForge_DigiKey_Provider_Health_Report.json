@@ -1,17 +1,17 @@
 {
   "status": "BOARD_FORGE_DIGIKEY_PROVIDER_HEALTH",
   "digikeyConfigured": true,
-  "tokenPresent": false,
-  "authenticated": false,
+  "tokenPresent": true,
+  "authenticated": true,
   "enabledApis": [
     "ProductInformationV4",
     "Quote",
     "SupplyChainAPI"
   ],
-  "productInformationV4Reachable": false,
+  "productInformationV4Reachable": true,
   "quoteReachable": false,
   "supplyChainApiScaffolded": true,
-  "lastCheckTime": "2026-07-05T13:15:59.952Z",
+  "lastCheckTime": "2026-07-05T13:51:20.119Z",
   "error": null,
   "noSecretsPrinted": true
 }

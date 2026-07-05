@@ -2,7 +2,7 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_Browser_Setup_Pairing_E2E_Report
-- generatedAt: 2026-07-05T13:21:34.640Z
+- generatedAt: 2026-07-05T13:55:40.147Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /setup
 - proves: setup page loads; pairing routes are visible; local token requirement is visible; protected path guard is visible; no browser-visible secrets
