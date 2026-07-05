@@ -4,7 +4,7 @@ export function getProviderConfig({ env, cwd = process.cwd() } = {}) {
   const loaded = env ? { env, loadedFiles: [] } : loadBoardForgeEnv({ cwd })
   const source = loaded.env
   const digikeyConfigured = Boolean(source.DIGIKEY_CLIENT_ID && source.DIGIKEY_CLIENT_SECRET)
-  const mouserProductApi = Boolean(source.MOUSER_PRODUCT_API_KEY || source.MOUSER_SEARCH_API_KEY)
+  const mouserSearchApi = Boolean(source.MOUSER_API_KEY || source.MOUSER_SEARCH_API_KEY || source.MOUSER_PRODUCT_API_KEY)
   return {
     loadedFiles: loaded.loadedFiles,
     providers: {
@@ -18,9 +18,10 @@ export function getProviderConfig({ env, cwd = process.cwd() } = {}) {
       },
       mouser: {
         name: 'Mouser',
-        status: mouserProductApi ? 'CONFIGURED' : 'NOT_CONFIGURED',
-        configured: mouserProductApi,
-        limitation: mouserProductApi ? null : 'Only order/cart/history credentials are available; no product/search sourcing API is configured.',
+        status: mouserSearchApi ? 'CONFIGURED' : 'NOT_CONFIGURED',
+        configured: mouserSearchApi,
+        missingEnv: mouserSearchApi ? [] : ['MOUSER_API_KEY'],
+        limitation: mouserSearchApi ? null : 'Mouser Search API key is not configured.',
       },
       lcsc: { name: 'LCSC', status: source.LCSC_API_KEY ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: Boolean(source.LCSC_API_KEY) },
       jlcpcb: { name: 'JLCPCB Assembly', status: source.JLCPCB_API_KEY ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: Boolean(source.JLCPCB_API_KEY) },

@@ -83,16 +83,58 @@ test('configured provider still does not claim API_VERIFIED before live query ev
   assert.notEqual(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
 })
 
+test('Mouser provider live lookup maps Search API payload to API_VERIFIED evidence', async () => {
+  const fetchCalls = []
+  const provider = createMouserProvider({
+    env: { MOUSER_API_KEY: 'test-key' },
+    liveLookup: true,
+    fetchImpl: async (url, request) => {
+      fetchCalls.push({ url, request })
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return JSON.stringify({
+            SearchResults: {
+              NumberOfResult: 1,
+              Parts: [{
+                ManufacturerPartNumber: 'RC0603FR-0710KL',
+                MouserPartNumber: '603-RC0603FR-0710KL',
+                Manufacturer: 'YAGEO',
+                AvailabilityInStock: '12,345',
+                PriceBreaks: [{ Quantity: 1, Price: '$0.10' }],
+                Min: '1',
+                ProductDetailUrl: 'https://www.mouser.com/example',
+              }],
+            },
+          })
+        },
+      }
+    },
+  })
+  const row = await provider.verifyPart({ ref: 'R1', mpn: 'RC0603FR-0710KL' })
+  assert.equal(fetchCalls.length, 1)
+  assert.match(fetchCalls[0].url, /api\.mouser\.com\/api\/v1\/search\/partnumber/)
+  assert.doesNotMatch(JSON.stringify(row), /test-key/)
+  assert.equal(row.provider, 'mouser')
+  assert.equal(row.sourcingStatus, SOURCING_STATUSES.API_VERIFIED)
+  assert.equal(row.stockStatus, 'IN_STOCK')
+  assert.equal(row.stockQty, 12345)
+  assert.equal(row.supplierSku, '603-RC0603FR-0710KL')
+  assert.equal(row.evidence.liveApiEvidence, true)
+})
+
 test('supplier env config exposes required keys without requiring committed secrets', () => {
   const report = detectSourcingProviderEnv({
     DIGIKEY_CLIENT_ID: 'present',
     DIGIKEY_CLIENT_SECRET: 'present',
+    MOUSER_API_KEY: 'present',
   })
   const digikey = report.find((provider) => provider.provider === 'digikey')
   const mouser = report.find((provider) => provider.provider === 'mouser')
   assert.equal(digikey.apiCallable, true)
-  assert.equal(mouser.apiCallable, false)
-  assert.ok(mouser.missingEnv.includes('MOUSER_API_KEY'))
+  assert.equal(mouser.apiCallable, true)
+  assert.equal(mouser.missingEnv.length, 0)
 })
 
 test('secret handling no logs exposes key presence but never values', () => {

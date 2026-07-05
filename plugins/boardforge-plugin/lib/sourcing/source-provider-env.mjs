@@ -1,22 +1,25 @@
 export const sourcingProviderEnvSpec = [
   { id: 'digikey', name: 'DigiKey', env: ['DIGIKEY_CLIENT_ID', 'DIGIKEY_CLIENT_SECRET'], callbackEnv: 'DIGIKEY_CALLBACK_URL' },
-  { id: 'mouser', name: 'Mouser', env: ['MOUSER_PRODUCT_API_KEY'], forcedStatus: 'NOT_CONFIGURED', limitation: 'Mouser order/cart/history APIs are not sourcing verification APIs.' },
+  { id: 'mouser', name: 'Mouser', env: ['MOUSER_API_KEY'], aliases: ['MOUSER_SEARCH_API_KEY', 'MOUSER_PRODUCT_API_KEY'] },
   { id: 'lcsc', name: 'LCSC', env: ['LCSC_API_KEY'] },
   { id: 'jlcpcb', name: 'JLCPCB Assembly', env: ['JLCPCB_API_KEY'] },
 ]
 
 export function detectSourcingProviderEnv(env = process.env) {
   return sourcingProviderEnvSpec.map((provider) => {
-    const present = provider.env.filter((name) => Boolean(env[name]))
-    const missing = provider.env.filter((name) => !env[name])
+    const aliases = [...provider.env, ...(provider.aliases || [])]
+    const present = aliases.filter((name) => Boolean(env[name]))
+    const configured = provider.id === 'mouser' ? present.length > 0 : provider.env.every((name) => Boolean(env[name]))
+    const missing = configured ? [] : provider.env.filter((name) => !env[name])
     return {
       provider: provider.id,
       name: provider.name,
       requiredEnv: provider.env,
+      acceptedEnvAliases: aliases,
       envKeysPresent: present,
       missingEnv: missing,
-      apiCallable: provider.forcedStatus ? false : missing.length === 0,
-      verificationAvailable: provider.forcedStatus ? 'not_configured' : missing.length === 0 ? 'configured_not_called' : 'not_configured',
+      apiCallable: provider.forcedStatus ? false : configured,
+      verificationAvailable: provider.forcedStatus ? 'not_configured' : configured ? 'configured_not_called' : 'not_configured',
       limitation: provider.limitation || null,
       fallbackBehavior: {
         sourcingStatus: 'NOT_CHECKED',

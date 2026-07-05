@@ -337,6 +337,7 @@
                     "boardforge:digikey-token-test":  "node plugins/boardforge-plugin/bin/boardforge-digikey-token-test.mjs",
                     "boardforge:digikey-provider-health":  "node plugins/boardforge-plugin/bin/boardforge-digikey-provider-health.mjs",
                     "boardforge:digikey-live-lookup":  "node plugins/boardforge-plugin/bin/boardforge-digikey-live-lookup.mjs",
+                    "boardforge:mouser-live-lookup":  "node plugins/boardforge-plugin/bin/boardforge-mouser-live-lookup.mjs",
                     "boardforge:digikey-live-sourcing-proof":  "node plugins/boardforge-plugin/bin/boardforge-digikey-live-sourcing-proof.mjs",
                     "report:99:full":  "node ./plugins/boardforge-plugin/bin/boardforge-report-99.mjs",
                     "test:readiness-gap-audit":  "node --test --test-name-pattern \"readiness gap audit\" ./plugins/boardforge-plugin/tests/*.test.mjs",
