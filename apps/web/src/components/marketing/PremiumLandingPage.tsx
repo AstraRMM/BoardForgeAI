@@ -339,7 +339,7 @@ export function PremiumLandingPage() {
       <PremiumNav />
       <section className="bf-hero">
         <div className="bf-hero-copy">
-          <span className="bf-kicker">AI PCB engineering command center</span>
+          <span className="bf-kicker">Premium public alpha command center</span>
           <h1>From PCB idea to manufacturable KiCad project.</h1>
           <p>BoardForge helps you generate board briefs, create custom outlines, validate KiCad projects, verify live supplier sourcing, repair manufacturability issues, and export fabrication-ready packages.</p>
           <div className="bf-button-row">
