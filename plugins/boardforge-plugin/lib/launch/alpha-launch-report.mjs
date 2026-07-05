@@ -13,8 +13,14 @@ export async function writeAlphaLaunchReport({ rootDir }) {
     '',
     `Status: ${report.status}`,
     '',
+    '## Categories',
+    ...Object.entries(report.categories).map(([name, value]) => `- ${value ? 'PASS' : 'LIMITATION'}: ${name}`),
+    '',
     '## External Blockers',
     ...report.externalBlockers.map((blocker) => `- ${blocker}`),
+    '',
+    '## Limitations',
+    ...report.limitations.map((limitation) => `- ${limitation}`),
     '',
   ].join('\n'))
   return { status: 'BOARD_FORGE_PUBLIC_ALPHA_LAUNCH_REPORT_WRITTEN', report, artifactPaths: [jsonPath, mdPath] }

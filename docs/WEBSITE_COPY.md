@@ -48,4 +48,4 @@ Projects stay local unless the user explicitly approves dashboard publishing.
 
 Verify BOM risk before assembly. BoardForge checks supplier availability through the installed local engine, keeps credentials off the live website, and distinguishes fab-ready boards from assembly-verified builds.
 
-Make Sourcable identifies unavailable or risky BOM rows, searches candidate alternatives, and creates an approval-required substitution plan. BoardForge never silently swaps parts or claims fake stock.
+Make Sourcable identifies unavailable or risky BOM rows, searches DigiKey and Mouser evidence through the local engine, and creates an approval-required substitution plan. BoardForge never silently swaps parts or claims fake stock.

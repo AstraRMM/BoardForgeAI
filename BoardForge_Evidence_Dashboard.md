@@ -1,0 +1,25 @@
+# BoardForge Evidence Dashboard
+
+- PASS: generated clean board - Prompt-to-manufacturing synthetic board proof.
+- PASS: dirty repair - Dirty board repaired to DRC/ERC clean.
+- PASS: import sandbox repair - Existing-project copy repaired while source hash stayed unchanged.
+- PASS: custom outline generation - Odd shape generated and validated.
+- PASS: variant ranking - Candidate layouts ranked by routeability and manufacturability.
+- PASS: make manufacturable - Safe sequence from validate to ready/blocked summary.
+- PASS: approved-only publish - Drafts and candidates stay hidden until publish confirm.
+- PASS: DigiKey credentials configured without leaking secrets - Provider config reports configured/missing without exposing raw values.
+- PASS: DigiKey provider health check - Local engine exposes backend-only DigiKey health status.
+- PASS: DigiKey OAuth token stored safely - DigiKey auth stores short-lived local tokens in ignored local engine storage without printing credentials.
+- PASS: Live ProductInformation V4 lookup - Live ProductInformation V4 lookup verifies real DigiKey stock, price, lifecycle, and datasheet fields through the local engine.
+- PASS: Live BOM sourcing verification - A real BOM sourcing proof uses live DigiKey lookup data and still avoids fake stock claims.
+- PASS: Mouser Search API live lookup - Mouser Search API lookup verifies real stock/pricing responses through local-only credentials.
+- PASS: Dual supplier lookup evidence - The same requested BOM rows can show DigiKey and Mouser states without inventing availability.
+- PASS: BOM sourcing verification - BOM rows map to supplier verification statuses without fake stock.
+- PASS: quote readiness - Quote readiness is scored separately from auto ordering.
+- PASS: Make Sourcable - Unavailable/risky BOM rows produce candidate substitution plans instead of silent schematic edits.
+- PASS: alternative parts - Alternatives are risk labeled and require engineering review.
+- PASS: supply-chain-aware variant ranking - Variants can be ranked by sourcing, quote, manufacturing, and engineering scores.
+- PASS: browser E2E supplier disclosure - The web UI discloses redacted local-engine supplier evidence and does not expose credentials in browser logs or requests.
+- PASS: browser E2E setup and pairing - Playwright covers setup pairing, browser-origin POST auth, and protected path guidance.
+- PASS: browser E2E demo/import/publish flows - Playwright covers one-click demo, import sandbox, variant ranking, publish gates, and Make Manufacturable/Sourcable panels.
+- PASS: secret redaction - Secrets are redacted from errors, reports, and public provider status.

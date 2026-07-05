@@ -1,9 +1,9 @@
 # DigiKey Provider Health
 
 - Configured: true
-- Token present: true
-- Authenticated: true
-- ProductInformation V4 reachable: true
+- Token present: false
+- Authenticated: false
+- ProductInformation V4 reachable: false
 - Quote reachable: false
 - SupplyChainAPI scaffolded: true
 

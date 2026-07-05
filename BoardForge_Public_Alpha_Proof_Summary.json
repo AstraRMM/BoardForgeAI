@@ -1,0 +1,18 @@
+{
+  "status": "BOARD_FORGE_PUBLIC_ALPHA_PROOF_WRITTEN",
+  "rootDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai",
+  "packageDir": "C:/Users/luifi/Desktop/BoardForge_Public_Alpha_Demo_Package",
+  "reports": [
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Demo_Artifact_Authenticity_Report.json",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Demo_Artifact_Authenticity_Report.md",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Evidence_Dashboard.json",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Evidence_Dashboard.md",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Public_Alpha_Launch_Report.json",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\BoardForge_Public_Alpha_Launch_Report.md",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Public_Alpha_Demo_Package\\BoardForge_Public_Alpha_Demo_Package_Manifest.json",
+    "C:\\Users\\luifi\\Desktop\\BoardForge_Public_Alpha_Demo_Package\\BoardForge_Public_Alpha_Demo_Package_Manifest.md"
+  ],
+  "launchStatus": "READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS",
+  "missingArtifacts": [],
+  "generatedAt": "2026-07-05T13:21:56.417Z"
+}

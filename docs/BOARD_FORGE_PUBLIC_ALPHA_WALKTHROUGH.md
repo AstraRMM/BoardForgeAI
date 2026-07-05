@@ -8,6 +8,7 @@
 6. Create or import a board.
 7. Generate variants.
 8. Run Make Manufacturable.
-9. Review health/risk/routeability/diff reports.
-10. Export manufacturing only if validation is clean.
-11. Publish to dashboard only with explicit confirmation.
+9. Run Make Sourcable if supplier credentials are configured locally.
+10. Review health/risk/routeability/diff/sourcing reports.
+11. Export manufacturing only if validation is clean.
+12. Publish to dashboard only with explicit confirmation.

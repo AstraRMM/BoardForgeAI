@@ -1,0 +1,40 @@
+{
+  "status": "READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS",
+  "categories": {
+    "engineReadiness": true,
+    "webUxReadiness": true,
+    "localEnginePairingSecurity": true,
+    "installerLauncherReadiness": true,
+    "kicadPluginReadiness": true,
+    "cliReadiness": true,
+    "demoReadiness": true,
+    "manufacturingExportReadiness": true,
+    "sourceProtectionReadiness": true,
+    "documentationReadiness": true,
+    "digikeyConfigured": false,
+    "digikeyProviderHealth": false,
+    "digikeyOAuthToken": false,
+    "liveProductInformationV4Lookup": false,
+    "liveBomSourcingProof": false,
+    "liveSourcingVerification": false,
+    "mouserConfigured": false,
+    "mouserSearchApiVerified": false,
+    "dualSupplierLiveLookup": false,
+    "quoteReadiness": true,
+    "demoArtifactAuthenticity": true,
+    "e2eStatus": true,
+    "browserSecretLeakGuard": true,
+    "supplierApiKeys": false,
+    "poeComplianceReview": false,
+    "installerSigning": false
+  },
+  "externalBlockers": [
+    "supplier credentials must remain local to each operator",
+    "real PoE compliance/safety review",
+    "public installer signing certificate"
+  ],
+  "limitations": [
+    "Public alpha is local-first and evidence-backed; supplier data and compliance are not faked.",
+    "Browser UI consumes redacted local-engine/sample evidence; live supplier calls remain backend/local CLI controlled."
+  ]
+}

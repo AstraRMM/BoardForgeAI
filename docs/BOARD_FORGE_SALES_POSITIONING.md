@@ -26,4 +26,4 @@ BoardForge is not “AI made a board.” BoardForge creates variants, ranks them
 
 BoardForge AI: From PCB idea to manufacturable KiCad project.
 
-The local engine now separates PCB fab readiness from assembly readiness. With DigiKey configured, BoardForge can verify BOM rows, surface stock and lifecycle risk, produce quote-readiness reports, and recommend candidate alternatives with explicit engineering-review labels. Without supplier keys, it stays honest and marks sourcing as not checked.
+The local engine now separates PCB fab readiness from assembly readiness. With DigiKey and Mouser configured, BoardForge can verify BOM rows, surface stock and lifecycle risk, produce quote-readiness reports, and recommend candidate alternatives with explicit engineering-review labels. Without supplier keys, it stays honest and marks sourcing as not checked.

@@ -1,0 +1,51 @@
+{
+  "status": "BOARD_FORGE_MOUSER_LIVE_LOOKUP_COMPLETE",
+  "configured": true,
+  "loadedEnvFiles": [
+    ".env.local"
+  ],
+  "results": [
+    {
+      "label": "0603 resistor",
+      "mpn": "RC0603FR-0710KL",
+      "provider": "mouser",
+      "supplierSku": "603-RC0603FR-0710KL",
+      "sourcingStatus": "OUT_OF_STOCK",
+      "stockStatus": "OUT_OF_STOCK",
+      "stockQty": 0,
+      "packageMatch": "UNKNOWN",
+      "risk": "api_verified_out_of_stock",
+      "totalResults": 3,
+      "liveApiEvidence": true
+    },
+    {
+      "label": "0603 capacitor",
+      "mpn": "CL10B104KB8NNNC",
+      "provider": "mouser",
+      "supplierSku": "187-CL10B104KB8NNNC",
+      "sourcingStatus": "API_VERIFIED",
+      "stockStatus": "IN_STOCK",
+      "stockQty": 13667,
+      "packageMatch": "UNKNOWN",
+      "risk": "api_verified_stock_available",
+      "totalResults": 1,
+      "liveApiEvidence": true
+    },
+    {
+      "label": "3.3V regulator",
+      "mpn": "MCP1700T-3302E/TT",
+      "provider": "mouser",
+      "supplierSku": "579-MCP1700T3302E/TT",
+      "sourcingStatus": "API_VERIFIED",
+      "stockStatus": "IN_STOCK",
+      "stockQty": 195189,
+      "packageMatch": "UNKNOWN",
+      "risk": "api_verified_stock_available",
+      "totalResults": 2,
+      "liveApiEvidence": true
+    }
+  ],
+  "blocker": null,
+  "generatedAt": "2026-07-05T13:16:00.898Z",
+  "noSecretsPrinted": true
+}

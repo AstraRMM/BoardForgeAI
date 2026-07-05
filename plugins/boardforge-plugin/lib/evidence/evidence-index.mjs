@@ -16,12 +16,16 @@ export async function writeEvidenceIndex({ rootDir }) {
     card('DigiKey OAuth token stored safely', 'digikey-oauth-token', true, 'DigiKey auth stores short-lived local tokens in ignored local engine storage without printing credentials.'),
     card('Live ProductInformation V4 lookup', 'digikey-live-product-info-v4', true, 'Live ProductInformation V4 lookup verifies real DigiKey stock, price, lifecycle, and datasheet fields through the local engine.'),
     card('Live BOM sourcing verification', 'BF-DIGIKEY-LIVE-SOURCING-PROOF-01_REV_A', true, 'A real BOM sourcing proof uses live DigiKey lookup data and still avoids fake stock claims.'),
+    card('Mouser Search API live lookup', 'mouser-live-search', true, 'Mouser Search API lookup verifies real stock/pricing responses through local-only credentials.'),
+    card('Dual supplier lookup evidence', 'digikey-mouser-live-sourcing', true, 'The same requested BOM rows can show DigiKey and Mouser states without inventing availability.'),
     card('BOM sourcing verification', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'BOM rows map to supplier verification statuses without fake stock.'),
     card('quote readiness', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'Quote readiness is scored separately from auto ordering.'),
     card('Make Sourcable', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'Unavailable/risky BOM rows produce candidate substitution plans instead of silent schematic edits.'),
     card('alternative parts', 'BF-DIGIKEY-SOURCING-DEMO-01_REV_A', true, 'Alternatives are risk labeled and require engineering review.'),
     card('supply-chain-aware variant ranking', 'BF-VARIANT-RANKING-DEMO-01_REV_A', true, 'Variants can be ranked by sourcing, quote, manufacturing, and engineering scores.'),
-    card('no fake Mouser usage', 'mouser-not-configured', true, 'Mouser remains NOT_CONFIGURED without a real product/search API.'),
+    card('browser E2E supplier disclosure', 'browser-live-sourcing-e2e', true, 'The web UI discloses redacted local-engine supplier evidence and does not expose credentials in browser logs or requests.'),
+    card('browser E2E setup and pairing', 'browser-setup-pairing-e2e', true, 'Playwright covers setup pairing, browser-origin POST auth, and protected path guidance.'),
+    card('browser E2E demo/import/publish flows', 'browser-public-alpha-e2e', true, 'Playwright covers one-click demo, import sandbox, variant ranking, publish gates, and Make Manufacturable/Sourcable panels.'),
     card('secret redaction', 'secret-redaction', true, 'Secrets are redacted from errors, reports, and public provider status.'),
   ]
   const report = { status: 'BOARD_FORGE_EVIDENCE_INDEX_WRITTEN', generatedAt: new Date().toISOString(), cards }

@@ -1,0 +1,9 @@
+# BoardForge Make Sourcable E2E Report
+
+- schema: boardforge.browser-e2e-report.v1
+- name: BoardForge_Make_Sourcable_E2E_Report
+- generatedAt: 2026-07-05T13:21:31.763Z
+- status: PASSED_WITH_LIMITATIONS
+- route: /projects/BF-DENSE-CONTROL-01_REV_A
+- proves: Make Sourcable UI visible; BOM verification table visible; supplier matrix visible; quote readiness visible; alternative parts visible
+- limitation: Live supplier CLI proof exists separately; browser job start remains local-engine backed.

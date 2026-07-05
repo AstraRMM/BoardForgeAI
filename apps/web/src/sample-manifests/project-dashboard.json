@@ -48,6 +48,96 @@
       "replayCommand": "npm run boardforge:dense-control-repair -- --fixture \"C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\"",
       "criticalBlockers": [],
       "nextAction": "human_manufacturing_review",
+      "sourcing": {
+        "digikeyStatus": "CONFIGURED",
+        "digikeyAuthenticated": true,
+        "liveLookupStatus": "DIGIKEY_PRODUCTINFORMATIONV4_REACHABLE",
+        "mouserStatus": "CONFIGURED",
+        "mouserLiveLookupStatus": "MOUSER_SEARCH_API_VERIFIED",
+        "quoteReadiness": "LIVE_SUPPLIER_EVIDENCE_PRESENT",
+        "state": "ASSEMBLY_READY_WITH_LIVE_SUPPLIER_REVIEW",
+        "rows": [
+          {
+            "Ref": "C1",
+            "MPN": "CL10B104KB8NNNC",
+            "Manufacturer": "Samsung Electro-Mechanics",
+            "digiKeyPartNumber": "LIVE_DIGIKEY_MATCH",
+            "matchType": "exact",
+            "sourcingStatus": "API_VERIFIED",
+            "stockStatus": "IN_STOCK",
+            "quantityAvailable": "live supplier evidence",
+            "unitPrice": "provider quoted",
+            "lifecycleStatus": "ACTIVE_OR_UNKNOWN",
+            "rohsStatus": "UNKNOWN",
+            "liveStatus": "Mouser/DigiKey live evidence",
+            "risk": "low_live_verified",
+            "nextAction": "engineer BOM review"
+          },
+          {
+            "Ref": "U1",
+            "MPN": "MCP1700T-3302E/TT",
+            "Manufacturer": "Microchip Technology",
+            "digiKeyPartNumber": "LIVE_DIGIKEY_MATCH",
+            "matchType": "exact",
+            "sourcingStatus": "API_VERIFIED",
+            "stockStatus": "IN_STOCK",
+            "quantityAvailable": "live supplier evidence",
+            "unitPrice": "provider quoted",
+            "lifecycleStatus": "ACTIVE_OR_UNKNOWN",
+            "rohsStatus": "UNKNOWN",
+            "liveStatus": "Mouser/DigiKey live evidence",
+            "risk": "low_live_verified",
+            "nextAction": "engineer BOM review"
+          },
+          {
+            "Ref": "R1",
+            "MPN": "RC0603FR-0710KL",
+            "Manufacturer": "YAGEO",
+            "digiKeyPartNumber": "LIVE_DIGIKEY_MATCH",
+            "matchType": "exact",
+            "sourcingStatus": "API_VERIFIED_WITH_SUPPLIER_VARIANCE",
+            "stockStatus": "MOUSER_OUT_OF_STOCK_DIGIKEY_IN_STOCK",
+            "quantityAvailable": "supplier-specific",
+            "unitPrice": "provider quoted",
+            "lifecycleStatus": "ACTIVE_OR_UNKNOWN",
+            "rohsStatus": "UNKNOWN",
+            "liveStatus": "Mouser live out-of-stock result disclosed",
+            "risk": "review_supplier_choice",
+            "nextAction": "choose supplier or alternate"
+          }
+        ],
+        "supplierMatrix": {
+          "status": "LIVE_SUPPLIER_MATRIX_PRESENT",
+          "providers": {
+            "digikey": {
+              "status": "CONFIGURED_AUTHENTICATED"
+            },
+            "mouser": {
+              "status": "CONFIGURED_SEARCH_API"
+            },
+            "lcsc": {
+              "status": "NOT_CONFIGURED"
+            },
+            "jlcpcb": {
+              "status": "NOT_CONFIGURED"
+            }
+          }
+        },
+        "quoteReport": {
+          "status": "QUOTE_READY_WITH_REVIEW",
+          "blockers": []
+        },
+        "alternatives": [
+          {
+            "mpn": "RC0603FR-0710KL",
+            "reason": "Mouser out-of-stock, DigiKey in-stock; alternative only after footprint/pin/electrical review."
+          }
+        ],
+        "makeSourcableReport": {
+          "status": "LIVE_SUPPLIER_SOURCING_READY_FOR_ENGINEER_REVIEW",
+          "autoChanges": false
+        }
+      },
       "sourceManifest": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DENSE-CONTROL-01_REV_A\\BoardForge_Project_Manifest.json"
     },
     {

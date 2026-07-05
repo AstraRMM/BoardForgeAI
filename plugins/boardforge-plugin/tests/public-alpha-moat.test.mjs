@@ -134,11 +134,14 @@ test('web public-alpha pages and panels expose launch features', async () => {
   }
 })
 
-test('launcher scripts and E2E spec placeholders exist with exact browser blocker', async () => {
+test('launcher scripts and Playwright E2E specs exist', async () => {
   const launcher = await readFile(path.join(repoRoot, 'scripts', 'boardforge-start-local-engine.mjs'), 'utf8')
   assert.match(launcher, /boardforge:local-server/)
-  const blocker = await readFile(path.join(repoRoot, 'BoardForge_Browser_E2E_Blocker_Report.md'), 'utf8')
-  assert.match(blocker, /@playwright\/test is not installed/)
+  const playwrightConfig = await readFile(path.join(repoRoot, 'apps', 'web', 'playwright.config.ts'), 'utf8')
+  assert.match(playwrightConfig, /@playwright\/test/)
+  const liveSourcingSpec = await readFile(path.join(repoRoot, 'apps', 'web', 'tests', 'e2e', 'boardforge-live-sourcing.spec.ts'), 'utf8')
+  assert.match(liveSourcingSpec, /Mouser/)
+  assert.match(liveSourcingSpec, /DigiKey/)
 })
 
 test('package scripts expose public-alpha workflows', () => {
@@ -146,4 +149,5 @@ test('package scripts expose public-alpha workflows', () => {
   assert.equal(Boolean(scripts.scripts['boardforge:demo']), true)
   assert.equal(Boolean(scripts.scripts['test:pairing-security']), true)
   assert.equal(Boolean(scripts.scripts['test:e2e']), true)
+  assert.equal(Boolean(scripts.scripts['boardforge:public-alpha-proof']), true)
 })

@@ -22,9 +22,10 @@ import { ProjectTimelinePanel } from '../../../components/project/ProjectTimelin
 import { SourcingCommandCenter } from '../../../components/project/SourcingCommandCenter'
 import { EngineeringCopilotPanel } from '../../../components/project/EngineeringCopilotPanel'
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
-  const project = dashboard.projects.find((item) => item.projectId === params.id) || dashboard.projects[0]
-  const engineStatus = getBoardForgeEngineStatus(params.id)
+export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const project = dashboard.projects.find((item) => item.projectId === id) || dashboard.projects[0]
+  const engineStatus = getBoardForgeEngineStatus(id)
   return (
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
       <LocalEngineStatusBar />

@@ -1,0 +1,213 @@
+{
+  "status": "BOARD_FORGE_EVIDENCE_INDEX_WRITTEN",
+  "generatedAt": "2026-07-05T13:21:56.391Z",
+  "cards": [
+    {
+      "name": "generated clean board",
+      "fixture": "BF-SENSOR-HUB-01_REV_D",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_D",
+      "whatItProves": "Prompt-to-manufacturing synthetic board proof.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "dirty repair",
+      "fixture": "BF-DIRTY-REPAIR-PROOF-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIRTY-REPAIR-PROOF-01_REV_A",
+      "whatItProves": "Dirty board repaired to DRC/ERC clean.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "import sandbox repair",
+      "fixture": "BF-IMPORTED-USER-BOARD-REPAIR-04_SANDBOX",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-IMPORTED-USER-BOARD-REPAIR-04_SANDBOX",
+      "whatItProves": "Existing-project copy repaired while source hash stayed unchanged.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "custom outline generation",
+      "fixture": "BF-LIVE-SITE-OUTLINE-GENERATED-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-LIVE-SITE-OUTLINE-GENERATED-01_REV_A",
+      "whatItProves": "Odd shape generated and validated.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "variant ranking",
+      "fixture": "BF-VARIANT-RANKING-DEMO-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-VARIANT-RANKING-DEMO-01_REV_A",
+      "whatItProves": "Candidate layouts ranked by routeability and manufacturability.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "make manufacturable",
+      "fixture": "BF-PUBLIC-DEMO-PRODUCT-FLOW-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-PUBLIC-DEMO-PRODUCT-FLOW-01_REV_A",
+      "whatItProves": "Safe sequence from validate to ready/blocked summary.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "approved-only publish",
+      "fixture": "approved-sync-validation",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\approved-sync-validation",
+      "whatItProves": "Drafts and candidates stay hidden until publish confirm.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "DigiKey credentials configured without leaking secrets",
+      "fixture": "digikey-config",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\digikey-config",
+      "whatItProves": "Provider config reports configured/missing without exposing raw values.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "DigiKey provider health check",
+      "fixture": "digikey-health",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\digikey-health",
+      "whatItProves": "Local engine exposes backend-only DigiKey health status.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "DigiKey OAuth token stored safely",
+      "fixture": "digikey-oauth-token",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\digikey-oauth-token",
+      "whatItProves": "DigiKey auth stores short-lived local tokens in ignored local engine storage without printing credentials.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "Live ProductInformation V4 lookup",
+      "fixture": "digikey-live-product-info-v4",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\digikey-live-product-info-v4",
+      "whatItProves": "Live ProductInformation V4 lookup verifies real DigiKey stock, price, lifecycle, and datasheet fields through the local engine.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "Live BOM sourcing verification",
+      "fixture": "BF-DIGIKEY-LIVE-SOURCING-PROOF-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIGIKEY-LIVE-SOURCING-PROOF-01_REV_A",
+      "whatItProves": "A real BOM sourcing proof uses live DigiKey lookup data and still avoids fake stock claims.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "Mouser Search API live lookup",
+      "fixture": "mouser-live-search",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\mouser-live-search",
+      "whatItProves": "Mouser Search API lookup verifies real stock/pricing responses through local-only credentials.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "Dual supplier lookup evidence",
+      "fixture": "digikey-mouser-live-sourcing",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\digikey-mouser-live-sourcing",
+      "whatItProves": "The same requested BOM rows can show DigiKey and Mouser states without inventing availability.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "BOM sourcing verification",
+      "fixture": "BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "whatItProves": "BOM rows map to supplier verification statuses without fake stock.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "quote readiness",
+      "fixture": "BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "whatItProves": "Quote readiness is scored separately from auto ordering.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "Make Sourcable",
+      "fixture": "BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "whatItProves": "Unavailable/risky BOM rows produce candidate substitution plans instead of silent schematic edits.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "alternative parts",
+      "fixture": "BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-DIGIKEY-SOURCING-DEMO-01_REV_A",
+      "whatItProves": "Alternatives are risk labeled and require engineering review.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "supply-chain-aware variant ranking",
+      "fixture": "BF-VARIANT-RANKING-DEMO-01_REV_A",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-VARIANT-RANKING-DEMO-01_REV_A",
+      "whatItProves": "Variants can be ranked by sourcing, quote, manufacturing, and engineering scores.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "browser E2E supplier disclosure",
+      "fixture": "browser-live-sourcing-e2e",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\browser-live-sourcing-e2e",
+      "whatItProves": "The web UI discloses redacted local-engine supplier evidence and does not expose credentials in browser logs or requests.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "browser E2E setup and pairing",
+      "fixture": "browser-setup-pairing-e2e",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\browser-setup-pairing-e2e",
+      "whatItProves": "Playwright covers setup pairing, browser-origin POST auth, and protected path guidance.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "browser E2E demo/import/publish flows",
+      "fixture": "browser-public-alpha-e2e",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\browser-public-alpha-e2e",
+      "whatItProves": "Playwright covers one-click demo, import sandbox, variant ranking, publish gates, and Make Manufacturable/Sourcable panels.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    },
+    {
+      "name": "secret redaction",
+      "fixture": "secret-redaction",
+      "pass": true,
+      "date": "2026-07-05",
+      "artifactPath": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\secret-redaction",
+      "whatItProves": "Secrets are redacted from errors, reports, and public provider status.",
+      "limitation": "Evidence-backed local alpha proof, not certification."
+    }
+  ]
+}
