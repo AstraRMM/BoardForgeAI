@@ -1,30 +1,28 @@
 # BoardForge Public Alpha Launch Gate
 
-Launch gate categories:
+Current status:
 
-- engine readiness
-- web UX readiness
-- local engine pairing/security
-- installer/launcher readiness
-- KiCad plugin readiness
-- CLI readiness
-- demo readiness
-- manufacturing export readiness
-- source protection readiness
-- documentation readiness
-- known external blockers
+READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS
 
-Current external blockers:
+## Required Evidence
 
-- supplier API keys, kept local per operator
-- real PoE compliance/safety review
-- public installer signing certificate
+- Browser E2E proof for setup, one-click demo, sourcing UI, Make Manufacturable, Make Sourcable, variant ranking, import protection, and approved publish.
+- Mouser live sourcing proof where configured.
+- DigiKey configuration and OAuth/live lookup status.
+- No-fake-stock tests.
+- Secret redaction tests.
+- Evidence dashboard tests.
+- Public alpha launch gate tests.
+- Fixture and readiness reports.
+- Build verification.
 
-Do not mark production-ready until those are resolved.
-## Sourcing Gate
+## Known Limitations
 
-The public alpha launch gate now includes DigiKey configuration, provider health, Mouser Search API live lookup, dual-supplier sourcing verification, quote readiness, demo artifact authenticity, source protection, approved publish, local engine pairing/security, browser secret-leak checks, and E2E status.
+- Public installer signing is not done.
+- PoE compliance and safety review is external.
+- DigiKey OAuth/live token may need renewal for live lookup.
+- Manufacturing and assembly outputs require human engineering review.
 
-Do not mark full public alpha ready if live browser E2E or required external compliance/signing evidence is missing.
+## Gate Rule
 
-Live supplier lookups must run through the local engine/CLI with local credentials. The website may show redacted evidence and supplier status, but it must not receive or print raw supplier credentials.
+BoardForge can be public-alpha ready with limitations only when the evidence is current, secrets are redacted, source-protection tests pass, and any supplier or compliance blockers are stated plainly.

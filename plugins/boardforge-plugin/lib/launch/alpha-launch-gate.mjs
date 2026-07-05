@@ -24,18 +24,33 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
     e2eStatus: checks.e2eStatus ?? true,
     browserSecretLeakGuard: checks.browserSecretLeakGuard ?? true,
     supplierApiKeys: checks.supplierApiKeys ?? false,
-    poeComplianceReview: checks.poeComplianceReview ?? false,
+    routingJarWorkflow: checks.routingJarWorkflow ?? 'ROUTING_JAR_OPTIONAL_MISSING_WITH_SETUP_STEPS',
+    installerPackage: checks.installerPackage ?? 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA',
     installerSigning: checks.installerSigning ?? false,
+    poeComplianceReview: checks.poeComplianceReview ?? 'POE_COMPLIANCE_REVIEW_PACKAGE_READY_HUMAN_REVIEW_REQUIRED',
+    digikeyQuoteApi: checks.digikeyQuoteApi ?? 'DIGIKEY_QUOTE_API_BLOCKED_OR_NOT_ENABLED',
   }
-  const nonCore = ['supplierApiKeys', 'poeComplianceReview', 'installerSigning', 'digikeyConfigured', 'digikeyProviderHealth', 'digikeyOAuthToken', 'liveProductInformationV4Lookup', 'liveBomSourcingProof', 'liveSourcingVerification', 'mouserConfigured', 'mouserSearchApiVerified', 'dualSupplierLiveLookup']
-  const coreReady = Object.entries(categories).filter(([key]) => !nonCore.includes(key)).every(([, value]) => value)
+  const nonCore = ['supplierApiKeys', 'poeComplianceReview', 'installerSigning', 'digikeyConfigured', 'digikeyProviderHealth', 'digikeyOAuthToken', 'liveProductInformationV4Lookup', 'liveBomSourcingProof', 'liveSourcingVerification', 'mouserConfigured', 'mouserSearchApiVerified', 'dualSupplierLiveLookup', 'routingJarWorkflow', 'installerPackage', 'digikeyQuoteApi']
+  const coreReady = Object.entries(categories)
+    .filter(([key]) => !nonCore.includes(key))
+    .every(([, value]) => value === true || /READY|PASS|OPTIONAL/i.test(String(value)))
   const privateReady = coreReady && categories.demoArtifactAuthenticity
   const publicReady = privateReady && categories.e2eStatus && categories.localEnginePairingSecurity
-  const status = publicReady ? 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS' : privateReady ? 'READY_FOR_PRIVATE_ALPHA' : 'BLOCKED'
+  const softwareClean = publicReady && categories.installerPackage === 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA' && String(categories.poeComplianceReview).startsWith('POE_COMPLIANCE_REVIEW_PACKAGE_READY')
+  const status = softwareClean || publicReady ? 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS' : privateReady ? 'READY_FOR_PRIVATE_ALPHA' : 'BLOCKED'
   return {
     status,
     categories,
-    externalBlockers: ['supplier credentials must remain local to each operator', 'real PoE compliance/safety review', 'public installer signing certificate'],
-    limitations: ['Public alpha is local-first and evidence-backed; supplier data and compliance are not faked.', 'Browser UI consumes redacted local-engine/sample evidence; live supplier calls remain backend/local CLI controlled.'],
+    externalBlockers: [
+      'public installer signing certificate',
+      'real PoE compliance/safety review and certification',
+      categories.digikeyQuoteApi === 'DIGIKEY_QUOTE_API_LIVE_REACHABLE' ? null : 'DigiKey Quote API account/endpoint approval remains unproven; ProductInformation V4 live sourcing is working',
+    ].filter(Boolean),
+    limitations: [
+      'Public alpha is local-first and evidence-backed; supplier data and compliance are not faked.',
+      'Browser UI consumes redacted local-engine/sample evidence; live supplier calls remain backend/local CLI controlled.',
+      'Unsigned launcher is public-alpha ready, not a signed production installer.',
+      'PoE package is review-ready, not certified.',
+    ],
   }
 }

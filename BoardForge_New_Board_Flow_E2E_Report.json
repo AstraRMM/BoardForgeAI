@@ -1,7 +1,7 @@
 {
   "schema": "boardforge.browser-e2e-report.v1",
   "name": "BoardForge_New_Board_Flow_E2E_Report",
-  "generatedAt": "2026-07-05T13:55:37.968Z",
+  "generatedAt": "2026-07-05T14:44:56.506Z",
   "title": "BoardForge New Board Flow E2E Report",
   "status": "PASSED_WITH_LIMITATIONS",
   "route": "/new-board",

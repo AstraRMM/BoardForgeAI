@@ -25,16 +25,21 @@
     "e2eStatus": true,
     "browserSecretLeakGuard": true,
     "supplierApiKeys": false,
-    "poeComplianceReview": false,
-    "installerSigning": false
+    "routingJarWorkflow": "ROUTING_JAR_OPTIONAL_MISSING_WITH_SETUP_STEPS",
+    "installerPackage": "INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA",
+    "installerSigning": false,
+    "poeComplianceReview": "POE_COMPLIANCE_REVIEW_PACKAGE_READY_HUMAN_REVIEW_REQUIRED",
+    "digikeyQuoteApi": "DIGIKEY_QUOTE_API_BLOCKED_OR_NOT_ENABLED"
   },
   "externalBlockers": [
-    "supplier credentials must remain local to each operator",
-    "real PoE compliance/safety review",
-    "public installer signing certificate"
+    "public installer signing certificate",
+    "real PoE compliance/safety review and certification",
+    "DigiKey Quote API account/endpoint approval remains unproven; ProductInformation V4 live sourcing is working"
   ],
   "limitations": [
     "Public alpha is local-first and evidence-backed; supplier data and compliance are not faked.",
-    "Browser UI consumes redacted local-engine/sample evidence; live supplier calls remain backend/local CLI controlled."
+    "Browser UI consumes redacted local-engine/sample evidence; live supplier calls remain backend/local CLI controlled.",
+    "Unsigned launcher is public-alpha ready, not a signed production installer.",
+    "PoE package is review-ready, not certified."
   ]
 }

@@ -6,40 +6,53 @@ import { ProjectActionPanel } from '../../components/project/ProjectActionPanel'
 import { localArtifactApiContract } from '../../lib/boardforge-local-artifact-client'
 
 export default function CustomBoardGeneratorPage() {
-  const shapes = ['rounded rectangle', 'mounting ears', 'octagonal', 'L-shaped', 'tabbed connector', 'circular puck', 'notched board', 'internal cutout']
+  const shapes = [
+    ['rounded rectangle', 'Fast manufacturable default with M3 holes and edge connector intent.'],
+    ['mounting ears', 'Mechanical ears for drone stacks, sensor modules, and enclosure screws.'],
+    ['octagonal', 'Compact shape with clearer routing corners and board-edge clearance.'],
+    ['L-shaped', 'Route around enclosure posts, camera cutouts, or connector access.'],
+    ['tabbed connector', 'Explicit edge connector region and keepout warning.'],
+    ['circular puck', 'Wearable or sensor puck seed with centered keepout.'],
+    ['notched board', 'USB, antenna, or flex-cable relief with Edge.Cuts validation.'],
+    ['internal cutout', 'Board cutout seed with manufacturability and routeability warnings.'],
+  ]
   return (
-    <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm uppercase tracking-wide text-cyan-300">Local engine artifact</p>
-        <h1 className="mt-2 text-3xl font-semibold">Custom Board Generator</h1>
-        <p className="mt-3 max-w-3xl text-slate-400">
-          BoardForge custom outlines are generated locally, scored for routeability, and must pass Edge.Cuts, mounting-hole,
-          connector-access, DRC/ERC, and manufacturing checks before export.
+    <main className="bf-app-page">
+      <section className="bf-app-hero">
+        <span className="bf-kicker">Flagship outline studio</span>
+        <h1>Custom Board Generator</h1>
+        <p>
+          Create board outlines with presets, drawing, points, mounting holes, connector edge intent, routeability scoring,
+          warnings, and a local-engine path to KiCad Edge.Cuts.
         </p>
-        <p className="mt-3 text-sm text-amber-200">{localArtifactApiContract.offlineMessage}</p>
-        <p className="mt-2 text-sm text-slate-400">When online, this page uses localhost routes for intake, brief approval, project creation, downloads, and publish gates.</p>
-        <div className="mt-6">
+        <div className="bf-app-status-note">
+          <strong>Local engine status</strong>
+          <span>{localArtifactApiContract.offlineMessage}</span>
+          <span>When paired, this page uses localhost routes for intake, brief approval, project creation, downloads, and publish gates.</span>
+        </div>
+        <div className="bf-app-panel">
           <LocalEngineStatusBar />
         </div>
       </section>
-      <section className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-2">
-        {shapes.map((shape) => (
-          <div key={shape} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <p className="font-semibold">{shape}</p>
-            <p className="mt-2 text-sm text-slate-400">Planned for crazy-outline regression after the prompt/conversation layer foundation.</p>
+      <section className="bf-app-grid two">
+        {shapes.map(([shape, description]) => (
+          <div key={shape} className="bf-premium-panel">
+            <h3>{shape}</h3>
+            <p>{description}</p>
+            <span className="bf-mini-badge">routeability + Edge.Cuts review</span>
           </div>
         ))}
       </section>
-      <section className="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-3">
+      <section className="bf-app-grid three">
         <OutlinePresetPicker />
         <OutlineEditor />
         <OutlineValidationPanel />
       </section>
-      <section className="mx-auto mt-8 max-w-5xl">
+      <section className="bf-app-section">
         <ProjectActionPanel />
       </section>
-      <section className="mx-auto mt-8 max-w-5xl rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-        <p className="text-sm text-amber-100">No fake outline success: failed shapes must report exact Edge.Cuts, DRC/ERC, routeability, or manufacturing blockers.</p>
+      <section className="bf-warning-panel">
+        <p>No fake outline success: failed shapes must report exact Edge.Cuts, DRC/ERC, routeability, or manufacturing blockers.</p>
       </section>
     </main>
   )

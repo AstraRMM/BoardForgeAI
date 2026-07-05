@@ -2,50 +2,62 @@
 
 ## Hero
 
-BoardForge AI
+From PCB idea to evidence-backed KiCad project.
 
-From PCB idea to manufacturable KiCad project.
+BoardForge is an AI PCB engineering command center that helps you generate board briefs, create custom outlines, validate KiCad projects, verify live supplier sourcing, repair manufacturability issues, and export fabrication packages when evidence supports them.
 
-Generate schematics, create board outlines, place components, route with FreeRouting, repair DRC/ERC, verify parts, and export manufacturing packages.
+Primary CTAs:
 
-## How It Works
+- Start Building
+- Try Demo
+- View Evidence
 
-1. Describe the board you want.
-2. BoardForge creates a KiCad project, schematic, PCB, constraints, and reports.
-3. External routers handle bulk copper.
-4. BoardForge validates, repairs, finishes exact routes, and packages manufacturing files.
-5. You review the evidence and send clean outputs to fabrication.
+Core flow:
 
-## Product Surfaces
+Describe -> Generate -> Validate -> Source -> Repair -> Export
 
-- Web app for project intake, dashboards, reports, and downloads.
-- Local engine for real KiCad file generation and validation.
-- KiCad plugin for in-editor actions and status.
-- CLI for deterministic workflows and replay.
-- AI control layer for Codex, ChatGPT, Claude, or future BoardForge agents.
+## Positioning
 
-## Feature Grid
+BoardForge does not just generate a PCB. It reviews it, checks it, sources it, explains blockers, helps repair it, and packages it for manufacturing.
 
-- Real KiCad schematic and PCB generation
-- Custom outline engine
-- Outline-aware placement and routeability scoring
-- FreeRouting bulk routing
-- SES import and validation
-- DRC/ERC repair
-- Exact ratsnest finishing
-- BOM/CPL/Gerber/Drill/JLCPCB export
-- Solution-library learning
+The live website is the command center. The installed local engine safely handles KiCad, board files, DRC/ERC reports, exports, and source protection on the user's machine.
 
-## Honesty Line
+## Core Tool Copy
 
-BoardForge does not fake routing, validation, sourcing, or manufacturing readiness. Advanced dense boards may require supervised workflows or exact design relaxations.
-## Live Website + Local Engine
+- AI Board Generator: turn requirements into an approved board brief and KiCad creation path.
+- Custom Board Generator: create rounded boards, mounting ears, cutouts, drone stacks, custom polygons, and Edge.Cuts seeds.
+- KiCad Project Import: copy existing projects into a protected sandbox before any repair action.
+- Make Manufacturable: review DRC/ERC, placement, routing, export blockers, and repair recommendations.
+- Make Sourcable: verify BOM risk, supplier availability, alternatives, and quote readiness.
+- Live DigiKey + Mouser Sourcing: use configured local supplier credentials for real lookup evidence. DigiKey ProductInformation V4 and Mouser Search API are live paths; direct DigiKey Quote API is only marked ready after live endpoint proof.
+- JLCPCB Export Package: prepare Gerbers, drill files, BOM, CPL, manifests, and limitation reports.
+- Evidence Dashboard: show proof cards, reports, tests, blockers, and alpha readiness.
 
-BoardForge AI is a live website connected to an installed local BoardForge engine. The website is the product surface; the local engine bridge controls KiCad, FreeRouting, board files, reviews, repairs, reports, and manufacturing exports on the user's machine.
+## Honesty Rules
 
-Projects stay local unless the user explicitly approves dashboard publishing.
-## Sourcing Command Center Copy
+Use:
 
-Verify BOM risk before assembly. BoardForge checks supplier availability through the installed local engine, keeps credentials off the live website, and distinguishes fab-ready boards from assembly-verified builds.
+- AI PCB engineering command center
+- KiCad-native project output
+- local-first source protection
+- DRC/ERC validation
+- live DigiKey/Mouser sourcing where configured
+- Make Manufacturable
+- Make Sourcable
+- evidence-backed readiness
+- public alpha with limitations
 
-Make Sourcable identifies unavailable or risky BOM rows, searches DigiKey and Mouser evidence through the local engine, and creates an approval-required substitution plan. BoardForge never silently swaps parts or claims fake stock.
+Do not use:
+
+- certified
+- guaranteed manufacturable
+- fully autonomous arbitrary PCB design
+- replaces engineers completely
+- PoE certified
+- assembly guaranteed
+- fake stock
+- fake supplier availability
+
+## Public Alpha Line
+
+BoardForge public-alpha software is ready with external certs pending: the launcher package is unsigned until a code-signing certificate exists, PoE compliance and safety review remain external, and DigiKey Quote API support is only claimed after live endpoint proof. DigiKey ProductInformation and Mouser live sourcing are supported with local credentials.

@@ -1,12 +1,23 @@
-const cards = ['generated clean board', 'dirty repair', 'import sandbox repair', 'custom outline generation', 'variant ranking', 'make manufacturable', 'approved-only publish', 'job polling']
+const cards = [
+  ['browser E2E passed', 'Setup, pairing, one-click demo, sourcing UI, manufacturable/sourcable actions, import protection, and publish gate.'],
+  ['Mouser live sourcing passed', 'Live Mouser lookup is available where configured and never silently becomes fake stock.'],
+  ['DigiKey configured', 'OAuth/local token is required for live lookup. ProductInformation proof is tracked separately from quote depth.'],
+  ['custom outline generation', 'Outline presets, point/draw flows, routeability warnings, and Edge.Cuts generation remain first-class.'],
+  ['import sandbox repair', 'Existing KiCad projects are copied into a sandbox before repair actions. Source projects stay protected.'],
+  ['make manufacturable', 'DRC/ERC, placement, routing, package, and blocker evidence are surfaced before export claims.'],
+  ['make sourcable', 'BOM verification, supplier matrix, alternatives, and quote readiness show known data and blockers.'],
+  ['approved-only publish', 'Public/demo publication requires approval state, evidence, and redacted reports.'],
+]
 
 export function EvidenceDashboard() {
   return (
-    <section className="grid gap-3 md:grid-cols-2">
-      {cards.map((card) => (
-        <div key={card} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-          <h3 className="font-semibold text-slate-100">{card}</h3>
-          <p className="mt-2 text-sm text-slate-400">Evidence card includes artifact path, test name, pass/fail, date, proof, and limitation.</p>
+    <section className="bf-proof-grid">
+      {cards.map(([card, body]) => (
+        <div key={card} className="bf-proof-card">
+          <span>proof card</span>
+          <h3>{card}</h3>
+          <p>{body}</p>
+          <small>Includes artifact path, test name, pass/fail, date, proof, and limitation.</small>
         </div>
       ))}
     </section>

@@ -1,12 +1,30 @@
 {
   "status": "BOARD_FORGE_DEMO_ARTIFACT_AUTHENTICITY_REVIEWED",
-  "generatedAt": "2026-07-05T14:08:54.458Z",
+  "generatedAt": "2026-07-05T14:51:58.325Z",
   "noEnvLocalIncluded": true,
   "noTokenStoreIncluded": true,
   "noProtectedEscFcProjectsIncluded": true,
   "browserE2EIsRealPlaywright": true,
   "liveSupplierProofIsLocalBackendOnly": true,
   "artifacts": [
+    {
+      "file": "BoardForge_Local_Alpha_Environment_Report.md",
+      "exists": true,
+      "bytes": 508,
+      "secretScan": "NO_SECRET_PATTERN_FOUND"
+    },
+    {
+      "file": "BoardForge_Routing_Setup_Report.md",
+      "exists": true,
+      "bytes": 491,
+      "secretScan": "NO_SECRET_PATTERN_FOUND"
+    },
+    {
+      "file": "BoardForge_DigiKey_Quote_API_Status_Report.md",
+      "exists": true,
+      "bytes": 349,
+      "secretScan": "NO_SECRET_PATTERN_FOUND"
+    },
     {
       "file": "BoardForge_DigiKey_Live_Lookup_Report.json",
       "exists": true,
@@ -29,6 +47,24 @@
       "file": "BoardForge_Mouser_Live_Lookup_Report.md",
       "exists": true,
       "bytes": 175,
+      "secretScan": "NO_SECRET_PATTERN_FOUND"
+    },
+    {
+      "file": "BoardForge_Installer_Check_Report.md",
+      "exists": true,
+      "bytes": 740,
+      "secretScan": "NO_SECRET_PATTERN_FOUND"
+    },
+    {
+      "file": "BoardForge_Launcher_Smoke_Test_Report.md",
+      "exists": true,
+      "bytes": 289,
+      "secretScan": "NO_SECRET_PATTERN_FOUND"
+    },
+    {
+      "file": "BoardForge_PoE_Compliance_Readiness_Report.md",
+      "exists": true,
+      "bytes": 907,
       "secretScan": "NO_SECRET_PATTERN_FOUND"
     },
     {

@@ -8,10 +8,16 @@ Status: BOARD_FORGE_DEMO_ARTIFACT_AUTHENTICITY_REVIEWED
 - No ESC/FC/protected hardware project is included.
 
 ## Artifacts
+- FOUND: BoardForge_Local_Alpha_Environment_Report.md (508 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_Routing_Setup_Report.md (491 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_DigiKey_Quote_API_Status_Report.md (349 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_DigiKey_Live_Lookup_Report.json (19204 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_DigiKey_Live_Lookup_Report.md (160 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Mouser_Live_Lookup_Report.json (1380 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Mouser_Live_Lookup_Report.md (175 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_Installer_Check_Report.md (740 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_Launcher_Smoke_Test_Report.md (289 bytes, NO_SECRET_PATTERN_FOUND)
+- FOUND: BoardForge_PoE_Compliance_Readiness_Report.md (907 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Live_Supplier_Sourcing_E2E_Report.json (856 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Live_Supplier_Sourcing_E2E_Report.md (750 bytes, NO_SECRET_PATTERN_FOUND)
 - FOUND: BoardForge_Make_Manufacturable_E2E_Report.json (635 bytes, NO_SECRET_PATTERN_FOUND)

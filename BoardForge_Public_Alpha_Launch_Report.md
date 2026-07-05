@@ -27,14 +27,19 @@ Status: READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS
 - PASS: e2eStatus
 - PASS: browserSecretLeakGuard
 - LIMITATION: supplierApiKeys
-- LIMITATION: poeComplianceReview
+- PASS: routingJarWorkflow
+- PASS: installerPackage
 - LIMITATION: installerSigning
+- PASS: poeComplianceReview
+- PASS: digikeyQuoteApi
 
 ## External Blockers
-- supplier credentials must remain local to each operator
-- real PoE compliance/safety review
 - public installer signing certificate
+- real PoE compliance/safety review and certification
+- DigiKey Quote API account/endpoint approval remains unproven; ProductInformation V4 live sourcing is working
 
 ## Limitations
 - Public alpha is local-first and evidence-backed; supplier data and compliance are not faked.
 - Browser UI consumes redacted local-engine/sample evidence; live supplier calls remain backend/local CLI controlled.
+- Unsigned launcher is public-alpha ready, not a signed production installer.
+- PoE package is review-ready, not certified.

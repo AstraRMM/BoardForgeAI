@@ -2,28 +2,29 @@
 
 BoardForge AI: from PCB idea to manufacturable KiCad project.
 
-BoardForge is a local-first PCB engineering platform for KiCad. It combines:
+BoardForge is an AI PCB engineering command center for founders, makers, and engineers who need more than a pretty PCB render. It combines board intake, custom outline generation, KiCad project validation, local-first source protection, supplier sourcing, manufacturability review, repair recommendations, and export packaging.
 
-- Prompt-to-board generation.
-- KiCad project validation.
-- Routing and post-route cleanup.
-- Dirty-to-clean repair.
-- Safe sandbox import of existing projects.
-- Manufacturing export gates.
-- Web dashboard, KiCad plugin, CLI, and AI control surfaces.
+## Primary Narrative
 
-BoardForge is not merely a Codex plugin. Codex is one controller. BoardForge owns the local engine, manifests, reports, validation, and manufacturing outputs.
+BoardForge helps users move through a complete PCB workflow:
+
+Describe -> Generate -> Validate -> Source -> Repair -> Export.
+
+It is not only a web app and not only a plugin. The live website is the command center. The installed local engine performs the KiCad work on the user's machine.
+
+## Customer Promise
+
+BoardForge helps you create, inspect, validate, source, and package KiCad projects with evidence. It does not promise certification, guaranteed assembly, or fully autonomous arbitrary-board success.
+
+## Differentiated Value
+
+- Custom board outlines become KiCad Edge.Cuts-ready seeds.
+- Imported projects are copied into a protected sandbox before repair.
+- Make Manufacturable surfaces DRC/ERC, placement, routing, and export blockers.
+- Make Sourcable verifies BOM risk and supplier data where credentials are configured.
+- Evidence dashboards keep public-alpha status honest.
+- Manufacturing exports are packaged with reports and limitations.
+
 ## Public Alpha Positioning
 
-BoardForge is not just a Codex plugin. It is a live website, KiCad plugin, CLI, and local engine bridge for AI-assisted PCB engineering.
-
-FreeRouting handles bulk routing. BoardForge provides the review, repair, explanation, versioning, packaging, and approved-publish layer around the PCB workflow.
-
-Launch narrative:
-
-BoardForge is not “AI made a board.” BoardForge creates variants, ranks them, reviews risk, repairs blockers, tracks the engineering timeline, protects source projects in sandboxes, and packages validated manufacturing outputs only when the evidence supports it.
-## Sourcing Positioning
-
-BoardForge AI: From PCB idea to manufacturable KiCad project.
-
-The local engine now separates PCB fab readiness from assembly readiness. With DigiKey and Mouser configured, BoardForge can verify BOM rows, surface stock and lifecycle risk, produce quote-readiness reports, and recommend candidate alternatives with explicit engineering-review labels. Without supplier keys, it stays honest and marks sourcing as not checked.
+BoardForge is ready for public alpha with limitations. It is suitable for demos, alpha users, evidence-backed workflows, and supervised KiCad project generation. Production manufacturing still requires engineer review.
