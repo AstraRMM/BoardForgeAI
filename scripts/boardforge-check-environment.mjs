@@ -48,6 +48,61 @@ async function exists(file) {
   }
 }
 
+function fileExistsSync(file) {
+  try {
+    return Boolean(file && spawnSync(process.execPath, ['-e', 'process.exit(require("fs").existsSync(process.argv[1]) ? 0 : 1)', file]).status === 0)
+  } catch {
+    return false
+  }
+}
+
+async function checkLocalEngine() {
+  const port = Number(process.env.BOARDFORGE_LOCAL_ENGINE_PORT || 38991)
+  const baseUrl = `http://127.0.0.1:${port}`
+  try {
+    const response = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(1200) })
+    const body = await response.json().catch(() => null)
+    return {
+      expected: '127.0.0.1:38991',
+      baseUrl,
+      running: response.ok,
+      status: response.ok ? 'ONLINE' : 'UNHEALTHY',
+      health: body,
+      startCommand: 'npm run boardforge:start',
+    }
+  } catch {
+    return {
+      expected: '127.0.0.1:38991',
+      baseUrl,
+      running: false,
+      status: 'OFFLINE',
+      health: null,
+      startCommand: 'npm run boardforge:start',
+    }
+  }
+}
+
+function detectFreeRoutingJar() {
+  const candidates = [
+    process.env.BOARDFORGE_FREEROUTING_JAR,
+    process.env.FREEROUTING_JAR,
+    path.resolve('tools/freerouting/freerouting.jar'),
+    path.resolve('tools/freerouting/freerouting-2.2.4.jar'),
+    path.resolve('plugins/boardforge-plugin/tools/freerouting.jar'),
+  ].filter(Boolean)
+  const found = candidates.find((candidate) => fileExistsSync(candidate)) || null
+  return {
+    available: Boolean(found),
+    path: found,
+    searched: candidates,
+    setupCommand: 'npm run boardforge:setup-routing',
+  }
+}
+
+const localEngineBridge = await checkLocalEngine()
+const freeroutingJar = detectFreeRoutingJar()
+const java = commandVersion('java', ['-version'])
+
 const checks = {
   node: commandVersion('node'),
   npm: firstAvailableCommand([process.env.npm_execpath, process.platform === 'win32' ? 'C:\\Program Files\\nodejs\\npm.cmd' : null, process.platform === 'win32' ? 'npm.cmd' : 'npm', 'npm'], ['--version']),
@@ -60,8 +115,13 @@ const checks = {
     'C:\\Program Files\\KiCad\\8.0\\bin\\kicad-cli.exe',
     'kicad-cli',
   ], ['version']),
-  java: commandVersion('java', ['-version']),
-  localEngineBridge: { expected: '127.0.0.1:38991', startCommand: 'npm run boardforge:local-server' },
+  java,
+  freeroutingJar,
+  routingJarWorkflow: {
+    status: java.available && freeroutingJar.available ? 'ROUTING_JAR_READY' : 'ROUTING_JAR_OPTIONAL_MISSING_WITH_SETUP_STEPS',
+    optional: true,
+  },
+  localEngineBridge,
   webBuild: { available: await exists(path.resolve('.next')) },
   protectedPathGuard: { active: true, protectedRoot: 'C:\\Users\\luifi\\Desktop\\FN-ESC1' },
   supplierApiKeys: {
@@ -80,9 +140,10 @@ const report = {
     !checks.node.available && 'Install Node.js 20+.',
     !checks.npm.available && 'Install npm with Node.js.',
     !checks.kicadCli.available && 'Install KiCad and ensure kicad-cli is on PATH.',
-    !checks.java.available && 'Install Java for FreeRouting if router JAR workflow is used.',
+    !checks.java.available && 'Optional: install Java for FreeRouting JAR workflow.',
+    !checks.freeroutingJar.available && 'Optional: run npm run boardforge:setup-routing to configure a FreeRouting JAR path.',
+    !checks.localEngineBridge.running && 'Run npm run boardforge:start to start the installed local engine bridge.',
     'Run npm install if dependencies are missing.',
-    'Run npm run boardforge:local-server to start the installed local engine bridge.',
   ].filter(Boolean),
 }
 
@@ -93,7 +154,9 @@ function render(report) {
   return `# BoardForge Environment Report
 
 - Status: ${report.status}
-- Local engine bridge: ${report.checks.localEngineBridge.expected}
+- Local engine bridge: ${report.checks.localEngineBridge.status} (${report.checks.localEngineBridge.baseUrl})
+- Routing JAR workflow: ${report.checks.routingJarWorkflow.status}
+- FreeRouting JAR: ${report.checks.freeroutingJar.path || 'missing'}
 - Protected path guard: active
 - Supplier keys: ${Object.entries(report.checks.supplierApiKeys).filter(([, value]) => value).length}/5 present
 

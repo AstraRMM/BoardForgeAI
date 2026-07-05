@@ -1,0 +1,28 @@
+{
+  "status": "ROUTING_JAR_OPTIONAL_MISSING_WITH_SETUP_STEPS",
+  "java": {
+    "available": false,
+    "output": null
+  },
+  "freeroutingJar": {
+    "found": false,
+    "path": null,
+    "searched": [
+      "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tools\\freerouting\\freerouting.jar",
+      "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tools\\freerouting\\freerouting-2.2.4.jar",
+      "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\plugins\\boardforge-plugin\\tools\\freerouting.jar"
+    ]
+  },
+  "smoke": {
+    "attempted": false,
+    "passed": false,
+    "output": null
+  },
+  "optionalForPublicAlpha": true,
+  "setupSteps": [
+    "Install Java 21+ or the Java runtime required by the selected FreeRouting JAR.",
+    "Place FreeRouting at tools/freerouting/freerouting.jar or set BOARDFORGE_FREEROUTING_JAR.",
+    "Run npm run boardforge:setup-routing again."
+  ],
+  "generatedAt": "2026-07-05T14:38:28.310Z"
+}

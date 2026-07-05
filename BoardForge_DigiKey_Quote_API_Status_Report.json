@@ -1,0 +1,58 @@
+{
+  "status": "DIGIKEY_QUOTE_API_BLOCKED_OR_NOT_ENABLED",
+  "authenticated": true,
+  "enabledApis": [
+    "ProductInformationV4",
+    "Quote",
+    "SupplyChainAPI"
+  ],
+  "quoteReachable": false,
+  "attempts": [
+    {
+      "method": "GET",
+      "path": "/quotes/v4",
+      "reachable": false,
+      "status": "DIGIKEY_REQUEST_FAILED",
+      "error": {
+        "status": "DIGIKEY_REQUEST_FAILED",
+        "message": "DigiKey API request failed.",
+        "details": {
+          "status": 404,
+          "body": ""
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/quote/v4",
+      "reachable": false,
+      "status": "DIGIKEY_REQUEST_FAILED",
+      "error": {
+        "status": "DIGIKEY_REQUEST_FAILED",
+        "message": "DigiKey API request failed.",
+        "details": {
+          "status": 404,
+          "body": ""
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/SupplyChain/v4/Quote",
+      "reachable": false,
+      "status": "DIGIKEY_REQUEST_FAILED",
+      "error": {
+        "status": "DIGIKEY_REQUEST_FAILED",
+        "message": "DigiKey API request failed.",
+        "details": {
+          "status": 404,
+          "body": ""
+        }
+      }
+    }
+  ],
+  "blocker": "No safe read-only DigiKey Quote endpoint returned a live success. ProductInformation V4 remains the verified live sourcing path.",
+  "noFakeQuoteData": true,
+  "noAutomaticBuying": true,
+  "generatedAt": "2026-07-05T14:42:08.235Z"
+}

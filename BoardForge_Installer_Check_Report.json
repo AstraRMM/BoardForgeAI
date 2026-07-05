@@ -1,0 +1,49 @@
+{
+  "status": "INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA",
+  "packageDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\dist\\BoardForge_Local_Alpha",
+  "required": [
+    {
+      "file": "tools/boardforge-launcher/BoardForge_Start_Local_Alpha.cmd",
+      "exists": true
+    },
+    {
+      "file": "tools/boardforge-launcher/BoardForge_Start_Local_Alpha.ps1",
+      "exists": true
+    },
+    {
+      "file": "tools/boardforge-launcher/BoardForge_Open_Dashboard.cmd",
+      "exists": true
+    },
+    {
+      "file": "tools/boardforge-launcher/BoardForge_Check_Environment.ps1",
+      "exists": true
+    },
+    {
+      "file": "README_PUBLIC_ALPHA.md",
+      "exists": true
+    },
+    {
+      "file": "KNOWN_LIMITATIONS.md",
+      "exists": true
+    },
+    {
+      "file": "INSTALLER_SIGNING_READINESS.md",
+      "exists": true
+    },
+    {
+      "file": "KICAD_PLUGIN_INSTALL.md",
+      "exists": true
+    },
+    {
+      "file": "LIVE_SITE_PAIRING.md",
+      "exists": true
+    }
+  ],
+  "secretScan": {
+    "status": "NO_SECRET_PATTERN_FOUND",
+    "files": []
+  },
+  "signed": false,
+  "signingBlocker": "No code-signing certificate is bundled or assumed.",
+  "generatedAt": "2026-07-05T14:41:02.163Z"
+}

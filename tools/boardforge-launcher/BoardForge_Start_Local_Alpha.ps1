@@ -12,5 +12,7 @@ if (-not (Test-Path (Join-Path $repo "node_modules"))) {
   npm install
 }
 
-Write-Host "Starting BoardForge web dashboard at http://localhost:3000"
-npm run dev:web
+Write-Host "Starting BoardForge local engine bridge"
+npm run boardforge:start
+
+Write-Host "Run BoardForge_Open_Dashboard.cmd to open the dashboard or pair the live site."

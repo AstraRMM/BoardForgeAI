@@ -3,6 +3,13 @@ $ErrorActionPreference = "Continue"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $report = Join-Path $repo "BoardForge_Local_Alpha_Environment_Report.md"
 
+Set-Location $repo
+
+if (Test-Path (Join-Path $repo "package.json")) {
+  npm run boardforge:doctor
+  exit $LASTEXITCODE
+}
+
 function Test-Command($name) {
   $cmd = Get-Command $name -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }

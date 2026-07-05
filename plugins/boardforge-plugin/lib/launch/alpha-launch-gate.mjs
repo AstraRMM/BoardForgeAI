@@ -30,21 +30,49 @@ export function evaluateAlphaLaunchGate({ checks = {} } = {}) {
     poeComplianceReview: checks.poeComplianceReview ?? 'POE_COMPLIANCE_REVIEW_PACKAGE_READY_HUMAN_REVIEW_REQUIRED',
     digikeyQuoteApi: checks.digikeyQuoteApi ?? 'DIGIKEY_QUOTE_API_BLOCKED_OR_NOT_ENABLED',
   }
-  const nonCore = ['supplierApiKeys', 'poeComplianceReview', 'installerSigning', 'digikeyConfigured', 'digikeyProviderHealth', 'digikeyOAuthToken', 'liveProductInformationV4Lookup', 'liveBomSourcingProof', 'liveSourcingVerification', 'mouserConfigured', 'mouserSearchApiVerified', 'dualSupplierLiveLookup', 'routingJarWorkflow', 'installerPackage', 'digikeyQuoteApi']
+
+  const nonCore = new Set([
+    'supplierApiKeys',
+    'poeComplianceReview',
+    'installerSigning',
+    'digikeyConfigured',
+    'digikeyProviderHealth',
+    'digikeyOAuthToken',
+    'liveProductInformationV4Lookup',
+    'liveBomSourcingProof',
+    'liveSourcingVerification',
+    'mouserConfigured',
+    'mouserSearchApiVerified',
+    'dualSupplierLiveLookup',
+    'routingJarWorkflow',
+    'installerPackage',
+    'digikeyQuoteApi',
+  ])
   const coreReady = Object.entries(categories)
-    .filter(([key]) => !nonCore.includes(key))
+    .filter(([key]) => !nonCore.has(key))
     .every(([, value]) => value === true || /READY|PASS|OPTIONAL/i.test(String(value)))
   const privateReady = coreReady && categories.demoArtifactAuthenticity
   const publicReady = privateReady && categories.e2eStatus && categories.localEnginePairingSecurity
-  const softwareClean = publicReady && categories.installerPackage === 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA' && String(categories.poeComplianceReview).startsWith('POE_COMPLIANCE_REVIEW_PACKAGE_READY')
-  const status = softwareClean || publicReady ? 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS' : privateReady ? 'READY_FOR_PRIVATE_ALPHA' : 'BLOCKED'
+  const softwareClean = publicReady
+    && categories.installerPackage === 'INSTALLER_READY_UNSIGNED_PUBLIC_ALPHA'
+    && String(categories.poeComplianceReview).startsWith('POE_COMPLIANCE_REVIEW_PACKAGE_READY')
+  const status = softwareClean
+    ? 'PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING'
+    : publicReady
+      ? 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS'
+      : privateReady
+        ? 'READY_FOR_PRIVATE_ALPHA'
+        : 'BLOCKED'
+
   return {
     status,
     categories,
     externalBlockers: [
       'public installer signing certificate',
       'real PoE compliance/safety review and certification',
-      categories.digikeyQuoteApi === 'DIGIKEY_QUOTE_API_LIVE_REACHABLE' ? null : 'DigiKey Quote API account/endpoint approval remains unproven; ProductInformation V4 live sourcing is working',
+      categories.digikeyQuoteApi === 'DIGIKEY_QUOTE_API_LIVE_REACHABLE'
+        ? null
+        : 'DigiKey Quote API account/endpoint approval remains unproven; ProductInformation V4 live sourcing is working',
     ].filter(Boolean),
     limitations: [
       'Public alpha is local-first and evidence-backed; supplier data and compliance are not faked.',

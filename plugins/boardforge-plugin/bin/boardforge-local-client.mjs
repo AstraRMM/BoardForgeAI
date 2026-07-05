@@ -36,7 +36,7 @@ const routeMap = {
   repair: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/repair`],
   export: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/export`],
   review: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/review`],
-  health: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/health`],
+  'project-health': ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/health`],
   risk: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/risk`],
   routeability: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/routeability`],
   diff: ['POST', `/project/${encodeURIComponent(argValue('--project-id', 'BoardForge_Local_Intake'))}/diff`],

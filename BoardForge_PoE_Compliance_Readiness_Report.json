@@ -1,0 +1,38 @@
+{
+  "status": "POE_COMPLIANCE_REVIEW_PACKAGE_READY_HUMAN_REVIEW_REQUIRED",
+  "certified": false,
+  "humanReviewRequired": true,
+  "checklist": [
+    {
+      "id": "isolation_creepage_clearance",
+      "requirement": "Human review required for final PoE isolation and creepage/clearance against selected standard, voltage, pollution degree, and fab stackup.",
+      "status": "HUMAN_REVIEW_REQUIRED"
+    },
+    {
+      "id": "poe_pd_front_end",
+      "requirement": "Verify PD controller, bridge/protection, classification resistors, TVS, and reference design constraints.",
+      "status": "HUMAN_REVIEW_REQUIRED"
+    },
+    {
+      "id": "fuse_protection",
+      "requirement": "Verify fuse/PTC, surge, ESD, and thermal protection sizing.",
+      "status": "HUMAN_REVIEW_REQUIRED"
+    },
+    {
+      "id": "magnetics_isolation",
+      "requirement": "Verify RJ45 magnetics isolation rating and Ethernet pair routing/return path.",
+      "status": "HUMAN_REVIEW_REQUIRED"
+    },
+    {
+      "id": "drc_manufacturing_spacing",
+      "requirement": "Run KiCad DRC and manufacturer spacing checks; DRC passing is not compliance certification.",
+      "status": "HUMAN_REVIEW_REQUIRED"
+    }
+  ],
+  "claims": {
+    "poeCertified": false,
+    "manufacturingGuarantee": false,
+    "drcEqualsCompliance": false
+  },
+  "generatedAt": "2026-07-05T14:38:28.898Z"
+}

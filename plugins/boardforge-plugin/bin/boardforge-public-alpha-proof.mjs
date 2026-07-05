@@ -12,10 +12,16 @@ await mkdir(rootDir, { recursive: true })
 await mkdir(packageDir, { recursive: true })
 
 const proofFiles = [
+  'BoardForge_Local_Alpha_Environment_Report.md',
+  'BoardForge_Routing_Setup_Report.md',
+  'BoardForge_DigiKey_Quote_API_Status_Report.md',
   'BoardForge_DigiKey_Live_Lookup_Report.json',
   'BoardForge_DigiKey_Live_Lookup_Report.md',
   'BoardForge_Mouser_Live_Lookup_Report.json',
   'BoardForge_Mouser_Live_Lookup_Report.md',
+  'BoardForge_Installer_Check_Report.md',
+  'BoardForge_Launcher_Smoke_Test_Report.md',
+  'BoardForge_PoE_Compliance_Readiness_Report.md',
   'BoardForge_Live_Supplier_Sourcing_E2E_Report.json',
   'BoardForge_Live_Supplier_Sourcing_E2E_Report.md',
   'BoardForge_Make_Manufacturable_E2E_Report.json',

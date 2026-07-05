@@ -1,7 +1,7 @@
 # BoardForge Public Alpha Proof Summary
 
 Status: BOARD_FORGE_PUBLIC_ALPHA_PROOF_WRITTEN
-Launch gate: READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS
+Launch gate: PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING
 
 ## Reports
 - C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\BoardForge_Demo_Artifact_Authenticity_Report.json

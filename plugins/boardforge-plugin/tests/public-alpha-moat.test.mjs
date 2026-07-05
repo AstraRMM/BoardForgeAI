@@ -114,7 +114,7 @@ test('evidence dashboard and public alpha launch gate write reports', async () =
   const evidence = await writeEvidenceIndex({ rootDir })
   const launch = await writeAlphaLaunchReport({ rootDir })
   assert.equal(evidence.report.cards.some((card) => card.name === 'make manufacturable'), true)
-  assert.equal(launch.report.status, 'READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS')
+  assert.equal(launch.report.status, 'PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING')
 })
 
 test('web public-alpha pages and panels expose launch features', async () => {

@@ -1,6 +1,6 @@
 # BoardForge Public Alpha Launch Gate
 
-Status: READY_FOR_PUBLIC_ALPHA_WITH_LIMITATIONS
+Status: PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING
 
 ## Categories
 - PASS: engineReadiness

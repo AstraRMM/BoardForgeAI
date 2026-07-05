@@ -1,0 +1,37 @@
+{
+  "status": "BOARD_FORGE_LAUNCHER_SMOKE_TEST_PASSED",
+  "launcherDir": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tools\\boardforge-launcher",
+  "results": [
+    {
+      "id": "start_cmd",
+      "file": "BoardForge_Start_Local_Alpha.cmd",
+      "exists": true,
+      "contentLooksValid": true
+    },
+    {
+      "id": "start_ps1",
+      "file": "BoardForge_Start_Local_Alpha.ps1",
+      "exists": true,
+      "contentLooksValid": true
+    },
+    {
+      "id": "open_dashboard",
+      "file": "BoardForge_Open_Dashboard.cmd",
+      "exists": true,
+      "contentLooksValid": true
+    },
+    {
+      "id": "doctor",
+      "file": "BoardForge_Check_Environment.ps1",
+      "exists": true,
+      "contentLooksValid": true
+    },
+    {
+      "id": "kicad_install_docs",
+      "file": "BoardForge_Install_KiCad_Plugin.ps1",
+      "exists": true,
+      "contentLooksValid": true
+    }
+  ],
+  "generatedAt": "2026-07-05T14:40:09.783Z"
+}

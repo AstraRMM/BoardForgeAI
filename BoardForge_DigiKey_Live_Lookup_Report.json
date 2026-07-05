@@ -29,7 +29,7 @@
         "lifecycleStatus": "Active",
         "rohsStatus": "UNKNOWN",
         "marketplace": false,
-        "lastChecked": "2026-07-05T13:51:20.119Z",
+        "lastChecked": "2026-07-05T14:42:07.165Z",
         "provider": "digikey",
         "status": "VERIFIED_IN_STOCK",
         "matchType": "exact"
@@ -54,14 +54,14 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:20.119Z",
+          "lastChecked": "2026-07-05T14:42:07.165Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "exact"
         }
       ],
       "provider": "digikey",
-      "lastChecked": "2026-07-05T13:51:20.119Z"
+      "lastChecked": "2026-07-05T14:42:07.165Z"
     },
     {
       "label": "0603 capacitor",
@@ -89,7 +89,7 @@
         "lifecycleStatus": "Active",
         "rohsStatus": "UNKNOWN",
         "marketplace": false,
-        "lastChecked": "2026-07-05T13:51:21.026Z",
+        "lastChecked": "2026-07-05T14:42:07.660Z",
         "provider": "digikey",
         "status": "VERIFIED_OUT_OF_STOCK",
         "matchType": "exact"
@@ -114,14 +114,14 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:21.026Z",
+          "lastChecked": "2026-07-05T14:42:07.660Z",
           "provider": "digikey",
           "status": "VERIFIED_OUT_OF_STOCK",
           "matchType": "exact"
         }
       ],
       "provider": "digikey",
-      "lastChecked": "2026-07-05T13:51:21.026Z"
+      "lastChecked": "2026-07-05T14:42:07.660Z"
     },
     {
       "label": "USB-C connector",
@@ -150,7 +150,7 @@
         "lifecycleStatus": "Active",
         "rohsStatus": "UNKNOWN",
         "marketplace": false,
-        "lastChecked": "2026-07-05T13:51:22.270Z",
+        "lastChecked": "2026-07-05T14:42:07.951Z",
         "provider": "digikey",
         "status": "AMBIGUOUS_MATCH",
         "matchType": "fuzzy"
@@ -175,7 +175,7 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:22.270Z",
+          "lastChecked": "2026-07-05T14:42:07.951Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "fuzzy"
@@ -199,7 +199,7 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:22.270Z",
+          "lastChecked": "2026-07-05T14:42:07.951Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "fuzzy"
@@ -223,7 +223,7 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:22.270Z",
+          "lastChecked": "2026-07-05T14:42:07.951Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "fuzzy"
@@ -247,7 +247,7 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:22.270Z",
+          "lastChecked": "2026-07-05T14:42:07.951Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "fuzzy"
@@ -271,14 +271,14 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:22.270Z",
+          "lastChecked": "2026-07-05T14:42:07.951Z",
           "provider": "digikey",
           "status": "VERIFIED_OUT_OF_STOCK",
           "matchType": "fuzzy"
         }
       ],
       "provider": "digikey",
-      "lastChecked": "2026-07-05T13:51:22.270Z"
+      "lastChecked": "2026-07-05T14:42:07.951Z"
     },
     {
       "label": "3.3V regulator",
@@ -306,7 +306,7 @@
         "lifecycleStatus": "Active",
         "rohsStatus": "UNKNOWN",
         "marketplace": false,
-        "lastChecked": "2026-07-05T13:51:23.205Z",
+        "lastChecked": "2026-07-05T14:42:08.852Z",
         "provider": "digikey",
         "status": "VERIFIED_IN_STOCK",
         "matchType": "exact"
@@ -331,7 +331,7 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:23.205Z",
+          "lastChecked": "2026-07-05T14:42:08.852Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "exact"
@@ -355,14 +355,14 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:23.205Z",
+          "lastChecked": "2026-07-05T14:42:08.852Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "exact"
         }
       ],
       "provider": "digikey",
-      "lastChecked": "2026-07-05T13:51:23.205Z"
+      "lastChecked": "2026-07-05T14:42:08.852Z"
     },
     {
       "label": "CAN transceiver",
@@ -390,7 +390,7 @@
         "lifecycleStatus": "Active",
         "rohsStatus": "UNKNOWN",
         "marketplace": false,
-        "lastChecked": "2026-07-05T13:51:23.926Z",
+        "lastChecked": "2026-07-05T14:42:09.590Z",
         "provider": "digikey",
         "status": "VERIFIED_IN_STOCK",
         "matchType": "exact"
@@ -415,7 +415,7 @@
           "lifecycleStatus": "Active",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:23.926Z",
+          "lastChecked": "2026-07-05T14:42:09.590Z",
           "provider": "digikey",
           "status": "VERIFIED_IN_STOCK",
           "matchType": "exact"
@@ -439,17 +439,17 @@
           "lifecycleStatus": "Discontinued at DigiKey",
           "rohsStatus": "UNKNOWN",
           "marketplace": false,
-          "lastChecked": "2026-07-05T13:51:23.926Z",
+          "lastChecked": "2026-07-05T14:42:09.590Z",
           "provider": "digikey",
           "status": "VERIFIED_OUT_OF_STOCK",
           "matchType": "exact"
         }
       ],
       "provider": "digikey",
-      "lastChecked": "2026-07-05T13:51:23.926Z"
+      "lastChecked": "2026-07-05T14:42:09.590Z"
     }
   ],
   "blocker": null,
-  "generatedAt": "2026-07-05T13:51:23.926Z",
+  "generatedAt": "2026-07-05T14:42:09.590Z",
   "noSecretsPrinted": true
 }
