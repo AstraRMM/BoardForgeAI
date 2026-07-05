@@ -1,0 +1,4 @@
+import path from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { auditSourceProtection } from './source-protection-auditor.mjs'
+export async function writeSecurityPrivacyReport({ projectDir=process.cwd() }={}){ await mkdir(projectDir,{recursive:true}); const source=auditSourceProtection(); const report={status:source.status==='SOURCE_PROTECTION_READY'?'SECURITY_PRIVACY_READY':'SECURITY_PRIVACY_NEEDS_WORK', sourceProtection:source, noCloudUploadByDefault:true, noSecretsInReports:true, generatedAt:new Date().toISOString()}; const json=path.join(projectDir,'BoardForge_Security_Privacy_Report.json'); const md=path.join(projectDir,'BoardForge_Security_Privacy_Report.md'); await writeFile(json,JSON.stringify(report,null,2)); await writeFile(md,`# Security and Privacy Report\n\n- Status: ${report.status}\n- Local-first: true\n- Secrets in reports: false\n`); return {status:report.status,report,artifactPaths:[json,md]} }

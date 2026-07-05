@@ -1,0 +1,4 @@
+import path from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { checkDigiKeySupplyChainCapability } from './digikey/digikey-supplychain-client.mjs'
+export async function writeSupplyChainCapabilityReport({ projectDir = process.cwd(), enabledApis = [] } = {}) { await mkdir(projectDir, { recursive: true }); const report = { ...(await checkDigiKeySupplyChainCapability({ enabledApis })), noOrderMutation: true, generatedAt: new Date().toISOString() }; const json = path.join(projectDir, 'BoardForge_DigiKey_SupplyChain_Capability_Report.json'); const md = path.join(projectDir, 'BoardForge_DigiKey_SupplyChain_Capability_Report.md'); await writeFile(json, JSON.stringify(report, null, 2)); await writeFile(md, `# DigiKey SupplyChain Capability Report\n\n- Status: ${report.status}\n- No order/cart mutation: true\n`); return { status: report.status, report, artifactPaths: [json, md] } }

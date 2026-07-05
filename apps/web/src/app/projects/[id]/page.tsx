@@ -20,6 +20,7 @@ import { VariantComparisonPanel } from '../../../components/project/VariantCompa
 import { MakeManufacturableReportPanel } from '../../../components/project/MakeManufacturableReportPanel'
 import { ProjectTimelinePanel } from '../../../components/project/ProjectTimelinePanel'
 import { SourcingCommandCenter } from '../../../components/project/SourcingCommandCenter'
+import { EngineeringCopilotPanel } from '../../../components/project/EngineeringCopilotPanel'
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const project = dashboard.projects.find((item) => item.projectId === params.id) || dashboard.projects[0]
@@ -51,6 +52,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         <VariantComparisonPanel />
         <MakeManufacturableReportPanel />
         <ProjectTimelinePanel />
+        <EngineeringCopilotPanel />
       </div>
       <div className="mt-6">
         <SourcingCommandCenter project={project as any} />
@@ -97,3 +99,4 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     </main>
   )
 }
+

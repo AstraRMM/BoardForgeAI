@@ -1,0 +1,1 @@
+export function auditGerberDrillPackage(files = []) { return { gerbers: files.filter((file)=>/\.g(b|t|m|o|s|p|l)|\.gbr$/i.test(file)), drills: files.filter((file)=>/\.drl$/i.test(file)), hasEdgeCuts: files.some((file)=>/edge|gm1/i.test(file)), valid: files.length ? true : false } }

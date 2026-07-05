@@ -1,0 +1,11 @@
+{
+  "status": "BOARD_FORGE_NEXT_ACTIONS_READY",
+  "health": "Ready for Review",
+  "sourcing": "SOURCABLE_WITH_WARNINGS",
+  "manufacturing": "PCB_FAB_READY",
+  "actions": [
+    "Review candidate alternatives and resolve unavailable or ambiguous BOM rows."
+  ],
+  "generatedAt": "2026-07-05T01:13:11.132Z",
+  "hallucinationPolicy": "artifact_only"
+}

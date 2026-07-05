@@ -32,6 +32,17 @@ export const JOB_TYPES = Object.freeze([
   'alternative_parts',
   'supplier_matrix',
   'digikey_lookup',
+  'digikey_live_lookup',
+  'digikey_provider_health',
+  'digikey_quote_depth',
+  'digikey_supplychain_capability',
+  'import_benchmark',
+  'manufacturing_authenticity',
+  'jlcpcb_readiness',
+  'library_coverage',
+  'security_privacy',
+  'performance_benchmark',
+  'engineering_copilot',
   'timeline',
   'run_fixture',
   'run_readiness_report',
@@ -81,3 +92,4 @@ export function publicJobRecord(job) {
     error: job.error || null,
   }
 }
+

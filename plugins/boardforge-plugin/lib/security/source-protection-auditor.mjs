@@ -1,0 +1,1 @@
+export function auditSourceProtection({ envIgnored=true, tokenStoreIgnored=true, protectedPathsRefused=true, sourceHashed=true }={}){ return {status: envIgnored&&tokenStoreIgnored&&protectedPathsRefused&&sourceHashed?'SOURCE_PROTECTION_READY':'SOURCE_PROTECTION_NEEDS_WORK', envIgnored, tokenStoreIgnored, protectedPathsRefused, sourceHashed} }

@@ -5,6 +5,17 @@ import { MakeSourcableReportPanel } from './MakeSourcableReportPanel'
 import { QuoteReadinessPanel } from './QuoteReadinessPanel'
 import { SupplierMatrixPanel } from './SupplierMatrixPanel'
 
+const actions = [
+  ['Check DigiKey Status', 'digikey_provider_health'],
+  ['Run DigiKey Verification', 'sourcing_verify'],
+  ['Run Quote Readiness', 'quote_readiness'],
+  ['Find Alternative Parts', 'alternative_parts'],
+  ['Make Sourcable', 'make_sourcable'],
+  ['Refresh Sourcing Reports', 'sourcing_verify'],
+  ['Open Supplier Matrix', 'supplier_matrix'],
+  ['Open Proposed Substitution Plan', 'make_sourcable'],
+]
+
 export function SourcingCommandCenter({ project }: { project?: any }) {
   const sourcing = project?.sourcing || {}
   return (
@@ -12,14 +23,14 @@ export function SourcingCommandCenter({ project }: { project?: any }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-cyan-100">Sourcing Command Center</h2>
-          <p className="mt-1 text-sm text-cyan-100/80">Local engine backed. No fake stock, no browser-exposed supplier secrets.</p>
+          <p className="mt-1 text-sm text-cyan-100/80">Live website connected to installed local engine. No fake stock, no browser-exposed supplier secrets, no silent mock fallback.</p>
         </div>
-        <div className="flex gap-2">
-          <button className="rounded border border-cyan-300 px-3 py-2 text-sm text-cyan-100" type="button">Run DigiKey Verification</button>
+        <div className="flex flex-wrap gap-2">
+          {actions.map(([label, job]) => <button key={label} data-job-type={job} className="rounded border border-cyan-300 px-3 py-2 text-sm text-cyan-100" type="button">{label}</button>)}
           <MakeSourcableButton />
-          <span className="sr-only">Make Sourcable</span>
         </div>
       </div>
+      <p className="mt-3 rounded border border-cyan-300/30 bg-slate-950 p-2 text-xs text-cyan-100">Each action checks pairing/local engine status, starts a job-backed local-engine action, polls logs, refreshes artifacts, and reports exact redacted blockers if DigiKey or local services fail.</p>
       <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey</dt><dd className="font-mono">{sourcing.digikeyStatus || 'CONFIGURED_IF_LOCAL_ENV_PRESENT'}</dd></div>
         <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey Auth</dt><dd className="font-mono">{sourcing.digikeyAuthenticated ? 'AUTHENTICATED_LOCAL_ENGINE' : 'LOCAL_TOKEN_REQUIRED'}</dd></div>

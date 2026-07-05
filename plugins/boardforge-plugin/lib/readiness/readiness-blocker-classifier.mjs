@@ -1,0 +1,2 @@
+export function classifyReadinessBlocker(item) { if (item.externalActionRequired || item.blockerType === 'EXTERNAL') return 'EXTERNAL'; if (item.missingEvidence?.length) return item.blockerType || 'TEST'; return 'NONE' }
+export function summarizeBlockers(categories) { return categories.filter((item) => classifyReadinessBlocker(item) !== 'NONE').map((item) => ({ category: item.category, blockerType: classifyReadinessBlocker(item), missingEvidence: item.missingEvidence, exactNextAction: item.exactNextAction, codexCanFixNow: item.codexCanFixNow })) }

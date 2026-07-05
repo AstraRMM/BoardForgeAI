@@ -1,0 +1,14 @@
+{
+  "source": "LIVE_DIGIKEY_PRODUCTINFO_PRICEBREAKS",
+  "status": "QUOTE_DEPTH_FALLBACK_PRODUCTINFO",
+  "rows": [
+    {
+      "MPN": "RC0603FR-0710KL",
+      "sourcingStatus": "VERIFIED_IN_STOCK",
+      "quantityAvailable": 1000
+    }
+  ],
+  "blocker": null,
+  "autoOrdering": false,
+  "generatedAt": "2026-07-05T01:13:11.086Z"
+}

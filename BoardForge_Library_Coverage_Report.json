@@ -1,0 +1,16 @@
+{
+  "status": "BOARD_FORGE_LIBRARY_COVERAGE_WRITTEN",
+  "rows": [
+    {
+      "ref": "U1",
+      "symbol": "present",
+      "footprint": "present",
+      "model3d": "missing",
+      "risk": "hand_review_required"
+    }
+  ],
+  "symbolCoverage": 100,
+  "footprintCoverage": 100,
+  "model3dCoverage": 0,
+  "generatedAt": "2026-07-05T01:13:11.110Z"
+}

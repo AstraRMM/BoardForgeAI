@@ -18,6 +18,16 @@ import { writeSupplierMatrix } from '../../sourcing/provider-matrix.mjs'
 import { runMakeSourcableWorkflow } from '../../workflows/make-sourcable-workflow.mjs'
 import { createPartLookupService } from '../../sourcing/part-lookup-service.mjs'
 import { getProviderConfig } from '../../config/provider-config.mjs'
+import { loadBoardForgeEnv } from '../../config/env-loader.mjs'
+import { probeDigiKeyQuoteDepth } from '../../sourcing/digikey/digikey-quote-client.mjs'
+import { writeSupplyChainCapabilityReport } from '../../sourcing/supply-chain-capability-report.mjs'
+import { writeManufacturingPackageAuthenticityReport } from '../../manufacturing/package-authenticator.mjs'
+import { writeJlcpcbReadinessReport } from '../../manufacturing/jlcpcb-readiness-checker.mjs'
+import { writeLibraryCoverageReport } from '../../library/library-coverage-auditor.mjs'
+import { writeSecurityPrivacyReport } from '../../security/local-privacy-report.mjs'
+import { writePerformanceBenchmark } from '../../performance/performance-benchmark.mjs'
+import { writeReliabilityReport } from '../../reliability/reliability-report.mjs'
+import { writeProjectNextActionsReport } from '../../copilot/project-explanation-generator.mjs'
 
 export async function runJob({ store, api, type, projectId, payload = {} }) {
   const job = createJobRecord({ jobId: randomUUID(), projectId, type, payload })
@@ -77,6 +87,7 @@ export async function executeJob({ store, api, job }) {
 
 async function runJobType({ api, job }) {
   const projectDir = job.payload.projectDir
+  const { env } = loadBoardForgeEnv()
   if (['validate', 'route', 'repair', 'export'].includes(job.type)) {
     const status = await api.projectStatus({ projectDir })
     return { status: `BOARD_FORGE_${job.type.toUpperCase()}_JOB_RECORDED`, data: status, artifactPaths: [] }
@@ -91,15 +102,24 @@ async function runJobType({ api, job }) {
   if (['blocker_report', 'blockers'].includes(job.type)) return writeBlockerReport({ projectDir })
   if (['variant_generation', 'variants'].includes(job.type)) return writeVariantComparisonReport({ projectDir, projectId: job.projectId })
   if (['make_manufacturable', 'make-manufacturable'].includes(job.type)) return runMakeManufacturableWorkflow({ projectDir, status: job.payload.status || {} })
-  if (job.type === 'sourcing_verify') return verifyBomSourcing({ projectDir, rows: job.payload.rows })
+  if (job.type === 'sourcing_verify') return verifyBomSourcing({ projectDir, rows: job.payload.rows, env, lookupService: createPartLookupService({ env }) })
   if (job.type === 'quote_readiness') {
-    const config = getProviderConfig()
+    const config = getProviderConfig({ env })
     return writeQuoteReadinessReport({ projectDir, rows: job.payload.rows || [], providerConfigured: config.providers.digikey.configured, buildQuantity: job.payload.buildQuantity || 10 })
   }
-  if (job.type === 'make_sourcable') return runMakeSourcableWorkflow({ projectDir, rows: job.payload.rows })
-  if (job.type === 'alternative_parts') return writeAlternativePartReport({ projectDir, rows: job.payload.rows || [], lookupService: createPartLookupService() })
+  if (job.type === 'make_sourcable') return runMakeSourcableWorkflow({ projectDir, rows: job.payload.rows, env, lookupService: createPartLookupService({ env }) })
+  if (job.type === 'alternative_parts') return writeAlternativePartReport({ projectDir, rows: job.payload.rows || [], lookupService: createPartLookupService({ env }) })
   if (job.type === 'supplier_matrix') return writeSupplierMatrix({ projectDir, rows: job.payload.rows || [] })
-  if (job.type === 'digikey_lookup') return { status: 'BOARD_FORGE_DIGIKEY_LOOKUP_JOB_COMPLETE', data: await createPartLookupService().lookup({ mpn: job.payload.mpn, keyword: job.payload.keyword }), artifactPaths: [] }
+  if (['digikey_lookup', 'digikey_live_lookup'].includes(job.type)) return { status: 'BOARD_FORGE_DIGIKEY_LOOKUP_JOB_COMPLETE', data: await createPartLookupService({ env }).lookup({ mpn: job.payload.mpn, keyword: job.payload.keyword }), artifactPaths: [] }
+  if (job.type === 'digikey_provider_health') return { status: 'BOARD_FORGE_DIGIKEY_PROVIDER_HEALTH_JOB_COMPLETE', data: await createPartLookupService({ env }).status(), artifactPaths: [] }
+  if (job.type === 'digikey_quote_depth') return probeDigiKeyQuoteDepth({ projectDir, rows: job.payload.rows || [] })
+  if (job.type === 'digikey_supplychain_capability') return writeSupplyChainCapabilityReport({ projectDir, enabledApis: config.providers.digikey.enabledApis || [] })
+  if (job.type === 'manufacturing_authenticity') return writeManufacturingPackageAuthenticityReport({ projectDir, zipPath: job.payload.zipPath })
+  if (job.type === 'jlcpcb_readiness') return writeJlcpcbReadinessReport({ projectDir, assemblyVerified: Boolean(job.payload.assemblyVerified), pcbFabReady: job.payload.pcbFabReady !== false })
+  if (job.type === 'library_coverage') return writeLibraryCoverageReport({ projectDir, components: job.payload.components || [] })
+  if (job.type === 'security_privacy') return writeSecurityPrivacyReport({ projectDir })
+  if (job.type === 'performance_benchmark') { const perf = await writePerformanceBenchmark({ projectDir }); const rel = await writeReliabilityReport({ projectDir }); return { status: 'BOARD_FORGE_PERFORMANCE_RELIABILITY_JOB_COMPLETE', artifactPaths: [...perf.artifactPaths, ...rel.artifactPaths], report: { performance: perf.report, reliability: rel.report } } }
+  if (job.type === 'engineering_copilot') return writeProjectNextActionsReport({ projectDir, state: job.payload.state || {} })
   if (['project_timeline', 'timeline'].includes(job.type)) return writeProjectTimeline({ projectDir, events: job.payload.events || [] })
   if (['run_readiness_report', 'readiness'].includes(job.type)) return { status: 'BOARD_FORGE_READINESS_JOB_RECORDED', artifactPaths: [] }
   if (['run_fixture', 'fixtures'].includes(job.type)) return { status: 'BOARD_FORGE_FIXTURE_JOB_RECORDED', artifactPaths: [] }
@@ -108,3 +128,4 @@ async function runJobType({ api, job }) {
   if (job.type === 'create_project') return api.createProject(job.payload)
   throw new Error(`unsupported_job_type:${job.type}`)
 }
+

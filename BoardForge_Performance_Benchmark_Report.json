@@ -1,0 +1,8 @@
+{
+  "status": "PERFORMANCE_BENCHMARK_WRITTEN",
+  "localEngineStartupMs": "not_measured_in_unit_test",
+  "healthRouteTargetMs": 250,
+  "jobQueueTargetMs": 500,
+  "cleanShutdown": true,
+  "generatedAt": "2026-07-05T01:13:11.125Z"
+}

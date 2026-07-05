@@ -1,0 +1,11 @@
+{
+  "status": "MANUFACTURING_PACKAGE_NEEDS_REAL_ZIP",
+  "zipPath": null,
+  "zipSize": 0,
+  "gerbersPresent": "CHECKED_BY_PACKAGE_GATE",
+  "drillPresent": "CHECKED_BY_PACKAGE_GATE",
+  "bomPresent": "CHECKED_BY_PACKAGE_GATE",
+  "cplPresent": "CHECKED_BY_PACKAGE_GATE",
+  "placeholderFilesDetected": false,
+  "generatedAt": "2026-07-05T01:13:11.104Z"
+}

@@ -1,0 +1,2 @@
+import { readFileSync, existsSync } from 'node:fs'
+export function scanForKnownSecrets({ files=[], secrets=[] }={}){ const violations=[]; for(const file of files){ if(!existsSync(file))continue; const text=readFileSync(file,'utf8'); for(const secret of secrets){ if(secret&&text.includes(secret))violations.push({file}) } } return {status:violations.length?'SECRET_SCAN_FAILED':'SECRET_SCAN_PASSED', violations} }

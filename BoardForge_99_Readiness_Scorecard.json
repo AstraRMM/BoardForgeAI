@@ -1,0 +1,317 @@
+{
+  "status": "99_BLOCKED_BY_EXTERNALS",
+  "oldScore": 91,
+  "evidenceBackedScore": 93,
+  "categories": [
+    {
+      "category": "Core KiCad generation",
+      "currentScore": 98,
+      "evidence": "KiCad-native project generation has repeated fixture evidence.",
+      "missingEvidence": [],
+      "blockerType": "CODE",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Schematic/PCB consistency",
+      "currentScore": 96,
+      "evidence": "Schematic graph, pin-map, and PCB generation are covered by regression fixtures.",
+      "missingEvidence": [],
+      "blockerType": "CODE",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Routing and DRC/ERC",
+      "currentScore": 95,
+      "evidence": "FreeRouting/SES plus dirty-to-clean repair proofs are evidence-backed.",
+      "missingEvidence": [],
+      "blockerType": "CODE",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Manufacturing export authenticity",
+      "currentScore": 94,
+      "evidence": "Strict ZIP gate exists; authenticity audit added for 99 evidence.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Imported project sandbox safety",
+      "currentScore": 96,
+      "evidence": "Sandbox source hash protection is proven; broader import benchmark adds confidence.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Dirty-board repair",
+      "currentScore": 95,
+      "evidence": "Multiple dirty-to-clean proofs exist.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Custom outline generation",
+      "currentScore": 94,
+      "evidence": "Odd-shape generation and custom outline proof exist.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Live website/local engine bridge",
+      "currentScore": 94,
+      "evidence": "Local engine service and pairing exist; browser E2E remains the main gap.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Secure pairing/auth",
+      "currentScore": 95,
+      "evidence": "Pairing token and origin allowlist are in place.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Job queue/polling/logs/retry",
+      "currentScore": 94,
+      "evidence": "Job routes, logs, retry, and blocker reports exist.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Browser E2E coverage",
+      "currentScore": 82,
+      "evidence": "Scripted E2E placeholder exists; full browser run is the main non-external gap.",
+      "missingEvidence": [
+        "full browser E2E run on live website/local engine pairing"
+      ],
+      "blockerType": "TEST",
+      "exactNextAction": "Run Playwright/browser flow after browser tooling is available.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "DigiKey live sourcing",
+      "currentScore": 96,
+      "evidence": "Live ProductInformation and BOM sourcing proof completed.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Quote readiness",
+      "currentScore": 94,
+      "evidence": "Quote readiness uses live ProductInformation price data; direct Quote endpoint depth is probed honestly.",
+      "missingEvidence": [
+        "direct DigiKey Quote endpoint permission proof"
+      ],
+      "blockerType": "TEST",
+      "exactNextAction": "Run Quote depth probe and keep fallback to ProductInformation price breaks honest.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "SupplyChainAPI capability",
+      "currentScore": 91,
+      "evidence": "Capability detection added; no order/cart mutation allowed.",
+      "missingEvidence": [
+        "read-only SupplyChain endpoint capability proof"
+      ],
+      "blockerType": "TEST",
+      "exactNextAction": "Run safe read-only capability detector and document unavailable endpoints.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Make Sourcable",
+      "currentScore": 95,
+      "evidence": "Live proof returns SOURCABLE_WITH_WARNINGS and does not auto-edit schematics.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Make Manufacturable",
+      "currentScore": 95,
+      "evidence": "Workflow is present and evidence-backed.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Web UX polish",
+      "currentScore": 92,
+      "evidence": "Command center panels exist; E2E remains gap.",
+      "missingEvidence": [],
+      "blockerType": "UX",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "KiCad plugin parity",
+      "currentScore": 91,
+      "evidence": "Plugin status/actions are scaffolded with parity reports.",
+      "missingEvidence": [],
+      "blockerType": "UX",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "CLI parity",
+      "currentScore": 94,
+      "evidence": "CLI/local client exposes sourcing and project actions.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Installer/tray/launcher readiness",
+      "currentScore": 87,
+      "evidence": "Doctor and package reports added; signing remains external.",
+      "missingEvidence": [],
+      "blockerType": "EXTERNAL",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": false,
+      "externalActionRequired": true
+    },
+    {
+      "category": "Secret redaction/security",
+      "currentScore": 97,
+      "evidence": "Secret redaction and ignored token/env stores are tested.",
+      "missingEvidence": [],
+      "blockerType": "TEST",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Evidence dashboard",
+      "currentScore": 94,
+      "evidence": "Evidence cards added for sourcing/public-alpha hardening.",
+      "missingEvidence": [],
+      "blockerType": "DOCS",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Public alpha launch gate",
+      "currentScore": 92,
+      "evidence": "Launch gate blocks 99 on external/signing/compliance gaps.",
+      "missingEvidence": [],
+      "blockerType": "DOCS",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "Documentation/demo readiness",
+      "currentScore": 92,
+      "evidence": "Public alpha docs and package manifest added.",
+      "missingEvidence": [],
+      "blockerType": "DOCS",
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": true,
+      "externalActionRequired": false
+    },
+    {
+      "category": "External blockers",
+      "currentScore": 70,
+      "evidence": "PoE compliance review and installer signing certificate remain external.",
+      "missingEvidence": [
+        "PoE safety review",
+        "installer signing certificate"
+      ],
+      "blockerType": "EXTERNAL",
+      "exactNextAction": "Provide compliance review/certificate; do not fake these blockers.",
+      "codexCanFixNow": false,
+      "externalActionRequired": true
+    }
+  ],
+  "blockers": [
+    {
+      "category": "Browser E2E coverage",
+      "blockerType": "TEST",
+      "missingEvidence": [
+        "full browser E2E run on live website/local engine pairing"
+      ],
+      "exactNextAction": "Run Playwright/browser flow after browser tooling is available.",
+      "codexCanFixNow": true
+    },
+    {
+      "category": "Quote readiness",
+      "blockerType": "TEST",
+      "missingEvidence": [
+        "direct DigiKey Quote endpoint permission proof"
+      ],
+      "exactNextAction": "Run Quote depth probe and keep fallback to ProductInformation price breaks honest.",
+      "codexCanFixNow": true
+    },
+    {
+      "category": "SupplyChainAPI capability",
+      "blockerType": "TEST",
+      "missingEvidence": [
+        "read-only SupplyChain endpoint capability proof"
+      ],
+      "exactNextAction": "Run safe read-only capability detector and document unavailable endpoints.",
+      "codexCanFixNow": true
+    },
+    {
+      "category": "Installer/tray/launcher readiness",
+      "blockerType": "EXTERNAL",
+      "missingEvidence": [],
+      "exactNextAction": "Keep regression evidence current.",
+      "codexCanFixNow": false
+    },
+    {
+      "category": "External blockers",
+      "blockerType": "EXTERNAL",
+      "missingEvidence": [
+        "PoE safety review",
+        "installer signing certificate"
+      ],
+      "exactNextAction": "Provide compliance review/certificate; do not fake these blockers.",
+      "codexCanFixNow": false
+    }
+  ],
+  "externalBlockers": [
+    "public installer signing certificate",
+    "real PoE compliance/safety review"
+  ],
+  "generatedAt": "2026-07-05T01:13:29.983Z"
+}

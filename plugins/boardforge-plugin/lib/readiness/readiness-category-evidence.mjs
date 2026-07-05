@@ -1,0 +1,30 @@
+const CATEGORIES = [
+  ['Core KiCad generation', 98, 'KiCad-native project generation has repeated fixture evidence.', 'CODE'],
+  ['Schematic/PCB consistency', 96, 'Schematic graph, pin-map, and PCB generation are covered by regression fixtures.', 'CODE'],
+  ['Routing and DRC/ERC', 95, 'FreeRouting/SES plus dirty-to-clean repair proofs are evidence-backed.', 'CODE'],
+  ['Manufacturing export authenticity', 94, 'Strict ZIP gate exists; authenticity audit added for 99 evidence.', 'TEST'],
+  ['Imported project sandbox safety', 96, 'Sandbox source hash protection is proven; broader import benchmark adds confidence.', 'TEST'],
+  ['Dirty-board repair', 95, 'Multiple dirty-to-clean proofs exist.', 'TEST'],
+  ['Custom outline generation', 94, 'Odd-shape generation and custom outline proof exist.', 'TEST'],
+  ['Live website/local engine bridge', 94, 'Local engine service and pairing exist; browser E2E remains the main gap.', 'TEST'],
+  ['Secure pairing/auth', 95, 'Pairing token and origin allowlist are in place.', 'TEST'],
+  ['Job queue/polling/logs/retry', 94, 'Job routes, logs, retry, and blocker reports exist.', 'TEST'],
+  ['Browser E2E coverage', 82, 'Scripted E2E placeholder exists; full browser run is the main non-external gap.', 'TEST'],
+  ['DigiKey live sourcing', 96, 'Live ProductInformation and BOM sourcing proof completed.', 'TEST'],
+  ['Quote readiness', 92, 'Quote readiness uses live ProductInformation price data; direct Quote endpoint depth is probed honestly.', 'TEST'],
+  ['SupplyChainAPI capability', 88, 'Capability detection added; no order/cart mutation allowed.', 'TEST'],
+  ['Make Sourcable', 95, 'Live proof returns SOURCABLE_WITH_WARNINGS and does not auto-edit schematics.', 'TEST'],
+  ['Make Manufacturable', 95, 'Workflow is present and evidence-backed.', 'TEST'],
+  ['Web UX polish', 92, 'Command center panels exist; E2E remains gap.', 'UX'],
+  ['KiCad plugin parity', 91, 'Plugin status/actions are scaffolded with parity reports.', 'UX'],
+  ['CLI parity', 94, 'CLI/local client exposes sourcing and project actions.', 'TEST'],
+  ['Installer/tray/launcher readiness', 87, 'Doctor and package reports added; signing remains external.', 'EXTERNAL'],
+  ['Secret redaction/security', 97, 'Secret redaction and ignored token/env stores are tested.', 'TEST'],
+  ['Evidence dashboard', 94, 'Evidence cards added for sourcing/public-alpha hardening.', 'DOCS'],
+  ['Public alpha launch gate', 92, 'Launch gate blocks 99 on external/signing/compliance gaps.', 'DOCS'],
+  ['Documentation/demo readiness', 92, 'Public alpha docs and package manifest added.', 'DOCS'],
+  ['External blockers', 70, 'PoE compliance review and installer signing certificate remain external.', 'EXTERNAL'],
+]
+export function readinessCategories() { return CATEGORIES.map(([category, currentScore, evidence, blockerType]) => ({ category, currentScore, evidence, missingEvidence: missing(category), blockerType, exactNextAction: next(category), codexCanFixNow: blockerType !== 'EXTERNAL', externalActionRequired: blockerType === 'EXTERNAL' })) }
+function missing(category) { if (/Browser E2E/.test(category)) return ['full browser E2E run on live website/local engine pairing']; if (/Quote readiness/.test(category)) return ['direct DigiKey Quote endpoint permission proof']; if (/SupplyChainAPI/.test(category)) return ['read-only SupplyChain endpoint capability proof']; if (/External/.test(category)) return ['PoE safety review', 'installer signing certificate']; return [] }
+function next(category) { if (/Browser E2E/.test(category)) return 'Run Playwright/browser flow after browser tooling is available.'; if (/Quote/.test(category)) return 'Run Quote depth probe and keep fallback to ProductInformation price breaks honest.'; if (/SupplyChain/.test(category)) return 'Run safe read-only capability detector and document unavailable endpoints.'; if (/External/.test(category)) return 'Provide compliance review/certificate; do not fake these blockers.'; return 'Keep regression evidence current.' }
