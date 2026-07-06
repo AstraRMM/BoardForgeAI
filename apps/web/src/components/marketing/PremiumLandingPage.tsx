@@ -5,7 +5,6 @@ import type { ComponentType, ReactNode } from 'react'
 import {
   ArrowRight,
   BadgeCheck,
-  Boxes,
   CircuitBoard,
   DatabaseZap,
   Download,
@@ -66,7 +65,40 @@ const workflowMetrics = [
   ['Evidence-backed', 'browser E2E, source protection, publish gates, report:99'],
 ]
 
-function AnimatedCTAButton({ href, children, variant = 'primary' }: { href: string; children: ReactNode; variant?: 'primary' | 'secondary' }) {
+function AnimatedPCBBackground() {
+  return (
+    <div className="bf-animated-pcb-background" aria-hidden="true">
+      <span className="bf-pcb-pulse p1" />
+      <span className="bf-pcb-pulse p2" />
+      <span className="bf-pcb-pulse p3" />
+      <svg viewBox="0 0 1440 920" preserveAspectRatio="none">
+        <path d="M0 180 H240 V330 H460 C540 330 560 250 650 250 H940 V140 H1440" />
+        <path d="M120 720 H360 V610 H610 C720 610 730 720 850 720 H1120 V610 H1440" />
+        <path d="M0 470 H210 C310 470 300 400 420 400 H710 V510 H1000 C1090 510 1110 430 1220 430 H1440" />
+        <path className="copper" d="M80 90 H340 V168 H620 M790 830 H1030 V760 H1320" />
+      </svg>
+    </div>
+  )
+}
+
+function BoardForgeMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={compact ? 'bf-logo-mark compact' : 'bf-logo-mark'} aria-hidden="true">
+      <svg viewBox="0 0 64 64">
+        <rect x="6" y="6" width="52" height="52" rx="14" />
+        <path className="trace copper" d="M14 20 H28 V14 H48" />
+        <path className="trace blue" d="M16 46 H28 V38 H48" />
+        <path className="trace blue" d="M32 14 V50" />
+        <circle cx="48" cy="14" r="4" />
+        <circle cx="48" cy="38" r="4" />
+        <circle cx="32" cy="50" r="4" />
+        <text x="17" y="39">BF</text>
+      </svg>
+    </span>
+  )
+}
+
+function AnimatedCTAButton({ href, children, variant = 'primary' }: { href: string; children: ReactNode; variant?: 'primary' | 'secondary' | 'ghost' }) {
   return <a className={`bf-animated-button ${variant}`} href={href}>{children}</a>
 }
 
@@ -79,22 +111,27 @@ function PremiumNav() {
     ['Evidence', '/evidence'],
     ['Docs', '/docs'],
     ['Pricing', '/pricing'],
-    ['Launch App', '/dashboard'],
   ]
 
   return (
     <header className="bf-nav">
       <a className="bf-brand" href="/">
-        <span>BF</span>
-        <strong>BoardForge AI</strong>
+        <BoardForgeMark compact />
+        <span className="bf-brand-copy">
+          <strong>BoardForge AI</strong>
+          <small>AI PCB Engineering Command Center</small>
+        </span>
       </a>
       <button className="bf-nav-toggle" type="button" aria-expanded={open} aria-controls="bf-public-nav" onClick={() => setOpen((value) => !value)}>
         <Menu size={18} />
         Menu
       </button>
-      <nav id="bf-public-nav" className={open ? 'open' : ''} aria-label="Public navigation">
-        {links.map(([label, href]) => <a href={href} key={label} onClick={() => setOpen(false)}>{label}</a>)}
-      </nav>
+      <div className="bf-nav-right">
+        <nav id="bf-public-nav" className={open ? 'open' : ''} aria-label="Public navigation">
+          {links.map(([label, href]) => <a href={href} key={label} onClick={() => setOpen(false)}>{label}</a>)}
+        </nav>
+        <a className="bf-nav-cta" href="/dashboard">Launch App</a>
+      </div>
     </header>
   )
 }
@@ -116,7 +153,7 @@ function Hero3DBoard() {
       onMouseLeave={() => setTilt({ x: 0, y: 0 })}
     >
       <div className="bf-cad-window">
-        <div className="bf-window-bar"><span /><span /><span /><strong>KiCad-ready board preview</strong></div>
+        <div className="bf-window-bar"><span /><span /><span /><strong>KiCad-ready physical preview</strong></div>
         <div className="bf-board-stage">
           <div className="bf-board-3d" style={{ transform }}>
             <svg viewBox="0 0 740 430" role="img" aria-label="Premium PCB rendering">
@@ -155,10 +192,10 @@ function Hero3DBoard() {
           </div>
         </div>
         <div className="bf-status-strip">
-          <span>custom outline</span>
-          <span>DRC/ERC evidence</span>
-          <span>live sourcing</span>
-          <span>manufacturing package</span>
+          <span><strong>DRC/ERC checks</strong> local evidence</span>
+          <span><strong>live sourcing</strong> DigiKey + Mouser</span>
+          <span><strong>local engine</strong> protected KiCad flow</span>
+          <span><strong>human review</strong> honest gates</span>
         </div>
       </div>
     </div>
@@ -386,16 +423,17 @@ function FooterCTA() {
 export function PremiumLandingPage() {
   return (
     <main className="bf-premium-site">
+      <AnimatedPCBBackground />
       <PremiumNav />
       <section className="bf-hero">
         <div className="bf-hero-copy">
-          <span className="bf-kicker">BoardForge AI</span>
+          <span className="bf-kicker">AI PCB Engineering Command Center</span>
           <h1>From PCB idea to manufacturable KiCad project.</h1>
-          <p>BoardForge helps you describe a board, generate a KiCad-ready project, validate DRC/ERC, verify live DigiKey and Mouser sourcing, run Make Manufacturable and Make Sourcable workflows, and export fabrication-ready packages with evidence-backed reports.</p>
+          <p>BoardForge helps you generate board briefs, create custom outlines, validate KiCad projects, verify live supplier sourcing, repair manufacturability issues, and export fabrication-ready packages.</p>
           <div className="bf-button-row">
             <AnimatedCTAButton href="/new-board"><Zap size={17} /> Start Building</AnimatedCTAButton>
             <AnimatedCTAButton href="/demo" variant="secondary"><Sparkles size={17} /> Try Demo</AnimatedCTAButton>
-            <AnimatedCTAButton href="/evidence" variant="secondary"><FileCheck2 size={17} /> View Evidence</AnimatedCTAButton>
+            <AnimatedCTAButton href="/evidence" variant="ghost"><FileCheck2 size={17} /> View Evidence</AnimatedCTAButton>
           </div>
           <div className="bf-hero-metrics">
             {workflowMetrics.map(([label, value]) => (

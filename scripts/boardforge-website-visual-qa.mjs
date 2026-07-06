@@ -16,13 +16,15 @@ const pages = [
   ['homepage', '/'],
   ['homepage-sourcing', '/#sourcing'],
   ['custom-board-generator', '/custom-board-generator'],
+  ['sourcing-page', '/projects'],
   ['evidence', '/evidence'],
   ['alpha-readiness', '/alpha-readiness'],
   ['projects-dashboard', '/projects'],
 ]
 
 const viewports = [
-  ['desktop', { width: 1440, height: 1000 }],
+  ['desktop-1440', { width: 1440, height: 900 }],
+  ['desktop-1920', { width: 1920, height: 1080 }],
   ['mobile', { width: 390, height: 844 }],
 ]
 
@@ -83,14 +85,18 @@ function writeReports(results) {
     `Base URL: ${baseUrl}`,
     `Generated: ${summary.generatedAt}`,
     '',
-    '| Page | Viewport | Passed | Horizontal overflow | Console errors | Screenshot |',
-    '| --- | --- | --- | --- | --- | --- |',
-    ...results.map((item) => `| ${item.page} | ${item.viewport} | ${item.passed ? 'yes' : 'no'} | ${item.horizontalOverflow ? 'yes' : 'no'} | ${item.consoleErrors.length} | ${item.screenshot} |`),
+    '| Page | Viewport | Passed | Hero overlap | Horizontal overflow | Nav layout | Favicon | Console errors | Screenshot |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    ...results.map((item) => `| ${item.page} | ${item.viewport} | ${item.passed ? 'yes' : 'no'} | ${item.heroTextOverlap ? 'yes' : 'no'} | ${item.horizontalOverflow ? 'yes' : 'no'} | ${item.navLayoutPass ? 'pass' : 'fail'} | ${item.faviconExists ? 'pass' : 'fail'} | ${item.consoleErrors.length} | ${item.screenshot} |`),
     '',
     'Checks:',
-    '- homepage no longer contains Codex-first hero language',
-    '- no horizontal overflow on desktop or mobile viewports',
-    '- no browser console errors during page load',
+    `- hero text overlap: ${results.filter((item) => item.heroTextOverlap).length === 0 ? 'pass' : 'fail'}`,
+    `- mobile horizontal overflow: ${results.filter((item) => item.viewport === 'mobile' && item.horizontalOverflow).length === 0 ? 'pass' : 'fail'}`,
+    `- nav layout: ${results.every((item) => item.navLayoutPass) ? 'pass' : 'fail'}`,
+    `- favicon/site icon exists: ${results.every((item) => item.faviconExists) ? 'pass' : 'fail'}`,
+    `- browser tab icon works: ${results.every((item) => item.faviconExists) ? 'pass' : 'fail'}`,
+    `- console errors: ${results.every((item) => item.consoleErrors.length === 0) ? 'pass' : 'fail'}`,
+    `- animations loaded: ${results.some((item) => item.animationsLoaded) ? 'pass' : 'fail'}`,
     '- screenshots captured for visual review under tmp/website-visual-qa',
     '',
   ]
@@ -125,15 +131,36 @@ async function run() {
         const checks = await page.evaluate(() => {
           const oldHeroPhrases = ['CODEX PLUGIN FIRST', 'Turn Codex into a KiCad PCB engineer', 'Plugin Beta']
           const text = document.body.innerText
+          const heroCopy = document.querySelector('.bf-hero-copy')
+          const heroVisual = document.querySelector('.bf-hero-visual')
+          const nav = document.querySelector('.bf-nav')
+          const brand = document.querySelector('.bf-logo-mark')
+          const favicon = document.querySelector('link[rel="icon"], link[rel="shortcut icon"]')
+          const animatedBackground = document.querySelector('.bf-animated-pcb-background')
+          const rectOf = (node) => {
+            if (!node) return null
+            const rect = node.getBoundingClientRect()
+            return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height }
+          }
+          const copyRect = rectOf(heroCopy)
+          const visualRect = rectOf(heroVisual)
+          const heroTextOverlap = Boolean(copyRect && visualRect && copyRect.right > visualRect.left && copyRect.left < visualRect.right && copyRect.bottom > visualRect.top && copyRect.top < visualRect.bottom)
           return {
             scrollWidth: document.documentElement.scrollWidth,
             innerWidth: window.innerWidth,
             oldHeroPresent: oldHeroPhrases.some((phrase) => text.includes(phrase)),
             ctaVisible: [...document.querySelectorAll('a, button')].some((node) => /Start Building|Try Demo|View Evidence|Launch/i.test(node.textContent || '')),
+            heroTextOverlap,
+            navLayoutPass: Boolean(nav && brand && nav.getBoundingClientRect().height < window.innerHeight * 0.45),
+            faviconExists: Boolean(favicon),
+            animationsLoaded: Boolean(animatedBackground),
           }
         })
         const horizontalOverflow = checks.scrollWidth > checks.innerWidth + 2
         const requiresCta = pageName === 'homepage'
+        const requiresMarketingNav = pageName === 'homepage' || pageName === 'homepage-sourcing'
+        const navLayoutPass = requiresMarketingNav ? checks.navLayoutPass : true
+        const animationsLoaded = requiresMarketingNav ? checks.animationsLoaded : true
         const screenshot = path.join(screenshotDir, `${pageName}-${viewportName}.png`)
         await page.screenshot({ path: screenshot, fullPage: true })
         results.push({
@@ -142,10 +169,14 @@ async function run() {
           viewport: viewportName,
           screenshot,
           horizontalOverflow,
+          heroTextOverlap: checks.heroTextOverlap,
+          navLayoutPass,
+          faviconExists: checks.faviconExists,
+          animationsLoaded,
           oldHeroPresent: checks.oldHeroPresent,
           ctaVisible: checks.ctaVisible,
           consoleErrors,
-          passed: !horizontalOverflow && !checks.oldHeroPresent && (!requiresCta || checks.ctaVisible) && consoleErrors.length === 0,
+          passed: !horizontalOverflow && !checks.heroTextOverlap && navLayoutPass && checks.faviconExists && !checks.oldHeroPresent && (!requiresCta || checks.ctaVisible) && consoleErrors.length === 0,
         })
         await context.close()
       }

@@ -1,27 +1,40 @@
 # BoardForge Website Visual QA Report
 
 Status: PASSED
-Base URL: http://127.0.0.1:3572
-Generated: 2026-07-06T03:57:12.820Z
+Base URL: http://127.0.0.1:3772
+Generated: 2026-07-06T19:08:00.511Z
 
-| Page | Viewport | Passed | Horizontal overflow | Console errors | Screenshot |
-| --- | --- | --- | --- | --- | --- |
-| homepage | desktop | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-desktop.png |
-| homepage | mobile | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-mobile.png |
-| homepage-sourcing | desktop | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-desktop.png |
-| homepage-sourcing | mobile | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-mobile.png |
-| custom-board-generator | desktop | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\custom-board-generator-desktop.png |
-| custom-board-generator | mobile | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\custom-board-generator-mobile.png |
-| evidence | desktop | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\evidence-desktop.png |
-| evidence | mobile | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\evidence-mobile.png |
-| alpha-readiness | desktop | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\alpha-readiness-desktop.png |
-| alpha-readiness | mobile | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\alpha-readiness-mobile.png |
-| projects-dashboard | desktop | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\projects-dashboard-desktop.png |
-| projects-dashboard | mobile | yes | no | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\projects-dashboard-mobile.png |
+| Page | Viewport | Passed | Hero overlap | Horizontal overflow | Nav layout | Favicon | Console errors | Screenshot |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| homepage | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-desktop-1440.png |
+| homepage | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-desktop-1920.png |
+| homepage | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-mobile.png |
+| homepage-sourcing | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-desktop-1440.png |
+| homepage-sourcing | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-desktop-1920.png |
+| homepage-sourcing | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-mobile.png |
+| custom-board-generator | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\custom-board-generator-desktop-1440.png |
+| custom-board-generator | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\custom-board-generator-desktop-1920.png |
+| custom-board-generator | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\custom-board-generator-mobile.png |
+| sourcing-page | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\sourcing-page-desktop-1440.png |
+| sourcing-page | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\sourcing-page-desktop-1920.png |
+| sourcing-page | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\sourcing-page-mobile.png |
+| evidence | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\evidence-desktop-1440.png |
+| evidence | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\evidence-desktop-1920.png |
+| evidence | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\evidence-mobile.png |
+| alpha-readiness | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\alpha-readiness-desktop-1440.png |
+| alpha-readiness | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\alpha-readiness-desktop-1920.png |
+| alpha-readiness | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\alpha-readiness-mobile.png |
+| projects-dashboard | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\projects-dashboard-desktop-1440.png |
+| projects-dashboard | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\projects-dashboard-desktop-1920.png |
+| projects-dashboard | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\projects-dashboard-mobile.png |
 
 Checks:
-- homepage no longer contains Codex-first hero language
-- no horizontal overflow on desktop or mobile viewports
-- no browser console errors during page load
+- hero text overlap: pass
+- mobile horizontal overflow: pass
+- nav layout: pass
+- favicon/site icon exists: pass
+- browser tab icon works: pass
+- console errors: pass
+- animations loaded: pass
 - screenshots captured for visual review under tmp/website-visual-qa
 
