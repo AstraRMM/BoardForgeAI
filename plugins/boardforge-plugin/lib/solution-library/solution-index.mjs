@@ -1,10 +1,11 @@
 import { escLessonsLearned } from './esc-solutions.mjs'
+import { customOutlineLessonsLearned } from './custom-outline-solutions.mjs'
 import { recordSolution } from './solution-store.mjs'
 import { applySolutionRecipe } from './solution-apply.mjs'
 import { rankSolutionsForBoardContext } from './solution-search.mjs'
 
 export function buildDefaultSolutionLibrary() {
-  return escLessonsLearned.reduce((store, solution) => recordSolution(store, solution), [])
+  return [...escLessonsLearned, ...customOutlineLessonsLearned].reduce((store, solution) => recordSolution(store, solution), [])
 }
 
 export function loadRelevantSolutionsForBoard(boardContext = {}, solutionStore = buildDefaultSolutionLibrary()) {

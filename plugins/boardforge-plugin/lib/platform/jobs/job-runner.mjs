@@ -28,6 +28,7 @@ import { writeSecurityPrivacyReport } from '../../security/local-privacy-report.
 import { writePerformanceBenchmark } from '../../performance/performance-benchmark.mjs'
 import { writeReliabilityReport } from '../../reliability/reliability-report.mjs'
 import { writeProjectNextActionsReport } from '../../copilot/project-explanation-generator.mjs'
+import { createOutlineSeed, validateOutlineSeed, generateOutlineKiCadProject } from '../../outline/custom-outline-workflow.mjs'
 
 export async function runJob({ store, api, type, projectId, payload = {} }) {
   const job = createJobRecord({ jobId: randomUUID(), projectId, type, payload })
@@ -123,8 +124,15 @@ async function runJobType({ api, job }) {
   if (['project_timeline', 'timeline'].includes(job.type)) return writeProjectTimeline({ projectDir, events: job.payload.events || [] })
   if (['run_readiness_report', 'readiness'].includes(job.type)) return { status: 'BOARD_FORGE_READINESS_JOB_RECORDED', artifactPaths: [] }
   if (['run_fixture', 'fixtures'].includes(job.type)) return { status: 'BOARD_FORGE_FIXTURE_JOB_RECORDED', artifactPaths: [] }
-  if (job.type === 'custom_outline_validate') return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_VALIDATION_JOB_RECORDED', artifactPaths: [] }
-  if (job.type === 'custom_outline_seed') return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_SEED_JOB_RECORDED', artifactPaths: [] }
+  if (job.type === 'custom_outline_seed') return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_SEEDED', seed: createOutlineSeed(job.payload), artifactPaths: [] }
+  if (job.type === 'custom_outline_validate') {
+    const seed = job.payload.seed || createOutlineSeed(job.payload)
+    return { status: 'BOARD_FORGE_CUSTOM_OUTLINE_VALIDATED', seed, validation: validateOutlineSeed(seed), artifactPaths: [] }
+  }
+  if (['custom_outline_generate_kicad', 'custom_outline_generate_board', 'custom_outline_export'].includes(job.type)) {
+    const seed = job.payload.seed || createOutlineSeed(job.payload)
+    return generateOutlineKiCadProject({ ...job.payload, seed, projectDir: projectDir || job.payload.projectDir })
+  }
   if (job.type === 'create_project') return api.createProject(job.payload)
   throw new Error(`unsupported_job_type:${job.type}`)
 }

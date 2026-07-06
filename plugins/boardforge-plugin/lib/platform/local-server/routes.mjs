@@ -30,6 +30,7 @@ import { verifyBomSourcing } from '../../sourcing/bom-sourcing-verifier.mjs'
 import { writeQuoteReadinessReport } from '../../sourcing/quote-readiness-report.mjs'
 import { writeAlternativePartReport } from '../../sourcing/alternative-part-report.mjs'
 import { runMakeSourcableWorkflow } from '../../workflows/make-sourcable-workflow.mjs'
+import { outlinePresetsResponse, createOutlineSeed, validateOutlineSeed, generateOutlineKiCadProject, readOutlineStatus, readOutlineReports } from '../../outline/custom-outline-workflow.mjs'
 
 export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
   const api = createLocalArtifactApi({ rootDir })
@@ -72,6 +73,36 @@ export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
       }
       if (method === 'GET' && pathname === '/setup/status') {
         return okResponse({ status: 'BOARD_FORGE_FIRST_RUN_SETUP_STATUS', data: checkFirstRunSetup() })
+      }
+      if (method === 'GET' && pathname === '/outline/presets') {
+        return okResponse({ status: 'BOARD_FORGE_OUTLINE_PRESETS', data: outlinePresetsResponse() })
+      }
+      if (method === 'POST' && pathname === '/outline/seed') {
+        const seed = createOutlineSeed(payload)
+        return okResponse({ status: 'BOARD_FORGE_OUTLINE_SEEDED', data: seed })
+      }
+      if (method === 'POST' && pathname === '/outline/validate') {
+        const seed = payload.seed || createOutlineSeed(payload)
+        const validation = validateOutlineSeed(seed)
+        return okResponse({ status: validation.status, data: { seed, validation }, warnings: validation.warnings })
+      }
+      if (method === 'POST' && (pathname === '/outline/generate-kicad' || pathname === '/outline/generate-board')) {
+        const seed = payload.seed || createOutlineSeed(payload)
+        const projectDir = payload.projectDir || path.join(rootDir, seed.id)
+        const guard = validateProjectPath(projectDir)
+        if (!guard.allowed) return errorResponse({ status: 'BOARD_FORGE_OUTLINE_PROJECT_PATH_REFUSED', error: guard.reason })
+        const result = await generateOutlineKiCadProject({ ...payload, seed, projectDir })
+        return okResponse({ status: result.status, data: result, artifactPaths: result.artifactPaths, warnings: result.validation.warnings })
+      }
+      const outlineRoute = pathname.match(/^\/outline\/([^/]+)\/?([^/]*)$/)
+      if (outlineRoute) {
+        const outlineId = decodeURIComponent(outlineRoute[1])
+        const action = outlineRoute[2] || 'status'
+        const projectDir = payload.projectDir || query.get('projectDir') || path.join(rootDir, outlineId)
+        const guard = validateProjectPath(projectDir)
+        if (!guard.allowed) return errorResponse({ status: 'BOARD_FORGE_OUTLINE_PATH_REFUSED', error: guard.reason })
+        if (method === 'GET' && action === 'status') return okResponse({ status: 'BOARD_FORGE_OUTLINE_STATUS', data: await readOutlineStatus(projectDir) })
+        if (method === 'GET' && action === 'reports') return okResponse({ status: 'BOARD_FORGE_OUTLINE_REPORTS', data: await readOutlineReports(projectDir) })
       }
       if (method === 'GET' && pathname === '/evidence') {
         const result = await writeEvidenceIndex({ rootDir })
