@@ -8,15 +8,15 @@ export default function AlphaReadinessPage() {
     ['Make Manufacturable', 'available as an evidence-backed local workflow'],
     ['Make Sourcable', 'available with no-fake-stock behavior'],
     ['manufacturing export readiness', 'exports are labeled by evidence and limitations'],
-    ['documentation readiness', 'public alpha limitations and walkthrough documented'],
-    ['launch gate', 'PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING'],
+    ['documentation readiness', 'release limitations and walkthrough documented'],
+    ['launch gate', 'software ready; external certificates pending'],
   ]
   return (
     <main className="bf-app-page">
       <section className="bf-app-hero">
-        <span className="bf-kicker">Public alpha launch gate</span>
-        <h1>Public alpha software ready with external certificates pending.</h1>
-        <p>BoardForge public-alpha software is ready with external limitations disclosed: installer signing still needs a certificate, PoE compliance/safety review is external, DigiKey ProductInformation live sourcing works with local credentials, and direct DigiKey Quote API support is only claimed after live endpoint proof.</p>
+        <span className="bf-kicker">Launch readiness gate</span>
+        <h1>Software ready with external certificates pending.</h1>
+        <p>BoardForge software is ready for controlled release with external limitations disclosed: installer signing still needs a certificate, PoE compliance/safety review is external, DigiKey ProductInformation live sourcing works with local credentials, and direct DigiKey Quote API support is only claimed after live endpoint proof.</p>
       </section>
       <section className="bf-app-grid two">
         {categories.map(([category, evidence]) => (

@@ -6,8 +6,8 @@ export default function DemoPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
       <section className="mx-auto max-w-5xl">
-        <p className="text-sm uppercase tracking-wide text-emerald-300">BoardForge local alpha demo</p>
-        <h1 className="mt-2 text-3xl font-semibold">Run The Guided Alpha Flow</h1>
+        <p className="text-sm uppercase tracking-wide text-emerald-300">BoardForge guided local workflow</p>
+        <h1 className="mt-2 text-3xl font-semibold">Run The Guided Workflow</h1>
         <p className="mt-3 max-w-3xl text-slate-400">
           This demo is local artifact-backed. It does not pretend to run cloud jobs.
         </p>

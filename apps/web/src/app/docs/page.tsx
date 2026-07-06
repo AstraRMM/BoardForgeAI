@@ -3,7 +3,7 @@ const docCards = [
   ['Custom Board Generator', 'Draw or select a board shape, validate holes and routeability, then export Edge.Cuts or continue into board creation.', '/custom-board-generator'],
   ['Sourcing Command Center', 'Verify supplier status, BOM risk, alternatives, and quote readiness using configured DigiKey and Mouser credentials.', '/evidence'],
   ['Downloads and Reports', 'Review Gerbers, drill files, BOM, CPL, manifests, evidence reports, and limitation notes before using any package.', '/downloads'],
-  ['Installer Return Codes', 'Understand local alpha installer return codes and setup behavior for the local KiCad engine.', '/docs/installer-return-codes'],
+  ['Installer Return Codes', 'Understand installer return codes and setup behavior for the local KiCad engine.', '/docs/installer-return-codes'],
 ]
 
 export default function DocsPage() {
@@ -27,7 +27,7 @@ export default function DocsPage() {
       <section className="bf-section bf-alpha-limitations">
         <div>
           <span className="bf-kicker">Public copy rule</span>
-          <h2>Evidence-backed alpha, not guaranteed autonomous manufacturing.</h2>
+          <h2>Evidence-backed engineering, not guaranteed autonomous manufacturing.</h2>
           <p>BoardForge can create and inspect KiCad projects, run local checks, source parts where configured, and generate reports. Engineers still review before fabrication or assembly.</p>
         </div>
       </section>

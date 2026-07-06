@@ -4,10 +4,10 @@ import { attachSecretLeakGuard, writeE2EReport } from './helpers/boardforge-e2e-
 test('one-click demo page shows honest local artifact-backed flow', async ({ page }) => {
   const guard = attachSecretLeakGuard(page)
   await page.goto('/demo')
-  await expect(page.getByRole('heading', { name: /Run The Guided Alpha Flow/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Run The Guided Workflow/i })).toBeVisible()
   await expect(page.getByText(/npm run boardforge:demo/i).first()).toBeVisible()
-  await expect(page.getByText(/One-click public demo mode/i)).toBeVisible()
-  await expect(page.getByText(/safe local demo package/i)).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Guided local workflow/i })).toBeVisible()
+  await expect(page.getByText(/safe local workflow package/i)).toBeVisible()
   await expect(page.getByText(/Compact robotics controller/i)).toBeVisible()
   await expect(page.getByText(/sourcing NOT_CHECKED when keys are missing/i)).toBeVisible()
   await guard.assertNoLeaks()

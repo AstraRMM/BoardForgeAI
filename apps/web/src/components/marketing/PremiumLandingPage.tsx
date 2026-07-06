@@ -47,22 +47,22 @@ const coreTools = [
 ]
 
 const proofCards = [
-  ['Browser E2E', 'passed', 'Setup, demo, sourcing UI, manufacturable/sourcable flows, ranking, import protection, publish gate.'],
-  ['Mouser live sourcing', 'passed', 'Mouser search lookup is available when local credentials are configured.'],
-  ['DigiKey live lookup', 'passed with OAuth', 'ProductInformation live lookup works when local OAuth credentials are valid; quote depth remains separately gated.'],
-  ['No fake stock', 'passed', 'Unavailable supplier data is shown as unavailable, blocked, or needs OAuth.'],
-  ['Source protection', 'passed', 'Imported KiCad projects are copied to sandbox before repair or publish action.'],
-  ['Approved publish gate', 'passed', 'Public/demo publish requires approved state and evidence.'],
-  ['Fixtures', 'passed', 'Regression fixtures and reports are generated for alpha readiness evidence.'],
-  ['report:99', 'passed', 'Evidence dashboard, launch gate, sourcing, readiness, and limitation reports are packaged.'],
+  ['Browser workflow', 'verified', 'Setup, guided board flow, sourcing UI, manufacturable/sourcable checks, ranking, import protection, and publish gates.'],
+  ['Mouser sourcing', 'verified', 'Mouser lookup is available when local credentials are configured and the supplier returns data.'],
+  ['DigiKey sourcing', 'OAuth gated', 'DigiKey lookup works when local OAuth credentials are valid; missing OAuth remains visible.'],
+  ['No fake stock', 'enforced', 'Unavailable supplier data is shown as unavailable, blocked, or needs credentials.'],
+  ['Source protection', 'verified', 'Imported KiCad projects are copied into a sandbox before repair or publish actions.'],
+  ['Publish gate', 'verified', 'Downloads and public artifacts require approved evidence instead of optimistic claims.'],
+  ['Fixture coverage', 'tracked', 'Regression fixtures prove the local engine across board categories and failure cases.'],
+  ['Readiness evidence', 'packaged', 'Dashboard, launch gate, sourcing, manufacturing, and limitation evidence are generated together.'],
 ]
 
-const demoSteps = ['Generate robotics controller', 'Run Make Manufacturable', 'Run Make Sourcable', 'View evidence', 'Download package']
+const demoSteps = ['Create board brief', 'Run Make Manufacturable', 'Run Make Sourcable', 'Inspect evidence', 'Prepare package']
 
 const workflowMetrics = [
   ['KiCad-native', 'project structure, board outlines, reports, and exports'],
   ['Sourcing-aware', 'DigiKey/Mouser lookup evidence and alternative risk notes'],
-  ['Evidence-backed', 'browser E2E, source protection, publish gates, report:99'],
+  ['Evidence-backed', 'browser workflow, source protection, publish gates, readiness reports'],
 ]
 
 function AnimatedPCBBackground() {
@@ -75,6 +75,10 @@ function AnimatedPCBBackground() {
         <path d="M0 180 H240 V330 H460 C540 330 560 250 650 250 H940 V140 H1440" />
         <path d="M120 720 H360 V610 H610 C720 610 730 720 850 720 H1120 V610 H1440" />
         <path d="M0 470 H210 C310 470 300 400 420 400 H710 V510 H1000 C1090 510 1110 430 1220 430 H1440" />
+        <path className="fast" d="M0 260 H330 V214 H520 V292 H820 V238 H1440" />
+        <path className="fast copper" d="M145 835 H420 V792 H560 C660 792 664 858 760 858 H1030" />
+        <path className="slow" d="M-20 610 H196 V555 H340 C430 555 454 650 540 650 H780 V590 H1010 V646 H1460" />
+        <path className="slow copper" d="M1120 60 V188 H1268 V310 H1440 M0 812 H170 V690 H278" />
         <path className="copper" d="M80 90 H340 V168 H620 M790 830 H1030 V760 H1320" />
       </svg>
     </div>
@@ -138,19 +142,27 @@ function PremiumNav() {
 
 function Hero3DBoard() {
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const [glare, setGlare] = useState({ x: 50, y: 44 })
   const transform = useMemo(() => `rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`, [tilt])
 
   return (
     <div
       className="bf-hero-visual"
+      style={{ '--mx': `${glare.x}%`, '--my': `${glare.y}%` } as React.CSSProperties}
       onMouseMove={(event) => {
         const rect = event.currentTarget.getBoundingClientRect()
+        const x = (event.clientX - rect.left) / rect.width
+        const y = (event.clientY - rect.top) / rect.height
         setTilt({
-          x: ((event.clientX - rect.left) / rect.width - 0.5) * 10,
-          y: -((event.clientY - rect.top) / rect.height - 0.5) * 8,
+          x: (x - 0.5) * 13,
+          y: -(y - 0.5) * 10,
         })
+        setGlare({ x: x * 100, y: y * 100 })
       }}
-      onMouseLeave={() => setTilt({ x: 0, y: 0 })}
+      onMouseLeave={() => {
+        setTilt({ x: 0, y: 0 })
+        setGlare({ x: 50, y: 44 })
+      }}
     >
       <div className="bf-cad-window">
         <div className="bf-window-bar"><span /><span /><span /><strong>KiCad-ready physical preview</strong></div>
@@ -158,6 +170,27 @@ function Hero3DBoard() {
           <div className="bf-board-3d" style={{ transform }}>
             <svg viewBox="0 0 740 430" role="img" aria-label="Premium PCB rendering">
               <defs>
+                <linearGradient id="boardMask" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0" stopColor="#103d25" />
+                  <stop offset="0.55" stopColor="#06371f" />
+                  <stop offset="1" stopColor="#052613" />
+                </linearGradient>
+                <linearGradient id="boardEdge" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stopColor="#b9e4c9" />
+                  <stop offset="1" stopColor="#4e7f66" />
+                </linearGradient>
+                <linearGradient id="metalBody" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0" stopColor="#ffffff" />
+                  <stop offset="0.48" stopColor="#c9d0d1" />
+                  <stop offset="1" stopColor="#8c9698" />
+                </linearGradient>
+                <linearGradient id="blackPackage" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0" stopColor="#2d333b" />
+                  <stop offset="1" stopColor="#0e1217" />
+                </linearGradient>
+                <filter id="boardShadow" x="-20%" y="-30%" width="140%" height="170%">
+                  <feDropShadow dx="0" dy="34" stdDeviation="24" floodColor="#000000" floodOpacity="0.45" />
+                </filter>
                 <filter id="softGlow">
                   <feGaussianBlur stdDeviation="3" result="blur" />
                   <feMerge>
@@ -166,28 +199,37 @@ function Hero3DBoard() {
                   </feMerge>
                 </filter>
               </defs>
-              <path className="bf-board-base" d="M90 92 Q90 54 128 54 H288 Q318 54 336 80 L360 116 Q376 140 404 140 H612 Q650 140 650 178 V308 Q650 346 612 346 H128 Q90 346 90 308 V236 Q90 214 72 201 Q52 186 52 162 V130 Q52 106 76 101 Z" />
-              <path className="bf-board-edge" d="M90 92 Q90 54 128 54 H288 Q318 54 336 80 L360 116 Q376 140 404 140 H612 Q650 140 650 178 V308 Q650 346 612 346 H128 Q90 346 90 308 V236 Q90 214 72 201 Q52 186 52 162 V130 Q52 106 76 101 Z" />
-              {[132, 594].map((x) => [104, 294].map((y) => <circle key={`${x}-${y}`} className="bf-hole" cx={x} cy={y} r="18" />))}
-              <rect className="bf-metal" x="94" y="182" width="72" height="48" rx="7" />
-              <rect className="bf-metal" x="548" y="190" width="76" height="60" rx="7" />
-              <rect className="bf-chip" x="292" y="170" width="88" height="76" rx="8" />
-              <rect className="bf-chip" x="424" y="168" width="66" height="52" rx="7" />
-              <rect className="bf-chip light" x="210" y="160" width="62" height="42" rx="6" />
-              <rect className="bf-chip light" x="240" y="246" width="52" height="24" rx="5" />
-              <rect className="bf-chip light" x="404" y="260" width="52" height="24" rx="5" />
-              <rect className="bf-chip dark" x="468" y="252" width="42" height="32" rx="4" />
-              {Array.from({ length: 10 }).map((_, index) => <rect key={index} className="bf-pin" x={442 + index * 15} y="106" width="8" height="64" rx="3" />)}
-              {Array.from({ length: 28 }).map((_, index) => <circle key={index} className="bf-via" cx={174 + (index % 14) * 28} cy={122 + Math.floor(index / 14) * 166} r="4" />)}
-              <path className="bf-trace power" d="M166 205 H242 V188 H292" />
-              <path className="bf-trace" d="M380 194 H424 M336 246 V286 H510 V252 H548" />
-              <path className="bf-trace" d="M272 180 L292 190 M490 194 H548" />
-              <path className="bf-trace glow" filter="url(#softGlow)" d="M166 214 C228 220 250 248 292 240 M380 218 C414 236 448 238 548 220" />
-              <text className="bf-silk" x="112" y="262">USB-C</text>
-              <text className="bf-silk" x="304" y="266">MCU</text>
-              <text className="bf-silk" x="544" y="274">RJ45</text>
-              <text className="bf-silk small" x="438" y="92">DEBUG HEADER</text>
-              <text className="bf-silk small" x="456" y="326">BF DEMO BOARD</text>
+              <path className="bf-board-shadow" filter="url(#boardShadow)" d="M82 106 Q82 66 122 66 H252 Q286 66 304 91 L335 136 Q354 162 388 162 H610 Q652 162 652 204 V306 Q652 348 610 348 H122 Q82 348 82 306 V250 Q82 226 62 214 Q40 200 40 170 V142 Q40 116 66 110 Z" />
+              <path className="bf-board-edge-layer" d="M84 116 Q84 72 128 72 H252 Q286 72 304 97 L334 139 Q352 166 388 166 H606 Q646 166 646 206 V305 Q646 345 606 345 H128 Q88 345 88 305 V249 Q88 222 66 211 Q46 201 46 172 V145 Q46 120 70 114 Z" />
+              <path className="bf-board-base" d="M84 104 Q84 60 128 60 H252 Q286 60 304 85 L334 127 Q352 154 388 154 H606 Q646 154 646 194 V293 Q646 333 606 333 H128 Q88 333 88 293 V237 Q88 210 66 199 Q46 189 46 160 V133 Q46 108 70 102 Z" />
+              <path className="bf-copper-plane" d="M110 117 H266 L309 176 H612 V300 H120 V235 C104 223 94 211 90 195 V132 Z" />
+              {[126, 594].map((x) => [106, 286].map((y) => <g key={`${x}-${y}`}><circle className="bf-hole-ring" cx={x} cy={y} r="20" /><circle className="bf-hole-core" cx={x} cy={y} r="10" /></g>))}
+              {Array.from({ length: 25 }).map((_, index) => <circle key={index} className="bf-via" cx={176 + (index % 13) * 29} cy={122 + Math.floor(index / 13) * 151} r="3.8" />)}
+              <path className="bf-trace power" d="M158 214 H244 V194 H294" />
+              <path className="bf-trace power" d="M380 218 H456 V260 H548" />
+              <path className="bf-trace signal" d="M162 236 C232 240 252 264 300 248 M383 242 C426 254 470 245 548 222" />
+              <path className="bf-trace signal" d="M272 178 L295 190 M491 191 H548 M380 194 H424" />
+              <path className="bf-trace signal" d="M334 247 V287 H507 V251" />
+              <path className="bf-trace glow" filter="url(#softGlow)" d="M164 225 C225 228 250 254 294 244 M383 228 C426 242 475 238 550 218" />
+              <rect className="bf-metal bf-usb-a" x="88" y="182" width="82" height="54" rx="7" />
+              <rect className="bf-metal bf-rj45" x="548" y="188" width="82" height="66" rx="7" />
+              <rect className="bf-chip bf-qfp" x="294" y="168" width="88" height="78" rx="7" />
+              {Array.from({ length: 11 }).map((_, index) => <rect key={`q1-${index}`} className="bf-qfp-pin" x={300 + index * 7} y="157" width="4" height="11" rx="1" />)}
+              {Array.from({ length: 11 }).map((_, index) => <rect key={`q2-${index}`} className="bf-qfp-pin" x={300 + index * 7} y="246" width="4" height="11" rx="1" />)}
+              {Array.from({ length: 8 }).map((_, index) => <rect key={`q3-${index}`} className="bf-qfp-pin" x="283" y={176 + index * 8} width="11" height="4" rx="1" />)}
+              {Array.from({ length: 8 }).map((_, index) => <rect key={`q4-${index}`} className="bf-qfp-pin" x="382" y={176 + index * 8} width="11" height="4" rx="1" />)}
+              <rect className="bf-chip bf-small-ic" x="422" y="166" width="70" height="52" rx="6" />
+              <rect className="bf-chip light" x="208" y="158" width="64" height="42" rx="6" />
+              <rect className="bf-chip light" x="236" y="246" width="56" height="23" rx="5" />
+              <rect className="bf-chip light" x="404" y="258" width="56" height="23" rx="5" />
+              <rect className="bf-chip dark" x="468" y="250" width="44" height="32" rx="4" />
+              {Array.from({ length: 10 }).map((_, index) => <rect key={index} className="bf-header-pin" x={442 + index * 15} y="99" width="8" height="66" rx="3" />)}
+              {Array.from({ length: 8 }).map((_, index) => <rect key={`pad-${index}`} className="bf-passive" x={176 + index * 42} y={292 + (index % 2) * 8} width="24" height="8" rx="2" />)}
+              <text className="bf-silk" x="108" y="263">USB-C</text>
+              <text className="bf-silk" x="310" y="266">MCU</text>
+              <text className="bf-silk" x="550" y="274">RJ45</text>
+              <text className="bf-silk small" x="434" y="86">DEBUG HEADER</text>
+              <text className="bf-silk small" x="450" y="322">BOARDFORGE</text>
             </svg>
           </div>
         </div>
@@ -204,11 +246,10 @@ function Hero3DBoard() {
 
 function ScrollProductFlow() {
   return (
-    <section className="bf-section" id="product">
-      <div className="bf-section-head">
+    <section className="bf-section bf-theme-flow" id="product">
+      <div className="bf-section-head bf-flow-intro">
         <span className="bf-kicker">Product flow</span>
-        <h2>{'Describe -> Generate -> Validate -> Source -> Repair -> Export'}</h2>
-        <p>BoardForge is built around evidence gates. It does not just draw a PCB-looking object. It helps create, check, source, repair, and package KiCad projects for engineering review.</p>
+        <p>Each workflow gate below has a job: capture intent, generate KiCad-ready structure, validate the board, verify supply, repair safe blockers, and export only when evidence supports it.</p>
       </div>
       <div className="bf-flow-grid">
         {productFlow.map(([title, body], index) => (
@@ -252,7 +293,7 @@ function AnimatedPCBTraces() {
 
 function SourcingNetworkAnimation() {
   return (
-    <section className="bf-section bf-sourcing" id="sourcing">
+    <section className="bf-section bf-sourcing bf-theme-sourcing" id="sourcing">
       <div className="bf-section-head">
         <span className="bf-kicker">Sourcing command center</span>
         <h2>Live supplier verification without fake stock claims.</h2>
@@ -282,7 +323,7 @@ function SourcingNetworkAnimation() {
 function CustomOutlineShowcase() {
   const shapes = ['rounded rectangle', 'mounting ears', 'cutout', 'drone stack', 'custom polygon']
   return (
-    <section className="bf-section bf-outline-showcase">
+    <section className="bf-section bf-outline-showcase bf-theme-outline">
       <div>
         <span className="bf-kicker">Flagship board shape studio</span>
         <h2>Custom board outlines stay first-class.</h2>
@@ -294,13 +335,31 @@ function CustomOutlineShowcase() {
       </div>
       <div className="bf-outline-card">
         <svg viewBox="0 0 520 320" role="img" aria-label="Custom outline preview">
-          <path className="outline-board" d="M72 80 Q72 48 104 48 H270 Q302 48 318 76 L340 112 Q354 136 384 136 H444 Q472 136 472 164 V242 Q472 274 440 274 H102 Q72 274 72 244 V198 Q72 178 52 168 Q36 160 36 138 V116 Q36 92 60 86 Z" />
-          <path className="outline-keepout" d="M92 118 H150 V176 H92 Z" />
-          {[106, 436].map((x) => [92, 236].map((y) => <circle key={`${x}-${y}`} className="outline-hole" cx={x} cy={y} r="13" />))}
-          <rect className="outline-part" x="210" y="132" width="84" height="62" rx="7" />
-          <rect className="outline-part" x="366" y="160" width="62" height="42" rx="6" />
-          <path className="outline-route" d="M150 148 H210 M294 164 H366 M252 194 V236 H436" />
-          <text x="86" y="306">routeability score 82 / needs edge connector review</text>
+          <defs>
+            <linearGradient id="outlineMask" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stopColor="#14663f" />
+              <stop offset="1" stopColor="#073a25" />
+            </linearGradient>
+            <filter id="outlineShadow" x="-20%" y="-30%" width="140%" height="170%">
+              <feDropShadow dx="0" dy="20" stdDeviation="18" floodColor="#000000" floodOpacity="0.42" />
+            </filter>
+          </defs>
+          <path className="outline-shadow" filter="url(#outlineShadow)" d="M76 104 Q76 58 122 58 H286 Q326 58 348 92 L380 142 Q400 172 438 172 H458 Q492 172 492 206 V252 Q492 286 458 286 H120 Q76 286 76 242 V218 Q76 196 54 184 Q32 172 32 142 V132 Q32 110 54 106 Z" />
+          <path className="outline-board" d="M78 92 Q78 50 120 50 H286 Q326 50 348 84 L380 134 Q400 164 438 164 H458 Q492 164 492 198 V244 Q492 278 458 278 H120 Q78 278 78 234 V210 Q78 188 56 176 Q34 164 34 134 V124 Q34 102 56 98 Z" />
+          <path className="outline-edge-highlight" d="M98 86 H284 C314 86 328 106 345 132 L364 160" />
+          <path className="outline-keepout" d="M104 114 H156 V166 H104 Z" />
+          {[
+            [118, 96],
+            [456, 98],
+            [118, 236],
+            [456, 238],
+          ].map(([x, y]) => <g key={`${x}-${y}`}><circle className="outline-hole-ring" cx={x} cy={y} r="16" /><circle className="outline-hole-core" cx={x} cy={y} r="8" /></g>)}
+          <rect className="outline-part" x="218" y="138" width="82" height="56" rx="7" />
+          <rect className="outline-part small" x="382" y="166" width="64" height="40" rx="6" />
+          <rect className="outline-part metal" x="110" y="186" width="54" height="28" rx="5" />
+          <path className="outline-route" d="M156 140 H218 M300 164 H382 M258 194 V240 H456" />
+          <path className="outline-route thin" d="M164 200 C206 214 224 230 258 240 M300 151 C330 142 358 146 382 166" />
+          <text x="84" y="306">routeability score 92 / all holes inside outline</text>
         </svg>
       </div>
     </section>
@@ -309,7 +368,7 @@ function CustomOutlineShowcase() {
 
 function MakeWorkflowSection() {
   return (
-    <section className="bf-section bf-make-section">
+    <section className="bf-section bf-make-section bf-theme-repair">
       <div className="bf-section-head">
         <span className="bf-kicker">Repair workflows</span>
         <h2>Make Manufacturable and Make Sourcable turn blockers into action.</h2>
@@ -343,11 +402,11 @@ function MakeWorkflowSection() {
 
 function EvidenceProofGrid() {
   return (
-    <section className="bf-section" id="evidence">
+    <section className="bf-section bf-theme-evidence" id="evidence">
       <div className="bf-section-head">
-        <span className="bf-kicker">Evidence-backed alpha</span>
-        <h2>Public alpha with limitations, not hand-wavy demos.</h2>
-        <p>Current launch status is PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING. External signing and PoE review limitations are disclosed instead of buried.</p>
+        <span className="bf-kicker">Evidence layer</span>
+        <h2>Proof before manufacturing claims.</h2>
+        <p>BoardForge exposes passed checks, blocked checks, supplier state, source protection, package evidence, and external review requirements instead of hiding uncertainty behind polished copy.</p>
       </div>
       <div className="bf-proof-grid">
         {proofCards.map(([title, status, body]) => (
@@ -365,7 +424,7 @@ function EvidenceProofGrid() {
 
 function LocalEngineExplainer() {
   return (
-    <section className="bf-section bf-engine-section">
+    <section className="bf-section bf-engine-section bf-theme-engine">
       <div>
         <span className="bf-kicker">Local-first safety</span>
         <h2>The website commands the workflow. Your machine protects the KiCad files.</h2>
@@ -387,11 +446,11 @@ function LocalEngineExplainer() {
 
 function PublicDemoSection() {
   return (
-    <section className="bf-section bf-demo-section">
+    <section className="bf-section bf-demo-section bf-theme-workflow">
       <div className="bf-section-head">
-        <span className="bf-kicker">One-click demo</span>
+        <span className="bf-kicker">Guided workflow</span>
         <h2>Run a realistic command-center path.</h2>
-        <p>Generate a robotics controller demo, review manufacturability, verify sourcing status, inspect reports, and download clearly labeled artifacts.</p>
+        <p>Create a board brief, review manufacturability, verify sourcing status, inspect evidence, and prepare clearly labeled artifacts.</p>
       </div>
       <div className="bf-demo-timeline">
         {demoSteps.map((step, index) => (
@@ -399,7 +458,7 @@ function PublicDemoSection() {
         ))}
       </div>
       <div className="bf-button-row">
-        <AnimatedCTAButton href="/demo"><Sparkles size={17} /> Try Demo</AnimatedCTAButton>
+        <AnimatedCTAButton href="/demo"><Sparkles size={17} /> Open Guided Workflow</AnimatedCTAButton>
         <AnimatedCTAButton href="/evidence" variant="secondary"><ScanLine size={17} /> View Evidence</AnimatedCTAButton>
       </div>
     </section>
@@ -432,7 +491,7 @@ export function PremiumLandingPage() {
           <p>BoardForge helps you generate board briefs, create custom outlines, validate KiCad projects, verify live supplier sourcing, repair manufacturability issues, and export fabrication-ready packages.</p>
           <div className="bf-button-row">
             <AnimatedCTAButton href="/new-board"><Zap size={17} /> Start Building</AnimatedCTAButton>
-            <AnimatedCTAButton href="/demo" variant="secondary"><Sparkles size={17} /> Try Demo</AnimatedCTAButton>
+            <AnimatedCTAButton href="/demo" variant="secondary"><Sparkles size={17} /> Guided Workflow</AnimatedCTAButton>
             <AnimatedCTAButton href="/evidence" variant="ghost"><FileCheck2 size={17} /> View Evidence</AnimatedCTAButton>
           </div>
           <div className="bf-hero-metrics">
@@ -444,7 +503,7 @@ export function PremiumLandingPage() {
         <Hero3DBoard />
       </section>
       <ScrollProductFlow />
-      <section className="bf-section">
+      <section className="bf-section bf-theme-tools">
         <div className="bf-section-head">
           <span className="bf-kicker">Core tools</span>
           <h2>The serious PCB workflow, from intake to evidence.</h2>
@@ -459,11 +518,11 @@ export function PremiumLandingPage() {
       <LocalEngineExplainer />
       <EvidenceProofGrid />
       <PublicDemoSection />
-      <section className="bf-section bf-alpha-limitations">
+      <section className="bf-section bf-alpha-limitations bf-theme-gate">
         <Gauge size={22} />
         <div>
-          <h2>Public alpha status: PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING</h2>
-          <p>Limitations: public installer signing is not done, PoE compliance and safety review is external, and DigiKey live lookup requires valid OAuth/local credentials.</p>
+          <h2>Engineering review gate</h2>
+          <p>BoardForge is honest about external requirements: public installer signing, PoE compliance and safety review, and live DigiKey OAuth credentials remain visible until completed.</p>
         </div>
         <AnimatedCTAButton href="/alpha-readiness" variant="secondary"><Radar size={17} /> View launch gate</AnimatedCTAButton>
       </section>

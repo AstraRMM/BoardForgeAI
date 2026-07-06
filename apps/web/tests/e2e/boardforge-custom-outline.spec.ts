@@ -6,7 +6,7 @@ test('custom board shape studio exposes visual outline workflow and no-fake KiCa
   await page.goto('/custom-board-generator')
   await expect(page.getByRole('heading', { name: /Custom Board Shape Studio/i })).toBeVisible()
   await expect(page.getByRole('img', { name: /Custom board outline editor/i })).toBeVisible()
-  await expect(page.getByText(/BoardForge_Mechanical_Constraints/i)).toBeVisible()
+  await expect(page.getByText(/mechanical constraints/i)).toBeVisible()
   await page.getByLabel(/Preset/i).selectOption('drone-stack')
   await expect(page.getByText(/42 x 42 mm/i)).toBeVisible()
   await expect(page.getByRole('button', { name: /Validate with local engine/i })).toBeVisible()

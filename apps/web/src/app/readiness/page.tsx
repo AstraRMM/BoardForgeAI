@@ -6,7 +6,7 @@ export default function ReadinessPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
       <header className="mx-auto max-w-6xl">
-        <p className="text-sm uppercase text-cyan-300">Evidence-backed alpha score</p>
+        <p className="text-sm uppercase text-cyan-300">Evidence-backed readiness score</p>
         <h1 className="mt-2 text-3xl font-semibold">BoardForge Readiness</h1>
         <p className="mt-2 max-w-3xl text-slate-400">This dashboard reports what BoardForge has proven locally. It does not inflate readiness for unverified sourcing, compliance, or arbitrary dense-board autonomy.</p>
         <div className="mt-6">

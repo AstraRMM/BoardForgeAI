@@ -23,7 +23,9 @@ const pages = [
 ]
 
 const viewports = [
+  ['desktop-1366', { width: 1366, height: 900 }],
   ['desktop-1440', { width: 1440, height: 900 }],
+  ['desktop-1660', { width: 1660, height: 960 }],
   ['desktop-1920', { width: 1920, height: 1080 }],
   ['mobile', { width: 390, height: 844 }],
 ]
@@ -132,6 +134,7 @@ async function run() {
           const oldHeroPhrases = ['CODEX PLUGIN FIRST', 'Turn Codex into a KiCad PCB engineer', 'Plugin Beta']
           const text = document.body.innerText
           const heroCopy = document.querySelector('.bf-hero-copy')
+          const heroHeadline = document.querySelector('.bf-hero-copy h1')
           const heroVisual = document.querySelector('.bf-hero-visual')
           const nav = document.querySelector('.bf-nav')
           const brand = document.querySelector('.bf-logo-mark')
@@ -143,13 +146,15 @@ async function run() {
             return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height }
           }
           const copyRect = rectOf(heroCopy)
+          const headlineRect = rectOf(heroHeadline)
           const visualRect = rectOf(heroVisual)
-          const heroTextOverlap = Boolean(copyRect && visualRect && copyRect.right > visualRect.left && copyRect.left < visualRect.right && copyRect.bottom > visualRect.top && copyRect.top < visualRect.bottom)
+          const rectsOverlap = (a, b) => Boolean(a && b && a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom)
+          const heroTextOverlap = rectsOverlap(copyRect, visualRect) || rectsOverlap(headlineRect, visualRect)
           return {
             scrollWidth: document.documentElement.scrollWidth,
             innerWidth: window.innerWidth,
             oldHeroPresent: oldHeroPhrases.some((phrase) => text.includes(phrase)),
-            ctaVisible: [...document.querySelectorAll('a, button')].some((node) => /Start Building|Try Demo|View Evidence|Launch/i.test(node.textContent || '')),
+            ctaVisible: [...document.querySelectorAll('a, button')].some((node) => /Start Building|Guided Workflow|View Evidence|Launch/i.test(node.textContent || '')),
             heroTextOverlap,
             navLayoutPass: Boolean(nav && brand && nav.getBoundingClientRect().height < window.innerHeight * 0.45),
             faviconExists: Boolean(favicon),
@@ -190,6 +195,7 @@ async function run() {
       process.exit(1)
     }
     console.log(JSON.stringify({ status: 'PASSED', report: jsonPath, markdown: mdPath }, null, 2))
+    process.exitCode = 0
   } finally {
     if (server) {
       if (process.platform === 'win32') {
@@ -198,6 +204,7 @@ async function run() {
         server.kill('SIGTERM')
       }
     }
+    if (process.exitCode === 0) process.exit(0)
   }
 }
 

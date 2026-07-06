@@ -6,7 +6,7 @@ import { outlinePresets } from '../../lib/outline-export'
 
 type Point = { x: number; y: number }
 type Hole = { ref: string; x: number; y: number; diameterMm: number }
-const requiredArtifactNames = 'BoardForge_Custom_Outline_Project_Seed.json BoardForge_Mechanical_Constraints.json BoardForge_Outline_Validation_Report.md'
+const outlineArtifactSummary = 'Creates a board outline seed, mechanical constraints, and validation notes for the local KiCad engine.'
 
 const presetPoints: Record<string, Point[]> = {
   'rounded-rectangle': [{ x: 4, y: 0 }, { x: 66, y: 0 }, { x: 70, y: 4 }, { x: 70, y: 41 }, { x: 66, y: 45 }, { x: 4, y: 45 }, { x: 0, y: 41 }, { x: 0, y: 4 }],
@@ -143,7 +143,7 @@ export function OutlineEditor() {
       </div>
       <div className="bf-outline-status">
         <strong>{status}</strong>
-        <span>{requiredArtifactNames}</span>
+        <span>{outlineArtifactSummary}</span>
         <textarea readOnly value={prompt} aria-label="Codex prompt for BoardForge outline" />
       </div>
     </section>

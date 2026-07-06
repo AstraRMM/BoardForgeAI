@@ -15,7 +15,7 @@ const packageFacts = [
   ['Silent install', 'BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe /S'],
   ['Silent uninstall', 'BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe /S /uninstall'],
   ['SHA256', '0248270A648E81A4056C000A3334B53C226DB88B771B9FACE1798494F9128A29'],
-  ['Signing status', 'Unsigned public alpha; production release requires Authenticode or Microsoft Trusted Signing.'],
+  ['Signing status', 'Unsigned controlled-release package; production release requires Authenticode or Microsoft Trusted Signing.'],
 ]
 
 export default function InstallerReturnCodesPage() {
@@ -73,9 +73,9 @@ export default function InstallerReturnCodesPage() {
       </section>
 
       <section className="mt-8 rounded-lg border border-amber-400/30 bg-amber-400/10 p-5">
-        <h2 className="text-xl font-semibold text-amber-100">Public alpha signing note</h2>
+        <h2 className="text-xl font-semibold text-amber-100">Installer signing note</h2>
         <p className="mt-3 max-w-3xl text-amber-100/80">
-          The public alpha package is installer-ready but unsigned. A production Microsoft Store submission should use a CA-trusted Authenticode certificate
+          The current package is installer-ready but unsigned. A production Microsoft Store submission should use a CA-trusted Authenticode certificate
           or Microsoft Trusted Signing before final validation.
         </p>
       </section>

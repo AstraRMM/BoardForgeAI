@@ -1,7 +1,7 @@
 const tiers = [
   {
     name: 'Builder',
-    price: 'Public alpha',
+    price: 'Early access',
     copy: 'For engineers testing BoardForge on local KiCad projects, custom outlines, sourcing checks, and evidence reports.',
     items: ['AI board intake', 'Custom board generator', 'local engine pairing', 'evidence dashboard'],
   },
@@ -25,7 +25,7 @@ export default function PricingPage() {
       <section className="bf-section">
         <div className="bf-section-head">
           <span className="bf-kicker">Pricing</span>
-          <h1>Public alpha pricing is built around evidence, sourcing, and local KiCad execution.</h1>
+          <h1>Pricing is built around evidence, sourcing, and local KiCad execution.</h1>
           <p>BoardForge is not sold as guaranteed autonomous PCB design. Human engineering review is required before manufacturing.</p>
         </div>
         <div className="bf-feature-grid">
