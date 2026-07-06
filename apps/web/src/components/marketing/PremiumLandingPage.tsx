@@ -14,6 +14,7 @@ import {
   HardDrive,
   Layers3,
   LockKeyhole,
+  Menu,
   MousePointer2,
   PackageCheck,
   PenTool,
@@ -70,20 +71,29 @@ function AnimatedCTAButton({ href, children, variant = 'primary' }: { href: stri
 }
 
 function PremiumNav() {
+  const [open, setOpen] = useState(false)
+  const links = [
+    ['Product', '#product'],
+    ['Generator', '/new-board'],
+    ['Sourcing', '#sourcing'],
+    ['Evidence', '/evidence'],
+    ['Docs', '/docs'],
+    ['Pricing', '/pricing'],
+    ['Launch App', '/dashboard'],
+  ]
+
   return (
     <header className="bf-nav">
       <a className="bf-brand" href="/">
         <span>BF</span>
         <strong>BoardForge AI</strong>
       </a>
-      <nav aria-label="Public navigation">
-        <a href="#product">Product</a>
-        <a href="/new-board">Generator</a>
-        <a href="#sourcing">Sourcing</a>
-        <a href="/evidence">Evidence</a>
-        <a href="/docs">Docs</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/dashboard">Login</a>
+      <button className="bf-nav-toggle" type="button" aria-expanded={open} aria-controls="bf-public-nav" onClick={() => setOpen((value) => !value)}>
+        <Menu size={18} />
+        Menu
+      </button>
+      <nav id="bf-public-nav" className={open ? 'open' : ''} aria-label="Public navigation">
+        {links.map(([label, href]) => <a href={href} key={label} onClick={() => setOpen(false)}>{label}</a>)}
       </nav>
     </header>
   )

@@ -15,7 +15,7 @@ export default function AlphaReadinessPage() {
     <main className="bf-app-page">
       <section className="bf-app-hero">
         <span className="bf-kicker">Public alpha launch gate</span>
-        <h1>PUBLIC_ALPHA_SOFTWARE_READY_EXTERNAL_CERTS_PENDING</h1>
+        <h1>Public alpha software ready with external certificates pending.</h1>
         <p>BoardForge public-alpha software is ready with external limitations disclosed: installer signing still needs a certificate, PoE compliance/safety review is external, DigiKey ProductInformation live sourcing works with local credentials, and direct DigiKey Quote API support is only claimed after live endpoint proof.</p>
       </section>
       <section className="bf-app-grid two">
