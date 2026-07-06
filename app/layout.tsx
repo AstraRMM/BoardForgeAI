@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import '../src/index.css'
 
 export const metadata: Metadata = {
-  title: 'BoardForge AI',
-  description: 'AI PCB engineering command center for KiCad projects, sourcing, validation, repair, and manufacturing exports.',
+  title: 'BoardForge AI - PCB Engineering Command Center',
+  description: 'Turn PCB ideas into KiCad-ready projects with custom board generation, DRC/ERC validation, live DigiKey and Mouser sourcing, repair workflows, evidence reports, and manufacturing exports.',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,18 +1,35 @@
+const docCards = [
+  ['Start Building', 'Create a board brief, approve the plan, pair the local engine, and generate a KiCad-ready project.', '/new-board'],
+  ['Custom Board Generator', 'Draw or select a board shape, validate holes and routeability, then export Edge.Cuts or continue into board creation.', '/custom-board-generator'],
+  ['Sourcing Command Center', 'Verify supplier status, BOM risk, alternatives, and quote readiness using configured DigiKey and Mouser credentials.', '/evidence'],
+  ['Downloads and Reports', 'Review Gerbers, drill files, BOM, CPL, manifests, evidence reports, and limitation notes before using any package.', '/downloads'],
+  ['Installer Return Codes', 'Understand local alpha installer return codes and setup behavior for the local KiCad engine.', '/docs/installer-return-codes'],
+]
+
 export default function DocsPage() {
   return (
-    <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
-      <h1 className="text-3xl font-semibold">Docs</h1>
-      <p className="mt-3 max-w-3xl text-slate-400">
-        BoardForge is a local-first KiCad engineering platform. Codex, ChatGPT, Claude, the web app, CLI, and KiCad plugin are control surfaces over the same engine and project manifests.
-      </p>
-      <section className="mt-8 max-w-3xl rounded-lg border border-slate-800 bg-slate-900 p-5">
-        <h2 className="text-xl font-semibold">Installer documentation</h2>
-        <p className="mt-2 text-slate-400">
-          Microsoft Store package validation uses the BoardForge installer return-code page for EXE handling notes.
-        </p>
-        <a className="mt-4 inline-flex rounded-md border border-cyan-400/40 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10" href="/docs/installer-return-codes">
-          Installer return codes
-        </a>
+    <main className="bf-premium-site bf-app-page">
+      <section className="bf-section">
+        <div className="bf-section-head">
+          <span className="bf-kicker">Docs</span>
+          <h1>BoardForge is the command center for KiCad project generation, sourcing, validation, repair, and export evidence.</h1>
+          <p>The website handles intake, dashboards, sourcing, reports, and onboarding. The installed local engine performs KiCad file work inside the user-approved workspace.</p>
+        </div>
+        <div className="bf-feature-grid">
+          {docCards.map(([title, copy, href]) => (
+            <a className="bf-feature-card" href={href} key={title}>
+              <h2>{title}</h2>
+              <p>{copy}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+      <section className="bf-section bf-alpha-limitations">
+        <div>
+          <span className="bf-kicker">Public copy rule</span>
+          <h2>Evidence-backed alpha, not guaranteed autonomous manufacturing.</h2>
+          <p>BoardForge can create and inspect KiCad projects, run local checks, source parts where configured, and generate reports. Engineers still review before fabrication or assembly.</p>
+        </div>
       </section>
     </main>
   )

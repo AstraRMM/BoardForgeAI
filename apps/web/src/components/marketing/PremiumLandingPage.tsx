@@ -49,15 +49,21 @@ const coreTools = [
 const proofCards = [
   ['Browser E2E', 'passed', 'Setup, demo, sourcing UI, manufacturable/sourcable flows, ranking, import protection, publish gate.'],
   ['Mouser live sourcing', 'passed', 'Mouser search lookup is available when local credentials are configured.'],
-  ['DigiKey OAuth', 'configured', 'ProductInformation live lookup works when token is valid; quote depth remains separately gated.'],
+  ['DigiKey live lookup', 'passed with OAuth', 'ProductInformation live lookup works when local OAuth credentials are valid; quote depth remains separately gated.'],
   ['No fake stock', 'passed', 'Unavailable supplier data is shown as unavailable, blocked, or needs OAuth.'],
   ['Source protection', 'passed', 'Imported KiCad projects are copied to sandbox before repair or publish action.'],
   ['Approved publish gate', 'passed', 'Public/demo publish requires approved state and evidence.'],
   ['Fixtures', 'passed', 'Regression fixtures and reports are generated for alpha readiness evidence.'],
-  ['Reports', 'generated', 'Evidence dashboard, launch gate, sourcing, and readiness reports are packaged.'],
+  ['report:99', 'passed', 'Evidence dashboard, launch gate, sourcing, readiness, and limitation reports are packaged.'],
 ]
 
 const demoSteps = ['Generate robotics controller', 'Run Make Manufacturable', 'Run Make Sourcable', 'View evidence', 'Download package']
+
+const workflowMetrics = [
+  ['KiCad-native', 'project structure, board outlines, reports, and exports'],
+  ['Sourcing-aware', 'DigiKey/Mouser lookup evidence and alternative risk notes'],
+  ['Evidence-backed', 'browser E2E, source protection, publish gates, report:99'],
+]
 
 function AnimatedCTAButton({ href, children, variant = 'primary' }: { href: string; children: ReactNode; variant?: 'primary' | 'secondary' }) {
   return <a className={`bf-animated-button ${variant}`} href={href}>{children}</a>
@@ -139,10 +145,10 @@ function Hero3DBoard() {
           </div>
         </div>
         <div className="bf-status-strip">
-          <span>DRC/ERC checks</span>
+          <span>custom outline</span>
+          <span>DRC/ERC evidence</span>
           <span>live sourcing</span>
-          <span>local engine</span>
-          <span>human review</span>
+          <span>manufacturing package</span>
         </div>
       </div>
     </div>
@@ -155,7 +161,7 @@ function ScrollProductFlow() {
       <div className="bf-section-head">
         <span className="bf-kicker">Product flow</span>
         <h2>{'Describe -> Generate -> Validate -> Source -> Repair -> Export'}</h2>
-        <p>BoardForge is built around evidence gates. It does not just make a PCB looking object. It checks, sources, explains, repairs, and packages work for KiCad inspection.</p>
+        <p>BoardForge is built around evidence gates. It does not just draw a PCB-looking object. It helps create, check, source, repair, and package KiCad projects for engineering review.</p>
       </div>
       <div className="bf-flow-grid">
         {productFlow.map(([title, body], index) => (
@@ -203,7 +209,7 @@ function SourcingNetworkAnimation() {
       <div className="bf-section-head">
         <span className="bf-kicker">Sourcing command center</span>
         <h2>Live supplier verification without fake stock claims.</h2>
-        <p>DigiKey and Mouser data is shown only when configured and verified. Missing OAuth, missing credentials, lifecycle risk, and quote blockers stay visible.</p>
+        <p>DigiKey and Mouser data is shown only when configured and verified. Missing OAuth, missing credentials, lifecycle risk, and quote blockers stay visible instead of being replaced with fake stock.</p>
       </div>
       <div className="bf-sourcing-grid">
         <AnimatedPCBTraces />
@@ -233,7 +239,7 @@ function CustomOutlineShowcase() {
       <div>
         <span className="bf-kicker">Flagship board shape studio</span>
         <h2>Custom board outlines stay first-class.</h2>
-        <p>Choose a preset, draw points, validate holes and connector edge intent, review routeability, then create an outline seed or KiCad Edge.Cuts project through the local engine.</p>
+        <p>Choose a preset, draw points, validate holes and connector edge intent, review routeability, then send the outline into board creation or export a KiCad Edge.Cuts project.</p>
         <div className="bf-outline-controls">
           {shapes.map((shape) => <span key={shape}>{shape}</span>)}
         </div>
@@ -249,6 +255,40 @@ function CustomOutlineShowcase() {
           <path className="outline-route" d="M150 148 H210 M294 164 H366 M252 194 V236 H436" />
           <text x="86" y="306">routeability score 82 / needs edge connector review</text>
         </svg>
+      </div>
+    </section>
+  )
+}
+
+function MakeWorkflowSection() {
+  return (
+    <section className="bf-section bf-make-section">
+      <div className="bf-section-head">
+        <span className="bf-kicker">Repair workflows</span>
+        <h2>Make Manufacturable and Make Sourcable turn blockers into action.</h2>
+        <p>BoardForge separates PCB/manufacturing issues from BOM/sourcing risk so users know exactly what must be fixed before ordering.</p>
+      </div>
+      <div className="bf-make-grid">
+        <article>
+          <Wrench size={24} />
+          <h3>Make Manufacturable</h3>
+          <p>Checks DRC/ERC evidence, placement risks, routing blockers, board outline geometry, export readiness, and manufacturer-rule gaps. Safe fixes are proposed or run through the local engine; unsafe changes require review.</p>
+          <ul>
+            <li>DRC/ERC parsing and blocker categories</li>
+            <li>placement, routeability, and outline warnings</li>
+            <li>Gerber, drill, BOM, CPL, and package evidence</li>
+          </ul>
+        </article>
+        <article>
+          <DatabaseZap size={24} />
+          <h3>Make Sourcable</h3>
+          <p>Checks BOM risk, live supplier availability, stock confidence, lifecycle flags, price-break visibility, alternatives, and quote readiness without inventing supplier data.</p>
+          <ul>
+            <li>DigiKey and Mouser lookup where configured</li>
+            <li>drop-in alternative risk notes</li>
+            <li>no-fake-stock status enforcement</li>
+          </ul>
+        </article>
       </div>
     </section>
   )
@@ -280,13 +320,13 @@ function LocalEngineExplainer() {
   return (
     <section className="bf-section bf-engine-section">
       <div>
-        <span className="bf-kicker">Local-first KiCad engine</span>
-        <h2>The website is the command center. Your machine does the KiCad work.</h2>
-        <p>The installed local engine handles project files, KiCad CLI, routing reports, DRC/ERC, manufacturing exports, source protection, and downloads in your selected workspace.</p>
+        <span className="bf-kicker">Local-first safety</span>
+        <h2>The website commands the workflow. Your machine protects the KiCad files.</h2>
+        <p>The installed local engine handles KiCad projects, routing reports, DRC/ERC, manufacturing exports, source protection, and downloads inside the workspace the user approves.</p>
       </div>
       <div className="bf-engine-chain">
         {[
-          ['Website', 'briefs, dashboards, sourcing, reports'],
+          ['Website', 'board intake, dashboards, sourcing, reports'],
           ['Pairing', 'localhost connection with source protection'],
           ['Local engine', 'KiCad automation and evidence generation'],
           ['KiCad project', '.kicad_pro, .kicad_sch, .kicad_pcb, exports'],
@@ -339,18 +379,18 @@ export function PremiumLandingPage() {
       <PremiumNav />
       <section className="bf-hero">
         <div className="bf-hero-copy">
-          <span className="bf-kicker">Premium public alpha command center</span>
+          <span className="bf-kicker">BoardForge AI</span>
           <h1>From PCB idea to manufacturable KiCad project.</h1>
-          <p>BoardForge helps you generate board briefs, create custom outlines, validate KiCad projects, verify live supplier sourcing, repair manufacturability issues, and export fabrication-ready packages.</p>
+          <p>BoardForge helps you describe a board, generate a KiCad-ready project, validate DRC/ERC, verify live DigiKey and Mouser sourcing, run Make Manufacturable and Make Sourcable workflows, and export fabrication-ready packages with evidence-backed reports.</p>
           <div className="bf-button-row">
             <AnimatedCTAButton href="/new-board"><Zap size={17} /> Start Building</AnimatedCTAButton>
             <AnimatedCTAButton href="/demo" variant="secondary"><Sparkles size={17} /> Try Demo</AnimatedCTAButton>
             <AnimatedCTAButton href="/evidence" variant="secondary"><FileCheck2 size={17} /> View Evidence</AnimatedCTAButton>
           </div>
           <div className="bf-hero-metrics">
-            <span><strong>KiCad-native</strong> project output</span>
-            <span><strong>Local-first</strong> source protection</span>
-            <span><strong>Live sourcing</strong> where configured</span>
+            {workflowMetrics.map(([label, value]) => (
+              <span key={label}><strong>{label}</strong> {value}</span>
+            ))}
           </div>
         </div>
         <Hero3DBoard />
@@ -367,6 +407,7 @@ export function PremiumLandingPage() {
       </section>
       <CustomOutlineShowcase />
       <SourcingNetworkAnimation />
+      <MakeWorkflowSection />
       <LocalEngineExplainer />
       <EvidenceProofGrid />
       <PublicDemoSection />
