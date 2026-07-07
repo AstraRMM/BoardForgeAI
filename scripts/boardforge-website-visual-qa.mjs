@@ -14,6 +14,7 @@ const mdPath = path.join(root, 'BoardForge_Website_Visual_QA_Report.md')
 
 const pages = [
   ['homepage', '/'],
+  ['new-board', '/new-board'],
   ['homepage-sourcing', '/#sourcing'],
   ['custom-board-generator', '/custom-board-generator'],
   ['sourcing-page', '/projects'],
@@ -132,6 +133,15 @@ async function run() {
 
         const checks = await page.evaluate(() => {
           const oldHeroPhrases = ['CODEX PLUGIN FIRST', 'Turn Codex into a KiCad PCB engineer', 'Plugin Beta']
+          const rawProductPhrases = [
+            'controller_preference',
+            'brief_pending_approval',
+            'blocked_before_approval',
+            'npm run',
+            'BoardForge Local Engine is offline. Start it with:',
+            'http://127.0.0.1',
+            'localArtifactCommand',
+          ]
           const text = document.body.innerText
           const heroCopy = document.querySelector('.bf-hero-copy')
           const heroHeadline = document.querySelector('.bf-hero-copy h1')
@@ -154,6 +164,7 @@ async function run() {
             scrollWidth: document.documentElement.scrollWidth,
             innerWidth: window.innerWidth,
             oldHeroPresent: oldHeroPhrases.some((phrase) => text.includes(phrase)),
+            rawProductTextPresent: rawProductPhrases.some((phrase) => text.includes(phrase)),
             ctaVisible: [...document.querySelectorAll('a, button')].some((node) => /Start Building|Guided Workflow|View Evidence|Launch/i.test(node.textContent || '')),
             heroTextOverlap,
             navLayoutPass: Boolean(nav && brand && nav.getBoundingClientRect().height < window.innerHeight * 0.45),
@@ -179,9 +190,10 @@ async function run() {
           faviconExists: checks.faviconExists,
           animationsLoaded,
           oldHeroPresent: checks.oldHeroPresent,
+          rawProductTextPresent: checks.rawProductTextPresent,
           ctaVisible: checks.ctaVisible,
           consoleErrors,
-          passed: !horizontalOverflow && !checks.heroTextOverlap && navLayoutPass && checks.faviconExists && !checks.oldHeroPresent && (!requiresCta || checks.ctaVisible) && consoleErrors.length === 0,
+          passed: !horizontalOverflow && !checks.heroTextOverlap && navLayoutPass && checks.faviconExists && !checks.oldHeroPresent && !checks.rawProductTextPresent && (!requiresCta || checks.ctaVisible) && consoleErrors.length === 0,
         })
         await context.close()
       }

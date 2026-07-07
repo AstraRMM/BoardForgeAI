@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Download, Grid2X2, MousePointer2, Pencil, RotateCcw, Sparkles } from 'lucide-react'
+import { ClipboardCopy, Download, Grid2X2, MousePointer2, Pencil, RotateCcw, Sparkles } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
 
 type Point = { x: number; y: number }
@@ -29,6 +29,7 @@ export function OutlineEditor() {
   const [snap, setSnap] = useState(true)
   const [mode, setMode] = useState<'points' | 'draw'>('points')
   const [status, setStatus] = useState<string>('Ready')
+  const [copied, setCopied] = useState(false)
 
   const holes = useMemo<Hole[]>(() => {
     const box = bounds(points)
@@ -107,6 +108,12 @@ export function OutlineEditor() {
     URL.revokeObjectURL(url)
   }
 
+  async function copyPrompt() {
+    await navigator.clipboard.writeText(prompt)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1400)
+  }
+
   return (
     <section className="bf-outline-workbench">
       <div className="bf-outline-toolbar">
@@ -144,7 +151,18 @@ export function OutlineEditor() {
       <div className="bf-outline-status">
         <strong>{status}</strong>
         <span>{outlineArtifactSummary}</span>
-        <textarea readOnly value={prompt} aria-label="Codex prompt for BoardForge outline" />
+        <div className="bf-outline-handoff">
+          <div>
+            <b>Codex handoff ready</b>
+            <p>
+              Exact outline points, mounting holes, connector intent, and validation requirements are packaged for the
+              BoardForge plugin when you copy the prompt or download the seed.
+            </p>
+          </div>
+          <button type="button" onClick={copyPrompt}>
+            <ClipboardCopy size={15} /> {copied ? 'Copied' : 'Copy prompt'}
+          </button>
+        </div>
       </div>
     </section>
   )

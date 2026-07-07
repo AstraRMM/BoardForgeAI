@@ -1,22 +1,29 @@
 import type { BoardForgeIntakeSummary } from '../../lib/boardforge-intake'
 
+function humanize(value: string) {
+  return value
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
 export function BoardBriefPanel({ intake }: { intake: BoardForgeIntakeSummary }) {
   return (
-    <section className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <h2 className="text-xl font-semibold">Board Brief Preview</h2>
-      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-        <div><dt className="text-slate-400">Prompt</dt><dd>{intake.prompt}</dd></div>
-        <div><dt className="text-slate-400">Inferred type</dt><dd className="font-mono">{intake.boardType}</dd></div>
-        <div><dt className="text-slate-400">Approval gate</dt><dd className="font-mono">brief_pending_approval</dd></div>
-        <div><dt className="text-slate-400">Build status</dt><dd className="font-mono">blocked_before_approval</dd></div>
+    <section className="bf-brief-panel">
+      <p className="bf-panel-kicker">Board brief</p>
+      <h2>Robotics controller candidate</h2>
+      <dl className="bf-brief-facts">
+        <div><dt>Prompt</dt><dd>{intake.prompt}</dd></div>
+        <div><dt>Detected board type</dt><dd>{humanize(intake.boardType)}</dd></div>
+        <div><dt>Approval gate</dt><dd>Waiting for engineering approval</dd></div>
+        <div><dt>Build state</dt><dd>Protected until the brief is accepted</dd></div>
       </dl>
-      <h3 className="mt-4 text-sm font-semibold text-slate-300">Assumptions</h3>
-      <ul className="mt-2 grid gap-1 text-sm text-slate-300">
-        {intake.assumptions.map((item) => <li key={item}>- {item}</li>)}
+      <h3>Assumptions to confirm</h3>
+      <ul className="bf-token-list">
+        {intake.assumptions.map((item) => <li key={item}>{humanize(item)}</li>)}
       </ul>
-      <h3 className="mt-4 text-sm font-semibold text-slate-300">Risks</h3>
-      <ul className="mt-2 grid gap-1 text-sm text-slate-300">
-        {intake.risks.map((item) => <li key={item}>- {item}</li>)}
+      <h3>Risk areas</h3>
+      <ul className="bf-token-list warning">
+        {intake.risks.map((item) => <li key={item}>{humanize(item)}</li>)}
       </ul>
     </section>
   )

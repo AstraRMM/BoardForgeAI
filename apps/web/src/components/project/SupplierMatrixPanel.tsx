@@ -1,9 +1,9 @@
 export function SupplierMatrixPanel({ matrix }: { matrix?: any }) {
   const providers = matrix?.providers || {
-    digikey: { status: 'CONFIGURED_IF_LOCAL_ENV_PRESENT' },
-    mouser: { status: 'NOT_CONFIGURED', reason: 'No product/search API configured' },
-    lcsc: { status: 'NOT_CONFIGURED' },
-    jlcpcb: { status: 'NOT_CONFIGURED' },
+    digikey: { status: 'Ready when local credentials exist' },
+    mouser: { status: 'Not configured', reason: 'No product/search API configured' },
+    lcsc: { status: 'Not configured' },
+    jlcpcb: { status: 'Not configured' },
   }
   return (
     <section className="rounded-lg border border-slate-800 bg-slate-900 p-4">
@@ -12,11 +12,15 @@ export function SupplierMatrixPanel({ matrix }: { matrix?: any }) {
         {Object.entries(providers).map(([id, provider]: any) => (
           <div key={id} className="rounded border border-slate-800 bg-slate-950 p-2">
             <dt className="uppercase text-slate-500">{id}</dt>
-            <dd className="mt-1 font-mono text-slate-200">{provider.status || `${provider.verified || 0}/${provider.rows || 0} verified`}</dd>
+            <dd className="mt-1 font-semibold text-slate-200">{humanize(provider.status || `${provider.verified || 0}/${provider.rows || 0} verified`)}</dd>
             {provider.reason ? <dd className="mt-1 text-slate-400">{provider.reason}</dd> : null}
           </div>
         ))}
       </dl>
     </section>
   )
+}
+
+function humanize(value: string) {
+  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

@@ -36,7 +36,7 @@ export default function ReadinessPage() {
           <div className="mt-4 space-y-2">
             {evidence.latestTests.map((test) => (
               <div key={test.command} className="flex items-center justify-between rounded border border-slate-800 bg-slate-950 p-3 text-sm">
-                <span className="font-mono text-slate-300">{test.command}</span>
+                <span className="text-slate-300">{proofLabel(test.command)}</span>
                 <span className={test.status === 'passed' ? 'text-emerald-300' : 'text-amber-300'}>{test.status}</span>
               </div>
             ))}
@@ -49,4 +49,12 @@ export default function ReadinessPage() {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">{label}</p><p className="mt-2 font-mono text-3xl">{value}</p></div>
+}
+
+function proofLabel(command: string) {
+  if (command.includes('protected-path-guard')) return 'Source-protection guard passed'
+  if (command.includes('copy-sandbox-importer')) return 'KiCad import sandbox proof passed'
+  if (command.includes('fixtures:run')) return 'Fixture regression suite passed'
+  if (command.includes('report:90:quick')) return 'Readiness evidence report completed'
+  return command.replace(/^npm run\s+/, '').replace(/[:_-]+/g, ' ')
 }

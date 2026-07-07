@@ -44,7 +44,7 @@
     "PoE compliance, magnetics, isolation, and supplier stock are not verified",
     "Real arbitrary dense ESC/FC boards are not fully autonomous yet",
     "Local shove/rip-up is early and needs more dirty-board proofs",
-    "Web and KiCad plugin surfaces are alpha control panels"
+    "Web and KiCad plugin surfaces are controlled-release command centers"
   ],
   "latestTests": [
     { "command": "npm run test:protected-path-guard", "status": "passed" },

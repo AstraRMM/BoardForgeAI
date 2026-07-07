@@ -26,6 +26,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { id } = await params
   const project = dashboard.projects.find((item) => item.projectId === id) || dashboard.projects[0]
   const engineStatus = getBoardForgeEngineStatus(id)
+  const publishState = (project as any).projectState || (project as any).publish?.projectState || 'local review'
+  const syncStatus = (project as any).syncStatus || (project as any).publish?.syncStatus || 'review pending'
+  const reports = project.reports || {}
   return (
     <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
       <LocalEngineStatusBar />
@@ -67,7 +70,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </div>
       <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Reports</h2>
-        <pre className="mt-3 overflow-auto text-xs text-slate-300">{JSON.stringify(project.reports, null, 2)}</pre>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {Object.entries(reports).map(([label, value]) => (
+            <div key={label} className="rounded border border-slate-800 bg-slate-950 p-3">
+              <dt className="text-sm text-cyan-300">{humanize(label)}</dt>
+              <dd className="mt-1 text-sm text-slate-300">{humanize(String(value))}</dd>
+            </div>
+          ))}
+        </div>
       </section>
       <section className="mt-6 rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
         <h2 className="text-xl font-semibold">Board Brief and Approval</h2>
@@ -75,10 +85,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           BoardForge creates a local board brief before KiCad generation. The build is blocked until the brief is approved or an explicit dev/test bypass is used.
         </p>
         <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-          <div><dt className="text-cyan-300">Project state</dt><dd className="font-mono">{(project as any).projectState || (project as any).publish?.projectState || 'local_draft'}</dd></div>
-          <div><dt className="text-cyan-300">Dashboard visible</dt><dd className="font-mono">{String(Boolean((project as any).dashboardVisible || (project as any).publish?.dashboardVisible))}</dd></div>
-          <div><dt className="text-cyan-300">Publish approval</dt><dd className="font-mono">{String(Boolean((project as any).publishApproved || (project as any).publish?.publishApproved))}</dd></div>
-          <div><dt className="text-cyan-300">Sync status</dt><dd className="font-mono">{(project as any).syncStatus || (project as any).publish?.syncStatus || 'not_synced'}</dd></div>
+          <div><dt className="text-cyan-300">Project state</dt><dd>{humanize(publishState)}</dd></div>
+          <div><dt className="text-cyan-300">Dashboard visible</dt><dd>{Boolean((project as any).dashboardVisible || (project as any).publish?.dashboardVisible) ? 'Visible after approval' : 'Private review only'}</dd></div>
+          <div><dt className="text-cyan-300">Publish approval</dt><dd>{Boolean((project as any).publishApproved || (project as any).publish?.publishApproved) ? 'Approved' : 'Awaiting approval'}</dd></div>
+          <div><dt className="text-cyan-300">Sync status</dt><dd>{humanize(syncStatus)}</dd></div>
         </dl>
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           <span className="rounded border border-cyan-400/40 px-2 py-1 text-cyan-100">Publish to Dashboard</span>
@@ -90,14 +100,24 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </section>
       <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Local Replay</h2>
-        <p className="mt-2 text-sm text-slate-400">Run locally with BoardForge CLI. The web app does not fake cloud execution.</p>
-        <pre className="mt-3 overflow-auto rounded bg-slate-950 p-3 text-xs text-emerald-300">{project.replayCommand || 'No replay command available'}</pre>
+        <p className="mt-2 text-sm text-slate-400">Re-run is available from the protected local workflow. The web app does not fake cloud execution or expose project paths.</p>
+        <p className="mt-3 rounded bg-slate-950 p-3 text-sm text-emerald-300">Protected local action available after desktop helper pairing.</p>
       </section>
       <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Manufacturing Download</h2>
-        <p className="mt-2 text-sm text-slate-300">{project.manufacturing.zip || project.manufacturing.blockedReason || 'No manufacturing package yet'}</p>
+        <p className="mt-2 text-sm text-slate-300">
+          {project.manufacturing.ready ? 'Manufacturing package evidence is recorded in the protected local workspace.' : humanize(project.manufacturing.blockedReason || 'No manufacturing package yet')}
+        </p>
       </section>
     </main>
   )
 }
 
+function humanize(value: string) {
+  return value
+    .replace(/[A-Z]:\\[^ ]+/g, 'local project workspace')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}

@@ -1,6 +1,6 @@
 export function BomVerificationTable({ rows = [] }: { rows?: any[] }) {
   const sample = rows.length ? rows : [
-    { Ref: 'R?', MPN: 'BOM not verified yet', Manufacturer: 'UNKNOWN', digiKeyPartNumber: 'NOT_CHECKED', matchType: 'not_checked', sourcingStatus: 'NOT_CHECKED', stockStatus: 'UNKNOWN', quantityAvailable: '', unitPrice: '', lifecycleStatus: 'UNKNOWN', rohsStatus: 'UNKNOWN', datasheetUrl: '', liveStatus: 'NOT_CHECKED', risk: 'Run DigiKey Verification', nextAction: 'Start sourcing_verify job' },
+    { Ref: 'R?', MPN: 'BOM not verified yet', Manufacturer: 'Not verified', digiKeyPartNumber: 'Not verified yet', matchType: 'Waiting for supplier check', sourcingStatus: 'Supplier lookup not run', stockStatus: 'Not verified', quantityAvailable: '', unitPrice: '', lifecycleStatus: 'Not verified', rohsStatus: 'Not verified', datasheetUrl: '', liveStatus: 'Not verified yet', risk: 'Run supplier verification', nextAction: 'Start sourcing verification' },
   ]
   return (
     <div className="overflow-auto rounded border border-slate-800">
@@ -15,21 +15,25 @@ export function BomVerificationTable({ rows = [] }: { rows?: any[] }) {
             <tr key={index} className="border-t border-slate-800">
               <td className="p-2 font-mono">{row.Ref || row.ref || row.reference}</td>
               <td className="p-2 font-mono">{row.MPN || row.mpn || row.manufacturerPartNumber}</td>
-              <td className="p-2">{row.Manufacturer || row.manufacturer || 'UNKNOWN'}</td>
-              <td className="p-2 font-mono">{row.digiKeyPartNumber || row.digikeyPartNumber || row.selected?.digiKeyPartNumber || 'NOT_CHECKED'}</td>
-              <td className="p-2">{row.matchType || row.sourcingStatus || 'not_checked'}</td>
-              <td className="p-2">{row.stockStatus}</td>
+              <td className="p-2">{humanize(row.Manufacturer || row.manufacturer || 'Not verified')}</td>
+              <td className="p-2 font-mono">{humanize(row.digiKeyPartNumber || row.digikeyPartNumber || row.selected?.digiKeyPartNumber || 'Not verified yet')}</td>
+              <td className="p-2">{humanize(row.matchType || row.sourcingStatus || 'Waiting for supplier check')}</td>
+              <td className="p-2">{humanize(row.stockStatus || 'Not verified')}</td>
               <td className="p-2">{row.quantityAvailable || ''}</td>
               <td className="p-2">{row.unitPrice || ''}</td>
-              <td className="p-2">{row.lifecycleStatus || 'UNKNOWN'}</td>
-              <td className="p-2">{row.rohsStatus || 'UNKNOWN'}</td>
-              <td className="p-2">{row.datasheetUrl ? 'datasheet' : (row.liveStatus || 'NOT_CHECKED')}</td>
-              <td className="p-2">{row.risk || row.sourcingStatus}</td>
-              <td className="p-2">{row.nextAction || 'Review report'}</td>
+              <td className="p-2">{humanize(row.lifecycleStatus || 'Not verified')}</td>
+              <td className="p-2">{humanize(row.rohsStatus || 'Not verified')}</td>
+              <td className="p-2">{row.datasheetUrl ? 'Datasheet linked' : humanize(row.liveStatus || 'Not verified yet')}</td>
+              <td className="p-2">{humanize(row.risk || row.sourcingStatus || 'Run supplier verification')}</td>
+              <td className="p-2">{humanize(row.nextAction || 'Review report')}</td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
   )
+}
+
+function humanize(value: string) {
+  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

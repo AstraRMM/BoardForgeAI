@@ -13,15 +13,17 @@ test('custom board shape studio exposes visual outline workflow and no-fake KiCa
   await expect(page.getByRole('button', { name: /Generate KiCad outline/i })).toBeVisible()
   await expect(page.getByText(/Blocked means blocked/i)).toBeVisible()
   await expect(page.getByText(/Edge.Cuts closed/i)).toBeVisible()
-  const prompt = await page.getByLabel(/Codex prompt for BoardForge outline/i).inputValue()
-  expect(prompt).toMatch(/custom_outline_generate_kicad/)
-  expect(prompt).toMatch(/Edge\.Cuts/)
+  await expect(page.getByText(/Codex handoff ready/i)).toBeVisible()
+  await expect(page.getByRole('button', { name: /Copy prompt/i })).toBeVisible()
+  const bodyText = await page.locator('body').innerText()
+  expect(bodyText).not.toMatch(/custom_outline_generate_kicad/)
+  expect(bodyText).not.toMatch(/npm run/)
   await guard.assertNoLeaks()
   await writeE2EReport('BoardForge_Custom_Outline_E2E_Report', {
     title: 'BoardForge Custom Outline E2E Report',
     status: 'PASSED_WITH_LIMITATIONS',
     route: '/custom-board-generator',
-    proves: ['visual SVG editor visible', 'drone stack preset updates dimensions', 'local validation/generation buttons visible', 'Codex prompt includes exact Edge.Cuts handoff', 'blocked outline policy visible'],
+    proves: ['visual SVG editor visible', 'drone stack preset updates dimensions', 'local validation/generation buttons visible', 'Codex handoff panel visible without raw prompt dump', 'blocked outline policy visible'],
     limitation: 'Browser test does not require a running localhost engine; local engine outline routes are covered by node tests.',
   })
 })

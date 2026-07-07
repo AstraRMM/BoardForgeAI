@@ -4,29 +4,38 @@ import { ManufacturingReadinessBadge, SourcingStatusBadge } from '../../componen
 export default function DownloadsPage() {
   const ready = dashboard.projects.filter((project) => project.manufacturing.ready)
   const blocked = dashboard.projects.filter((project) => !project.manufacturing.ready)
-  const readinessStates = ['PCB_FAB_READY', 'ASSEMBLY_READY_NOT_VERIFIED', 'ASSEMBLY_READY_VERIFIED', 'BLOCKED_DRC', 'BLOCKED_ERC', 'BLOCKED_UNCONNECTED', 'BLOCKED_SOURCING', 'BLOCKED_COMPLIANCE_REVIEW']
+  const readinessStates = [
+    ['Fab package ready', 'DRC/ERC/connectivity and manufacturing files are present.'],
+    ['Assembly review required', 'BOM/CPL may exist, but sourcing or placement evidence still needs review.'],
+    ['Assembly evidence verified', 'Supplier and placement evidence are available for review.'],
+    ['Blocked by DRC', 'The package cannot be released until design-rule errors are resolved.'],
+    ['Blocked by ERC', 'The package cannot be released until schematic electrical errors are resolved.'],
+    ['Blocked by connectivity', 'Unconnected items remain and require repair or approval.'],
+    ['Blocked by sourcing', 'Supplier data is missing, unavailable, or lifecycle-risky.'],
+    ['Compliance review required', 'External safety, PoE, RF, or certification review is still required.'],
+  ]
   return (
-    <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
+    <main className="bf-app-page">
+      <section className="bf-app-hero">
       <h1 className="text-3xl font-semibold">Downloads</h1>
       <p className="mt-2 max-w-3xl text-slate-400">Only validation-backed manufacturing outputs are listed as ready. Blocked projects keep their reports visible but do not pretend to have shippable ZIPs.</p>
       <p className="mt-2 max-w-3xl text-cyan-300">Local engine artifact downloads include Gerbers, drill files, BOM, CPL, reports, preview SVG/JSON, and JLCPCB ZIP only after strict gates pass.</p>
+      </section>
       <section className="mt-6">
         <h2 className="text-xl font-semibold">Manufacturing Packages</h2>
         <div className="mt-4 space-y-3">
         {ready.map((project) => (
-          <div key={project.projectId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+          <div key={project.projectId} className="bf-premium-panel">
             <p className="font-semibold">{project.projectName}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <ManufacturingReadinessBadge state="PCB_FAB_READY" />
               <SourcingStatusBadge state="NOT_CHECKED" />
             </div>
-            <p className="mt-1 text-sm text-slate-400">Readiness: {project.readiness}</p>
-            <p className="mt-1 text-sm text-slate-400">Manufacturing ZIP: {project.manufacturing.zip || 'not exported'}</p>
-            <p className="text-sm text-slate-400">Gerbers / drill / BOM / CPL / JLCPCB ZIP: gated by local manufacturing validator</p>
-            <p className="text-sm text-slate-400">PCB fab readiness: PCB_FAB_READY when DRC/ERC/connectivity/manufacturing files pass</p>
-            <p className="text-sm text-slate-400">Assembly readiness: ASSEMBLY_READY_NOT_VERIFIED until sourcing/provider APIs verify stock and placement availability</p>
-            <p className="text-sm text-slate-400">User report: {project.reports?.status || project.reports?.routeability || 'not written'}</p>
-            <p className="mt-2 font-mono text-xs text-slate-500">{project.replayCommand || 'No replay command'}</p>
+            <p className="mt-1 text-sm text-slate-400">Readiness: {humanize(project.readiness)}</p>
+            <p className="mt-1 text-sm text-slate-400">Package: Evidence recorded in the protected local workspace.</p>
+            <p className="text-sm text-slate-400">Gerbers, drill, BOM, CPL, reports, and package archives stay gated by local manufacturing validation.</p>
+            <p className="text-sm text-slate-400">Assembly readiness requires supplier and placement evidence before claims are shown.</p>
+            <p className="text-sm text-slate-400">User report: {humanize(project.reports?.status || project.reports?.routeability || 'report pending')}</p>
           </div>
         ))}
         </div>
@@ -35,11 +44,15 @@ export default function DownloadsPage() {
         <h2 className="text-xl font-semibold">Blocked / Review Outputs</h2>
         <div className="mt-4 space-y-3">
           {blocked.map((project) => (
-            <div key={project.projectId} className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+            <div key={project.projectId} className="bf-premium-panel">
               <p className="font-semibold">{project.projectName}</p>
-              <p className="mt-1 text-sm text-amber-100">Blocked: {project.manufacturing.blockedReason || 'validation not complete'}</p>
-              <p className="mt-1 text-sm text-amber-100">Blocked states: BLOCKED_DRC / BLOCKED_ERC / BLOCKED_UNCONNECTED / BLOCKED_SOURCING / BLOCKED_COMPLIANCE_REVIEW</p>
-              <pre className="mt-2 overflow-auto text-xs text-amber-100">{JSON.stringify(project.criticalBlockers || [], null, 2)}</pre>
+              <p className="mt-1 text-sm text-amber-100">Blocked: {humanize(project.manufacturing.blockedReason || 'validation not complete')}</p>
+              <p className="mt-1 text-sm text-amber-100">Release stays locked until DRC, ERC, connectivity, sourcing, and compliance blockers are resolved.</p>
+              {project.criticalBlockers?.length > 0 && (
+                <ul className="bf-project-blockers">
+                  {project.criticalBlockers.map((blocker) => <li key={blocker.code}>{humanize(blocker.code)}: {blocker.count}</li>)}
+                </ul>
+              )}
             </div>
           ))}
         </div>
@@ -47,9 +60,18 @@ export default function DownloadsPage() {
       <section className="mt-8 rounded-lg border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-xl font-semibold">Readiness State Vocabulary</h2>
         <div className="mt-4 grid gap-2 md:grid-cols-2">
-          {readinessStates.map((state) => <div key={state} className="rounded border border-slate-800 bg-slate-950 p-3 font-mono text-sm text-slate-300">{state}</div>)}
+          {readinessStates.map(([state, description]) => (
+            <div key={state} className="rounded border border-slate-800 bg-slate-950 p-3 text-sm text-slate-300">
+              <strong className="block text-slate-100">{state}</strong>
+              <span>{description}</span>
+            </div>
+          ))}
         </div>
       </section>
     </main>
   )
+}
+
+function humanize(value: string) {
+  return value.replace(/[A-Z]:\\[^ ]+/g, 'local project workspace').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

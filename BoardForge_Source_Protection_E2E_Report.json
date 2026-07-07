@@ -1,7 +1,7 @@
 {
   "schema": "boardforge.browser-e2e-report.v1",
   "name": "BoardForge_Source_Protection_E2E_Report",
-  "generatedAt": "2026-07-05T19:44:16.851Z",
+  "generatedAt": "2026-07-07T09:44:28.862Z",
   "title": "BoardForge Source Protection E2E Report",
   "status": "PASSED_WITH_LIMITATIONS",
   "route": "/import",

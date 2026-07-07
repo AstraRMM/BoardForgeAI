@@ -1,8 +1,8 @@
 # BoardForge Website Visual QA Report
 
 Status: PASSED
-Base URL: http://127.0.0.1:3638
-Generated: 2026-07-06T21:48:30.960Z
+Base URL: http://127.0.0.1:3688
+Generated: 2026-07-07T09:41:16.551Z
 
 | Page | Viewport | Passed | Hero overlap | Horizontal overflow | Nav layout | Favicon | Console errors | Screenshot |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -11,6 +11,11 @@ Generated: 2026-07-06T21:48:30.960Z
 | homepage | desktop-1660 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-desktop-1660.png |
 | homepage | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-desktop-1920.png |
 | homepage | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-mobile.png |
+| new-board | desktop-1366 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\new-board-desktop-1366.png |
+| new-board | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\new-board-desktop-1440.png |
+| new-board | desktop-1660 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\new-board-desktop-1660.png |
+| new-board | desktop-1920 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\new-board-desktop-1920.png |
+| new-board | mobile | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\new-board-mobile.png |
 | homepage-sourcing | desktop-1366 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-desktop-1366.png |
 | homepage-sourcing | desktop-1440 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-desktop-1440.png |
 | homepage-sourcing | desktop-1660 | yes | no | no | pass | pass | 0 | C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\tmp\website-visual-qa\homepage-sourcing-desktop-1660.png |

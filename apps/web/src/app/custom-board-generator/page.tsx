@@ -16,9 +16,9 @@ export default function CustomBoardGeneratorPage() {
           BoardForge Codex plugin or the local engine for a real outline-only KiCad project.
         </p>
         <div className="bf-app-status-note">
-          <strong>Local engine status</strong>
-          <span>{localArtifactApiContract.offlineMessage}</span>
-          <span>When paired, this page calls localhost outline routes for seed, validation, reports, and KiCad Edge.Cuts generation.</span>
+          <strong>Desktop helper status</strong>
+          <span>{localArtifactApiContract.offlineDisplayMessage}</span>
+          <span>When paired, this studio validates the outline, records mechanical intent, and prepares real KiCad Edge.Cuts output.</span>
         </div>
         <div className="bf-app-panel">
           <LocalEngineStatusBar />

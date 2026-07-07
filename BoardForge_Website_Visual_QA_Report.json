@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-06T21:48:30.960Z",
-  "baseUrl": "http://127.0.0.1:3638",
+  "generatedAt": "2026-07-07T09:41:16.551Z",
+  "baseUrl": "http://127.0.0.1:3688",
   "status": "PASSED",
   "pages": [
     {
@@ -14,6 +14,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -29,6 +30,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -44,6 +46,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -59,6 +62,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -74,7 +78,88 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
+      "consoleErrors": [],
+      "passed": true
+    },
+    {
+      "page": "new-board",
+      "path": "/new-board",
+      "viewport": "desktop-1366",
+      "screenshot": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tmp\\website-visual-qa\\new-board-desktop-1366.png",
+      "horizontalOverflow": false,
+      "heroTextOverlap": false,
+      "navLayoutPass": true,
+      "faviconExists": true,
+      "animationsLoaded": true,
+      "oldHeroPresent": false,
+      "rawProductTextPresent": false,
+      "ctaVisible": false,
+      "consoleErrors": [],
+      "passed": true
+    },
+    {
+      "page": "new-board",
+      "path": "/new-board",
+      "viewport": "desktop-1440",
+      "screenshot": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tmp\\website-visual-qa\\new-board-desktop-1440.png",
+      "horizontalOverflow": false,
+      "heroTextOverlap": false,
+      "navLayoutPass": true,
+      "faviconExists": true,
+      "animationsLoaded": true,
+      "oldHeroPresent": false,
+      "rawProductTextPresent": false,
+      "ctaVisible": false,
+      "consoleErrors": [],
+      "passed": true
+    },
+    {
+      "page": "new-board",
+      "path": "/new-board",
+      "viewport": "desktop-1660",
+      "screenshot": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tmp\\website-visual-qa\\new-board-desktop-1660.png",
+      "horizontalOverflow": false,
+      "heroTextOverlap": false,
+      "navLayoutPass": true,
+      "faviconExists": true,
+      "animationsLoaded": true,
+      "oldHeroPresent": false,
+      "rawProductTextPresent": false,
+      "ctaVisible": false,
+      "consoleErrors": [],
+      "passed": true
+    },
+    {
+      "page": "new-board",
+      "path": "/new-board",
+      "viewport": "desktop-1920",
+      "screenshot": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tmp\\website-visual-qa\\new-board-desktop-1920.png",
+      "horizontalOverflow": false,
+      "heroTextOverlap": false,
+      "navLayoutPass": true,
+      "faviconExists": true,
+      "animationsLoaded": true,
+      "oldHeroPresent": false,
+      "rawProductTextPresent": false,
+      "ctaVisible": false,
+      "consoleErrors": [],
+      "passed": true
+    },
+    {
+      "page": "new-board",
+      "path": "/new-board",
+      "viewport": "mobile",
+      "screenshot": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\tmp\\website-visual-qa\\new-board-mobile.png",
+      "horizontalOverflow": false,
+      "heroTextOverlap": false,
+      "navLayoutPass": true,
+      "faviconExists": true,
+      "animationsLoaded": true,
+      "oldHeroPresent": false,
+      "rawProductTextPresent": false,
+      "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
     },
@@ -89,6 +174,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -104,6 +190,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -119,6 +206,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -134,6 +222,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -149,6 +238,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": true,
       "consoleErrors": [],
       "passed": true
@@ -164,6 +254,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -179,6 +270,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -194,6 +286,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -209,6 +302,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -224,6 +318,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -239,6 +334,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -254,6 +350,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -269,6 +366,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -284,6 +382,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -299,6 +398,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -314,6 +414,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -329,6 +430,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -344,6 +446,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -359,6 +462,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -374,6 +478,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -389,6 +494,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -404,6 +510,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -419,6 +526,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -434,6 +542,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -449,6 +558,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -464,6 +574,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -479,6 +590,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -494,6 +606,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -509,6 +622,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true
@@ -524,6 +638,7 @@
       "faviconExists": true,
       "animationsLoaded": true,
       "oldHeroPresent": false,
+      "rawProductTextPresent": false,
       "ctaVisible": false,
       "consoleErrors": [],
       "passed": true

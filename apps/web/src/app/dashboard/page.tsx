@@ -36,11 +36,11 @@ export default function DashboardPage() {
         </p>
       </section>
       <section className="mx-auto mt-6 max-w-6xl rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
-        <p className="text-sm uppercase tracking-wide text-cyan-300">Local engine artifact</p>
-        <h2 className="mt-1 text-xl font-semibold">Alpha demo launcher ready</h2>
+        <p className="text-sm uppercase tracking-wide text-cyan-300">Guided local workflow</p>
+        <h2 className="mt-1 text-xl font-semibold">Protected project workflow ready</h2>
         <p className="mt-2 text-sm text-cyan-100">
-          Run <code>npm run boardforge:demo</code> to replay prompt intake, brief approval, local candidate creation,
-          publish confirmation, sandbox repair proof links, and sourcing status without fake cloud execution.
+          Replay prompt intake, brief approval, protected candidate creation, publish confirmation, sandbox repair evidence,
+          and sourcing status without pretending that unverified cloud execution happened.
         </p>
       </section>
     </main>

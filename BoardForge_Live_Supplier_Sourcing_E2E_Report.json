@@ -1,7 +1,7 @@
 {
   "schema": "boardforge.browser-e2e-report.v1",
   "name": "BoardForge_Live_Supplier_Sourcing_E2E_Report",
-  "generatedAt": "2026-07-05T19:44:19.299Z",
+  "generatedAt": "2026-07-07T09:44:30.693Z",
   "title": "BoardForge Live Supplier Sourcing E2E Report",
   "status": "PASSED_WITH_LIVE_CLI_EVIDENCE_AND_BROWSER_DISCLOSURE",
   "route": "/projects/BF-DENSE-CONTROL-01_REV_A",

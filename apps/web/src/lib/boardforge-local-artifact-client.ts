@@ -1,8 +1,9 @@
 export const BOARDFORGE_LOCAL_ENGINE_URL = 'http://127.0.0.1:38991'
 
 export const localArtifactApiContract = {
-  mode: 'localhost local engine service',
-  offlineMessage: 'BoardForge Local Engine is offline. Start it with: npm run boardforge:local-server',
+  mode: 'protected desktop helper service',
+  offlineMessage: 'BoardForge Desktop Helper is offline. Start the protected local helper from your BoardForge workspace when you are ready to create or modify real KiCad files.',
+  offlineDisplayMessage: 'Local engine not connected. Start the desktop helper when you are ready to create or modify real KiCad files.',
   endpoints: [
     'GET /health',
     'GET /status',
@@ -44,8 +45,8 @@ export async function checkBoardForgeLocalEngine() {
     return {
       ok: false,
       status: 'BOARD_FORGE_LOCAL_ENGINE_OFFLINE',
-      errors: [{ message: localArtifactApiContract.offlineMessage }],
-      data: { startCommand: 'npm run boardforge:local-server' },
+      errors: [{ message: localArtifactApiContract.offlineDisplayMessage }],
+      data: { startCommand: 'Start the BoardForge desktop helper' },
       warnings: [],
       artifactPaths: [],
     }
@@ -53,5 +54,5 @@ export async function checkBoardForgeLocalEngine() {
 }
 
 export function describeLocalArtifactAction(action: string) {
-  return `Local engine localhost action: ${action}`
+  return `Protected local engine action: ${action}`
 }

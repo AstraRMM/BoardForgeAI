@@ -27,7 +27,7 @@ export function ProjectActionPanel() {
           </div>
         ))}
       </div>
-      <p className="bf-local-workflow-note">{localArtifactApiContract.offlineMessage}</p>
+      <p className="bf-local-workflow-note">{localArtifactApiContract.offlineDisplayMessage}</p>
     </section>
   )
 }

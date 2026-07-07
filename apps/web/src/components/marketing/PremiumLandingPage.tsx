@@ -171,9 +171,9 @@ function Hero3DBoard() {
             <svg viewBox="0 0 740 430" role="img" aria-label="Premium PCB rendering">
               <defs>
                 <linearGradient id="boardMask" x1="0" x2="1" y1="0" y2="1">
-                  <stop offset="0" stopColor="#103d25" />
-                  <stop offset="0.55" stopColor="#06371f" />
-                  <stop offset="1" stopColor="#052613" />
+                  <stop offset="0" stopColor="#0a4a2b" />
+                  <stop offset="0.46" stopColor="#063a22" />
+                  <stop offset="1" stopColor="#031d12" />
                 </linearGradient>
                 <linearGradient id="boardEdge" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0" stopColor="#b9e4c9" />
@@ -198,10 +198,16 @@ function Hero3DBoard() {
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
+                <pattern id="maskTexture" width="18" height="18" patternUnits="userSpaceOnUse">
+                  <path d="M0 9 H18 M9 0 V18" stroke="rgba(255,255,255,0.055)" strokeWidth="0.7" />
+                  <circle cx="4" cy="4" r="0.8" fill="rgba(255,255,255,0.06)" />
+                  <circle cx="13" cy="14" r="0.7" fill="rgba(0,0,0,0.12)" />
+                </pattern>
               </defs>
               <path className="bf-board-shadow" filter="url(#boardShadow)" d="M82 106 Q82 66 122 66 H252 Q286 66 304 91 L335 136 Q354 162 388 162 H610 Q652 162 652 204 V306 Q652 348 610 348 H122 Q82 348 82 306 V250 Q82 226 62 214 Q40 200 40 170 V142 Q40 116 66 110 Z" />
               <path className="bf-board-edge-layer" d="M84 116 Q84 72 128 72 H252 Q286 72 304 97 L334 139 Q352 166 388 166 H606 Q646 166 646 206 V305 Q646 345 606 345 H128 Q88 345 88 305 V249 Q88 222 66 211 Q46 201 46 172 V145 Q46 120 70 114 Z" />
               <path className="bf-board-base" d="M84 104 Q84 60 128 60 H252 Q286 60 304 85 L334 127 Q352 154 388 154 H606 Q646 154 646 194 V293 Q646 333 606 333 H128 Q88 333 88 293 V237 Q88 210 66 199 Q46 189 46 160 V133 Q46 108 70 102 Z" />
+              <path className="bf-board-texture" d="M84 104 Q84 60 128 60 H252 Q286 60 304 85 L334 127 Q352 154 388 154 H606 Q646 154 646 194 V293 Q646 333 606 333 H128 Q88 333 88 293 V237 Q88 210 66 199 Q46 189 46 160 V133 Q46 108 70 102 Z" />
               <path className="bf-copper-plane" d="M110 117 H266 L309 176 H612 V300 H120 V235 C104 223 94 211 90 195 V132 Z" />
               {[126, 594].map((x) => [106, 286].map((y) => <g key={`${x}-${y}`}><circle className="bf-hole-ring" cx={x} cy={y} r="20" /><circle className="bf-hole-core" cx={x} cy={y} r="10" /></g>))}
               {Array.from({ length: 25 }).map((_, index) => <circle key={index} className="bf-via" cx={176 + (index % 13) * 29} cy={122 + Math.floor(index / 13) * 151} r="3.8" />)}
@@ -210,6 +216,7 @@ function Hero3DBoard() {
               <path className="bf-trace signal" d="M162 236 C232 240 252 264 300 248 M383 242 C426 254 470 245 548 222" />
               <path className="bf-trace signal" d="M272 178 L295 190 M491 191 H548 M380 194 H424" />
               <path className="bf-trace signal" d="M334 247 V287 H507 V251" />
+              <path className="bf-trace signal fine" d="M176 177 H210 M178 192 H208 M492 176 C512 170 530 174 548 190 M412 154 V127 H438 M258 202 C266 230 280 242 294 238" />
               <path className="bf-trace glow" filter="url(#softGlow)" d="M164 225 C225 228 250 254 294 244 M383 228 C426 242 475 238 550 218" />
               <rect className="bf-metal bf-usb-a" x="88" y="182" width="82" height="54" rx="7" />
               <rect className="bf-metal bf-rj45" x="548" y="188" width="82" height="66" rx="7" />
@@ -223,8 +230,14 @@ function Hero3DBoard() {
               <rect className="bf-chip light" x="236" y="246" width="56" height="23" rx="5" />
               <rect className="bf-chip light" x="404" y="258" width="56" height="23" rx="5" />
               <rect className="bf-chip dark" x="468" y="250" width="44" height="32" rx="4" />
+              <rect className="bf-chip dark slim" x="214" y="212" width="38" height="20" rx="3" />
+              <rect className="bf-chip dark slim" x="512" y="270" width="38" height="20" rx="3" />
+              <rect className="bf-crystal" x="395" y="130" width="38" height="18" rx="3" />
               {Array.from({ length: 10 }).map((_, index) => <rect key={index} className="bf-header-pin" x={442 + index * 15} y="99" width="8" height="66" rx="3" />)}
               {Array.from({ length: 8 }).map((_, index) => <rect key={`pad-${index}`} className="bf-passive" x={176 + index * 42} y={292 + (index % 2) * 8} width="24" height="8" rx="2" />)}
+              {Array.from({ length: 10 }).map((_, index) => <rect key={`top-passive-${index}`} className="bf-passive small" x={188 + index * 30} y={128 + (index % 2) * 9} width="18" height="7" rx="2" />)}
+              {Array.from({ length: 8 }).map((_, index) => <rect key={`decouple-${index}`} className="bf-passive cap" x={256 + (index % 4) * 42} y={150 + Math.floor(index / 4) * 105} width="15" height="8" rx="2" />)}
+              <path className="bf-silk-outline" d="M112 95 H250 Q278 95 294 118 M416 181 H620 V286 H554" />
               <text className="bf-silk" x="108" y="263">USB-C</text>
               <text className="bf-silk" x="310" y="266">MCU</text>
               <text className="bf-silk" x="550" y="274">RJ45</text>
@@ -433,7 +446,7 @@ function LocalEngineExplainer() {
       <div className="bf-engine-chain">
         {[
           ['Website', 'board intake, dashboards, sourcing, reports'],
-          ['Pairing', 'localhost connection with source protection'],
+          ['Pairing', 'private desktop connection with source protection'],
           ['Local engine', 'KiCad automation and evidence generation'],
           ['KiCad project', '.kicad_pro, .kicad_sch, .kicad_pcb, exports'],
         ].map(([label, body]) => (

@@ -2,8 +2,8 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_One_Click_Demo_E2E_Report
-- generatedAt: 2026-07-05T19:44:23.618Z
+- generatedAt: 2026-07-07T09:44:35.565Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /demo
-- proves: demo page loads; demo command visible; demo package limitation visible; project gallery visible; no browser-visible secrets
-- limitation: Browser page points to the local demo command; it does not yet launch the local engine job from the browser.
+- proves: demo page loads; polished local workflow action visible; demo package limitation visible; project gallery visible; no browser-visible secrets or raw commands
+- limitation: Browser page describes the protected local workflow; local engine execution remains desktop-helper backed.

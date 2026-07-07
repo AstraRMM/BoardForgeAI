@@ -32,13 +32,13 @@ export function SourcingCommandCenter({ project }: { project?: any }) {
       </div>
       <p className="mt-3 rounded border border-cyan-300/30 bg-slate-950 p-2 text-xs text-cyan-100">Each action checks pairing/local engine status, starts a job-backed local-engine action, polls logs, refreshes artifacts, and reports exact redacted blockers if DigiKey or local services fail.</p>
       <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey</dt><dd className="font-mono">{sourcing.digikeyStatus || 'CONFIGURED_IF_LOCAL_ENV_PRESENT'}</dd></div>
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey Auth</dt><dd className="font-mono">{sourcing.digikeyAuthenticated ? 'AUTHENTICATED_LOCAL_ENGINE' : 'LOCAL_TOKEN_REQUIRED'}</dd></div>
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Live Lookup</dt><dd className="font-mono">{sourcing.liveLookupStatus || 'RUN_VERIFICATION'}</dd></div>
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Mouser</dt><dd className="font-mono">{sourcing.mouserStatus || 'CONFIGURED_IF_LOCAL_ENV_PRESENT'}</dd></div>
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Mouser Live Lookup</dt><dd className="font-mono">{sourcing.mouserLiveLookupStatus || 'RUN_MOUSER_SEARCH_VERIFICATION'}</dd></div>
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Quote</dt><dd className="font-mono">{sourcing.quoteReadiness || 'NOT_CHECKED'}</dd></div>
-        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Assembly</dt><dd className="font-mono">{sourcing.state || 'ASSEMBLY_READY_NOT_VERIFIED'}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey</dt><dd className="font-semibold">{humanize(sourcing.digikeyStatus || 'Ready when local credentials exist')}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">DigiKey Auth</dt><dd className="font-semibold">{sourcing.digikeyAuthenticated ? 'Authenticated through local engine' : 'Local token required'}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Live Lookup</dt><dd className="font-semibold">{humanize(sourcing.liveLookupStatus || 'Run verification')}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Mouser</dt><dd className="font-semibold">{humanize(sourcing.mouserStatus || 'Ready when local credentials exist')}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Mouser Live Lookup</dt><dd className="font-semibold">{humanize(sourcing.mouserLiveLookupStatus || 'Run Mouser verification')}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Quote</dt><dd className="font-semibold">{humanize(sourcing.quoteReadiness || 'Not verified yet')}</dd></div>
+        <div className="rounded bg-slate-950 p-2"><dt className="text-slate-500">Assembly</dt><dd className="font-semibold">{humanize(sourcing.state || 'Assembly not verified yet')}</dd></div>
       </dl>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <div>
@@ -52,4 +52,8 @@ export function SourcingCommandCenter({ project }: { project?: any }) {
       </div>
     </section>
   )
+}
+
+function humanize(value: string) {
+  return String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

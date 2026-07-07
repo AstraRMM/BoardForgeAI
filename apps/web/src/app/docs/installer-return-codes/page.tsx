@@ -10,10 +10,10 @@ const standardCodes = [
 ]
 
 const packageFacts = [
-  ['Current package', 'BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe'],
+  ['Current package', 'BoardForgeAI-Setup-0.1.0-x64.exe'],
   ['Architecture', 'x64'],
-  ['Silent install', 'BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe /S'],
-  ['Silent uninstall', 'BoardForgeAI-Setup-0.1.0-alpha.1-x64.exe /S /uninstall'],
+  ['Silent install', 'BoardForgeAI-Setup-0.1.0-x64.exe /S'],
+  ['Silent uninstall', 'BoardForgeAI-Setup-0.1.0-x64.exe /S /uninstall'],
   ['SHA256', '0248270A648E81A4056C000A3334B53C226DB88B771B9FACE1798494F9128A29'],
   ['Signing status', 'Unsigned controlled-release package; production release requires Authenticode or Microsoft Trusted Signing.'],
 ]

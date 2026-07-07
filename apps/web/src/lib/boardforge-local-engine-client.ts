@@ -21,7 +21,7 @@ export type LocalEngineBridgeStatus = {
 }
 
 export const localEngineOfflineMessage =
-  'BoardForge Local Engine is offline. Start it with: npm run boardforge:local-server'
+  'BoardForge Desktop Helper is offline. Start the protected local helper from your BoardForge workspace when you are ready to run local KiCad actions.'
 
 export function getLocalEngineStatusCopy() {
   return {

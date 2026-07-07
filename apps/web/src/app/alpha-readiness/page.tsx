@@ -2,7 +2,7 @@ export default function AlphaReadinessPage() {
   const categories = [
     ['engine readiness', 'local engine proof exists; public installer signing still required'],
     ['web UX readiness', 'premium command center routes and E2E smoke coverage'],
-    ['local engine pairing/security', 'localhost pairing and source protection tested'],
+    ['local engine pairing/security', 'private desktop pairing and source protection tested'],
     ['KiCad project import', 'sandbox import must keep original source untouched'],
     ['supplier sourcing', 'Mouser live available; DigiKey requires valid OAuth token'],
     ['Make Manufacturable', 'available as an evidence-backed local workflow'],

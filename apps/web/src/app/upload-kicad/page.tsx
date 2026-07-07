@@ -1,6 +1,5 @@
-import { previewImportedRepairProof, previewImportSandbox } from '../../lib/import-sandbox'
+import { previewImportedRepairProof } from '../../lib/import-sandbox'
 
-const example = previewImportSandbox('C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-ODD-SHAPE-ROBOT-01_REV_A')
 const repairProof = previewImportedRepairProof()
 
 export default function UploadKicadPage() {
@@ -25,13 +24,11 @@ export default function UploadKicadPage() {
         <h2 className="text-xl font-semibold">Sandbox Import Preview</h2>
         <p className="mt-2 text-sm text-slate-400">Protected paths are refused before copying or scanning begins.</p>
         <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-          <Field label="Source path" value={example.sourcePath} />
-          <Field label="Sandbox path" value={example.sandboxPath} />
-          <Field label="Protected-path status" value={example.protectedPathStatus} />
-          <Field label="Mutation policy" value={example.originalMutationPolicy} />
+          <Field label="Source project" value="selected by the user" />
+          <Field label="Sandbox copy" value="created in a protected BoardForge workspace" />
+          <Field label="Protected-path status" value="checked before import" />
+          <Field label="Mutation policy" value="source files stay untouched" />
         </div>
-        <p className="mt-5 text-sm text-slate-400">CLI action: npm run boardforge:import-sandbox</p>
-        <pre className="mt-5 overflow-auto rounded bg-slate-950 p-3 text-xs text-emerald-300">{example.command}</pre>
       </section>
 
       <section className="mx-auto mt-8 max-w-5xl rounded-lg border border-slate-800 bg-slate-900 p-5">
@@ -50,15 +47,13 @@ export default function UploadKicadPage() {
           This proof repairs only the copied sandbox project. The source project is hash-checked before and after repair.
         </p>
         <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-          <Field label="Source path" value={repairProof.sourcePath} />
-          <Field label="Sandbox path" value={repairProof.sandboxPath} />
+          <Field label="Source project" value="hash-checked before and after repair" />
+          <Field label="Sandbox project" value="all repair work happens on the copy" />
           <Field label="Source untouched" value={repairProof.sourceUntouched ? 'yes, hash guard passed' : 'no'} />
           <Field label="Repair result" value={`DRC ${repairProof.dirtyDrc} -> ${repairProof.cleanDrc}, shorts ${repairProof.dirtyShorts} -> ${repairProof.cleanShorts}`} />
           <Field label="Status" value={repairProof.status} />
-          <Field label="Manufacturing ZIP" value={repairProof.manufacturingZip} />
+          <Field label="Manufacturing package" value={repairProof.manufacturingZip ? 'available after evidence checks' : 'blocked until evidence passes'} />
         </div>
-        <p className="mt-5 text-sm text-emerald-100/80">CLI action: npm run boardforge:imported-board-repair-proof</p>
-        <pre className="mt-5 overflow-auto rounded bg-slate-950 p-3 text-xs text-emerald-300">{repairProof.command}</pre>
       </section>
     </main>
   )

@@ -3,6 +3,13 @@ import { normalizePublishState } from '../lib/boardforge-manifest'
 
 export function ProjectStatusCard({ project }: { project: BoardForgeDashboardCard }) {
   const publish = normalizePublishState(project)
+  const manufacturingStatus = project.manufacturing.ready
+    ? 'Manufacturing evidence ready'
+    : humanize(project.manufacturing.blockedReason || 'Blocked pending engineering review')
+  const packageStatus = project.manufacturing.zip ? 'Package evidence recorded' : 'Package not exported'
+  const publishStatus = publish.dashboardVisible ? 'Published to dashboard' : 'Local review only'
+  const syncStatus = humanize(publish.syncStatus || 'Waiting for review')
+  const nextAction = humanize(project.nextAction || 'Engineering review')
   return (
     <article className="bf-project-card">
       <div className="bf-project-card-head">
@@ -21,20 +28,20 @@ export function ProjectStatusCard({ project }: { project: BoardForgeDashboardCar
         <Metric label="Forbidden vias" value={project.validation.forbiddenVias ?? 0} />
       </dl>
       <div className="bf-project-evidence">
-        <p>Manufacturing: {project.manufacturing.ready ? 'ready' : project.manufacturing.blockedReason || 'blocked'}</p>
-        <p>ZIP: {project.manufacturing.zip || 'not exported'}</p>
-        <p>Sourcing: {project.validation.schematicGraphStatus || 'manifest evidence required'}</p>
-        <p>Publish: {publish.projectState} / {publish.dashboardVisible ? 'dashboard visible' : 'local only'}</p>
-        <p>Sync: {publish.syncStatus}</p>
-        <p>Next: {project.nextAction}</p>
+        <p>Manufacturing: {manufacturingStatus}</p>
+        <p>Package: {packageStatus}</p>
+        <p>Sourcing: {humanize(project.validation.schematicGraphStatus || 'Evidence required')}</p>
+        <p>Publish: {publishStatus}</p>
+        <p>Sync: {syncStatus}</p>
+        <p>Next: {nextAction}</p>
         {project.criticalBlockers.length > 0 && (
           <ul className="bf-project-blockers">
             {project.criticalBlockers.map((blocker) => (
-              <li key={blocker.code}>{blocker.code}: {blocker.count}</li>
+              <li key={blocker.code}>{humanize(blocker.code)}: {blocker.count}</li>
             ))}
           </ul>
         )}
-        <p className="bf-project-command">{project.replayCommand || 'No replay command written'}</p>
+        <p className="bf-project-command">Re-run available from the protected local workflow.</p>
       </div>
     </article>
   )
@@ -53,4 +60,13 @@ function badgeClass(readiness: string) {
   if (readiness === 'ready') return 'bf-project-badge ready'
   if (readiness === 'review') return 'bf-project-badge review'
   return 'bf-project-badge blocked'
+}
+
+function humanize(value: string) {
+  return value
+    .replace(/[A-Z]:\\[^ ]+/g, 'local project workspace')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
