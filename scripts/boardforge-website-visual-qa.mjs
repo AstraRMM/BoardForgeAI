@@ -78,6 +78,14 @@ function writeReports(results) {
     generatedAt: new Date().toISOString(),
     baseUrl,
     status: results.every((item) => item.passed) ? 'PASSED' : 'FAILED',
+    premiumChecks: {
+      productFlowRedesigned: results.filter((item) => item.page === 'homepage').every((item) => item.productFlowRedesigned),
+      sourcingDiagramRebuilt: results.filter((item) => item.page === 'homepage-sourcing').every((item) => item.sourcingDiagramRebuilt),
+      pcbRenderUpgraded: results.filter((item) => item.page === 'homepage').every((item) => item.pcbRenderUpgraded),
+      outlineRenderUpgraded: results.filter((item) => item.page === 'homepage').every((item) => item.outlineRenderUpgraded),
+      textHierarchyReducedWhiteWall: results.filter((item) => item.page === 'homepage').every((item) => item.textHierarchyReducedWhiteWall),
+      noAlphaDemoCopy: results.every((item) => item.noAlphaDemoCopy),
+    },
     pages: results,
   }
   fs.writeFileSync(jsonPath, `${JSON.stringify(summary, null, 2)}\n`)
@@ -100,6 +108,12 @@ function writeReports(results) {
     `- browser tab icon works: ${results.every((item) => item.faviconExists) ? 'pass' : 'fail'}`,
     `- console errors: ${results.every((item) => item.consoleErrors.length === 0) ? 'pass' : 'fail'}`,
     `- animations loaded: ${results.some((item) => item.animationsLoaded) ? 'pass' : 'fail'}`,
+    `- product flow redesigned: ${summary.premiumChecks.productFlowRedesigned ? 'pass' : 'fail'}`,
+    `- sourcing diagram rebuilt: ${summary.premiumChecks.sourcingDiagramRebuilt ? 'pass' : 'fail'}`,
+    `- PCB render upgraded: ${summary.premiumChecks.pcbRenderUpgraded ? 'pass' : 'fail'}`,
+    `- custom outline render upgraded: ${summary.premiumChecks.outlineRenderUpgraded ? 'pass' : 'fail'}`,
+    `- text hierarchy avoids white-wall layout: ${summary.premiumChecks.textHierarchyReducedWhiteWall ? 'pass' : 'fail'}`,
+    `- no alpha/demo/file-name copy on public pages: ${summary.premiumChecks.noAlphaDemoCopy ? 'pass' : 'fail'}`,
     '- screenshots captured for visual review under tmp/website-visual-qa',
     '',
   ]
@@ -150,6 +164,14 @@ async function run() {
           const brand = document.querySelector('.bf-logo-mark')
           const favicon = document.querySelector('link[rel="icon"], link[rel="shortcut icon"]')
           const animatedBackground = document.querySelector('.bf-animated-pcb-background')
+          const productFlowShell = document.querySelector('.bf-flow-shell')
+          const productFlowCards = document.querySelectorAll('.bf-flow-card')
+          const supplierNetwork = document.querySelector('.bf-supplier-network')
+          const networkNodes = document.querySelectorAll('.network-node')
+          const pcbRender = document.querySelector('.bf-board-3d')
+          const pcbDetails = document.querySelectorAll('.bf-gold-pad, .bf-header-socket, .bf-chip.micro, .bf-route')
+          const outlineRender = document.querySelector('.bf-outline-card')
+          const outlineDetails = document.querySelectorAll('.outline-anchor, .outline-keepout, .outline-internal-plane, .outline-callout')
           const rectOf = (node) => {
             if (!node) return null
             const rect = node.getBoundingClientRect()
@@ -170,6 +192,12 @@ async function run() {
             navLayoutPass: Boolean(nav && brand && nav.getBoundingClientRect().height < window.innerHeight * 0.45),
             faviconExists: Boolean(favicon),
             animationsLoaded: Boolean(animatedBackground),
+            productFlowRedesigned: Boolean(productFlowShell && productFlowCards.length >= 6),
+            sourcingDiagramRebuilt: Boolean(supplierNetwork && networkNodes.length >= 6),
+            pcbRenderUpgraded: Boolean(pcbRender && pcbDetails.length >= 20),
+            outlineRenderUpgraded: Boolean(outlineRender && outlineDetails.length >= 6),
+            textHierarchyReducedWhiteWall: !text.includes('Describe -> Generate') && Boolean(document.querySelector('.bf-flow-shell')) && document.querySelectorAll('.bf-kicker, .bf-section-lede, .bf-feature-card p, .bf-flow-card p, .bf-sourcing-panel li, .bf-chip-label').length >= 18,
+            noAlphaDemoCopy: !/alpha|demo file|sample manifest|private beta/i.test(text),
           }
         })
         const horizontalOverflow = checks.scrollWidth > checks.innerWidth + 2
@@ -189,11 +217,17 @@ async function run() {
           navLayoutPass,
           faviconExists: checks.faviconExists,
           animationsLoaded,
+          productFlowRedesigned: checks.productFlowRedesigned,
+          sourcingDiagramRebuilt: checks.sourcingDiagramRebuilt,
+          pcbRenderUpgraded: checks.pcbRenderUpgraded,
+          outlineRenderUpgraded: checks.outlineRenderUpgraded,
+          textHierarchyReducedWhiteWall: checks.textHierarchyReducedWhiteWall,
+          noAlphaDemoCopy: checks.noAlphaDemoCopy,
           oldHeroPresent: checks.oldHeroPresent,
           rawProductTextPresent: checks.rawProductTextPresent,
           ctaVisible: checks.ctaVisible,
           consoleErrors,
-          passed: !horizontalOverflow && !checks.heroTextOverlap && navLayoutPass && checks.faviconExists && !checks.oldHeroPresent && !checks.rawProductTextPresent && (!requiresCta || checks.ctaVisible) && consoleErrors.length === 0,
+          passed: !horizontalOverflow && !checks.heroTextOverlap && navLayoutPass && checks.faviconExists && !checks.oldHeroPresent && !checks.rawProductTextPresent && checks.noAlphaDemoCopy && (!requiresMarketingNav || (checks.productFlowRedesigned && checks.sourcingDiagramRebuilt && checks.pcbRenderUpgraded && checks.outlineRenderUpgraded && checks.textHierarchyReducedWhiteWall)) && (!requiresCta || checks.ctaVisible) && consoleErrors.length === 0,
         })
         await context.close()
       }

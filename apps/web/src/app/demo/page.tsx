@@ -3,30 +3,33 @@ import { OneClickDemoButton } from '../../components/demo/OneClickDemoButton'
 
 export default function DemoPage() {
   return (
-    <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm uppercase tracking-wide text-emerald-300">BoardForge guided local workflow</p>
-        <h1 className="mt-2 text-3xl font-semibold">Run The Guided Workflow</h1>
-        <p className="mt-3 max-w-3xl text-slate-400">
-          This demo is local artifact-backed. It does not pretend to run cloud jobs.
+    <main className="bf-premium-site bf-app-page bf-guided-workflow-page">
+      <section className="bf-app-hero">
+        <span className="bf-kicker">Guided local workflow</span>
+        <h1>Run the guided workflow.</h1>
+        <p>
+          The guided workflow uses local artifacts and explicit evidence gates. It keeps cloud execution claims blocked
+          unless the local engine, source protection, sourcing, and publish checks prove the state.
         </p>
       </section>
-      <section className="mx-auto mt-8 max-w-5xl rounded-lg border border-slate-800 bg-slate-900 p-5">
-        <h2 className="text-xl font-semibold">Workflow package</h2>
-        <p className="mt-3 text-sm text-slate-300">
+      <section className="bf-app-section">
+        <div className="bf-premium-panel">
+          <h2>Workflow package</h2>
+          <p>
           The guided workflow creates a protected local package with intake evidence, brief approval, manufacturability review,
           sourcing state, and clearly labeled outputs.
-        </p>
+          </p>
+        </div>
       </section>
-      <section className="mx-auto mt-8 max-w-5xl">
+      <section className="bf-app-section">
         <OneClickDemoButton />
       </section>
-      <section className="mx-auto mt-8 max-w-5xl">
+      <section className="bf-app-section">
         <DemoProjectGallery />
       </section>
-      <section className="mx-auto mt-8 grid max-w-5xl gap-3 md:grid-cols-2">
+      <section className="bf-app-grid two">
         {['prompt intake', 'conditional questions', 'brief revisions', 'approval gate', 'local candidate', 'publish confirmation', 'manufacturing example', 'sourcing blocked when credentials are missing'].map((step) => (
-          <div key={step} className="rounded-lg border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">{step}</div>
+          <div key={step} className="bf-premium-panel bf-guided-step">{step}</div>
         ))}
       </section>
     </main>

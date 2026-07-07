@@ -1,8 +1,8 @@
 # BoardForge Website Visual QA Report
 
 Status: PASSED
-Base URL: http://127.0.0.1:3688
-Generated: 2026-07-07T09:41:16.551Z
+Base URL: http://127.0.0.1:3529
+Generated: 2026-07-07T14:03:27.424Z
 
 | Page | Viewport | Passed | Hero overlap | Horizontal overflow | Nav layout | Favicon | Console errors | Screenshot |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -55,5 +55,11 @@ Checks:
 - browser tab icon works: pass
 - console errors: pass
 - animations loaded: pass
+- product flow redesigned: pass
+- sourcing diagram rebuilt: pass
+- PCB render upgraded: pass
+- custom outline render upgraded: pass
+- text hierarchy avoids white-wall layout: pass
+- no alpha/demo/file-name copy on public pages: pass
 - screenshots captured for visual review under tmp/website-visual-qa
 

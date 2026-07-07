@@ -23,7 +23,7 @@ export default function ProjectsPage() {
         <div className="bf-premium-panel">
           <h2>Local drafts and candidates</h2>
           <p>Drafts stay out of the main public dashboard until the user approves publishing.</p>
-          <span className="bf-mini-badge">{localDrafts.length} local-only artifacts in sample manifest</span>
+          <span className="bf-mini-badge">{localDrafts.length} local-only candidates awaiting approval</span>
         </div>
       </section>
     </main>

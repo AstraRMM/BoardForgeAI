@@ -26,13 +26,15 @@ import {
   Zap,
 } from 'lucide-react'
 
-const productFlow = [
-  ['Describe', 'Capture requirements, constraints, use case, board size, layer target, connectors, power, and risk areas.'],
-  ['Generate', 'Create a board brief, KiCad-ready outline intent, starter project structure, and candidate component plan.'],
-  ['Validate', 'Run local checks, DRC/ERC evidence, footprint/model resolution, source protection, and readiness gates.'],
-  ['Source', 'Verify live DigiKey and Mouser data where configured. No fake stock or silent mock availability.'],
-  ['Repair', 'Use Make Manufacturable and Make Sourcable to explain blockers and prepare safe local actions.'],
-  ['Export', 'Package reports, downloads, and manufacturing artifacts only when evidence supports the status.'],
+type ProductFlowStep = [string, string, ComponentType<{ size?: number }>, string]
+
+const productFlow: ProductFlowStep[] = [
+  ['Describe', 'Capture requirements, constraints, use case, board size, layer target, connectors, power, and risk areas.', ScanLine, 'intent'],
+  ['Generate', 'Create a board brief, KiCad-ready outline intent, starter project structure, and candidate component plan.', CircuitBoard, 'cad'],
+  ['Validate', 'Run local checks, DRC/ERC evidence, footprint/model resolution, source protection, and readiness gates.', BadgeCheck, 'proof'],
+  ['Source', 'Verify live DigiKey and Mouser data where configured. No fake stock or silent mock availability.', DatabaseZap, 'supply'],
+  ['Repair', 'Use Make Manufacturable and Make Sourcable to explain blockers and prepare safe local actions.', Wrench, 'repair'],
+  ['Export', 'Package reports, downloads, and manufacturing artifacts only when evidence supports the status.', PackageCheck, 'export'],
 ]
 
 const coreTools = [
@@ -232,11 +234,17 @@ function Hero3DBoard() {
               <rect className="bf-chip dark" x="468" y="250" width="44" height="32" rx="4" />
               <rect className="bf-chip dark slim" x="214" y="212" width="38" height="20" rx="3" />
               <rect className="bf-chip dark slim" x="512" y="270" width="38" height="20" rx="3" />
+              <rect className="bf-chip dark micro" x="168" y="150" width="20" height="17" rx="2" />
+              <rect className="bf-chip dark micro" x="520" y="139" width="24" height="17" rx="2" />
+              <rect className="bf-chip light micro" x="452" y="292" width="25" height="12" rx="2" />
+              <rect className="bf-chip light micro" x="185" y="284" width="24" height="12" rx="2" />
               <rect className="bf-crystal" x="395" y="130" width="38" height="18" rx="3" />
               {Array.from({ length: 10 }).map((_, index) => <rect key={index} className="bf-header-pin" x={442 + index * 15} y="99" width="8" height="66" rx="3" />)}
+              {Array.from({ length: 10 }).map((_, index) => <rect key={`header-shadow-${index}`} className="bf-header-socket" x={438 + index * 15} y="157" width="16" height="9" rx="2" />)}
               {Array.from({ length: 8 }).map((_, index) => <rect key={`pad-${index}`} className="bf-passive" x={176 + index * 42} y={292 + (index % 2) * 8} width="24" height="8" rx="2" />)}
               {Array.from({ length: 10 }).map((_, index) => <rect key={`top-passive-${index}`} className="bf-passive small" x={188 + index * 30} y={128 + (index % 2) * 9} width="18" height="7" rx="2" />)}
               {Array.from({ length: 8 }).map((_, index) => <rect key={`decouple-${index}`} className="bf-passive cap" x={256 + (index % 4) * 42} y={150 + Math.floor(index / 4) * 105} width="15" height="8" rx="2" />)}
+              {Array.from({ length: 28 }).map((_, index) => <rect key={`gold-pad-${index}`} className="bf-gold-pad" x={138 + (index % 14) * 31} y={104 + Math.floor(index / 14) * 184} width="8" height="4" rx="1.5" />)}
               <path className="bf-silk-outline" d="M112 95 H250 Q278 95 294 118 M416 181 H620 V286 H554" />
               <text className="bf-silk" x="108" y="263">USB-C</text>
               <text className="bf-silk" x="310" y="266">MCU</text>
@@ -260,16 +268,25 @@ function Hero3DBoard() {
 function ScrollProductFlow() {
   return (
     <section className="bf-section bf-theme-flow" id="product">
-      <div className="bf-section-head bf-flow-intro">
-        <span className="bf-kicker">Product flow</span>
-        <p>Each workflow gate below has a job: capture intent, generate KiCad-ready structure, validate the board, verify supply, repair safe blockers, and export only when evidence supports it.</p>
+      <div className="bf-flow-shell">
+        <div className="bf-section-head bf-flow-intro">
+          <span className="bf-kicker">Product flow</span>
+          <h2>One controlled engineering path from prompt to package.</h2>
+          <p>Each gate has a specific job: capture intent, generate KiCad-ready structure, validate the board, verify supply, repair safe blockers, and export only when evidence supports it.</p>
+        </div>
+        <div className="bf-flow-rail" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
       </div>
       <div className="bf-flow-grid">
-        {productFlow.map(([title, body], index) => (
-          <article className="bf-flow-card" key={title} style={{ '--i': index } as React.CSSProperties}>
+        {productFlow.map(([title, body, Icon, accent], index) => (
+          <article className={`bf-flow-card ${accent}`} key={title as string} style={{ '--i': index } as React.CSSProperties}>
             <small>{String(index + 1).padStart(2, '0')}</small>
-            <strong>{title}</strong>
-            <p>{body}</p>
+            {Icon ? <Icon size={22} /> : null}
+            <strong>{title as string}</strong>
+            <p>{body as string}</p>
           </article>
         ))}
       </div>
@@ -289,16 +306,32 @@ function FeatureCard({ title, body, Icon }: { title: string; body: string; Icon:
 
 function AnimatedPCBTraces() {
   return (
-    <div className="bf-trace-map" aria-hidden="true">
-      <span className="node n1">BOM</span>
-      <span className="node n2">DigiKey</span>
-      <span className="node n3">Mouser</span>
-      <span className="node n4">Alternatives</span>
-      <span className="node n5">Quote readiness</span>
-      <svg viewBox="0 0 680 300">
-        <path d="M110 150 H250 C300 150 290 72 348 72 H522" />
-        <path d="M110 150 H250 C300 150 290 228 348 228 H522" />
-        <path d="M250 150 H380 V150 H560" />
+    <div className="bf-trace-map bf-supplier-network" aria-hidden="true">
+      <span className="network-node bom"><strong>BOM</strong><em>line items</em></span>
+      <span className="network-node digikey"><strong>DigiKey</strong><em>OAuth live</em></span>
+      <span className="network-node mouser"><strong>Mouser</strong><em>search API</em></span>
+      <span className="network-node alt"><strong>Alternatives</strong><em>drop-in risk</em></span>
+      <span className="network-node quote"><strong>Quote readiness</strong><em>MOQ / stock</em></span>
+      <span className="network-node risk"><strong>Risk review</strong><em>lifecycle</em></span>
+      <svg viewBox="0 0 760 360">
+        <defs>
+          <linearGradient id="supplierTrace" x1="0" x2="1">
+            <stop stopColor="#45e4ff" />
+            <stop offset="0.55" stopColor="#75f7d1" />
+            <stop offset="1" stopColor="#e0a650" />
+          </linearGradient>
+          <filter id="supplierGlow">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        <path className="main-bus" d="M120 176 H276 C326 176 326 82 380 82 H596" />
+        <path className="main-bus delay" d="M120 176 H276 C326 176 326 270 380 270 H596" />
+        <path className="main-bus copper" d="M278 176 H440 V176 H640" />
+        <path className="main-bus mint" d="M440 176 C496 176 496 118 552 118 H654" />
+        <path className="main-bus mint delay" d="M440 176 C496 176 496 232 552 232 H654" />
+        <circle className="network-pulse" cx="276" cy="176" r="5" />
+        <circle className="network-pulse delay" cx="440" cy="176" r="5" />
       </svg>
     </div>
   )
@@ -359,8 +392,10 @@ function CustomOutlineShowcase() {
           </defs>
           <path className="outline-shadow" filter="url(#outlineShadow)" d="M76 104 Q76 58 122 58 H286 Q326 58 348 92 L380 142 Q400 172 438 172 H458 Q492 172 492 206 V252 Q492 286 458 286 H120 Q76 286 76 242 V218 Q76 196 54 184 Q32 172 32 142 V132 Q32 110 54 106 Z" />
           <path className="outline-board" d="M78 92 Q78 50 120 50 H286 Q326 50 348 84 L380 134 Q400 164 438 164 H458 Q492 164 492 198 V244 Q492 278 458 278 H120 Q78 278 78 234 V210 Q78 188 56 176 Q34 164 34 134 V124 Q34 102 56 98 Z" />
+          <path className="outline-internal-plane" d="M98 110 H278 C306 110 320 130 336 154 L350 176 H462 V256 H118 V218 C94 205 78 190 70 170 V126 Z" />
           <path className="outline-edge-highlight" d="M98 86 H284 C314 86 328 106 345 132 L364 160" />
           <path className="outline-keepout" d="M104 114 H156 V166 H104 Z" />
+          <path className="outline-keepout antenna" d="M345 84 H420 V132 H374 C362 116 354 101 345 84 Z" />
           {[
             [118, 96],
             [456, 98],
@@ -370,8 +405,17 @@ function CustomOutlineShowcase() {
           <rect className="outline-part" x="218" y="138" width="82" height="56" rx="7" />
           <rect className="outline-part small" x="382" y="166" width="64" height="40" rx="6" />
           <rect className="outline-part metal" x="110" y="186" width="54" height="28" rx="5" />
+          <rect className="outline-part micro" x="320" y="218" width="38" height="22" rx="5" />
+          <rect className="outline-part micro" x="176" y="112" width="44" height="24" rx="5" />
           <path className="outline-route" d="M156 140 H218 M300 164 H382 M258 194 V240 H456" />
           <path className="outline-route thin" d="M164 200 C206 214 224 230 258 240 M300 151 C330 142 358 146 382 166" />
+          <path className="outline-route glow" d="M214 124 C266 128 294 148 300 164 M258 240 C286 232 306 226 320 229" />
+          {[78, 120, 286, 348, 380, 438, 492, 458, 120].map((x, index) => {
+            const y = [92, 50, 50, 84, 134, 164, 198, 278, 278][index]
+            return <circle key={`${x}-${index}`} className="outline-anchor" cx={x} cy={y} r="4" />
+          })}
+          <text className="outline-callout" x="104" y="108">validated keepout</text>
+          <text className="outline-callout" x="326" y="80">antenna edge intent</text>
           <text x="84" y="306">routeability score 92 / all holes inside outline</text>
         </svg>
       </div>
