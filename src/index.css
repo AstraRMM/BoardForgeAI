@@ -2200,6 +2200,421 @@ a {
   font-weight: 850;
 }
 
+/* Visual-quality hardening pass: remove boxed glows, improve PCB/render diagrams, and restore generator affordances. */
+.bf-premium-site {
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(25, 110, 190, 0.18), transparent 36%),
+    radial-gradient(ellipse at 82% 18%, rgba(187, 124, 45, 0.12), transparent 38%),
+    radial-gradient(ellipse at 48% 72%, rgba(28, 155, 131, 0.1), transparent 44%),
+    linear-gradient(135deg, #05080c 0%, #071017 48%, #020405 100%);
+}
+
+.bf-animated-pcb-background::before {
+  inset: -14% -8%;
+  height: auto;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(78, 220, 255, 0.16), transparent 34%),
+    radial-gradient(ellipse at 76% 22%, rgba(224, 166, 78, 0.12), transparent 38%),
+    radial-gradient(ellipse at 48% 82%, rgba(121, 246, 199, 0.09), transparent 42%);
+  filter: blur(54px);
+  mask-image: radial-gradient(ellipse at center, #000 0 48%, transparent 76%);
+}
+
+.bf-section::before,
+.bf-outline-card::before,
+.bf-supplier-network::before {
+  mask-image: radial-gradient(ellipse at center, #000 0 58%, transparent 84%);
+}
+
+.bf-hero-visual {
+  perspective: 1500px;
+}
+
+.bf-cad-window {
+  border-color: rgba(99, 220, 255, 0.24);
+  background:
+    radial-gradient(ellipse at 54% 12%, rgba(88, 172, 215, 0.16), transparent 42%),
+    linear-gradient(145deg, rgba(12, 21, 27, 0.96), rgba(2, 7, 10, 0.99));
+}
+
+.bf-board-stage {
+  min-height: 500px;
+  perspective: 1600px;
+  background:
+    linear-gradient(rgba(136, 194, 216, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(136, 194, 216, 0.035) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 48%, rgba(70, 170, 190, 0.12), transparent 46%);
+  background-size: 44px 44px, 44px 44px, auto;
+}
+
+.bf-board-3d {
+  transform-style: preserve-3d;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.bf-board-3d svg {
+  max-width: 100%;
+  filter:
+    drop-shadow(0 32px 38px rgba(0, 0, 0, 0.52))
+    drop-shadow(0 0 18px rgba(121, 246, 199, 0.08));
+}
+
+.bf-board-edge-layer {
+  fill: url(#boardEdge);
+  opacity: 0.9;
+}
+
+.bf-board-base {
+  fill: url(#boardMask);
+  stroke: rgba(176, 255, 210, 0.96);
+  stroke-width: 3.2;
+}
+
+.bf-board-texture {
+  fill: url(#maskTexture);
+  opacity: 0.24;
+}
+
+.bf-copper-plane {
+  fill: rgba(198, 154, 70, 0.085);
+  stroke: rgba(222, 172, 78, 0.14);
+}
+
+.bf-hole-ring {
+  fill: none;
+  stroke: #dca854;
+  stroke-width: 7;
+}
+
+.bf-hole-core {
+  fill: #081015;
+  stroke: rgba(242, 232, 189, 0.8);
+  stroke-width: 2;
+}
+
+.bf-trace {
+  fill: none;
+  stroke: #d19b40;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bf-trace.power {
+  stroke-width: 5;
+}
+
+.bf-trace.signal {
+  stroke-width: 2.2;
+}
+
+.bf-trace.fine {
+  stroke-width: 1.25;
+  opacity: 0.85;
+}
+
+.bf-trace.glow {
+  stroke: #50e7ff;
+  stroke-width: 1.7;
+  stroke-dasharray: 18 16;
+  opacity: 0.75;
+  animation: bfTraceDash 5s linear infinite;
+}
+
+.bf-metal {
+  fill: url(#metalBody);
+  stroke: rgba(255, 255, 255, 0.45);
+}
+
+.bf-chip {
+  fill: url(#blackPackage);
+  stroke: rgba(225, 236, 238, 0.22);
+}
+
+.bf-chip.light,
+.bf-passive {
+  fill: #d6dddb;
+  stroke: rgba(255, 255, 255, 0.42);
+}
+
+.bf-passive.cap {
+  fill: #c8b18a;
+}
+
+.bf-qfp-pin,
+.bf-header-pin,
+.bf-gold-pad,
+.bf-via {
+  fill: #d6a84e;
+}
+
+.bf-crystal {
+  fill: #d9d0b5;
+  stroke: rgba(255, 255, 255, 0.42);
+}
+
+.bf-silk,
+.bf-silk-outline {
+  fill: none;
+  stroke: rgba(235, 248, 238, 0.72);
+}
+
+text.bf-silk {
+  fill: rgba(238, 250, 240, 0.86);
+  stroke: none;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+text.bf-silk.small {
+  font-size: 9px;
+}
+
+.bf-trace-map.bf-supplier-network {
+  min-height: 360px;
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 40% 44%, rgba(52, 210, 255, 0.14), transparent 48%),
+    linear-gradient(145deg, rgba(4, 18, 26, 0.86), rgba(2, 7, 10, 0.94));
+}
+
+.bf-trace-map .network-node {
+  min-width: 118px;
+  text-align: center;
+}
+
+.bf-trace-map .network-node.bom { left: 6%; top: 39%; }
+.bf-trace-map .network-node.digikey { left: 24%; top: 16%; }
+.bf-trace-map .network-node.mouser { left: 24%; bottom: 15%; }
+.bf-trace-map .network-node.alt { left: 47%; top: 39%; }
+.bf-trace-map .network-node.quote { right: 5%; top: 31%; }
+.bf-trace-map .network-node.risk { right: 5%; top: 61%; display: flex; border-color: rgba(255, 190, 95, 0.38); }
+
+.bf-trace-map .supplier-rail.ghost {
+  fill: none;
+  stroke: rgba(102, 216, 255, 0.13);
+  stroke-width: 2;
+}
+
+.bf-trace-map path.main-bus,
+.bf-trace-map path.supplier-subrail {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 10 12;
+  animation: bfTraceDash 6s linear infinite;
+}
+
+.bf-trace-map path.supplier-subrail {
+  stroke: rgba(78, 220, 255, 0.46);
+  stroke-width: 1.7;
+}
+
+.supplier-proof-strip {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px;
+  border: 1px solid rgba(121, 246, 199, 0.22);
+  border-radius: 10px;
+  background: rgba(5, 25, 27, 0.7);
+}
+
+.supplier-proof-strip span {
+  color: #bde6de;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.supplier-proof-strip span::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #77f6cf;
+  box-shadow: 0 0 12px rgba(119, 246, 207, 0.55);
+  vertical-align: middle;
+}
+
+.bf-outline-workbench {
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 40% 0, rgba(55, 198, 255, 0.12), transparent 45%),
+    linear-gradient(135deg, rgba(6, 21, 27, 0.94), rgba(2, 7, 10, 0.96));
+}
+
+.bf-outline-toolbar button.danger {
+  border-color: rgba(255, 121, 91, 0.52);
+  background: rgba(93, 30, 24, 0.72);
+}
+
+.bf-outline-studio > svg {
+  cursor: crosshair;
+  border-radius: 12px;
+  background:
+    linear-gradient(rgba(94, 218, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 218, 255, 0.04) 1px, transparent 1px),
+    radial-gradient(ellipse at 48% 50%, rgba(34, 151, 132, 0.14), transparent 58%),
+    #020d0e;
+  background-size: 32px 32px, 32px 32px, auto, auto;
+}
+
+.bf-editor-open-path {
+  fill: none;
+  stroke: rgba(122, 245, 208, 0.48);
+  stroke-width: 0.7;
+  stroke-dasharray: 1.5 1.2;
+}
+
+.bf-editor-polygon {
+  stroke-width: 0.85;
+}
+
+.bf-editor-polygon.valid {
+  fill: rgba(20, 113, 84, 0.78);
+  stroke: #80f4c8;
+}
+
+.bf-editor-polygon.blocked {
+  fill: rgba(114, 59, 45, 0.58);
+  stroke: #ff8f6e;
+}
+
+.bf-editor-hole circle:first-child {
+  fill: none;
+  stroke: rgba(245, 199, 84, 0.78);
+  stroke-width: 0.7;
+}
+
+.bf-editor-hole circle:last-child {
+  fill: #061316;
+  stroke: rgba(255, 238, 184, 0.9);
+  stroke-width: 0.35;
+}
+
+.bf-editor-hole.invalid circle:first-child {
+  stroke: #ff7d64;
+}
+
+.bf-editor-point circle {
+  fill: #f1bd50;
+  stroke: #071015;
+  stroke-width: 0.42;
+}
+
+.bf-editor-point.selected circle {
+  fill: #2f86ff;
+  filter: drop-shadow(0 0 5px rgba(47, 134, 255, 0.8));
+}
+
+.bf-editor-point text {
+  fill: rgba(230, 246, 244, 0.74);
+  font-size: 2.6px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.bf-outline-side {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.bf-outline-side .bf-outline-hole-control {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.bf-outline-hole-control span,
+.bf-outline-hole-control strong {
+  grid-column: 1 / -1;
+}
+
+.bf-outline-hole-control button {
+  min-height: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.bf-outline-side button.blocked {
+  border-color: rgba(255, 124, 88, 0.38);
+  color: #ffd0c4;
+  background: rgba(80, 30, 24, 0.56);
+}
+
+.bf-outline-state {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #061316 !important;
+  font-weight: 900;
+}
+
+.bf-outline-state.valid {
+  background: #82f7ce;
+}
+
+.bf-outline-state.blocked {
+  background: #ff9a78;
+}
+
+.bf-outline-validation-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bf-outline-validation-chips span {
+  border: 1px solid rgba(122, 245, 208, 0.2);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #cce4e6;
+  background: rgba(4, 16, 22, 0.76);
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.bf-outline-validation-chips span.pass {
+  border-color: rgba(122, 245, 208, 0.34);
+  color: #bff7e6;
+}
+
+.bf-outline-validation-chips span.fail {
+  border-color: rgba(255, 139, 98, 0.42);
+  color: #ffd4c8;
+}
+
+.risk-low { color: #82f7ce !important; }
+.risk-medium { color: #f0c46c !important; }
+.risk-high,
+.risk-blocked { color: #ff9d81 !important; }
+
+@media (max-width: 760px) {
+  .bf-outline-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bf-outline-studio > svg {
+    min-height: 380px;
+  }
+
+  .supplier-proof-strip {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    margin: 270px 16px 0;
+  }
+}
+
 .bf-new-board-page {
   padding-top: 0;
 }

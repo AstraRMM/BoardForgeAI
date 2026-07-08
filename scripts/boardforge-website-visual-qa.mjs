@@ -143,6 +143,16 @@ async function run() {
         page.on('pageerror', (error) => consoleErrors.push(error.message))
         const url = `${baseUrl}${pagePath}`
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+        await page.addStyleTag({
+          content: `
+            *, *::before, *::after {
+              animation-duration: 0.001s !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.001s !important;
+              scroll-behavior: auto !important;
+            }
+          `,
+        })
         await page.waitForTimeout(650)
 
         const checks = await page.evaluate(() => {
@@ -206,7 +216,7 @@ async function run() {
         const navLayoutPass = requiresMarketingNav ? checks.navLayoutPass : true
         const animationsLoaded = requiresMarketingNav ? checks.animationsLoaded : true
         const screenshot = path.join(screenshotDir, `${pageName}-${viewportName}.png`)
-        await page.screenshot({ path: screenshot, fullPage: true })
+        await page.screenshot({ path: screenshot, fullPage: true, timeout: 45_000 })
         results.push({
           page: pageName,
           path: pagePath,

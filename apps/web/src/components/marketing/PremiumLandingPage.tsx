@@ -307,12 +307,12 @@ function FeatureCard({ title, body, Icon }: { title: string; body: string; Icon:
 function AnimatedPCBTraces() {
   return (
     <div className="bf-trace-map bf-supplier-network" aria-hidden="true">
-      <span className="network-node bom"><strong>BOM</strong><em>line items</em></span>
-      <span className="network-node digikey"><strong>DigiKey</strong><em>OAuth live</em></span>
-      <span className="network-node mouser"><strong>Mouser</strong><em>search API</em></span>
-      <span className="network-node alt"><strong>Alternatives</strong><em>drop-in risk</em></span>
-      <span className="network-node quote"><strong>Quote readiness</strong><em>MOQ / stock</em></span>
-      <span className="network-node risk"><strong>Risk review</strong><em>lifecycle</em></span>
+      <span className="network-node bom"><strong>BOM</strong><em>normalized line items</em></span>
+      <span className="network-node digikey"><strong>DigiKey</strong><em>OAuth live data</em></span>
+      <span className="network-node mouser"><strong>Mouser</strong><em>live search API</em></span>
+      <span className="network-node alt"><strong>Alternatives</strong><em>ranked drop-in risk</em></span>
+      <span className="network-node quote"><strong>Quote readiness</strong><em>MOQ / lifecycle / stock</em></span>
+      <span className="network-node risk"><strong>No fake stock</strong><em>blocked states stay visible</em></span>
       <svg viewBox="0 0 760 360">
         <defs>
           <linearGradient id="supplierTrace" x1="0" x2="1">
@@ -325,14 +325,24 @@ function AnimatedPCBTraces() {
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
-        <path className="main-bus" d="M120 176 H276 C326 176 326 82 380 82 H596" />
-        <path className="main-bus delay" d="M120 176 H276 C326 176 326 270 380 270 H596" />
-        <path className="main-bus copper" d="M278 176 H440 V176 H640" />
-        <path className="main-bus mint" d="M440 176 C496 176 496 118 552 118 H654" />
-        <path className="main-bus mint delay" d="M440 176 C496 176 496 232 552 232 H654" />
-        <circle className="network-pulse" cx="276" cy="176" r="5" />
-        <circle className="network-pulse delay" cx="440" cy="176" r="5" />
+        <path className="supplier-rail ghost" d="M116 158 H662" />
+        <path className="main-bus" d="M116 158 H224" />
+        <path className="main-bus delay" d="M272 158 H380" />
+        <path className="main-bus copper" d="M428 158 H536" />
+        <path className="main-bus mint" d="M584 158 H690" />
+        <path className="supplier-subrail" d="M228 158 C248 104 282 104 304 158 C326 214 360 214 380 158" />
+        <path className="supplier-subrail copper" d="M428 158 C450 116 490 116 512 158" />
+        <circle className="network-pulse" cx="224" cy="158" r="5" />
+        <circle className="network-pulse delay" cx="380" cy="158" r="5" />
+        <circle className="network-pulse slow" cx="536" cy="158" r="5" />
       </svg>
+      <div className="supplier-proof-strip">
+        <span>Stock verified</span>
+        <span>Lifecycle</span>
+        <span>Risk notes</span>
+        <span>Datasheets</span>
+        <span>No fake stock</span>
+      </div>
     </div>
   )
 }

@@ -264,6 +264,7 @@
         "test:web-ui-local-engine-actions": "node --test --test-name-pattern \"web UI local engine actions\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:web-new-board-interactive-flow": "node --test --test-name-pattern \"web new board interactive flow\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:web-custom-outline-interactive-flow": "node --test --test-name-pattern \"web custom outline interactive flow\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+        "test:web-custom-board-generator": "node --test --test-name-pattern \"web custom outline interactive flow\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:custom-outline-presets": "node --test --test-name-pattern \"custom outline presets\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:custom-outline-validation": "node --test --test-name-pattern \"custom outline validation\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:custom-outline-self-intersection": "node --test --test-name-pattern \"self-intersecting\" ./plugins/boardforge-plugin/tests/*.test.mjs",

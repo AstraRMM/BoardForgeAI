@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-07T14:03:27.424Z",
-  "baseUrl": "http://127.0.0.1:3529",
+  "generatedAt": "2026-07-08T01:42:43.370Z",
+  "baseUrl": "http://127.0.0.1:3648",
   "status": "PASSED",
   "premiumChecks": {
     "productFlowRedesigned": true,

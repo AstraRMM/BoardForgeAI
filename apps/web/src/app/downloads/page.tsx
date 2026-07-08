@@ -19,7 +19,7 @@ export default function DownloadsPage() {
       <section className="bf-app-hero">
       <h1 className="text-3xl font-semibold">Downloads</h1>
       <p className="mt-2 max-w-3xl text-slate-400">Only validation-backed manufacturing outputs are listed as ready. Blocked projects keep their reports visible but do not pretend to have shippable ZIPs.</p>
-      <p className="mt-2 max-w-3xl text-cyan-300">Local engine artifact downloads include Gerbers, drill files, BOM, CPL, reports, preview SVG/JSON, and JLCPCB ZIP only after strict gates pass.</p>
+      <p className="mt-2 max-w-3xl text-cyan-300">Manufacturing ZIP downloads include Gerbers, drill files, BOM, CPL, reports, preview SVG/JSON, and JLCPCB ZIP only after strict gates pass.</p>
       </section>
       <section className="mt-6">
         <h2 className="text-xl font-semibold">Manufacturing Packages</h2>
@@ -33,8 +33,8 @@ export default function DownloadsPage() {
             </div>
             <p className="mt-1 text-sm text-slate-400">Readiness: {humanize(project.readiness)}</p>
             <p className="mt-1 text-sm text-slate-400">Package: Evidence recorded in the protected local workspace.</p>
-            <p className="text-sm text-slate-400">Gerbers, drill, BOM, CPL, reports, and package archives stay gated by local manufacturing validation.</p>
-            <p className="text-sm text-slate-400">Assembly readiness requires supplier and placement evidence before claims are shown.</p>
+            <p className="text-sm text-slate-400">Manufacturing ZIP, Gerbers, drill, BOM, CPL, and reports stay gated by local manufacturing validation.</p>
+            <p className="text-sm text-slate-400">Assembly state: ASSEMBLY_READY_NOT_VERIFIED until supplier and placement evidence are reviewed.</p>
             <p className="text-sm text-slate-400">User report: {humanize(project.reports?.status || project.reports?.routeability || 'report pending')}</p>
           </div>
         ))}

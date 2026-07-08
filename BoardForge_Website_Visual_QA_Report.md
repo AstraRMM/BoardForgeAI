@@ -1,8 +1,8 @@
 # BoardForge Website Visual QA Report
 
 Status: PASSED
-Base URL: http://127.0.0.1:3529
-Generated: 2026-07-07T14:03:27.424Z
+Base URL: http://127.0.0.1:3648
+Generated: 2026-07-08T01:42:43.370Z
 
 | Page | Viewport | Passed | Hero overlap | Horizontal overflow | Nav layout | Favicon | Console errors | Screenshot |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

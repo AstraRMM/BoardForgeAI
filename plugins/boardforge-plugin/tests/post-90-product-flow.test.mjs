@@ -534,7 +534,10 @@ test('custom outline generator has presets validation and seed export components
   const editor = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlineEditor.tsx'), 'utf8')
   const validation = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlineValidationPanel.tsx'), 'utf8')
   assert.match(picker, /mounting ears/)
-  assert.match(editor, /BoardForge_Mechanical_Constraints/)
+  assert.match(editor, /boardforge\.custom-outline-project-seed\.web\.v2/)
+  assert.match(editor, /Generate KiCad outline/)
+  assert.match(editor, /validation\.valid/)
+  assert.match(editor, /mountingHolesMm/)
   assert.match(validation, /Edge.Cuts closed/)
 })
 
@@ -779,10 +782,18 @@ test('web new board interactive flow shows local service intake and brief approv
 
 test('web custom outline interactive flow connects outline presets to local service actions', async () => {
   const customPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
+  const outlineEditor = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlineEditor.tsx'), 'utf8')
   assert.match(customPage, /OutlinePresetPicker/)
   assert.match(customPage, /OutlineEditor/)
   assert.match(customPage, /OutlineValidationPanel/)
   assert.match(customPage, /ProjectActionPanel/)
+  assert.match(outlineEditor, /mode, setMode.*points/)
+  assert.match(outlineEditor, /setMode\('draw'\)/)
+  assert.match(outlineEditor, /setMode\('delete'\)/)
+  assert.match(outlineEditor, /setSnap/)
+  assert.match(outlineEditor, /validateOutline/)
+  assert.match(outlineEditor, /bf-outline-validation-chips/)
+  assert.match(outlineEditor, /action === 'generate' && !validation\.valid/)
 })
 
 test('web project action buttons and downloads local service parity are visible', async () => {
