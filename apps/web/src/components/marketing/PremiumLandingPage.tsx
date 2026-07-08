@@ -170,6 +170,12 @@ function Hero3DBoard() {
         <div className="bf-window-bar"><span /><span /><span /><strong>KiCad-ready physical preview</strong></div>
         <div className="bf-board-stage">
           <div className="bf-board-3d" style={{ transform }}>
+            <img
+              className="bf-hero-pcb-render-image"
+              src="/images/boardforge-hero-pcb-render.png"
+              alt="Realistic BoardForge PCB render with USB-C, RJ45, debug header, mounted ICs, traces, vias, and gold-plated mounting holes"
+              draggable={false}
+            />
             <svg viewBox="0 0 740 430" role="img" aria-label="Premium PCB rendering">
               <defs>
                 <linearGradient id="boardMask" x1="0" x2="1" y1="0" y2="1">

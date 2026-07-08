@@ -2248,8 +2248,10 @@ a {
 }
 
 .bf-board-3d {
+  position: relative;
   transform-style: preserve-3d;
   transition: transform 180ms ease, filter 180ms ease;
+  animation: bfHeroPcbFloat 7.5s ease-in-out infinite;
 }
 
 .bf-board-3d svg {
@@ -2257,6 +2259,72 @@ a {
   filter:
     drop-shadow(0 32px 38px rgba(0, 0, 0, 0.52))
     drop-shadow(0 0 18px rgba(121, 246, 199, 0.08));
+}
+
+.bf-hero-pcb-render-image {
+  position: relative;
+  z-index: 3;
+  display: block;
+  width: min(118%, 1120px);
+  max-width: none;
+  margin: 0 0 0 50%;
+  user-select: none;
+  pointer-events: none;
+  border-radius: 18px;
+  transform: translateX(-50%) translateZ(44px) rotateX(1deg);
+  filter:
+    drop-shadow(0 42px 42px rgba(0, 0, 0, 0.58))
+    drop-shadow(0 0 30px rgba(121, 246, 199, 0.1));
+}
+
+.bf-board-stage .bf-board-3d > svg {
+  display: none;
+}
+
+.bf-board-3d::before,
+.bf-board-3d::after {
+  content: "";
+  position: absolute;
+  inset: 4% 0 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bf-board-3d::before {
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 44%), rgba(255, 255, 255, 0.16), transparent 18%),
+    linear-gradient(110deg, transparent 8%, rgba(255, 255, 255, 0.12) 38%, transparent 62%);
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  transform: translateZ(72px);
+  mask-image: radial-gradient(ellipse at center, #000 0 42%, transparent 74%);
+  animation: bfHeroPcbGlint 6.5s ease-in-out infinite;
+}
+
+.bf-board-3d::after {
+  top: auto;
+  bottom: 0;
+  height: 38%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.62), transparent 68%);
+  filter: blur(18px);
+  opacity: 0.7;
+  transform: translateZ(-20px) translateY(26px) scaleX(0.9);
+}
+
+.bf-hero-visual:hover .bf-hero-pcb-render-image {
+  filter:
+    drop-shadow(0 50px 50px rgba(0, 0, 0, 0.64))
+    drop-shadow(0 0 38px rgba(121, 246, 199, 0.15));
+}
+
+@keyframes bfHeroPcbFloat {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+
+@keyframes bfHeroPcbGlint {
+  0%, 100% { opacity: 0.28; transform: translateZ(72px) translateX(-4%); }
+  48% { opacity: 0.62; transform: translateZ(72px) translateX(5%); }
 }
 
 .bf-board-edge-layer {
