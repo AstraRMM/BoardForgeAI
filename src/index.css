@@ -1970,7 +1970,8 @@ a {
 }
 
 .bf-sourcing-grid {
-  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  grid-template-columns: 1fr;
+  gap: clamp(18px, 2.6vw, 34px);
 }
 
 .bf-trace-map.bf-supplier-network {
@@ -2079,7 +2080,9 @@ a {
 .bf-sourcing-render-card {
   position: relative;
   overflow: hidden;
-  padding: clamp(14px, 2vw, 22px);
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding: clamp(10px, 1.3vw, 16px);
   border: 1px solid rgba(78, 220, 255, 0.22);
   border-radius: 14px;
   background:
@@ -2099,7 +2102,7 @@ a {
   background:
     linear-gradient(112deg, transparent 28%, rgba(92, 232, 255, 0.09) 44%, transparent 58%),
     radial-gradient(circle at 48% 52%, rgba(0, 229, 255, 0.08), transparent 34%);
-  opacity: 0.55;
+  opacity: 0.34;
   animation: bfSourcingAmbientSweep 9s ease-in-out infinite;
 }
 
@@ -2125,7 +2128,7 @@ a {
     linear-gradient(90deg, transparent 0 22%, rgba(71, 231, 255, 0.15) 48%, transparent 74%),
     radial-gradient(circle at 48% 78%, rgba(86, 231, 255, 0.12), transparent 20%);
   mix-blend-mode: screen;
-  opacity: 0.34;
+  opacity: 0.2;
   transform: translateX(-70%);
   animation: bfSourcingLineSweep 6.8s ease-in-out infinite;
 }
@@ -2135,7 +2138,7 @@ a {
     linear-gradient(rgba(78, 220, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(78, 220, 255, 0.035) 1px, transparent 1px);
   background-size: 44px 44px;
-  opacity: 0.18;
+  opacity: 0.08;
 }
 
 .bf-sourcing-render-image {
@@ -2147,10 +2150,11 @@ a {
   user-select: none;
   pointer-events: none;
   filter:
-    saturate(1.04)
-    contrast(1.03)
-    drop-shadow(0 34px 44px rgba(0, 0, 0, 0.4));
-  transform: scale(1.006);
+    brightness(1.12)
+    saturate(1.08)
+    contrast(1.08)
+    drop-shadow(0 34px 44px rgba(0, 0, 0, 0.36));
+  transform: scale(1.002);
   animation: bfSourcingDiagramFloat 8s ease-in-out infinite;
 }
 
@@ -2203,12 +2207,12 @@ a {
 
 @keyframes bfSourcingDiagramFloat {
   0%, 100% {
-    transform: scale(1.006);
-    filter: saturate(1.04) contrast(1.03) drop-shadow(0 34px 44px rgba(0, 0, 0, 0.4));
+    transform: scale(1.002);
+    filter: brightness(1.12) saturate(1.08) contrast(1.08) drop-shadow(0 34px 44px rgba(0, 0, 0, 0.36));
   }
   50% {
-    transform: scale(1.018);
-    filter: saturate(1.08) contrast(1.04) drop-shadow(0 40px 52px rgba(0, 0, 0, 0.48));
+    transform: scale(1.008);
+    filter: brightness(1.16) saturate(1.12) contrast(1.1) drop-shadow(0 40px 52px rgba(0, 0, 0, 0.44));
   }
 }
 
@@ -2250,11 +2254,18 @@ a {
 }
 
 .bf-sourcing-panel {
+  display: grid;
   gap: 11px;
-  padding: 22px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding: clamp(14px, 1.6vw, 20px);
 }
 
 .bf-sourcing-panel div {
+  display: grid;
+  min-height: 72px;
+  align-content: center;
   border-color: rgba(78, 220, 255, 0.13);
   border-radius: 10px;
   background:
@@ -2272,6 +2283,8 @@ a {
 
 .bf-sourcing-panel strong {
   color: #dffaf2;
+  font-size: clamp(12px, 0.86vw, 14px);
+  line-height: 1.25;
 }
 
 .bf-footer-cta {
@@ -2288,8 +2301,18 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .bf-sourcing-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .bf-flow-rail {
     min-height: 72px;
+  }
+}
+
+@media (max-width: 640px) {
+  .bf-sourcing-panel {
+    grid-template-columns: 1fr;
   }
 }
 
