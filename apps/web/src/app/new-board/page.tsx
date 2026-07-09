@@ -27,6 +27,14 @@ function NewBoardCommandCenter() {
           </div>
         </div>
         <div className="bf-new-board-preview" aria-label="BoardForge intake preview">
+          <div className="bf-new-board-render-stage">
+            <img
+              className="bf-new-board-render-image"
+              src="/images/boardforge-intake-board-render.png"
+              alt="Realistic routed bare PCB preview with gold traces and mounting holes"
+              draggable={false}
+            />
+          </div>
           <div className="bf-new-board-preview-grid">
             {[
               ['01', 'Requirements', 'power, connectors, use case'],

@@ -312,42 +312,19 @@ function FeatureCard({ title, body, Icon }: { title: string; body: string; Icon:
 
 function AnimatedPCBTraces() {
   return (
-    <div className="bf-trace-map bf-supplier-network" aria-hidden="true">
-      <span className="network-node bom"><strong>BOM</strong><em>normalized line items</em></span>
-      <span className="network-node digikey"><strong>DigiKey</strong><em>OAuth live data</em></span>
-      <span className="network-node mouser"><strong>Mouser</strong><em>live search API</em></span>
-      <span className="network-node alt"><strong>Alternatives</strong><em>ranked drop-in risk</em></span>
-      <span className="network-node quote"><strong>Quote readiness</strong><em>MOQ / lifecycle / stock</em></span>
-      <span className="network-node risk"><strong>No fake stock</strong><em>blocked states stay visible</em></span>
-      <svg viewBox="0 0 760 360">
-        <defs>
-          <linearGradient id="supplierTrace" x1="0" x2="1">
-            <stop stopColor="#45e4ff" />
-            <stop offset="0.55" stopColor="#75f7d1" />
-            <stop offset="1" stopColor="#e0a650" />
-          </linearGradient>
-          <filter id="supplierGlow">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <path className="supplier-rail ghost" d="M116 158 H662" />
-        <path className="main-bus" d="M116 158 H224" />
-        <path className="main-bus delay" d="M272 158 H380" />
-        <path className="main-bus copper" d="M428 158 H536" />
-        <path className="main-bus mint" d="M584 158 H690" />
-        <path className="supplier-subrail" d="M228 158 C248 104 282 104 304 158 C326 214 360 214 380 158" />
-        <path className="supplier-subrail copper" d="M428 158 C450 116 490 116 512 158" />
-        <circle className="network-pulse" cx="224" cy="158" r="5" />
-        <circle className="network-pulse delay" cx="380" cy="158" r="5" />
-        <circle className="network-pulse slow" cx="536" cy="158" r="5" />
-      </svg>
-      <div className="supplier-proof-strip">
-        <span>Stock verified</span>
-        <span>Lifecycle</span>
-        <span>Risk notes</span>
-        <span>Datasheets</span>
-        <span>No fake stock</span>
+    <div className="bf-sourcing-render-card" aria-label="Live supplier verification workflow diagram">
+      <div className="bf-sourcing-render-stage">
+        <img
+          className="bf-sourcing-render-image"
+          src="/images/boardforge-sourcing-command-render.png"
+          alt="BoardForge sourcing command center showing BOM input, DigiKey, Mouser, stock verification, risk review, alternatives, quote readiness, datasheet links, and no fake stock evidence"
+          draggable={false}
+        />
+        <span className="bf-sourcing-scan scan-a" />
+        <span className="bf-sourcing-scan scan-b" />
+        <span className="bf-sourcing-pulse pulse-a" />
+        <span className="bf-sourcing-pulse pulse-b" />
+        <span className="bf-sourcing-pulse pulse-c" />
       </div>
     </div>
   )
@@ -396,44 +373,18 @@ function CustomOutlineShowcase() {
         <AnimatedCTAButton href="/custom-board-generator"><PenTool size={17} /> Open Custom Generator</AnimatedCTAButton>
       </div>
       <div className="bf-outline-card">
-        <svg viewBox="0 0 520 320" role="img" aria-label="Custom outline preview">
-          <defs>
-            <linearGradient id="outlineMask" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0" stopColor="#14663f" />
-              <stop offset="1" stopColor="#073a25" />
-            </linearGradient>
-            <filter id="outlineShadow" x="-20%" y="-30%" width="140%" height="170%">
-              <feDropShadow dx="0" dy="20" stdDeviation="18" floodColor="#000000" floodOpacity="0.42" />
-            </filter>
-          </defs>
-          <path className="outline-shadow" filter="url(#outlineShadow)" d="M76 104 Q76 58 122 58 H286 Q326 58 348 92 L380 142 Q400 172 438 172 H458 Q492 172 492 206 V252 Q492 286 458 286 H120 Q76 286 76 242 V218 Q76 196 54 184 Q32 172 32 142 V132 Q32 110 54 106 Z" />
-          <path className="outline-board" d="M78 92 Q78 50 120 50 H286 Q326 50 348 84 L380 134 Q400 164 438 164 H458 Q492 164 492 198 V244 Q492 278 458 278 H120 Q78 278 78 234 V210 Q78 188 56 176 Q34 164 34 134 V124 Q34 102 56 98 Z" />
-          <path className="outline-internal-plane" d="M98 110 H278 C306 110 320 130 336 154 L350 176 H462 V256 H118 V218 C94 205 78 190 70 170 V126 Z" />
-          <path className="outline-edge-highlight" d="M98 86 H284 C314 86 328 106 345 132 L364 160" />
-          <path className="outline-keepout" d="M104 114 H156 V166 H104 Z" />
-          <path className="outline-keepout antenna" d="M345 84 H420 V132 H374 C362 116 354 101 345 84 Z" />
-          {[
-            [118, 96],
-            [456, 98],
-            [118, 236],
-            [456, 238],
-          ].map(([x, y]) => <g key={`${x}-${y}`}><circle className="outline-hole-ring" cx={x} cy={y} r="16" /><circle className="outline-hole-core" cx={x} cy={y} r="8" /></g>)}
-          <rect className="outline-part" x="218" y="138" width="82" height="56" rx="7" />
-          <rect className="outline-part small" x="382" y="166" width="64" height="40" rx="6" />
-          <rect className="outline-part metal" x="110" y="186" width="54" height="28" rx="5" />
-          <rect className="outline-part micro" x="320" y="218" width="38" height="22" rx="5" />
-          <rect className="outline-part micro" x="176" y="112" width="44" height="24" rx="5" />
-          <path className="outline-route" d="M156 140 H218 M300 164 H382 M258 194 V240 H456" />
-          <path className="outline-route thin" d="M164 200 C206 214 224 230 258 240 M300 151 C330 142 358 146 382 166" />
-          <path className="outline-route glow" d="M214 124 C266 128 294 148 300 164 M258 240 C286 232 306 226 320 229" />
-          {[78, 120, 286, 348, 380, 438, 492, 458, 120].map((x, index) => {
-            const y = [92, 50, 50, 84, 134, 164, 198, 278, 278][index]
-            return <circle key={`${x}-${index}`} className="outline-anchor" cx={x} cy={y} r="4" />
-          })}
-          <text className="outline-callout" x="104" y="108">validated keepout</text>
-          <text className="outline-callout" x="326" y="80">antenna edge intent</text>
-          <text x="84" y="306">routeability score 92 / all holes inside outline</text>
-        </svg>
+        <div className="bf-outline-render-stage">
+          <img
+            className="bf-outline-render-image"
+            src="/images/boardforge-outline-render.png"
+            alt="Realistic custom bare PCB outline with gold-plated mounting holes, green solder mask, and routed board contour"
+            draggable={false}
+          />
+        </div>
+        <div className="bf-outline-render-status">
+          <span>Edge.Cuts-ready contour</span>
+          <strong>5 holes verified inside outline</strong>
+        </div>
       </div>
     </section>
   )
