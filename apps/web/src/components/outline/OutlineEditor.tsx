@@ -16,6 +16,16 @@ type AutoFixProposal = {
   before: ValidationResult
   after: ValidationResult
 }
+type BoardMetrics = {
+  dimensionsMm: { width: number; height: number }
+  boundingBoxMm: { minX: number; minY: number; maxX: number; maxY: number }
+  areaMm2: number
+  areaCm2: number
+  perimeterMm: number
+  outlinePointCount: number
+  mountingHoleCount: number
+  holesInsideOutline: number
+}
 type ValidationResult = {
   valid: boolean
   routeability: number
@@ -52,12 +62,14 @@ export function OutlineEditor() {
   const [mode, setMode] = useState<Mode>('select')
   const [status, setStatus] = useState<string>('Ready - choose a preset, edit points, or draw a custom outline.')
   const [copied, setCopied] = useState(false)
+  const [showPromptPanel, setShowPromptPanel] = useState(false)
   const [autoFixProposal, setAutoFixProposal] = useState<AutoFixProposal | null>(null)
 
   const box = useMemo(() => bounds(points), [points])
   const viewBox = `${box.minX - 10} ${box.minY - 10} ${Math.max(36, box.width + 20)} ${Math.max(36, box.height + 20)}`
   const validation = useMemo(() => validateOutline(points, holes), [points, holes])
-  const prompt = useMemo(() => buildCodexPrompt({ preset, points, holes, validation }), [preset, points, holes, validation])
+  const metrics = useMemo(() => buildBoardMetrics(points, holes), [points, holes])
+  const prompt = useMemo(() => buildCodexPrompt({ preset, points, holes, validation, metrics }), [preset, points, holes, validation, metrics])
   const statusTone = validation.valid ? 'valid' : 'blocked'
   const areaMm2 = useMemo(() => Math.abs(polygonArea(points)), [points])
   const edgeLength = useMemo(() => totalEdgeLength(points), [points])
@@ -293,21 +305,85 @@ export function OutlineEditor() {
     }
   }
 
-  function downloadSeed() {
-    const seed = { schema: 'boardforge.custom-outline-project-seed.web.v2', preset, outline: points, holes, validation, prompt }
-    const blob = new Blob([JSON.stringify(seed, null, 2)], { type: 'application/json' })
+  async function downloadSeed() {
+    const { default: JSZip } = await import('jszip')
+    const outlinePackage = buildOutlinePackage({ preset, points, holes, validation, metrics, prompt })
+    const zip = new JSZip()
+    zip.file('manifest.json', JSON.stringify({
+      schema: 'boardforge.custom-outline.package-manifest.v1',
+      packageId: outlinePackage.packageId,
+      createdAt: outlinePackage.createdAt,
+      preset,
+      validationStatus: validation.valid ? 'valid_browser_outline' : 'blocked_browser_outline',
+      files: [
+        'boardforge-outline-package.json',
+        'codex-prompt.txt',
+        'edge-cuts-outline.json',
+        'validation-report.json',
+        'README.txt',
+      ],
+    }, null, 2))
+    zip.file('boardforge-outline-package.json', JSON.stringify(outlinePackage, null, 2))
+    zip.file('codex-prompt.txt', prompt)
+    zip.file('edge-cuts-outline.json', JSON.stringify({
+      schema: 'boardforge.edge-cuts-outline.v1',
+      units: 'mm',
+      outlinePointsMm: points,
+      mountingHolesMm: holes,
+      boardDimensionsMm: metrics.dimensionsMm,
+      boundingBoxMm: metrics.boundingBoxMm,
+    }, null, 2))
+    zip.file('validation-report.json', JSON.stringify({
+      schema: 'boardforge.browser-outline-validation.v1',
+      validation,
+      metrics,
+      note: validation.valid
+        ? 'Browser geometry checks passed. KiCad DRC/ERC still require the local BoardForge engine.'
+        : 'Browser geometry checks are blocked. Run Auto-Fix Geometry or edit the selected points/holes before KiCad handoff.',
+    }, null, 2))
+    zip.file('README.txt', [
+      'BoardForge Custom Outline Package',
+      '',
+      'This ZIP was generated in-browser from the custom board generator.',
+      'It contains exact outline points in millimeters, mounting hole definitions, browser validation evidence, and the Codex prompt.',
+      '',
+      'Important:',
+      '- This is an outline handoff package, not a fake manufacturing-ready package.',
+      '- KiCad DRC/ERC and real Edge.Cuts project generation require the BoardForge local engine or Codex plugin.',
+      '- If validationStatus is blocked_browser_outline, repair the geometry before generating KiCad files.',
+    ].join('\n'))
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'BoardForge_Custom_Outline_Project_Seed.json'
+    link.download = `${outlinePackage.packageId}.zip`
+    link.style.display = 'none'
+    document.body.appendChild(link)
     link.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url)
+      link.remove()
+    }, 3000)
+    setStatus(`Downloaded ${outlinePackage.packageId}.zip with exact outline, validation report, and Codex prompt.`)
   }
 
   async function copyPrompt() {
-    await navigator.clipboard.writeText(prompt)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1400)
+    setShowPromptPanel(true)
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopied(true)
+      setStatus('Copied exact BoardForge Codex prompt with dimensions, points, holes, and validation blockers.')
+      window.setTimeout(() => setCopied(false), 1400)
+    } catch {
+      const copiedWithFallback = copyTextFallback(prompt)
+      if (copiedWithFallback) {
+        setCopied(true)
+        setStatus('Copied exact BoardForge Codex prompt with dimensions, points, holes, and validation blockers.')
+        window.setTimeout(() => setCopied(false), 1400)
+        return
+      }
+      setStatus('Clipboard access was blocked by the browser, so the exact Codex prompt is open below and included in codex-prompt.txt inside the ZIP.')
+    }
   }
 
   return (
@@ -469,14 +545,28 @@ export function OutlineEditor() {
             <b>Codex handoff ready</b>
             <p>
               Exact outline points, mounting holes, connector intent, and validation requirements are packaged for the
-              BoardForge plugin when you copy the prompt or download the seed.
+              BoardForge plugin when you copy the prompt or download the outline package.
             </p>
           </div>
           <button type="button" onClick={copyPrompt}>
             <ClipboardCopy size={15} /> {copied ? 'Copied' : 'Copy prompt'}
           </button>
-          <button type="button" onClick={downloadSeed}>Download seed JSON</button>
+          <button type="button" onClick={downloadSeed}>Download outline package</button>
         </div>
+        {showPromptPanel && (
+          <div className="bf-prompt-panel">
+            <div className="bf-prompt-panel-head">
+              <b>Exact Codex prompt</b>
+              <button type="button" onClick={() => setShowPromptPanel(false)}>Close</button>
+            </div>
+            <textarea
+              readOnly
+              value={prompt}
+              onFocus={(event) => event.currentTarget.select()}
+              aria-label="Exact BoardForge Codex prompt"
+            />
+          </div>
+        )}
       </div>
     </section>
   )
@@ -567,23 +657,170 @@ function SelectionMenu({
   return null
 }
 
-function buildCodexPrompt({ preset, points, holes, validation }: { preset: string; points: Point[]; holes: Hole[]; validation: ValidationResult }) {
+function buildCodexPrompt({
+  preset,
+  points,
+  holes,
+  validation,
+  metrics,
+}: {
+  preset: string
+  points: Point[]
+  holes: Hole[]
+  validation: ValidationResult
+  metrics: BoardMetrics
+}) {
+  const payload = buildOutlinePayload({ preset, points, holes, validation, metrics })
   return `Use the BoardForge Codex Plugin to create an outline-only KiCad project from this custom board outline.
 
-Requirements:
+Critical rules:
 - Preserve every Edge.Cuts point exactly in millimeters.
-- Generate an empty schematic and a .kicad_pcb containing only the board outline, mounting holes, labels, and review notes.
-- Do not place components, route copper, or claim manufacturing readiness.
-- Validate self-intersection, hole edge clearance, component fit, routeability, and KiCad Edge.Cuts loadability.
-- If validation fails, stop and report exact blockers.
+- Use the dimensions, area, perimeter, and mounting holes from the JSON payload exactly.
+- Generate an empty schematic and a .kicad_pcb containing only the Edge.Cuts outline, mounting holes, optional mechanical labels, and review notes.
+- Do not place components, route copper, or claim DRC/ERC/manufacturing readiness from this browser package.
+- If browserValidation.status is blocked, stop before generating KiCad files and report the listed blockers.
+- If KiCad is available locally, load the generated board and validate Edge.Cuts geometry before export.
 
 Outline preset: ${preset}
+Dimensions: ${metrics.dimensionsMm.width} mm x ${metrics.dimensionsMm.height} mm
+Area: ${metrics.areaMm2} mm^2 (${metrics.areaCm2} cm^2)
+Perimeter: ${metrics.perimeterMm} mm
+Mounting holes: ${metrics.holesInsideOutline}/${metrics.mountingHoleCount} inside outline
 Browser validation: ${validation.valid ? 'valid' : `blocked - ${validation.blockers.join('; ')}`}
 
 JSON payload:
 \`\`\`json
-${JSON.stringify({ preset, outlinePointsMm: points, mountingHolesMm: holes, browserValidation: validation }, null, 2)}
+${JSON.stringify(payload, null, 2)}
 \`\`\``
+}
+
+function copyTextFallback(text: string) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', 'true')
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '0'
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.select()
+  try {
+    return document.execCommand('copy')
+  } catch {
+    return false
+  } finally {
+    document.body.removeChild(textarea)
+  }
+}
+
+function buildOutlinePackage({
+  preset,
+  points,
+  holes,
+  validation,
+  metrics,
+  prompt,
+}: {
+  preset: string
+  points: Point[]
+  holes: Hole[]
+  validation: ValidationResult
+  metrics: BoardMetrics
+  prompt: string
+}) {
+  const createdAt = new Date().toISOString()
+  const packageId = `BoardForge_Custom_Outline_${createdAt.replace(/[:.]/g, '-').replace('T', '_').replace('Z', 'Z')}`
+  return {
+    schema: 'boardforge.custom-outline-package.web.v1',
+    packageId,
+    createdAt,
+    source: 'BoardForge web custom board generator',
+    units: 'mm',
+    exactPromptFile: 'codex-prompt.txt',
+    contents: [
+      'manifest.json',
+      'boardforge-outline-package.json',
+      'codex-prompt.txt',
+      'edge-cuts-outline.json',
+      'validation-report.json',
+      'README.txt',
+    ],
+    payload: buildOutlinePayload({ preset, points, holes, validation, metrics }),
+    codexPrompt: prompt,
+  }
+}
+
+function buildOutlinePayload({
+  preset,
+  points,
+  holes,
+  validation,
+  metrics,
+}: {
+  preset: string
+  points: Point[]
+  holes: Hole[]
+  validation: ValidationResult
+  metrics: BoardMetrics
+}) {
+  return {
+    schema: 'boardforge.custom-outline.payload.v1',
+    units: 'mm',
+    preset,
+    board: {
+      dimensionsMm: metrics.dimensionsMm,
+      boundingBoxMm: metrics.boundingBoxMm,
+      areaMm2: metrics.areaMm2,
+      areaCm2: metrics.areaCm2,
+      perimeterMm: metrics.perimeterMm,
+      outlinePointCount: metrics.outlinePointCount,
+      mountingHoleCount: metrics.mountingHoleCount,
+      holesInsideOutline: metrics.holesInsideOutline,
+    },
+    outlinePointsMm: points.map((point, index) => ({ index: index + 1, x: roundMetric(point.x), y: roundMetric(point.y) })),
+    mountingHolesMm: holes.map((hole) => ({
+      ref: hole.ref,
+      x: roundMetric(hole.x),
+      y: roundMetric(hole.y),
+      diameterMm: roundMetric(hole.diameterMm),
+      keepoutMm: roundMetric(hole.keepoutMm ?? 1),
+      plating: hole.plating ?? 'plated',
+      locked: Boolean(hole.locked),
+      insideOutline: pointInPolygon(hole, points),
+      edgeClearanceMm: roundMetric(distanceToPolygonEdges(hole, points) - hole.diameterMm / 2),
+    })),
+    browserValidation: {
+      status: validation.valid ? 'valid' : 'blocked',
+      routeabilityScore: validation.routeability,
+      risk: validation.risk,
+      checks: validation.checks,
+      blockers: validation.blockers,
+    },
+  }
+}
+
+function buildBoardMetrics(points: Point[], holes: Hole[]): BoardMetrics {
+  const box = bounds(points)
+  const areaMm2 = roundMetric(Math.abs(polygonArea(points)))
+  return {
+    dimensionsMm: { width: roundMetric(box.width), height: roundMetric(box.height) },
+    boundingBoxMm: {
+      minX: roundMetric(box.minX),
+      minY: roundMetric(box.minY),
+      maxX: roundMetric(box.maxX),
+      maxY: roundMetric(box.maxY),
+    },
+    areaMm2,
+    areaCm2: roundMetric(areaMm2 / 100),
+    perimeterMm: roundMetric(totalEdgeLength(points)),
+    outlinePointCount: points.length,
+    mountingHoleCount: holes.length,
+    holesInsideOutline: holes.filter((hole) => pointInPolygon(hole, points)).length,
+  }
+}
+
+function roundMetric(value: number) {
+  return Number(value.toFixed(2))
 }
 
 function buildHoles(points: Point[], preset: string, count: number): Hole[] {

@@ -3633,6 +3633,51 @@ text.bf-silk.small {
   font-weight: 800;
 }
 
+.bf-prompt-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(124, 245, 208, 0.24);
+  border-radius: 12px;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(2, 12, 18, 0.96), rgba(3, 21, 27, 0.94)),
+    radial-gradient(circle at 88% 12%, rgba(91, 221, 255, 0.12), transparent 34%);
+}
+
+.bf-prompt-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bf-prompt-panel-head b {
+  color: #f7fffb;
+}
+
+.bf-prompt-panel-head button {
+  border: 1px solid rgba(100, 214, 255, 0.24);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #d6eef2;
+  background: rgba(7, 18, 26, 0.82);
+  font-weight: 800;
+}
+
+.bf-prompt-panel textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  border: 1px solid rgba(100, 214, 255, 0.22);
+  border-radius: 10px;
+  padding: 13px;
+  color: #dbf9f5;
+  background: rgba(2, 8, 12, 0.92);
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  outline: none;
+  white-space: pre;
+}
+
 .bf-outline-workbench.premium {
   width: min(1320px, 100%);
   padding: 22px;
