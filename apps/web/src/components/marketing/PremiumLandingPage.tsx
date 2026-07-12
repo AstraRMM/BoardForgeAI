@@ -136,7 +136,7 @@ function PremiumNav() {
         <nav id="bf-public-nav" className={open ? 'open' : ''} aria-label="Public navigation">
           {links.map(([label, href]) => <a href={href} key={label} onClick={() => setOpen(false)}>{label}</a>)}
         </nav>
-        <a className="bf-nav-cta" href="/dashboard">Launch App</a>
+        <a className="bf-nav-cta" href="/login">Launch App</a>
       </div>
     </header>
   )

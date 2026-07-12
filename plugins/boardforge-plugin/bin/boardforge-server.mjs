@@ -3,6 +3,7 @@ import http from 'node:http'
 import path from 'node:path'
 import { executeJob } from '../lib/jobs.mjs'
 import { detectKiCadCli } from '../lib/kicad-cli.mjs'
+import { localAuthStatus, logoutLocalEngine, pairLocalEngine, verifyLocalEngineSession } from '../lib/local-auth.mjs'
 
 function argValue(name) {
   const index = process.argv.indexOf(name)
@@ -147,6 +148,15 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && url.pathname === '/kicad/status') {
       return send(response, 200, await detectKiCadCli())
     }
+    if (request.method === 'GET' && url.pathname === '/auth/status') return send(response, 200, await localAuthStatus(workspace))
+    if (request.method === 'GET' && url.pathname === '/license/status') return send(response, 200, { status: 'requires_paired_account', localAuth: await localAuthStatus(workspace) })
+    if (request.method === 'GET' && url.pathname === '/plugin/status') return send(response, 200, { plugin: 'boardforge-codex-plugin', localAuth: await localAuthStatus(workspace) })
+    if (request.method === 'POST' && url.pathname === '/auth/pair') {
+      const body = await readJson(request)
+      return send(response, 200, await pairLocalEngine({ workspace, code: body.code, deviceName: body.deviceName || 'BoardForge Local Engine', origin: body.origin }))
+    }
+    if (request.method === 'POST' && url.pathname === '/auth/logout') return send(response, 200, await logoutLocalEngine(workspace))
+    if (request.method === 'POST' && (url.pathname === '/auth/refresh' || url.pathname === '/auth/heartbeat')) return send(response, 200, await verifyLocalEngineSession(workspace))
     const jobMatch = url.pathname.match(/^\/jobs\/([^/]+)$/)
     if (request.method === 'GET' && jobMatch) {
       const job = jobs.get(jobMatch[1])

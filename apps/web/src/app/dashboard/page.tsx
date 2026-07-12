@@ -1,52 +1,18 @@
-import dashboard from '../../sample-manifests/project-dashboard.json'
-import { ProjectStatusCard } from '../../components/ProjectStatusCard'
-import { filterDashboardPublishedProjects, filterLocalDraftProjects } from '../../lib/boardforge-manifest'
+import Link from 'next/link'
+import { getAuthEnvironment } from '../../lib/auth'
+
+const workspaceCards = [
+  ['Projects', 'Local projects appear after you pair the desktop engine.', 'Open projects', '/projects'],
+  ['New board', 'Capture a board brief or create an Edge.Cuts outline.', 'Start a board', '/new-board'],
+  ['Plugin pairing', 'Pair Codex and the local engine with a short-lived code.', 'Connect plugin', '/plugin/connect'],
+  ['Evidence', 'Review local checks, reports, sourcing state, and export gates.', 'View evidence', '/evidence'],
+]
 
 export default function DashboardPage() {
-  const publishedProjects = filterDashboardPublishedProjects(dashboard.projects as any)
-  const localDrafts = filterLocalDraftProjects(dashboard.projects as any)
-  return (
-    <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
-      <header className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-semibold">BoardForge Dashboard</h1>
-        <p className="mt-2 text-slate-400">Manifest-driven project status from the local BoardForge engine.</p>
-      </header>
-      <section className="mx-auto mt-6 grid max-w-6xl gap-4 md:grid-cols-3">
-        <Summary label="Projects" value={dashboard.summary.totalProjects} />
-        <Summary label="Manufacturing Ready" value={dashboard.summary.manufacturingReady} />
-        <Summary label="Needs Routing" value={dashboard.summary.needsRouting} />
-      </section>
-      <section className="mx-auto mt-6 max-w-6xl rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
-        <p className="text-sm uppercase tracking-wide text-emerald-300">Latest engine proof</p>
-        <h2 className="mt-1 text-xl font-semibold">Dense-control DRC 10 to manufacturing ZIP</h2>
-        <p className="mt-2 text-sm text-emerald-100">
-          BoardForge physically mutated KiCad copper and silkscreen, committed 6/6 repair transactions,
-          and exported a manufacturing ZIP only after DRC 0 / ERC 0 / unconnected 0.
-        </p>
-      </section>
-      <section className="mx-auto mt-6 grid max-w-6xl gap-4 lg:grid-cols-2">
-        {(publishedProjects.length ? publishedProjects : dashboard.projects).map((project) => <ProjectStatusCard key={project.projectId} project={project as any} />)}
-      </section>
-      <section className="mx-auto mt-6 max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-4">
-        <p className="text-sm uppercase tracking-wide text-slate-400">Approved-only sync</p>
-        <h2 className="mt-1 text-xl font-semibold">Main dashboard shows published projects only</h2>
-        <p className="mt-2 text-sm text-slate-300">
-          Local drafts, failed experiments, and candidates stay in local review until a user explicitly approves publish.
-          Current local/draft artifacts detected: {localDrafts.length}.
-        </p>
-      </section>
-      <section className="mx-auto mt-6 max-w-6xl rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
-        <p className="text-sm uppercase tracking-wide text-cyan-300">Guided local workflow</p>
-        <h2 className="mt-1 text-xl font-semibold">Protected project workflow ready</h2>
-        <p className="mt-2 text-sm text-cyan-100">
-          Replay prompt intake, brief approval, protected candidate creation, publish confirmation, sandbox repair evidence,
-          and sourcing status without pretending that unverified cloud execution happened.
-        </p>
-      </section>
-    </main>
-  )
-}
-
-function Summary({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-lg border border-slate-800 bg-slate-900 p-4"><p className="text-sm text-slate-400">{label}</p><p className="mt-1 font-mono text-2xl">{value}</p></div>
+  const auth = getAuthEnvironment()
+  return <main className="min-h-screen bg-[#050a12] text-slate-100"><header className="border-b border-slate-800 bg-[#070e18]"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5"><div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">BoardForge workspace</p><h1 className="mt-1 text-2xl font-semibold">Engineering command center</h1></div><Link href="/settings/plugin" className="rounded-md border border-cyan-400/40 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10">Plugin settings</Link></div></header><div className="mx-auto max-w-7xl px-6 py-10">
+    {!auth.ready && <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-5"><div><p className="font-semibold text-amber-100">Account services need configuration before this workspace can be used by testers.</p><p className="mt-1 text-sm text-amber-100/80">Missing: {auth.missing.join(', ')}. The local engine remains local; this page does not expose project files.</p></div><Link href="/setup" className="rounded-md bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950">Complete setup</Link></section>}
+    <section className="grid gap-6 lg:grid-cols-[1.35fr_.65fr]"><div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-900 to-[#08101c] p-7"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">Safe starting point</p><h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-tight">Create a board brief before anything touches KiCad.</h2><p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">BoardForge turns requirements into a reviewable local plan. Project creation, validation, repair, and export stay behind explicit approvals and local evidence.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/new-board" className="rounded-md bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950">New board</Link><Link href="/upload-kicad" className="rounded-md border border-slate-700 px-4 py-2.5 font-semibold text-slate-200 hover:border-cyan-400">Inspect existing KiCad project</Link></div></div><aside className="rounded-xl border border-slate-800 bg-slate-900/70 p-6"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Session status</p><dl className="mt-5 grid gap-4 text-sm"><div><dt className="text-slate-500">Website authentication</dt><dd className={auth.ready ? 'mt-1 font-semibold text-emerald-300' : 'mt-1 font-semibold text-amber-200'}>{auth.ready ? 'Configured' : 'Setup required'}</dd></div><div><dt className="text-slate-500">Local engine</dt><dd className="mt-1 font-semibold text-slate-200">Pair a desktop helper to inspect status</dd></div><div><dt className="text-slate-500">Manufacturing exports</dt><dd className="mt-1 font-semibold text-slate-200">Released only after local evidence passes</dd></div></dl></aside></section>
+    <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{workspaceCards.map(([title, body, action, href]) => <article key={title} className="flex min-h-56 flex-col rounded-lg border border-slate-800 bg-slate-900/50 p-5"><h3 className="text-lg font-semibold">{title}</h3><p className="mt-3 flex-1 text-sm leading-6 text-slate-400">{body}</p><Link href={href} className="mt-5 text-sm font-semibold text-cyan-300">{action} →</Link></article>)}</section>
+  </div></main>
 }
