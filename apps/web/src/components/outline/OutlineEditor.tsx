@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Layers3, MousePointer2, Pencil, Plus, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Wand2 } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
@@ -37,6 +37,7 @@ type ValidationResult = {
 const outlineArtifactSummary = 'Creates an exact Edge.Cuts seed, mechanical constraints, and validation notes for the local KiCad engine.'
 
 const presetPoints: Record<string, Point[]> = {
+  'blank-custom': [],
   'rounded-rectangle': [{ x: 4, y: 0 }, { x: 66, y: 0 }, { x: 70, y: 4 }, { x: 70, y: 41 }, { x: 66, y: 45 }, { x: 4, y: 45 }, { x: 0, y: 41 }, { x: 0, y: 4 }],
   'mounting-ears': [{ x: 8, y: 0 }, { x: 74, y: 0 }, { x: 82, y: 8 }, { x: 82, y: 19 }, { x: 78, y: 24 }, { x: 82, y: 29 }, { x: 82, y: 40 }, { x: 74, y: 48 }, { x: 8, y: 48 }, { x: 0, y: 40 }, { x: 0, y: 29 }, { x: 4, y: 24 }, { x: 0, y: 19 }, { x: 0, y: 8 }],
   'octagon-chamfered': [{ x: 8, y: 0 }, { x: 52, y: 0 }, { x: 60, y: 8 }, { x: 60, y: 34 }, { x: 52, y: 42 }, { x: 8, y: 42 }, { x: 0, y: 34 }, { x: 0, y: 8 }],
@@ -53,9 +54,9 @@ const presetPoints: Record<string, Point[]> = {
 export function OutlineEditor() {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const drawingRef = useRef(false)
-  const [preset, setPreset] = useState('mounting-ears')
-  const [points, setPoints] = useState<Point[]>(clonePoints(presetPoints[preset]))
-  const [holes, setHoles] = useState<Hole[]>(() => buildHoles(presetPoints[preset], preset, 4))
+  const [preset, setPreset] = useState('blank-custom')
+  const [points, setPoints] = useState<Point[]>([])
+  const [holes, setHoles] = useState<Hole[]>([])
   const [selectedObject, setSelectedObject] = useState<SelectedObject>(null)
   const [multiSelect, setMultiSelect] = useState(false)
   const [snap, setSnap] = useState(true)
@@ -79,15 +80,102 @@ export function OutlineEditor() {
   const selectedHole = selectedObject?.type === 'hole' ? holes.find((hole) => hole.ref === selectedObject.ref) || null : null
   const selectedAnchor = selectedObject?.type === 'point' ? points[selectedObject.index] : selectedHole
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.tagName === 'SELECT' || target?.isContentEditable
+      if (isTyping) return
+
+      const key = event.key.toLowerCase()
+      if (key === 'escape') {
+        setSelectedObject(null)
+        setStatus('Selection cleared.')
+        return
+      }
+      if (key === 'a') {
+        event.preventDefault()
+        setMode('add-point')
+        setStatus('Add point mode active. Click an edge to insert a precise outline vertex.')
+        return
+      }
+      if (key === 'p') {
+        event.preventDefault()
+        setMode('add-point')
+        setStatus('Add point mode active. Click an edge to insert a precise outline vertex.')
+        return
+      }
+      if (key === 'm') {
+        event.preventDefault()
+        setMode('select')
+        setStatus(selectedObject ? 'Move mode active. Drag the selected point or hole.' : 'Move mode active. Select a point or hole, then drag it.')
+        return
+      }
+      if (key === 'd' && selectedObject) {
+        event.preventDefault()
+        duplicateSelected()
+        return
+      }
+      if ((key === 'delete' || key === 'backspace') && selectedObject) {
+        event.preventDefault()
+        deleteSelected()
+        return
+      }
+      if (key === 's' && selectedObject) {
+        event.preventDefault()
+        snapSelected()
+        return
+      }
+      if (key === 'h') {
+        event.preventDefault()
+        addHole()
+        return
+      }
+      if (key === 'f') {
+        event.preventDefault()
+        runAutoFixGeometry()
+        return
+      }
+      if (key === 'r') {
+        event.preventDefault()
+        resetCanvas()
+        return
+      }
+      if (key === 'c' && (event.ctrlKey || event.metaKey)) {
+        return
+      }
+      if (key === 'c') {
+        event.preventDefault()
+        void copyPrompt()
+        return
+      }
+      if (key === 'v') {
+        event.preventDefault()
+        void callLocal('validate')
+        return
+      }
+      if (key === 'g') {
+        event.preventDefault()
+        void downloadSeed()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
+
   function choosePreset(nextPreset: string) {
     setPreset(nextPreset)
-    const nextPoints = clonePoints(presetPoints[nextPreset] || presetPoints['rounded-rectangle'])
+    const nextPoints = clonePoints(presetPoints[nextPreset] || [])
     setPoints(nextPoints)
-    setHoles(buildHoles(nextPoints, nextPreset, nextPreset === 'drone-stack' ? 8 : 4))
+    setHoles(nextPreset === 'blank-custom' ? [] : buildHoles(nextPoints, nextPreset, 4))
     setSelectedObject(null)
     setAutoFixProposal(null)
     setMode('select')
-    setStatus(`Loaded ${labelForPreset(nextPreset)}. Outline is ready for edit and validation.`)
+    setStatus(nextPreset === 'blank-custom' ? 'Blank canvas ready. Add points or draw a custom outline.' : `Loaded ${labelForPreset(nextPreset)}. Outline is ready for edit and validation.`)
+  }
+
+  function resetCanvas() {
+    choosePreset(preset)
   }
 
   function canvasPoint(event: ReactPointerEvent<SVGSVGElement>) {
@@ -216,6 +304,10 @@ export function OutlineEditor() {
   }
 
   function addHole() {
+    if (points.length < 3) {
+      setStatus('Add at least three outline points before adding mounting holes.')
+      return
+    }
     const nextRef = `H${holes.length + 1}`
     const candidate = chooseNewHolePosition(points, holes)
     setHoles((current) => [...current, { ref: nextRef, ...candidate, diameterMm: 2.4, keepoutMm: 1, plating: 'plated' }])
@@ -252,6 +344,33 @@ export function OutlineEditor() {
     if (!hole) return
     updateHole(ref, { x: Math.round(hole.x), y: Math.round(hole.y) })
     setStatus(`${ref} snapped to the millimeter grid.`)
+  }
+
+  function deleteSelected() {
+    if (!selectedObject) return
+    if (selectedObject.type === 'point') {
+      deletePoint(selectedObject.index)
+    } else {
+      deleteHole(selectedObject.ref)
+    }
+  }
+
+  function duplicateSelected() {
+    if (!selectedObject) return
+    if (selectedObject.type === 'point') {
+      duplicatePoint(selectedObject.index)
+    } else {
+      duplicateHole(selectedObject.ref)
+    }
+  }
+
+  function snapSelected() {
+    if (!selectedObject) return
+    if (selectedObject.type === 'point') {
+      snapPoint(selectedObject.index)
+    } else {
+      snapHole(selectedObject.ref)
+    }
   }
 
   function runAutoFixGeometry() {
@@ -411,7 +530,7 @@ export function OutlineEditor() {
           <button type="button" className={snap ? 'active' : ''} onClick={() => setSnap(!snap)}><Grid2X2 size={16} /> Snap</button>
           <button type="button" onClick={addHole}><ShieldCheck size={16} /> Add hole</button>
           <button type="button" onClick={runAutoFixGeometry}><Wand2 size={16} /> Auto-Fix Geometry</button>
-          <button type="button" onClick={() => choosePreset(preset)}><RotateCcw size={16} /> Reset</button>
+          <button type="button" onClick={resetCanvas}><RotateCcw size={16} /> Reset</button>
           <span>Units: mm</span>
         </aside>
         <div className="bf-outline-canvas-panel">
@@ -553,6 +672,21 @@ export function OutlineEditor() {
           </button>
           <button type="button" onClick={downloadSeed}>Download outline package</button>
         </div>
+        <div className="bf-outline-hotkeys" aria-label="Custom board generator keyboard shortcuts">
+          <b>Keyboard shortcuts</b>
+          <span><kbd>M</kbd> move selected</span>
+          <span><kbd>D</kbd> duplicate selected</span>
+          <span><kbd>Del</kbd> delete selected</span>
+          <span><kbd>S</kbd> snap selected</span>
+          <span><kbd>A</kbd>/<kbd>P</kbd> add point</span>
+          <span><kbd>H</kbd> add hole</span>
+          <span><kbd>F</kbd> auto-fix</span>
+          <span><kbd>R</kbd> reset preset/canvas</span>
+          <span><kbd>C</kbd> copy prompt</span>
+          <span><kbd>V</kbd> validate local</span>
+          <span><kbd>G</kbd> download package</span>
+          <span><kbd>Esc</kbd> clear selection</span>
+        </div>
         {showPromptPanel && (
           <div className="bf-prompt-panel">
             <div className="bf-prompt-panel-head">
@@ -681,7 +815,7 @@ Critical rules:
 - If browserValidation.status is blocked, stop before generating KiCad files and report the listed blockers.
 - If KiCad is available locally, load the generated board and validate Edge.Cuts geometry before export.
 
-Outline preset: ${preset}
+Outline preset: ${labelForPreset(preset)} (${preset})
 Dimensions: ${metrics.dimensionsMm.width} mm x ${metrics.dimensionsMm.height} mm
 Area: ${metrics.areaMm2} mm^2 (${metrics.areaCm2} cm^2)
 Perimeter: ${metrics.perimeterMm} mm
@@ -767,6 +901,7 @@ function buildOutlinePayload({
     schema: 'boardforge.custom-outline.payload.v1',
     units: 'mm',
     preset,
+    presetLabel: labelForPreset(preset),
     board: {
       dimensionsMm: metrics.dimensionsMm,
       boundingBoxMm: metrics.boundingBoxMm,
@@ -826,11 +961,17 @@ function roundMetric(value: number) {
 function buildHoles(points: Point[], preset: string, count: number): Hole[] {
   if (!points.length || count <= 0) return []
   if (preset === 'drone-stack') {
+    const box = bounds(points)
+    const center = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 }
+    const spacing = 30.5
+    const half = spacing / 2
     const stack = [
-      { ref: 'H20-1', x: 11, y: 11, diameterMm: 2.2 }, { ref: 'H20-2', x: 31, y: 11, diameterMm: 2.2 }, { ref: 'H20-3', x: 31, y: 31, diameterMm: 2.2 }, { ref: 'H20-4', x: 11, y: 31, diameterMm: 2.2 },
-      { ref: 'H30-1', x: 5.75, y: 5.75, diameterMm: 2.2 }, { ref: 'H30-2', x: 36.25, y: 5.75, diameterMm: 2.2 }, { ref: 'H30-3', x: 36.25, y: 36.25, diameterMm: 2.2 }, { ref: 'H30-4', x: 5.75, y: 36.25, diameterMm: 2.2 },
+      { ref: 'M3-1', x: center.x - half, y: center.y - half, diameterMm: 3.05, keepoutMm: 1.1 },
+      { ref: 'M3-2', x: center.x + half, y: center.y - half, diameterMm: 3.05, keepoutMm: 1.1 },
+      { ref: 'M3-3', x: center.x + half, y: center.y + half, diameterMm: 3.05, keepoutMm: 1.1 },
+      { ref: 'M3-4', x: center.x - half, y: center.y + half, diameterMm: 3.05, keepoutMm: 1.1 },
     ]
-    return stack.slice(0, count)
+    return stack.slice(0, Math.min(count, 4)).map((hole) => ({ ...hole, plating: 'plated' as const, locked: true }))
   }
   const box = bounds(points)
   const inset = Math.min(6, Math.max(3.2, Math.min(box.width, box.height) * 0.12))
@@ -853,6 +994,9 @@ function validateOutline(points: Point[], holes: Hole[]): ValidationResult {
   const intersections = countIntersections(points)
   const minEdge = points.length > 1 ? Math.min(...points.map((point, index) => distance(point, points[(index + 1) % points.length]))) : 0
   const duplicateCount = countDuplicatePoints(points)
+  const redundantPointCount = countRedundantPoints(points)
+  const minUsefulDimension = Math.min(box.width, box.height)
+  const aspectRatio = Math.max(box.width / Math.max(1, box.height), box.height / Math.max(1, box.width))
   const holesInside = holes.every((hole) => pointInPolygon(hole, points))
   const closestHoleClearance = holes.length ? Math.min(...holes.map((hole) => distanceToPolygonEdges(hole, points) - hole.diameterMm / 2)) : Number.POSITIVE_INFINITY
   const holesClear = holes.every((hole) => distanceToPolygonEdges(hole, points) >= Math.max(2.2, hole.diameterMm / 2 + (hole.keepoutMm ?? 1)))
@@ -863,23 +1007,31 @@ function validateOutline(points: Point[], holes: Hole[]): ValidationResult {
     { label: 'Minimum edge length', pass: minEdge >= 2, reason: minEdge >= 2 ? 'No tiny zero-length or near-zero Edge.Cuts segments.' : 'One or more outline edges are too short for reliable fabrication.' },
     { label: 'Board area', pass: area >= 280, reason: area >= 280 ? 'Mechanical area is large enough for a real outline seed.' : 'Board area is too small for reliable connector, hole, and route planning.' },
     { label: 'Hole clearance OK', pass: holesInside && holesClear, reason: holesInside && holesClear ? `Closest finished hole-to-edge clearance is ${Number.isFinite(closestHoleClearance) ? closestHoleClearance.toFixed(2) : 'n/a'} mm.` : 'One or more mounting holes are outside the board or too close to Edge.Cuts.' },
-    { label: 'Aspect ratio OK', pass: box.width / Math.max(1, box.height) < 5 && box.height / Math.max(1, box.width) < 5, reason: 'Outline aspect ratio is checked for routeability.' },
+    { label: 'Redundant points OK', pass: redundantPointCount === 0, reason: redundantPointCount === 0 ? 'No unnecessary collinear or clustered outline vertices detected.' : `${redundantPointCount} redundant point(s) should be removed or smoothed.` },
+    { label: 'Aspect ratio OK', pass: aspectRatio < 5, reason: 'Outline aspect ratio is checked for routeability.' },
   ]
   const blockers = checks.filter((check) => !check.pass).map((check) => check.reason)
-  const narrowPenalty = Math.min(18, Math.max(0, 16 - Math.min(box.width, box.height)))
-  const complexityPenalty = Math.max(0, points.length - 8) * 1.4
-  const routeability = blockers.length ? Math.max(0, Math.round(58 - blockers.length * 12 - complexityPenalty)) : Math.max(45, Math.min(100, Math.round(96 - complexityPenalty - narrowPenalty)))
+  if (points.length < 3) {
+    return { valid: false, routeability: 0, risk: 'Blocked', checks, blockers }
+  }
+  const narrowPenalty = minUsefulDimension < 24 ? Math.min(20, (24 - minUsefulDimension) * 1.4) : 0
+  const aspectPenalty = aspectRatio > 3.2 ? Math.min(12, (aspectRatio - 3.2) * 5) : 0
+  const holePenalty = holes.length ? Math.max(0, 4 - holes.length) * 1.5 : 0
+  const routeability = blockers.length
+    ? Math.max(0, Math.round(68 - blockers.length * 10 - redundantPointCount * 3 - narrowPenalty - aspectPenalty))
+    : Math.max(60, Math.min(100, Math.round(100 - redundantPointCount * 4 - narrowPenalty - aspectPenalty - holePenalty)))
   const risk = blockers.length ? 'Blocked' : routeability > 78 ? 'Low' : routeability > 60 ? 'Medium' : 'High'
   return { valid: blockers.length === 0, routeability, risk, checks, blockers }
 }
 
 function buildAutoFixProposal(points: Point[], holes: Hole[], before: ValidationResult): AutoFixProposal {
   const changes: string[] = []
-  let nextPoints = removeDuplicateAndTinyEdges(points, changes)
+  let nextPoints = removeDuplicateTinyAndRedundantEdges(points, changes)
 
   if (countIntersections(nextPoints) > 0) {
     nextPoints = sortOutlineByAngle(nextPoints)
     changes.push('Reordered crossing outline vertices around the board centroid to remove self-intersections.')
+    nextPoints = removeDuplicateTinyAndRedundantEdges(nextPoints, changes)
   }
 
   if (nextPoints.length >= 3 && Math.abs(polygonArea(nextPoints)) < 280) {
@@ -888,7 +1040,7 @@ function buildAutoFixProposal(points: Point[], holes: Hole[], before: Validation
   }
 
   const centroid = polygonCentroid(nextPoints)
-  const nextHoles = holes.map((hole) => {
+  const repairedHoles = holes.map((hole) => {
     let repaired = { ...hole }
     const minClearance = Math.max(2.2, repaired.diameterMm / 2 + (repaired.keepoutMm ?? 1))
     let attempts = 0
@@ -903,12 +1055,24 @@ function buildAutoFixProposal(points: Point[], holes: Hole[], before: Validation
     if (repaired.x !== hole.x || repaired.y !== hole.y) changes.push(`Moved ${hole.ref} inward to satisfy board outline and edge-clearance checks.`)
     return repaired
   })
+  let nextHoles = repairedHoles.filter((hole) => {
+    const minClearance = Math.max(2.2, hole.diameterMm / 2 + (hole.keepoutMm ?? 1))
+    const safe = pointInPolygon(hole, nextPoints) && distanceToPolygonEdges(hole, nextPoints) >= minClearance
+    if (!safe) changes.push(`Removed ${hole.ref} because it could not be repaired inside the outline with required edge clearance.`)
+    return safe
+  })
+
+  if (holes.length > 0 && nextHoles.length === 0 && nextPoints.length >= 3) {
+    const replacement = chooseNewHolePosition(nextPoints, [])
+    nextHoles = [{ ref: 'H1', ...replacement, diameterMm: 2.4, keepoutMm: 1, plating: 'plated' }]
+    changes.push('Created one safe replacement mounting hole because every original hole was outside the usable board area.')
+  }
 
   const after = validateOutline(nextPoints, nextHoles)
   return { points: nextPoints, holes: nextHoles, changes, before, after }
 }
 
-function removeDuplicateAndTinyEdges(points: Point[], changes: string[]) {
+function removeDuplicateTinyAndRedundantEdges(points: Point[], changes: string[]) {
   const cleaned: Point[] = []
   points.forEach((point) => {
     const previous = cleaned[cleaned.length - 1]
@@ -922,7 +1086,41 @@ function removeDuplicateAndTinyEdges(points: Point[], changes: string[]) {
     cleaned.pop()
     changes.push('Removed a closing duplicate point stacked on the first vertex.')
   }
-  return cleaned.length >= 3 ? cleaned : points
+  if (cleaned.length < 3) return points
+  const simplified = cleaned.filter((point, index) => {
+    const previous = cleaned[(index - 1 + cleaned.length) % cleaned.length]
+    const next = cleaned[(index + 1) % cleaned.length]
+    const nearlyCollinear = distanceToSegment(point, previous, next) < 0.55
+    const tinyAngle = cornerAngle(previous, point, next) > 172
+    if (nearlyCollinear || tinyAngle) {
+      changes.push(`Removed redundant point ${index + 1} that did not materially define the board outline.`)
+      return false
+    }
+    return true
+  })
+  return simplified.length >= 3 ? simplified : cleaned
+}
+
+function countRedundantPoints(points: Point[]) {
+  if (points.length < 4) return 0
+  let count = 0
+  points.forEach((point, index) => {
+    const previous = points[(index - 1 + points.length) % points.length]
+    const next = points[(index + 1) % points.length]
+    if (distanceToSegment(point, previous, next) < 0.55 || cornerAngle(previous, point, next) > 172) count += 1
+  })
+  return count
+}
+
+function cornerAngle(previous: Point, current: Point, next: Point) {
+  const ax = previous.x - current.x
+  const ay = previous.y - current.y
+  const bx = next.x - current.x
+  const by = next.y - current.y
+  const magnitude = Math.hypot(ax, ay) * Math.hypot(bx, by)
+  if (!magnitude) return 180
+  const cosine = clamp((ax * bx + ay * by) / magnitude, -1, 1)
+  return (Math.acos(cosine) * 180) / Math.PI
 }
 
 function sortOutlineByAngle(points: Point[]) {

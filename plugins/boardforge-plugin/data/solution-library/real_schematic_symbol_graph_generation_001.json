@@ -1,0 +1,72 @@
+{
+  "id": "real_schematic_symbol_graph_generation_001",
+  "createdAt": "2026-06-28",
+  "updatedAt": "2026-06-28",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_C",
+  "boardType": "synthetic-robotics-sensor-hub",
+  "problemType": "schematic_generation",
+  "problemSignature": {
+    "prior": "schematic_shell_only"
+  },
+  "rootCause": "BoardForge could create and route a clean synthetic PCB, but the schematic was documentation-shell style instead of a connected KiCad symbol graph.",
+  "fixSummary": "Generate real KiCad schematic symbols, refs, values, footprint fields, datasheet fields, net labels, and schematic-to-PCB consistency from a shared architecture model.",
+  "implementation": {
+    "filesChanged": [
+      "lib/schematic/real-schematic-symbol-graph.mjs",
+      "tests/real-schematic-symbol-graph.test.mjs"
+    ],
+    "functionsAdded": [
+      "parseKiCadSchematicSymbolGraph",
+      "validateRealSchematicSymbolGraph",
+      "compareSchematicGraphToPcbText"
+    ],
+    "testsAdded": [
+      "test:real-schematic-symbol-graph",
+      "test:schematic-to-pcb-netlist-consistency",
+      "test:symbol-footprint-field-completeness"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "synthetic-fixture",
+      "robotics-sensor-hub"
+    ],
+    "netRoles": [
+      "power",
+      "usb",
+      "can",
+      "i2c",
+      "uart",
+      "swd"
+    ],
+    "conditions": [
+      "new-project-generation"
+    ]
+  },
+  "recipe": [
+    "build shared architecture model",
+    "emit KiCad schematic symbols and net labels",
+    "generate PCB from same refs/nets",
+    "validate symbol footprint fields",
+    "compare schematic refs to PCB refs"
+  ],
+  "safetyRules": [
+    "do not fake ERC",
+    "do not export manufacturing unless DRC/ERC clean"
+  ],
+  "evidence": {
+    "before": {
+      "schematicStyle": "shell"
+    },
+    "after": {
+      "schematicStyle": "real-symbol-graph",
+      "drc": 0,
+      "erc": 0
+    },
+    "tests": [
+      "test:real-schematic-symbol-graph"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

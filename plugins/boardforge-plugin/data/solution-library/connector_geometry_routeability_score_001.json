@@ -1,0 +1,11 @@
+{
+  "id": "connector_geometry_routeability_score_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "More realistic/longer edge connector pad geometry consumed routing corridors and prevented FreeRouting from finishing.",
+  "fixSummary": "Connector footprint/pad geometry must be scored for routeability before selecting dense outline-aware placements; if connector geometry blocks routing, expand the corridor or choose a verified fixture footprint strategy.",
+  "evidence": {
+    "failedUnconnected": 23,
+    "completedUnconnected": 0
+  }
+}

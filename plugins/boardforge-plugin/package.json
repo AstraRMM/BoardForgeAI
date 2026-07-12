@@ -514,6 +514,8 @@
     "test:minimum-design-relaxation-report": "node --test --test-name-pattern \"minimum design relaxation report\" ./tests/*.test.mjs",
     "test:manual-copy-never-modified": "node --test --test-name-pattern \"manual copy never modified\" ./tests/*.test.mjs",
     "boardforge:postroute-supervisor": "node ./bin/boardforge-postroute-supervisor.mjs",
+    "boardforge:real-board-proof": "node ./bin/boardforge-real-board-proof.mjs",
+    "test:real-board-proof": "node --test ./tests/real-board-proof.test.mjs",
     "test:esc-external-routing-workflow": "node --test --test-name-pattern \"ESC external routing workflow\" ./tests/*.test.mjs",
     "test:dsn-export-check": "node --test --test-name-pattern \"DSN export check\" ./tests/*.test.mjs",
     "test:ses-import-check": "node --test --test-name-pattern \"SES import check\" ./tests/*.test.mjs",

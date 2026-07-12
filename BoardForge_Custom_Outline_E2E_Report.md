@@ -2,8 +2,8 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_Custom_Outline_E2E_Report
-- generatedAt: 2026-07-08T01:55:21.359Z
+- generatedAt: 2026-07-11T02:25:47.757Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /custom-board-generator
-- proves: visual SVG editor visible; drone stack preset updates dimensions; points/draw/delete/snap controls visible; draw interaction appends geometry without navigating away; validation chips visible; local validation/generation buttons visible; Codex handoff panel visible without raw prompt dump; blocked outline policy visible
+- proves: blank canvas is the default; drone preset uses four FC stack holes; selection opens a useful edit menu; draw interaction appends geometry without navigating away; validation chips visible; local validation/generation buttons visible; exact Codex prompt can be generated; keyboard shortcuts are visible
 - limitation: Browser test does not require a running localhost engine; local engine outline routes are covered by node tests.

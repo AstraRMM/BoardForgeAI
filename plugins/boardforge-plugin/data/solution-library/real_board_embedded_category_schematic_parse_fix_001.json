@@ -1,0 +1,10 @@
+{
+  "id": "real_board_embedded_category_schematic_parse_fix_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "CATEGORY_PROOF_SCHEMATIC_HAS_TEXT_SHELL_OR_KICAD_CANNOT_LOAD_EMBEDDED_SYMBOL_GRAPH",
+  "detectionRule": "A BOM-backed proof schematic has zero symbol instances, KiCad ERC reports erc_command_failed, or named net labels are not attached to symbol pins.",
+  "rootCause": "The proof flow retained the outline-only schematic stub, while the first embedded connector writer used an invalid KiCad instance structure and label coordinates that did not reach the real pin endpoints.",
+  "fixStrategy": "Write an embedded BoardForge connector symbol graph, retain proper symbol/pin/instance records, and extend each pin to an outward named-net label using KiCad sheet coordinates.",
+  "regressionTest": "test:real-board-proof asserts every BOM-backed proof emits symbols and obtains a real ERC result; the schematic generator smoke check verifies KiCad loads the output.",
+  "futureAutoApplyRule": "Never replace a category proof schematic with a text-only manifest. Keep unresolved assets explicitly review-required, but generate parseable symbols and named-net connectivity before running ERC."
+}

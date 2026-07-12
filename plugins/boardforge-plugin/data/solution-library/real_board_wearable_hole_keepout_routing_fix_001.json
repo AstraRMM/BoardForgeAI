@@ -1,0 +1,11 @@
+{
+  "id": "real_board_wearable_hole_keepout_routing_fix_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "WEARABLE_PUCK_ROUTING_CROSSED_STRAP_HOLE_KEEP_OUTS",
+  "boardId": "tiny-wearable-sensor-puck",
+  "detectionRule": "A compact wearable proof has copper, vias, or solder-mask apertures intersecting a strap/mounting-hole keepout, or fails to connect its battery, sensor, MCU, and programming pads inside the puck envelope.",
+  "rootCause": "The real-board proof flow had mechanical output but no category-specific placed-reference, named-net, and routed-copper evidence for this board family.",
+  "fixStrategy": "Place the sensor in the lower-center corridor, reserve all strap-hole keepouts as routing obstacles, and use separate B.Cu corridors for I2C, 3V3, and GND. Verify every SMD pad changes layers through an explicit legal via.",
+  "regressionTest": "test:real-board-proof verifies category-specific placed refs, named nets, routed tracks, zero KiCad DRC errors, and no manufacturing ZIP claim.",
+  "futureAutoApplyRule": "Never promote category proof routing evidence beyond engineering review until a verified schematic graph, selected library assets, placement validation, sourcing, and category safety review are complete."
+}

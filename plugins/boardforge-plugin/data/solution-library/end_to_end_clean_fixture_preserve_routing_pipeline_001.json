@@ -1,0 +1,68 @@
+{
+  "id": "end_to_end_clean_fixture_preserve_routing_pipeline_001",
+  "createdAt": "2026-06-28",
+  "updatedAt": "2026-06-28",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_C",
+  "boardType": "synthetic-robotics-sensor-hub",
+  "problemType": "routing_pipeline_regression_guard",
+  "problemSignature": {
+    "priorCleanRevision": "REV_B"
+  },
+  "rootCause": "A clean routing/manufacturing pipeline was achieved in REV_B and had to be preserved while schematic generation improved.",
+  "fixSummary": "Reuse routing rule source of truth, DSN parity, FreeRouting, direct SES import, silkscreen cleanup, DRC/ERC validation, and manufacturing manifest export in REV_C.",
+  "implementation": {
+    "filesChanged": [
+      "tests/real-schematic-symbol-graph.test.mjs",
+      "package.json"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "test:freerouting-workflow",
+      "test:postroute-cleanup",
+      "test:rev-c-end-to-end-manufacturing-candidate"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "synthetic-fixture",
+      "dense-board-fixture"
+    ],
+    "netRoles": [
+      "all"
+    ],
+    "conditions": [
+      "postroute-clean-routing-pipeline"
+    ]
+  },
+  "recipe": [
+    "verify pre-route shorts zero",
+    "sanitize DSN",
+    "run FreeRouting",
+    "direct import SES",
+    "remove silkscreen-only DRC",
+    "export manufacturing only after DRC/ERC zero"
+  ],
+  "safetyRules": [
+    "shorts must remain zero",
+    "forbidden vias must remain zero",
+    "DRC/ERC must be honest"
+  ],
+  "evidence": {
+    "before": {
+      "revision": "REV_B",
+      "drc": 0,
+      "erc": 0
+    },
+    "after": {
+      "revision": "REV_C",
+      "drc": 0,
+      "erc": 0,
+      "unconnected": 0
+    },
+    "tests": [
+      "test:rev-c-end-to-end-manufacturing-candidate"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

@@ -1,0 +1,530 @@
+---
+name: boardforge-kicad-workflow
+description: Use BoardForge-controlled local tools for KiCad project creation, outline generation, validation, export, and JLCPCB packaging from Codex.
+---
+
+# BoardForge KiCad Workflow
+
+Use this skill when the user wants Codex to create, inspect, edit, validate, or export KiCad PCB projects with BoardForge.
+
+BoardForge Plugin is the execution layer. Codex should produce structured JSON jobs and call the BoardForge local helper or MCP server. Codex must not freestyle edits to KiCad project files and must not run arbitrary shell commands.
+
+## Architecture
+
+```text
+User in Codex
+↓
+BoardForge Codex Plugin
+↓
+BoardForge local MCP/tool server or CLI helper
+↓
+Whitelisted KiCad automation tools
+↓
+Real local KiCad project files
+↓
+DRC/ERC/export reports
+↓
+Gerbers, BOM, CPL, KiCad ZIP, JLCPCB package
+```
+
+## Allowed Workflows
+
+- `generate_custom_outline`
+- `create_outline_board`
+- `validate_board_outline`
+- `add_mounting_holes`
+- `round_board_corners`
+- `add_usb_c_edge_cutout`
+- `add_rj45_edge_clearance`
+- `create_kicad_project`
+- `apply_edge_cuts`
+- `scan_kicad_project`
+- `snapshot_project`
+- `list_project_snapshots`
+- `diff_project_snapshot`
+- `restore_project_snapshot`
+- `run_project_preflight`
+- `list_board_categories`
+- `plan_board_category`
+- `validate_schematic_graph`
+- `validate_schematic_readiness`
+- `synthesize_schematic_design`
+- `validate_schematic_pcb_sync`
+- `apply_schematic_pcb_sync`
+- `check_routing_readiness`
+- `calculate_power_routing`
+- `select_via_strategy`
+- `build_noise_map`
+- `summarize_manufacturer_rules`
+- `generate_project_review_report`
+- `build_workflow_preset`
+- `run_boardforge_workflow`
+- `run_verified_demo`
+- `plan_mission_requirements`
+- `intake_user_bom`
+- `audit_user_bom`
+- `ingest_reference_design`
+- `synthesize_circuit_blocks`
+- `plan_production_pipeline`
+- `build_verified_demo_recipe`
+- `build_canonical_net_model`
+- `audit_asset_resolution`
+- `audit_placement_legality`
+- `compile_routing_execution_strategy`
+- `audit_release_export_gates`
+- `run_production_readiness_suite`
+- `classify_board_architecture`
+- `plan_hdi_manufacturing_strategy`
+- `audit_return_path_integrity`
+- `audit_creepage_clearance`
+- `plan_bringup_reliability_matrix`
+- `run_advanced_board_suite`
+- `autotrace_board`
+- `autotrace_critical_nets`
+- `autotrace_power`
+- `autotrace_signals`
+- `autotrace_diff_pairs`
+- `autotrace_remaining_nets`
+- `repair_routing`
+- `reroute_failed_nets`
+- `run_routing_drc`
+- `calculate_trace_width`
+- `validate_trace_width`
+- `detect_power_neckdowns`
+- `create_power_pour`
+- `select_via_type`
+- `validate_via_manufacturability`
+- `plan_requirements`
+- `plan_pin_assignments`
+- `plan_power_tree`
+- `plan_stackup`
+- `plan_fanout`
+- `plan_signal_integrity`
+- `plan_test_strategy`
+- `run_dfm_checks`
+- `compare_manufacturers`
+- `plan_complex_board`
+- `generate_design_constraints`
+- `generate_kicad_rules`
+- `sync_kicad_libraries`
+- `search_library_assets`
+- `resolve_component_assets`
+- `sync_component_database`
+- `resolve_bom_parts`
+- `audit_component_library`
+- `validate_component_bindings`
+- `plan_pin_map_repairs`
+- `apply_pin_map_repairs`
+- `validate_3d_model_coverage`
+- `audit_bom_sourcing`
+- `generate_netlist`
+- `run_design_audit`
+- `generate_schematic`
+- `plan_erc_repairs`
+- `apply_safe_erc_repairs`
+- `validate_manufacturing_readiness`
+- `validate_jlcpcb_package`
+- `generate_manufacturing_manifest`
+- `find_missing_footprints`
+- `link_3d_models`
+- `create_net_classes`
+- `assign_net_to_class`
+- `validate_net_classes`
+- `report_unclassified_nets`
+- `generate_placement_plan`
+- `solve_placement`
+- `apply_placement_plan`
+- `validate_placement`
+- `move_component`
+- `fix_component_off_board`
+- `fix_component_overlap`
+- `fix_mounting_hole_conflicts`
+- `analyze_routing_congestion`
+- `plan_escape_routing`
+- `plan_diff_pair_tuning`
+- `validate_power_integrity`
+- `analyze_thermal_bottlenecks`
+- `validate_assembly_orientation`
+- `estimate_board_cost`
+- `generate_engineering_questions`
+- `score_production_readiness`
+- `build_release_gate_report`
+- `generate_routing_plan`
+- `plan_copper_pours`
+- `autoroute_board`
+- `autoroute_and_apply`
+- `autoroute_drc_iteration`
+- `plan_autoroute_repair_loop`
+- `score_routing_quality`
+- `validate_routing_geometry`
+- `route_critical_nets`
+- `route_power_nets`
+- `route_diff_pair`
+- `route_signal_net`
+- `add_ground_zone`
+- `stitch_ground_vias`
+- `validate_routes`
+- `report_unrouted_nets`
+- `fix_route_clearance_violations`
+- `run_full_self_review`
+- `run_kicad_drc`
+- `run_kicad_erc`
+- `export_gerbers`
+- `export_drill_files`
+- `export_bom`
+- `export_cpl`
+- `package_jlcpcb`
+- `summarize_project`
+
+## Safety Rules
+
+- Use structured JSON jobs.
+- Validate job fields before invoking local tools.
+- Keep all writes inside the user-approved workspace.
+- Do not allow path traversal.
+- Do not run arbitrary shell commands.
+- Download KiCad libraries only through the BoardForge allowlist. Do not clone arbitrary repos or install untrusted footprint libraries.
+- Prefer installed KiCad libraries first. Use official KiCad GitLab library repos only when `downloadOfficial` and `allowNetwork` are explicitly true in the structured job.
+- Do not overwrite existing project folders unless the job explicitly allows it.
+- Prefer dry run before destructive edits.
+- Snapshot existing projects before edits when supported.
+- Restore only through `restore_project_snapshot`, then rerun scan, ERC, and DRC before export.
+- Run `diff_project_snapshot` before restore or export when a snapshot exists so the user can review changed files.
+- Run `run_project_preflight` before risky edits, routing, manufacturing export, package generation, or project handoff.
+- Run `plan_board_category` before requirements on universal board prompts so BoardForge does not accidentally apply drone, PoE, motor, RF, or carrier-board rules to the wrong board family.
+- Run `synthesize_schematic_design` before `generate_schematic` when a project has requirements, a BOM, or generated components. It normalizes components, pin maps, power rails, support passives, and the net graph.
+- Run `validate_schematic_readiness` before `generate_schematic`. If it returns `SCHEMATIC_READINESS_BLOCKED`, fix symbols, footprints, pin maps, and net endpoints instead of writing a misleading KiCad schematic.
+- Run `validate_schematic_graph` before placement/routing to catch missing power pins, ground pins, support components, weak net endpoints, and broken differential pairs.
+- Run `validate_schematic_pcb_sync` after schematic/netlist generation and after copper/pad-net writes to catch mismatched KiCad schematic labels, BoardForge netlist nets, PCB net declarations, and PCB pad assignments.
+- Run `plan_pin_map_repairs` after component binding validation if pin-map keys do not match symbol pins or footprint pads. Use `apply_pin_map_repairs` only for safe mechanical key rewrites; rerun binding validation afterward.
+- Run `apply_schematic_pcb_sync` only after netlist/schematic review when PCB net declarations and footprint pad-net assignments must be synchronized before DRC.
+- Run `calculate_power_routing` before route planning on any high-current, motor, battery, PoE, LED, switching-regulator, or field-power board so trace widths, copper pours, and via arrays are explicit.
+- Run `select_via_strategy` before fanout/routing on compact, dense, high-speed, or HDI boards so through/blind/buried/microvia policy is manufacturer-gated.
+- Run `build_noise_map` before placement/routing on RF, antenna, sensor, analog, switching, motor, PoE, or thermal boards so Codex can avoid noisy/sensitive regions.
+- Run `plan_copper_pours` after power/via/noise planning and before route generation so ground/power zones and stitching vias are explicit and keepout-aware.
+- Run `generate_engineering_questions` before serious project generation and before release gates to expose missing mechanical, power, stackup, RF, thermal, or part-source decisions.
+- Run `plan_escape_routing` before `plan_fanout` for dense ICs, fine-pitch packages, modules, connectors, or compact boards.
+- Run `validate_power_integrity` after power-tree and copper-pour planning to catch missing ground reference, weak decoupling, and high-current pour requirements.
+- Run `analyze_routing_congestion` before route generation or autorouting to catch packed channels that need placement, stackup, or HDI changes.
+- Run `plan_diff_pair_tuning` for USB, Ethernet, CAN, RF, clock, PCIe, LVDS, MIPI, or any generated differential pair before copper is treated as reviewable.
+- Run `analyze_thermal_bottlenecks` and `validate_assembly_orientation` before DFM/export so hot parts, polarity, pin-1, and CPL orientation risks are explicit.
+- Run `estimate_board_cost`, `score_production_readiness`, and `build_release_gate_report` before quoting, packaging, or calling anything close to ready.
+- Run `check_routing_readiness` immediately before `generate_routing_plan`, `autoroute_board`, `autoroute_and_apply`, or `autoroute_drc_iteration`. If it returns blocked, do not route.
+- Run `generate_project_review_report` after schematic, placement, routing, DFM, power, via, noise, and manufacturing checks so the user gets one concise human-review artifact.
+- Run `build_workflow_preset` when the user asks Codex to build a common board type and needs an ordered sequence of safe BoardForge jobs.
+- Run `run_boardforge_workflow` when the user wants BoardForge to execute the full controlled preset sequence and produce one workflow report. Do not include exports unless validation and human review gates are acceptable.
+- Run `run_verified_demo` when the user wants a repeatable local proof that the BoardForge stack can create a demo project, generate schematic evidence, solve placement, run routing/DRC/ERC gates, and write one verification report. Stop on blockers unless the user explicitly asks for diagnostic continuation.
+- Run `plan_mission_requirements` first when the user gives a mission-level goal such as range, endurance, aircraft type, payload, autonomy, or "make a drone that flies X miles." Ask/return the required decision questions before claiming a full KiCad design is possible.
+- Run `intake_user_bom` when the user supplies a parts list, CSV, JSON, or rough free-text BOM. Do not trust the list until it is normalized into refs, groups, packages, supplier ids, pin maps, and nets.
+- Run `audit_user_bom` after BOM intake and mission planning to verify whether the supplied parts support the goal, identify missing functions, supplier/package gaps, power-budget issues, substitutions, and clarification questions before schematic generation.
+- Run `ingest_reference_design` whenever the user provides datasheet text, a reference design description, layout-guide notes, or a part-specific prompt. It extracts interfaces, support circuits, numeric constraints, and review warnings.
+- Run `synthesize_circuit_blocks` after reference/design intake to create reviewable schematic blocks, support components, and net intent before schematic generation.
+- Run `solve_placement` before `apply_placement_plan` when placement should be inferred from roles, board geometry, edge connectors, controllers, power parts, and passives.
+- Run `plan_autoroute_repair_loop` after DRC/routing-quality failures to produce controlled repair iterations instead of improvising shell/file edits.
+- Run `build_canonical_net_model`, `audit_asset_resolution`, and `audit_placement_legality` before serious schematic/placement/routing claims.
+- Run `compile_routing_execution_strategy` before autorouting so escape routing, high-speed nets, power copper, vias, keepouts, pours, and DRC loops are explicitly ordered.
+- Run `audit_release_export_gates` or `run_production_readiness_suite` before any Gerber, drill, BOM, CPL, JLCPCB package, or manufacturable claim.
+- Run `classify_board_architecture` near the start of any serious board so Codex applies the correct controls for high-speed, RF, motor/power, industrial isolation, analog/sensor, compact HDI, or general embedded boards.
+- Run `plan_hdi_manufacturing_strategy` before stackup/routing decisions on dense, compact, BGA/WLCSP, blind/buried/microvia, or via-in-pad boards.
+- Run `audit_return_path_integrity` before routing high-speed, RF, clock, analog, sensor, CAN, USB, Ethernet, PCIe, MIPI, or LVDS nets.
+- Run `audit_creepage_clearance` for PoE, mains, isolated, surge, relay, terminal block, high-voltage, industrial, BMS, charger, or field-I/O boards.
+- Run `plan_bringup_reliability_matrix` before release gates so rail checks, interface tests, thermal soak, ESD/surge review, and production fixture requirements are explicit.
+- Run `run_advanced_board_suite` before release scoring on complex boards.
+- Run `autotrace_board` only after schematic/netlist, component placement, board outline, stackup, manufacturer profile, assets, and routing readiness are acceptable.
+- Prefer `autotrace_critical_nets`, `autotrace_power`, `autotrace_diff_pairs`, and `autotrace_signals` when debugging a hard board instead of blindly rerouting everything.
+- Run `calculate_trace_width`, `validate_trace_width`, `detect_power_neckdowns`, `select_via_type`, and `validate_via_manufacturability` on power/high-current/HDI designs before copper is trusted.
+- Treat `AUTOTRACE_PLANNED_NEEDS_DRC` as not finished. A board is not fully routed until `AUTOTRACE_FULLY_ROUTED_DRC_PASSED` is returned.
+- Do not call a routing result fab-ready unless autotrace, KiCad DRC, manufacturer gates, and export/package gates pass.
+- Run `build_verified_demo_recipe` for repeatable local demo boards and `plan_production_pipeline` when Codex needs the full ordered path from questions to release gates.
+- Run `generate_manufacturing_manifest` before Gerber/drill/BOM/CPL handoff or JLCPCB packaging so Codex has one explicit artifact list and blocker list.
+- Run `plan_requirements` when the user gives a hardware description and Codex needs a structured BOM/net/circuit plan before KiCad generation.
+- Run `plan_pin_assignments` after requirements/component selection and before schematic generation so MCU/module pins, interface nets, boot/reset/debug pins, and peripheral pin maps are explicit.
+- Run `plan_power_tree` before stackup, schematic, placement, or routing so rails, regulators, current budget, decoupling, sequencing, and thermal blockers are explicit.
+- Run `plan_stackup` before dense, high-speed, high-current, RF, or HDI boards so BoardForge can decide layer roles, blind/buried/microvia policy, impedance intent, copper strategy, and advanced fab blockers.
+- Run `plan_fanout` after placement/stackup and before routing so dense IC escape, connector escape, via layer transitions, decoupling preconditions, and HDI blockers are explicit.
+- Run `plan_signal_integrity` before routing high-speed, RF, Ethernet, USB, CAN, clock, crystal, or dense mixed-signal boards so impedance, reference planes, length matching, terminations, and return-path rules are explicit.
+- Run `plan_test_strategy` before final placement/routing/export so power rails, programming pins, debug access, fixture pads, and bring-up checks are explicit.
+- Run `run_dfm_checks` before preflight/export/package to catch board outline, placement, fanout, power thermal, route, assembly, silkscreen, and advanced-fab issues.
+- Run `plan_complex_board` for serious boards before project generation or routing. Treat its output as the main engineering plan for requirements, stackup, keepouts, vias, copper pours, and export gates.
+- Run `generate_design_constraints` after requirements/stackup/placement changes so Codex has one current constraints artifact before routing/export.
+- Run `generate_kicad_rules` after design constraints so KiCad has a reviewable custom-rules file for net classes, differential pairs, keepouts, route widths, and clearance policy.
+- Run `autoroute_board` only after placement, net classes, fanout, SI, and DFM are review-clean enough to attempt routed copper. Treat partial routes as blockers unless the user explicitly asks for a review/debug artifact.
+- Run `autoroute_and_apply` only when routed nets have known endpoints and prechecks do not block copper writing. It writes KiCad copper and forces DRC-required state.
+- Run `autoroute_drc_iteration` when the user asks for autorouting plus the first KiCad DRC pass. Do not export from an autorouted project until DRC/ERC and manufacturing readiness gates pass.
+- Run `score_routing_quality` after routing plans and before copper writing so via count, differential-pair matching, sensitive-net layer swaps, route length, unrouted nets, and power-route widths are reviewed.
+- Treat all AI plans as proposals until validated.
+- Require human review before manufacturing.
+- Never claim `DRC pass`, `ERC pass`, `routed`, `JLCPCB ready`, or `manufacturable` unless the local tool result proves it.
+- If KiCad CLI, footprints, 3D models, or export files are missing, report `BLOCKED_MISSING_ADAPTER`, `NEEDS_FIX`, or `NEEDS_HUMAN_REVIEW`.
+
+## Required Workflow Pattern
+
+1. Ask for missing required info such as board size, layer count, manufacturer, mounting pattern, MCU, power rails, interfaces, and constraints.
+2. Build a structured JSON job.
+3. Call the BoardForge local CLI or MCP server.
+   - Prefer `--job path.json` for saved workflows.
+   - Prefer `--job-json-b64` for inline Codex-generated jobs on Windows to avoid shell quoting errors.
+4. Inspect generated files and returned validation issues.
+5. Run `run_full_self_review` after outline, placement, routing, or export operations.
+6. Attempt safe fixes only through BoardForge commands.
+7. Summarize what was created, what failed, what was auto-fixed, and what still needs human review.
+
+## Current Real Capabilities
+
+- `generate_custom_outline` converts prompt/point/sketch outline intent into validated board geometry with mounting holes, USB/RJ45 mechanical notches, fabrication warnings, and structured `generatedOutline` metadata.
+- `create_outline_board` writes real `.kicad_pro`, `.kicad_pcb`, `README.md`, `boardforge-outline-plan.json`, and `boardforge-review.json`.
+- `apply_edge_cuts`, `round_board_corners`, `add_mounting_holes`, `add_usb_c_edge_cutout`, and `add_rj45_edge_clearance` can transform outline-only projects and update `boardforge-project.json`; they refuse to rewrite populated PCB files unless explicitly approved after snapshotting.
+- `create_kicad_project` writes real `.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, `README.md`, `boardforge-components.json`, `boardforge-bindings.json`, and `boardforge-review.json`.
+- Project creation writes persistent `boardforge-project.json` state with requirements, board geometry, component/library decisions, validation results, exports, generated files, and history.
+- `snapshot_project`, `list_project_snapshots`, and `restore_project_snapshot` provide controlled rollback for KiCad project files and BoardForge metadata before risky edits.
+- `diff_project_snapshot` compares current project files to a saved snapshot and reports added, modified, deleted, and unchanged files with line-delta summaries.
+- `run_project_preflight` writes `boardforge-preflight.json` and aggregates scan, component audit, binding validation, netlist, manufacturing readiness, and optional snapshot diff gates.
+- `build_workflow_preset` returns ordered controlled job steps for ESP32 sensor, PoE/Ethernet sensor, and drone flight-controller workflows, with export steps separated behind validation gates.
+- `run_boardforge_workflow` executes the controlled preset steps, stops on blockers by default, writes `boardforge-workflow-run.json`, and summarizes next actions.
+- `run_verified_demo` executes a repeatable demo recipe, writes `boardforge-verified-demo-report.json`, and reports project, schematic, placement, routing, ERC, DRC, and package gates without claiming fabrication readiness.
+- `plan_mission_requirements` converts mission prompts into feasibility warnings, required user decisions, architecture, board families, long-range UAV support circuits, and a controlled workflow. It is the right first step for prompts like "drone that flies 15 miles and lasts 30 minutes."
+- `intake_user_bom` parses and normalizes user-supplied BOM rows into BoardForge components, inferred groups, pin maps, supplier identifiers, packages, and nets.
+- `audit_user_bom` compares a user BOM to mission/requirements goals, reports missing functions, compatibility issues, power-budget review, substitutions, and the controlled end-to-end user-BOM workflow.
+- Pin assignment and pin-map repair can synthesize reviewed pin maps from parsed KiCad symbol/footprint metadata. Prefer this controlled repair path before claiming schematic/PCB sync is authoritative.
+- `ingest_reference_design` parses datasheet/reference/prompt text for interfaces, required support circuits, numeric constraints, RF/layout warnings, and next schematic-block actions.
+- `synthesize_circuit_blocks` creates circuit blocks such as protection, power tree, USB, Ethernet, I2C, SPI, RF, motor power, clocking, and debug with support-component and net intent.
+- `plan_production_pipeline` returns the full controlled execution sequence from engineering questions through release gates.
+- `build_verified_demo_recipe` returns repeatable demo recipes with pass criteria for USB sensor, PoE sensor, and motor-controller flows.
+- `run_verified_demo` runs one of those demo recipes end-to-end and stores the proof report in the generated KiCad project folder.
+- `build_canonical_net_model` builds the authoritative component/net/pin model used to keep schematic, PCB, BOM, CPL, and routing checks aligned.
+- `audit_asset_resolution` blocks on missing real KiCad symbols or footprints and warns on missing STEP/WRL models for physical 3D review.
+- `audit_placement_legality` catches unplaced, off-board, overlapping, connector-edge, hot/RF, and clearance issues before routing.
+- `compile_routing_execution_strategy` creates the ordered routing execution policy for escape routing, differential pairs, power routes, copper pours, vias, repair loops, and release proof.
+- `audit_release_export_gates` checks the 25 production gates before export/package claims.
+- `run_production_readiness_suite` runs canonical net, asset, placement, routing strategy, and release-gate audits together.
+- `classify_board_architecture` detects board families and required controls for high-speed digital, RF/wireless, power/motor, industrial isolation, sensor/analog, compact HDI, and general embedded designs.
+- `plan_hdi_manufacturing_strategy` creates density, layer-count, advanced-via, manufacturer-approval, and yield/cost review gates.
+- `audit_return_path_integrity` checks ground reference, split/keepout crossings, sensitive-net via policy, and return-via requirements.
+- `audit_creepage_clearance` checks high-voltage/isolation inference, minimum clearance, field connectors, and required isolation zones.
+- `plan_bringup_reliability_matrix` creates rail, interface, thermal, ESD/surge, fixture, and production bring-up acceptance checks.
+- `run_advanced_board_suite` combines architecture, HDI, return path, creepage, and bring-up reliability audits with a release-risk score.
+- `autotrace_board` orchestrates BoardForge routing readiness, net classification, deterministic A* routing, diff-pair pairing checks, power/fab/via validation, real KiCad copper writing, KiCad DRC when available, and an honest routing report.
+- `autotrace_critical_nets`, `autotrace_power`, `autotrace_signals`, `autotrace_diff_pairs`, and `autotrace_remaining_nets` run scoped routing modes for debug and staged routing.
+- `repair_routing` and `reroute_failed_nets` rerun the controlled router over existing state instead of freestyle-editing copper.
+- `calculate_trace_width`, `validate_trace_width`, `detect_power_neckdowns`, `create_power_pour`, `select_via_type`, and `validate_via_manufacturability` provide trace-width, pour, and via safety gates.
+- `plan_requirements` writes or returns a requirements plan with reusable circuit blocks, components, nets, constraints, and assumptions for constrained board families.
+- `plan_pin_assignments` writes or returns `boardforge-pin-assignments.json` with controller pin maps, peripheral pin maps, interface inference, boot/reset/debug review, unassigned-net warnings, and conflict blockers.
+- `plan_power_tree` writes or returns `boardforge-power-tree.json` with input sources, rails, regulator topology, rail current budget, decoupling requirements, sequencing rules, thermal review, and manufacturing gates.
+- `plan_stackup` writes or returns a stackup plan with layer roles, manufacturer HDI capability, blind/buried/microvia rules, impedance intent, copper strategy, and thermal strategy.
+- `plan_fanout` writes or returns `boardforge-fanout-plan.json` with dense-package escape method, connector fanout, via transition policy, routing preconditions, and blockers for impossible low-layer dense packages.
+- `plan_signal_integrity` writes or returns `boardforge-signal-integrity.json` with impedance intent, length-matching targets, return-path rules, termination review, RF/clock/USB/Ethernet/CAN constraints, and SI blockers before routing/export.
+- `plan_test_strategy` writes or returns `boardforge-test-strategy.json` with required test points, programming/debug access, bring-up sequence, fixture strategy, and test-pad placement actions.
+- `run_dfm_checks` writes or returns `boardforge-dfm-report.json` with board, placement, route, power, fanout, assembly, silkscreen, and advanced-fab manufacturing checks.
+- `plan_board_category` infers universal PCB categories such as motor controller, BMS, industrial I/O, compute-module carrier, USB device, PoE device, wearable, dense compact board, and drone flight controller, then returns expected components, net classes, placement/routing priorities, and required decisions.
+- `validate_schematic_graph` validates component pin maps, power/ground intent, differential-pair members, supply-net endpoints, and support component review before KiCad ERC.
+- `validate_schematic_readiness` is the hard pre-generation gate. It combines component binding, symbol/footprint/pad/pin-map checks, net endpoint checks, differential-pair completeness, and schematic graph validation before BoardForge writes schematic objects.
+- `synthesize_schematic_design` builds the review-required component/pin/net graph, adds obvious support passives such as decoupling, USB-C CC pulldowns, reset/boot parts, and regulator caps, then writes `boardforge-schematic-synthesis.json`.
+- `validate_schematic_pcb_sync` writes `boardforge-schematic-pcb-sync.json` and compares KiCad schematic labels, BoardForge netlist nets, PCB net declarations, and PCB footprint pad-net assignments.
+- `apply_schematic_pcb_sync` writes review-required PCB net declarations and footprint pad-net assignments from BoardForge components/netlist, then requires DRC before export.
+- `calculate_power_routing` estimates current-driven trace widths, copper-pour requirements, thermal review needs, and minimum parallel via count for power/current nets.
+- `select_via_strategy` chooses through, parallel through, blind, buried, or microvia review policies per net based on stackup, manufacturer profile, cost, density, and signal class.
+- `build_noise_map` creates noisy, sensitive, and antenna regions plus coupling warnings so routing avoids switching regulators, motor power, RF, analog, sensor, and crystal conflicts.
+- `check_routing_readiness` blocks copper until outline, placement, net classes, schematic graph, routing geometry, stackup, and routing quality gates are acceptable.
+- `generate_project_review_report` writes or returns a combined blocker/warning report across category, schematic, placement, routing readiness, routing, power, via, noise, DFM, manufacturer, and manufacturing gates.
+- `plan_complex_board` writes or returns a combined complex-board plan with requirements, stackup, complexity score, placement/routing strategy, keepouts, copper pours, and manufacturing gates.
+- `generate_design_constraints` writes `boardforge-constraints.json` for reusable board, manufacturer, placement, routing, keepout, net-class, HDI, and manufacturing-gate constraints.
+- `generate_kicad_rules` writes `boardforge.kicad_dru` with review-required KiCad custom rules for BoardForge net classes, trace widths, clearances, differential pairs, antenna keepouts, and thermal spacing.
+- `create_kicad_project` places real KiCad footprints from installed footprint libraries for template components.
+- `sync_kicad_libraries` detects installed KiCad 10/9/8 library roots, optionally syncs allowlisted official KiCad symbol/footprint/3D repos, and writes `.boardforge/library-cache/boardforge-library-index.json`.
+- `search_library_assets` searches indexed symbols, footprints, and 3D models.
+- `resolve_component_assets` maps component refs/groups/values/MPNs to review-required symbol, footprint, and 3D model candidates.
+- `find_missing_footprints` reports which component footprints cannot be found in the indexed allowlisted libraries.
+- `link_3d_models` attaches available 3D model references from indexed KiCad footprints/packages and normalizes model paths to KiCad variables when possible.
+- `resolve_component_assets` and `link_3d_models` update `boardforge-project.json` when `projectPath` is provided.
+- `sync_component_database` and `resolve_bom_parts` enrich components with LCSC, MPN, package, pin-map, symbol, footprint, 3D model, and stock-risk candidates for common USB, MCU, IMU, barometer, flash, Ethernet, PoE, SWD, power, connector, passive, and inductor blocks.
+- Component database jobs also return footprint confidence, selection scores, lifecycle/assembly risk, procurement summary, and substitution candidates for BOM review.
+- `audit_component_library` writes `boardforge-component-audit.json` and scores symbol, footprint, 3D model, pin-map, package, LCSC, and MPN coverage before schematic, placement, routing, or export work.
+- `validate_component_bindings` parses KiCad symbol pins and footprint pads, compares them to BoardForge pin maps, and writes compatibility results to `boardforge-bindings.json` when `projectPath` is provided.
+- `plan_pin_map_repairs` writes `boardforge-pin-map-repair-plan.json` with safe candidate pin-map key repairs for symbol/footprint/pad mismatches.
+- `apply_pin_map_repairs` applies only safe pin-map rewrites to `boardforge-components.json`, writes `boardforge-pin-map-repairs-applied.json`, and requires binding validation afterward.
+- `validate_3d_model_coverage` writes `boardforge-3d-model-coverage.json` and reports missing or unverified KiCad STEP/WRL model links for visual/mechanical review.
+- `audit_bom_sourcing` writes `boardforge-bom-sourcing-audit.json` and checks MPN/LCSC/JLCPCB sourcing readiness against component footprints.
+- `generate_netlist` writes `boardforge-netlist.json` from component pin maps so Codex can review schematic/PCB connectivity before routing.
+- `run_design_audit` writes `boardforge-design-report.json`, combining netlist coverage, PCB pad-net audit, placement score, route prechecks, binding issues, and recommended next BoardForge actions.
+- `validate_manufacturing_readiness` checks DRC/ERC reports plus BOM/CPL artifacts and reports blockers before export/package workflows.
+- `validate_jlcpcb_package` writes `boardforge-jlcpcb-package-validation.json` and checks Gerbers, drill files, BOM, CPL, DRC/ERC reports, assembly refs, and BOM/CPL reference matching before package/order workflows.
+- `generate_manufacturing_manifest` writes `boardforge-manufacturing-manifest.json`, collecting required project files, stackup, assembly, binding, preflight, DRC/ERC, BOM, CPL, advanced-fab approval, blockers, and warnings.
+- `generate_schematic` writes review-required KiCad schematic objects into `.kicad_sch`, including symbols, footprint properties, wires, labels, global labels, and symbol instances. Run ERC after it.
+- `plan_erc_repairs` and `apply_safe_erc_repairs` classify ERC reports and apply only metadata-safe schematic repair notes; electrical connectivity fixes remain review-required.
+- `plan_drc_repairs` and `apply_safe_drc_repairs` create a DRC repair plan and apply only low-risk safe repairs; rerun DRC after any repair.
+- `interactive_edit` parses plain-English edits such as resizing the board, rounding corners, moving USB to an edge, enforcing antenna keepout, or increasing power route width.
+- `validate_board_outline` checks outline area, self-intersections, mounting hole containment, and edge clearance.
+- `create_net_classes`, `validate_net_classes`, and `report_unclassified_nets` use BoardForge net-class rules.
+- `generate_placement_plan` creates deterministic placement plans, scores density, edge connector intent, passive proximity, and ratsnest length, and fails on off-board/overlap issues.
+- `optimize_placement` proposes deterministic placement repairs for overlaps, edge connectors, RF/antenna edge access, and ratsnest quality before routing.
+- `solve_placement` creates role-aware placements for edge connectors, controllers, power blocks, passives, and remaining components, then blocks on off-board or overlap results.
+- `apply_placement_plan` writes reviewed placement coordinates into real `.kicad_pcb` footprint `(at x y rotation)` fields and marks the project DRC-required.
+- `generate_engineering_questions` writes missing-decision prompts for mechanical envelope, layer count, part source, power inputs, RF keepouts, thermal limits, and high-speed stackup.
+- `plan_escape_routing` writes dense-package escape strategy, recommended layer count, dogbone/microvia/via-in-pad review flags, and blockers.
+- `validate_power_integrity` checks rails, decoupling count, ground reference, high-current pour requirements, and required copper widths.
+- `analyze_routing_congestion` maps routing-channel hotspots from component, endpoint, and route demand before autorouting.
+- `plan_diff_pair_tuning` plans target impedance, spacing, length mismatch, and tuning actions for differential pairs.
+- `analyze_thermal_bottlenecks` checks hot components against copper regions and edge/mechanical constraints.
+- `validate_assembly_orientation` checks pin-1/polarity markers, 90-degree assembly rotation, and CPL orientation risks.
+- `estimate_board_cost` estimates prototype cost drivers from area, layer count, component count, HDI multiplier, and sourcing risk.
+- `score_production_readiness` scores outline, components, bindings, schematic, placement, routing, power, thermal, DFM, and manufacturing gates.
+- `build_release_gate_report` creates the final release blocker list, required artifacts, and packaging gate.
+- `generate_routing_plan` creates a partial routing plan from explicit route points or inferred component pin-map endpoints, emits route waypoints for reviewable 45/90-degree legs, and reports unrouted nets. It does not claim full autorouting.
+- `plan_copper_pours` writes `boardforge-copper-pour-plan.json`, plans GND/power copper zones, keepout-aware stitching vias, thermal relief strategy, and updates design intent before routing.
+- `autoroute_board` runs the BoardForge controlled deterministic grid/A* router against board outline, component obstacles, net classes, layer policy, via policy, keepouts, and compact-board rules. It returns routed/unrouted nets and remains review-required.
+- `autoroute_and_apply` writes only prechecked autorouted KiCad copper to `.kicad_pcb`, assigns PCB nets/pad nets where possible, records `boardforge-project.json` routing state, and requires DRC before export.
+- `autoroute_drc_iteration` applies controlled autorouted copper and immediately runs local KiCad DRC, returning the DRC report and blocking manufacturing claims when DRC errors remain.
+- `plan_autoroute_repair_loop` turns DRC/routing failures into bounded repair iteration plans for clearance, unconnected nets, route width, via geometry, and copper-zone refill.
+- `score_routing_quality` scores routing plans for unrouted nets, route length, differential-pair mismatch, sensitive-net vias, layer swaps, via budget, and power-route width before copper writing.
+- `validate_routing_geometry` prechecks route points, widths, via size/drill, via keepouts, mounting-hole clearance, differential-pair mates, copper-pour keepouts, and power-route width before copper is written.
+- Routing tools return compact-board via policy, layer-change rules, copper pour plans, antenna keepouts, thermal keepouts, and sensitive analog/sensor regions.
+- `add_ground_zone`, `stitch_ground_vias`, `route_critical_nets`, `route_power_nets`, `route_diff_pair`, `route_signal_net`, `validate_routes`, and `report_unrouted_nets` are controlled planning tools. They do not claim completed copper until a later KiCad route writer applies and validates geometry.
+- `apply_routing_plan` can write review-required KiCad `segment`, `via`, and `zone` objects from a BoardForge routing plan, add PCB nets, and assign footprint pad nets from component pin maps. It runs routing geometry prechecks first and then requires `run_kicad_drc` before any export/manufacturing claim.
+- `scan_kicad_project` parses existing `.kicad_pcb` projects for layers, nets, footprints, tracks, vias, zones, and mounting holes.
+- `run_kicad_drc` and `run_kicad_erc` call local KiCad 10/9/8 `kicad-cli` when available and parse JSON reports.
+- `export_gerbers`, `export_drill_files`, `export_cpl`, and `export_bom` use whitelisted KiCad CLI commands.
+- Export jobs are validation-gated by default. Use `allowUnvalidatedExport: true` only for development artifacts that must not be called manufacturing-ready.
+- Manufacturing readiness also checks BOM/CPL columns, refs, values, coordinates, and placement rows.
+- If the schematic BOM is empty but placed components exist, `export_bom` writes a review-required BOM from `boardforge-components.json`.
+- `package_jlcpcb` creates a ZIP only when `validate_jlcpcb_package` has no blockers and required Gerber, drill, BOM, CPL, DRC, and ERC report files exist.
+
+## Explicitly Not Complete Yet
+
+- Fully automatic DRC-clean repair for all geometry classes.
+- Full DRC-clean trace autorouting and route repair.
+- Native KiCad API editing.
+- Full KiCad-symbol-library fidelity for every possible component family.
+- Clean DRC on component projects until clearances, placement, routing, and KiCad validation are solved.
+
+These commands return blocked or not-implemented statuses until the safe adapters exist.
+
+## CLI MVP
+
+The local helper can be called as:
+
+```bash
+node plugins/boardforge-plugin/bin/boardforge-plugin.mjs --job path/to/job.json --workspace path/to/workspace
+```
+
+Use `plugins/boardforge-plugin/examples/verified-demo-job.json` to run the repeatable USB sensor proof path. It writes `boardforge-verified-demo-report.json` and stops on the first blocker by default.
+
+Current MVP implements outline generation, outline validation, schematic object generation, net classes, placement planning, real KiCad footprint placement for templates, component pin-map net assignment, routing planning, review-required copper writing, self-review, KiCad project scanning, KiCad CLI DRC/ERC, Gerber/drill/CPL/BOM export, and gated JLCPCB packaging.
+
+## Local Tool Server
+
+The same safe dispatcher can run as a local HTTP server:
+
+```bash
+node plugins/boardforge-plugin/bin/boardforge-server.mjs --workspace path/to/workspace --port 47321
+```
+
+Supported endpoints:
+
+- `GET /status`
+- `GET /kicad/status`
+- `GET /jobs/:id`
+- `POST /jobs/create-outline`
+- `POST /jobs/create-project`
+- `POST /jobs/snapshot`
+- `POST /jobs/list-snapshots`
+- `POST /jobs/diff-snapshot`
+- `POST /jobs/restore-snapshot`
+- `POST /jobs/preflight`
+- `POST /jobs/list-board-categories`
+- `POST /jobs/plan-category`
+- `POST /jobs/validate-schematic-graph`
+- `POST /jobs/validate-schematic-readiness`
+- `POST /jobs/synthesize-schematic`
+- `POST /jobs/routing-readiness`
+- `POST /jobs/power-routing`
+- `POST /jobs/via-strategy`
+- `POST /jobs/noise-map`
+- `POST /jobs/manufacturer-rules`
+- `POST /jobs/project-review`
+- `POST /jobs/workflow-preset`
+- `POST /jobs/run-workflow`
+- `POST /jobs/run-verified-demo`
+- `POST /jobs/plan-mission`
+- `POST /jobs/intake-bom`
+- `POST /jobs/audit-bom`
+- `POST /jobs/canonical-net-model`
+- `POST /jobs/audit-assets`
+- `POST /jobs/audit-placement-legality`
+- `POST /jobs/routing-execution-strategy`
+- `POST /jobs/release-export-gates`
+- `POST /jobs/production-readiness-suite`
+- `POST /jobs/classify-board-architecture`
+- `POST /jobs/hdi-manufacturing-strategy`
+- `POST /jobs/return-path-integrity`
+- `POST /jobs/creepage-clearance`
+- `POST /jobs/bringup-reliability-matrix`
+- `POST /jobs/advanced-board-suite`
+- `POST /jobs/autotrace`
+- `POST /jobs/autotrace-critical`
+- `POST /jobs/autotrace-power`
+- `POST /jobs/autotrace-signals`
+- `POST /jobs/autotrace-diff-pairs`
+- `POST /jobs/autotrace-remaining`
+- `POST /jobs/repair-routing`
+- `POST /jobs/reroute-failed-nets`
+- `POST /jobs/routing-drc`
+- `POST /jobs/calculate-trace-width`
+- `POST /jobs/validate-trace-width`
+- `POST /jobs/detect-power-neckdowns`
+- `POST /jobs/create-power-pour`
+- `POST /jobs/select-via-type`
+- `POST /jobs/validate-via-manufacturability`
+- `POST /jobs/plan-requirements`
+- `POST /jobs/plan-pin-assignments`
+- `POST /jobs/plan-power-tree`
+- `POST /jobs/plan-stackup`
+- `POST /jobs/plan-fanout`
+- `POST /jobs/plan-signal-integrity`
+- `POST /jobs/plan-test-strategy`
+- `POST /jobs/dfm-checks`
+- `POST /jobs/compare-manufacturers`
+- `POST /jobs/plan-complex-board`
+- `POST /jobs/design-constraints`
+- `POST /jobs/kicad-rules`
+- `POST /jobs/sync-libraries`
+- `POST /jobs/search-library`
+- `POST /jobs/resolve-assets`
+- `POST /jobs/audit-component-library`
+- `POST /jobs/validate-bindings`
+- `POST /jobs/validate-manufacturing`
+- `POST /jobs/manufacturing-manifest`
+- `POST /jobs/generate-netlist`
+- `POST /jobs/design-audit`
+- `POST /jobs/plan-erc-repairs`
+- `POST /jobs/apply-safe-erc-repairs`
+- `POST /jobs/score-routing`
+- `POST /jobs/validate-routing`
+- `POST /jobs/apply-placement`
+- `POST /jobs/find-missing-footprints`
+- `POST /jobs/link-3d-models`
+- `POST /jobs/autoroute`
+- `POST /jobs/autoroute-apply`
+- `POST /jobs/autoroute-drc-iteration`
+- `POST /jobs/validate`
+- `POST /jobs/run-drc`
+- `POST /jobs/run-erc`
+- `POST /jobs/export-gerbers`
+- `POST /jobs/export-drill`
+- `POST /jobs/export-bom`
+- `POST /jobs/export-cpl`
+- `POST /jobs/export`
+- `POST /jobs/scan`
+
+## Codex MCP Server
+
+When the plugin is installed in Codex, Codex should call the BoardForge MCP tools directly instead of invoking shell commands by hand.
+
+Local test command:
+
+```bash
+node plugins/boardforge-plugin/bin/boardforge-mcp.mjs --workspace path/to/workspace
+```
+
+The MCP server exposes controlled tools for status, KiCad detection, outline/project creation, library sync/search/resolve, DRC/ERC, Gerbers, drill, BOM, CPL, JLCPCB packaging, and project summaries. Each tool accepts structured JSON and returns a review-required result object as text content.
+
+Use `status` first, then `kicad_status`, then the specific BoardForge job tool. Do not bypass these tools for direct KiCad file edits.

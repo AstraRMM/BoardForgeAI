@@ -1,0 +1,21 @@
+{
+  "id": "physical_silkscreen_labeling_as_product_feature_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "Previous boards reported labels but avoided physical product labels.",
+  "fixSummary": "REV_F physically places connector/user labels and DRC-gates them; current result shows label cleanup still required before manufacturing.",
+  "evidence": {
+    "labels": [
+      "USB",
+      "CAN",
+      "GPS/UART",
+      "I2C",
+      "SWD",
+      "BOOT",
+      "RESET",
+      "3V3",
+      "GND"
+    ],
+    "silkscreenDrc": 3
+  }
+}

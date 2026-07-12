@@ -1,0 +1,55 @@
+{
+  "id": "true_outline_aware_placement_reroute_001",
+  "status": "active",
+  "confidence": "medium",
+  "rootCause": "REV_E shrink-wrapped existing routing but did not co-design outline, placement, routing, and silkscreen.",
+  "fixSummary": "REV_F generates outline candidates first, places connectors/holes/components intentionally, exports DSN, runs FreeRouting, direct-imports SES, and reports remaining routeability gaps honestly.",
+  "evidence": {
+    "protectedProjects": {
+      "ESC untouched": true,
+      "FC untouched": true,
+      "protected files modified": false
+    },
+    "projectFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+    "latestBoard": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT_boardforge_freerouting_bulk.kicad_pcb",
+    "discardedUnsafeStitchCandidate": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT_boardforge_finished.kicad_pcb",
+    "selectedShape": "rounded_rectangle",
+    "selectedDensity": "normal",
+    "areaRevD": 2604,
+    "areaRevE": 2291.21,
+    "areaRevF": 2262.0,
+    "areaReductionVsRevD": 13.1,
+    "areaReductionVsRevE": 1.3,
+    "freeRoutingRun": true,
+    "sesProduced": true,
+    "sesImportedDirectly": true,
+    "segmentsImported": 179,
+    "viasImported": 6,
+    "shorts": 0,
+    "unconnected": 23,
+    "forbiddenVias": 0,
+    "drcViolations": 8,
+    "drcTypes": {
+      "clearance": 4,
+      "hole_to_hole": 1,
+      "silk_over_copper": 3
+    },
+    "ercViolations": null,
+    "manufacturingExported": false,
+    "reasonNotExported": "REV_F routed from true outline-aware placement, but remaining unconnected/DRC violations prevent manufacturing export.",
+    "physicalLabels": [
+      "USB",
+      "CAN",
+      "GPS/UART",
+      "I2C",
+      "SWD",
+      "BOOT",
+      "RESET",
+      "3V3",
+      "GND"
+    ],
+    "silkscreenDrc": 3,
+    "readabilityScore": 0.72,
+    "nextImprovement": "clearance-aware exact stitch/finisher and placement expansion loop for remaining 23 connections"
+  }
+}

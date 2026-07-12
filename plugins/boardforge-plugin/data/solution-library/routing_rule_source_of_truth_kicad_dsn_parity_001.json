@@ -1,0 +1,25 @@
+{
+  "id": "routing_rule_source_of_truth_kicad_dsn_parity_001",
+  "problem": "FreeRouting route was connectivity-clean but failed KiCad DRC because router and KiCad rules diverged.",
+  "rootCause": "FreeRouting used 0.18 mm traces / 0.16 mm clearance while KiCad enforced 0.20 mm width/clearance.",
+  "fix": "Add one routing-rule source of truth for KiCad net classes and DSN route rules; regenerate DSN; rerun FreeRouting; direct-import SES; clean silkscreen.",
+  "evidence": {
+    "before": {
+      "drc": 220,
+      "unconnected": 0,
+      "shorts": 0
+    },
+    "after": {
+      "drc": 0,
+      "unconnected": 0,
+      "shorts": 0,
+      "erc": 0
+    }
+  },
+  "filesChanged": [
+    "lib/routing/routing-rule-source-of-truth.mjs",
+    "tests/routing-rule-source-of-truth.test.mjs"
+  ],
+  "status": "active",
+  "confidence": "high"
+}

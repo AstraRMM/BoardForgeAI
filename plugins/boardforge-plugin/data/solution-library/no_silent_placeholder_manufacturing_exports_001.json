@@ -1,0 +1,61 @@
+{
+  "id": "no_silent_placeholder_manufacturing_exports_001",
+  "createdAt": "2026-06-28",
+  "updatedAt": "2026-06-28",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_D",
+  "boardType": "synthetic-robotics-sensor-hub",
+  "problemType": "manufacturing_readiness_disclosure",
+  "problemSignature": {
+    "risk": "DRC clean but placeholder BOM unsafe"
+  },
+  "rootCause": "A manufacturing ZIP can be technically DRC-clean while still containing placeholder/common parts that are not safe to fabricate without disclosure.",
+  "fixSummary": "Manufacturing readiness includes part verification status, placeholder disclosure, pin-map validation, and BOM sourcing status.",
+  "implementation": {
+    "filesChanged": [
+      "manufacturing/BOM/BF-SENSOR-HUB-01_REV_D_BOM.csv",
+      "tests/rev-d-verification.test.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "test:no-silent-placeholders",
+      "test:sourcing-status-report"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [
+      "all"
+    ],
+    "conditions": [
+      "BOM generation",
+      "JLCPCB package"
+    ]
+  },
+  "recipe": [
+    "include MPN/status columns",
+    "mark NOT_API_VERIFIED when no API check exists",
+    "disclose placeholders explicitly",
+    "export only after DRC/ERC/pinmap gates pass"
+  ],
+  "safetyRules": [
+    "do not fake MPN",
+    "do not fake stock",
+    "do not hide placeholder geometry"
+  ],
+  "evidence": {
+    "before": {
+      "bomSourcingFields": false
+    },
+    "after": {
+      "bomSourcingFields": true,
+      "placeholderDisclosure": true
+    },
+    "tests": [
+      "test:no-silent-placeholders"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

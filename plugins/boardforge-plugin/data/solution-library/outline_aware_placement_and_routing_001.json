@@ -1,0 +1,62 @@
+{
+  "id": "outline_aware_placement_and_routing_001",
+  "createdAt": "2026-06-28",
+  "updatedAt": "2026-06-28",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_E",
+  "boardType": "synthetic-robotics-sensor-hub",
+  "problemType": "outline_placement_routing_coupling",
+  "problemSignature": {
+    "issue": "outline, placement, holes, and routing treated separately"
+  },
+  "rootCause": "Board shape, component placement, mounting holes, connectors, and routing were treated as separate steps instead of one co-designed mechanical/electrical problem.",
+  "fixSummary": "BoardForge should choose/generate outline and placement together, validate all components/copper/holes against Edge.Cuts, route within the outline, and expand or reshape only when routing/DRC requires it.",
+  "implementation": {
+    "filesChanged": [
+      "BoardForge_REV_E_Mechanical_Constraints.json"
+    ],
+    "functionsAdded": [
+      "buildMechanicalConstraints"
+    ],
+    "testsAdded": [
+      "test:outline-aware-placement",
+      "test:connector-edge-placement"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [
+      "all"
+    ],
+    "conditions": [
+      "outline-aware-placement"
+    ]
+  },
+  "recipe": [
+    "select mechanical constraints",
+    "place edge connectors",
+    "place holes",
+    "generate outline",
+    "validate edge clearance",
+    "reroute if needed"
+  ],
+  "safetyRules": [
+    "validate DRC after outline mutation",
+    "do not let visual shape override electrical clearance"
+  ],
+  "evidence": {
+    "before": {
+      "genericRectangle": true
+    },
+    "after": {
+      "selectedCandidate": "rounded_rectangle",
+      "alternateCandidatesRejectedForDrc": 2
+    },
+    "tests": [
+      "test:outline-aware-placement"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

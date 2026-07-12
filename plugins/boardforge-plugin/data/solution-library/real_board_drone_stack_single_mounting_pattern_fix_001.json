@@ -1,0 +1,11 @@
+{
+  "id": "real_board_drone_stack_single_mounting_pattern_fix_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "DRONE_STACK_MULTIPLE_MOUNTING_PATTERNS_CAUSE_NPTH_CLEARANCE_AND_MASK_BRIDGE_DRC",
+  "boardId": "drone-stack-board",
+  "detectionRule": "A drone stack outline emits more than one standard stack mounting pattern, such as 20x20 plus 25.5x25.5 plus 30.5x30.5, in the same compact board.",
+  "rootCause": "Different drone stack standards are alternatives, not simultaneous mounting requirements; placing all of them creates overlapping NPTH keepouts and solder-mask bridge errors.",
+  "fixStrategy": "Select one stack pattern per board. Default to 30.5x30.5 when it fits, then fall back to 25.5x25.5 or 20x20 only when the mechanical envelope is too small.",
+  "regressionTest": "test:real-board-proof verifies the drone stack proof uses one four-hole pattern and does not carry DRC errors from mixed mounting patterns.",
+  "futureAutoApplyRule": "When a prompt names a stack pattern, lock that one. When the prompt is ambiguous, choose the largest supported pattern that satisfies board-edge clearance and do not emit alternate patterns as holes."
+}

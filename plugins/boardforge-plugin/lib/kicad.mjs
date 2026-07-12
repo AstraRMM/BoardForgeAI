@@ -1,0 +1,586 @@
+import crypto from 'node:crypto'
+import { readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { polygonBounds, round } from './geometry.mjs'
+import { assignNetsToClasses } from './net-classes.mjs'
+import { atomNumber, atomText, child, children, descendants, parseSExpr } from './sexpr.mjs'
+
+const uuid = () => crypto.randomUUID()
+const text = (value) => String(value).replace(/"/g, "'")
+
+export function kicadProjectFile(board, netClasses = [], profile = {}, nets = []) {
+  const rules = projectRules(profile)
+  const nativeNetSettings = kicadNativeNetSettings(netClasses, nets, profile)
+  return JSON.stringify({
+    meta: { version: 1 },
+    board: { design_settings: { defaults: {}, rules, net_classes: netClasses } },
+    boards: [],
+    cvpcb: {},
+    libraries: {},
+    net_settings: nativeNetSettings,
+    pcbnew: {},
+    schematic: {},
+    sheets: [],
+    text_variables: { BOARD_NAME: board.name, BOARDFORGE_MODE: 'outline_only', BOARDFORGE_EXECUTOR: 'boardforge-plugin-cli' },
+  }, null, 2)
+}
+
+export async function syncKiCadProjectNetSettings({ projectFile, nets = [], netClasses = [], profile = {} }) {
+  if (!projectFile) return { status: 'PROJECT_NET_SETTINGS_SKIPPED', changed: false, reason: 'No .kicad_pro file supplied.' }
+  const content = await readFile(projectFile, 'utf8')
+  const project = JSON.parse(content)
+  const currentClasses = netClasses.length ? netClasses : project.board?.design_settings?.net_classes || []
+  const nextSettings = kicadNativeNetSettings(currentClasses, nets, profile)
+  project.board = project.board || {}
+  project.board.design_settings = project.board.design_settings || {}
+  project.board.design_settings.net_classes = currentClasses
+  project.net_settings = nextSettings
+  const nextContent = `${JSON.stringify(project, null, 2)}\n`
+  if (nextContent === content) return { status: 'PROJECT_NET_SETTINGS_CURRENT', changed: false, projectFile, netCount: nets.length, classCount: currentClasses.length }
+  await writeFile(projectFile, nextContent, 'utf8')
+  return { status: 'PROJECT_NET_SETTINGS_SYNCED', changed: true, projectFile, netCount: nets.length, classCount: currentClasses.length, assignedNetCount: Object.keys(nextSettings.netclass_assignments || {}).length }
+}
+
+function kicadNativeNetSettings(netClasses = [], nets = [], profile = {}) {
+  const classes = normalizeNetClasses(netClasses, profile).map((item, index) => ({
+    bus_width: 12,
+    clearance: round(item.clearanceMm ?? profile.minClearanceMm ?? 0.15),
+    diff_pair_gap: round(item.differentialPairGapMm ?? 0.25),
+    diff_pair_via_gap: round(item.differentialPairViaGapMm ?? item.differentialPairGapMm ?? 0.25),
+    diff_pair_width: round(item.differentialPairWidthMm ?? item.traceWidthMm ?? 0.15),
+    line_style: 0,
+    microvia_diameter: round(profile.hdi?.minMicroviaDiameterMm ?? 0.3),
+    microvia_drill: round(profile.hdi?.minMicroviaDrillMm ?? 0.1),
+    name: item.name === 'DEFAULT' ? 'Default' : item.name,
+    pcb_color: 'rgba(0, 0, 0, 0.000)',
+    priority: item.name === 'DEFAULT' ? 2147483647 : Math.max(1, 1000 - Number(item.priority ?? index)),
+    schematic_color: 'rgba(0, 0, 0, 0.000)',
+    track_width: round(item.traceWidthMm ?? profile.minTraceWidthMm ?? 0.15),
+    tuning_profile: '',
+    via_diameter: round(item.viaDiameterMm ?? profile.minViaDiameterMm ?? 0.45),
+    via_drill: round(item.viaDrillMm ?? profile.minViaDrillMm ?? 0.2),
+    wire_width: 6,
+  }))
+  const assignments = {}
+  for (const net of assignNetsToClasses(nets || [])) {
+    if (!net?.name) continue
+    const className = net.className === 'DEFAULT' ? 'Default' : net.className
+    if (className && className !== 'Default') assignments[net.name] = className
+  }
+  return {
+    classes,
+    meta: { version: 5 },
+    net_colors: null,
+    netclass_assignments: Object.keys(assignments).length ? assignments : null,
+    netclass_patterns: [],
+  }
+}
+
+function normalizeNetClasses(netClasses, profile) {
+  if (netClasses?.length) return netClasses
+  return [{
+    name: 'DEFAULT',
+    traceWidthMm: profile.minTraceWidthMm || 0.15,
+    clearanceMm: profile.minClearanceMm || 0.15,
+    viaDiameterMm: profile.minViaDiameterMm || 0.45,
+    viaDrillMm: profile.minViaDrillMm || 0.2,
+  }]
+}
+
+function projectRules(profile = {}) {
+  const minViaDrill = Number(profile.minViaDrillMm || 0.2)
+  const minHole = Math.min(Number(profile.minHoleSizeMm || minViaDrill), minViaDrill)
+  return {
+    max_error: 0.005,
+    min_clearance: Number(profile.minClearanceMm || 0.127),
+    min_connection: 0,
+    min_copper_edge_clearance: Number(profile.edgeClearanceMm || 0.35),
+    min_groove_width: 0,
+    min_hole_clearance: 0.25,
+    min_hole_to_hole: 0.25,
+    min_microvia_diameter: Number(profile.hdi?.minMicroviaDiameterMm || 0.2),
+    min_microvia_drill: Number(profile.hdi?.minMicroviaDrillMm || 0.1),
+    min_resolved_spokes: 2,
+    min_silk_clearance: 0,
+    min_text_height: 0.8,
+    min_text_thickness: 0.08,
+    min_through_hole_diameter: minHole,
+    min_track_width: Number(profile.minTraceWidthMm || 0.127),
+    min_via_annular_width: 0.1,
+    min_via_diameter: Number(profile.minViaDiameterMm || 0.45),
+    solder_mask_to_copper_clearance: 0,
+    use_height_for_length_calcs: true,
+  }
+}
+
+const grLine = (a, b) => `  (gr_line (start ${round(a.x)} ${round(a.y)}) (end ${round(b.x)} ${round(b.y)})\n    (stroke (width 0.1) (type solid)) (layer "Edge.Cuts") (uuid "${uuid()}"))`
+const grCircle = (c, r, layer = 'Edge.Cuts') => `  (gr_circle (center ${round(c.x)} ${round(c.y)}) (end ${round(c.x + r)} ${round(c.y)})\n    (stroke (width 0.1) (type solid)) (fill none) (layer "${layer}") (uuid "${uuid()}"))`
+const grText = (label, x, y, layer = 'Cmts.User') => `  (gr_text "${text(label)}" (at ${round(x)} ${round(y)} 0) (layer "${layer}")\n    (effects (font (size 1 1) (thickness 0.12))) (uuid "${uuid()}"))`
+
+export function kicadPcbFile(board, options = {}) {
+  const points = board.outline || []
+  const edgeCuts = points.map((point, index) => grLine(point, points[(index + 1) % points.length]))
+  const holes = (board.mountingHoles || []).flatMap((hole) => [grCircle(hole, hole.diameterMm / 2), grText(hole.id, hole.x, hole.y + hole.diameterMm + 1.2)])
+  const bounds = polygonBounds(points)
+  const classes = netClassText(options.netClasses || [], options.nets || [])
+  return `(kicad_pcb (version 20240108) (generator "BoardForge Plugin CLI")\n  (general (thickness 1.6))\n  (paper "A4")\n  (layers\n    (0 "F.Cu" signal)\n    (1 "In1.Cu" signal)\n    (2 "In2.Cu" signal)\n    (31 "B.Cu" signal)\n    (36 "B.SilkS" user)\n    (37 "F.SilkS" user)\n    (38 "B.Mask" user)\n    (39 "F.Mask" user)\n    (44 "Edge.Cuts" user)\n    (45 "Margin" user)\n    (46 "B.CrtYd" user)\n    (47 "F.CrtYd" user)\n    (48 "B.Fab" user)\n    (49 "F.Fab" user)\n  )${classes}\n  (setup (pad_to_mask_clearance 0))\n${edgeCuts.join('\n')}\n${holes.join('\n')}\n${grText(`BoardForge outline-only: ${board.name}`, bounds.minX, bounds.minY - 3)}\n${(options.footprints || []).join('\n')}\n)\n`
+}
+
+function netClassText(netClasses, nets) {
+  if (!netClasses.length) return ''
+  const netsByClass = new Map()
+  for (const net of nets || []) {
+    if (!net?.name) continue
+    const className = net.className || 'DEFAULT'
+    if (!netsByClass.has(className)) netsByClass.set(className, [])
+    netsByClass.get(className).push(net.name)
+  }
+  return netClasses.map((item) => {
+    const netNames = [...new Set(netsByClass.get(item.name) || [])]
+    const addNets = netNames.map((name) => `    (add_net "${text(name)}")`).join('\n')
+    return `\n  (net_class "${text(item.name)}" ""\n    (clearance ${round(item.clearanceMm || 0.15)})\n    (trace_width ${round(item.traceWidthMm || 0.15)})\n    (via_dia ${round(item.viaDiameterMm || 0.45)})\n    (via_drill ${round(item.viaDrillMm || 0.2)})${addNets ? `\n${addNets}` : ''}\n  )`
+  }).join('')
+}
+
+export function kicadSchematicFile(board, options = {}) {
+  const components = options.components || []
+  const componentNotes = components.map((component, index) => `\t(text "${text(`${component.ref}: ${component.value || component.group || 'component'} | ${component.symbol?.libId || component.symbol || 'symbol needs review'} | ${component.footprint?.libId || component.footprint || 'footprint needs review'}`)}"\n\t\t(at 25 ${35 + index * 5} 0)\n\t\t(effects (font (size 1.2 1.2)) (justify left bottom))\n\t\t(uuid "${uuid()}")\n\t)`).join('\n')
+  return `(kicad_sch
+\t(version 20250114)
+\t(generator "BoardForge Plugin CLI")
+\t(generator_version "0.1.0")
+\t(uuid "${uuid()}")
+\t(paper "A4")
+\t(title_block
+\t\t(title "${text(board.name)}")
+\t\t(company "BoardForge AI")
+\t\t(comment 1 "Review-required component manifest. Native symbol/wire emission must pass ERC before manufacturing.")
+\t)
+\t(lib_symbols)
+\t(text "BoardForge component manifest - review required"
+\t\t(at 25 25 0)
+\t\t(effects (font (size 1.5 1.5) bold) (justify left bottom))
+\t\t(uuid "${uuid()}")
+\t)
+${componentNotes}
+\t(sheet_instances
+\t\t(path "/"
+\t\t\t(page "1")
+\t\t)
+\t)
+\t(embedded_fonts no)
+)
+`
+}
+
+export function readmeFile(job, board, review) {
+  return `# ${board.name}\n\nGenerated by BoardForge Plugin CLI from structured job ${job.id || 'unknown'}.\n\nStatus: ${review.status}\n\n## What exists\n\n- KiCad project file\n- KiCad PCB file\n- Real Edge.Cuts board outline\n- Mounting hole Edge.Cuts geometry when provided\n- BoardForge self-review JSON\n\n## What does not exist yet\n\n- Schematic\n- Footprints/components\n- Routed copper\n- ERC/DRC pass reports\n- Gerbers\n- Drill files\n- BOM\n- CPL / pick-and-place\n- JLCPCB manufacturing ZIP\n\nHuman review is required before manufacturing.\n`
+}
+
+export function projectReadmeFile(job, board, review) {
+  return `# ${board.name}\n\nGenerated by BoardForge Plugin CLI from structured job ${job.id || 'unknown'}.\n\nStatus: ${review.status}\n\n## What exists\n\n- KiCad project file\n- KiCad schematic scaffold\n- KiCad PCB file\n- Real Edge.Cuts board outline\n- Mounting hole Edge.Cuts geometry when provided\n- BoardForge self-review JSON\n\n## What does not exist yet\n\n- Real schematic symbols or wires\n- Assigned real footprints\n- Routed copper\n- ERC/DRC pass reports until those commands are run\n- Gerbers until export command is run\n- Drill files until export command is run\n- Populated BOM until schematic symbols exist\n- CPL / pick-and-place with placed components\n- JLCPCB manufacturing ZIP until required files exist\n\nHuman review is required before manufacturing.\n`
+}
+
+export async function scanKiCadProject(projectPath) {
+  const rootStat = await stat(projectPath)
+  const root = rootStat.isDirectory() ? projectPath : path.dirname(projectPath)
+  const files = await readdir(root)
+  const pcbFile = files.find((file) => file.endsWith('.kicad_pcb'))
+  const proFile = files.find((file) => file.endsWith('.kicad_pro'))
+  const schFiles = files.filter((file) => file.endsWith('.kicad_sch'))
+  if (!pcbFile) return { projectName: path.basename(root), projectFile: proFile ? path.join(root, proFile) : null, schematicFiles: schFiles.map((file) => path.join(root, file)), pcbFile: null, layerCount: 0, layers: [], netClasses: [], nets: [], footprints: [], tracks: [], vias: [], zones: [], mountingHoles: [], errors: [{ severity: 'ERROR', code: 'PCB_FILE_MISSING', message: 'No .kicad_pcb file was found.' }], warnings: [] }
+  const content = await readFile(path.join(root, pcbFile), 'utf8')
+  const tree = safeParsePcb(content)
+  const layers = tree ? parseLayersTree(tree) : [...content.matchAll(/\(\d+\s+"([^"]+)"\s+([^)]+)\)/g)].map((match) => ({ name: match[1], type: match[2].trim() }))
+  const nets = tree ? parseNetsTree(tree) : [...content.matchAll(/\(net\s+(\d+)\s+"([^"]+)"\)/g)].map((match) => ({ number: Number(match[1]), name: match[2] }))
+  const netByNumber = new Map(nets.map((net) => [net.number, net.name]))
+  const footprints = tree ? parseFootprintsTree(tree, netByNumber) : parseFootprints(content, netByNumber)
+  const boardOutline = tree ? edgeCutsOutlineTree(tree) : edgeCutsOutline(content)
+  const pads = footprints.flatMap((footprint) => footprint.pads.map((pad) => ({
+    ...pad,
+    ref: footprint.ref,
+    footprint: footprint.footprint,
+  })))
+  const tracks = tree ? parseTracksTree(tree, netByNumber) : parseTracks(content, netByNumber)
+  const vias = tree ? parseViasTree(tree, netByNumber) : parseVias(content, netByNumber)
+  const zones = tree ? parseZonesTree(tree, netByNumber) : parseZones(content, netByNumber)
+  const mountingHoles = tree ? parseMountingHolesTree(tree) : parseMountingHoles(content)
+  const bounds = boardOutline.length ? polygonBounds(boardOutline) : null
+  return {
+    projectName: path.basename(root), projectFile: proFile ? path.join(root, proFile) : null, schematicFiles: schFiles.map((file) => path.join(root, file)), pcbFile: path.join(root, pcbFile), kicadVersion: content.match(/\(version\s+(\d+)\)/)?.[1],
+    boardSize: bounds ? { widthMm: round(bounds.maxX - bounds.minX), heightMm: round(bounds.maxY - bounds.minY), bounds } : null,
+    boardOutline,
+    layerCount: layers.filter((layer) => layer.type.includes('signal')).length,
+    layers,
+    netClasses: [...content.matchAll(/\(net_class\s+"([^"]+)"/g)].map((match) => ({ name: match[1] })),
+    nets,
+    footprints,
+    pads,
+    tracks,
+    vias,
+    zones,
+    mountingHoles,
+    routeObstacleSummary: {
+      pads: pads.length,
+      tracks: tracks.length,
+      vias: vias.length,
+      zones: zones.length,
+      mountingHoles: mountingHoles.length,
+      edgeCutPoints: boardOutline.length,
+    },
+    errors: [],
+    warnings: footprints.length && !content.includes('(model') ? [{ severity: 'WARNING', code: 'MISSING_3D_MODEL_HINT', message: `${footprints.length} footprints may be missing 3D models.` }] : [],
+  }
+}
+
+function safeParsePcb(content) {
+  try {
+    const tree = parseSExpr(content)
+    return Array.isArray(tree) && tree[0] === 'kicad_pcb' ? tree : null
+  } catch {
+    return null
+  }
+}
+
+function parseLayersTree(tree) {
+  const layers = child(tree, 'layers')
+  return layers ? layers.slice(1).filter(Array.isArray).map((layer) => ({ id: Number(layer[0]), name: atomText(layer[1]), type: atomText(layer[2]) || '' })) : []
+}
+
+function parseNetsTree(tree) {
+  return children(tree, 'net').map((net) => ({ number: atomNumber(net[1]), name: atomText(net[2]) || '' }))
+}
+
+function parseFootprintsTree(tree, netByNumber) {
+  return children(tree, 'footprint').map((node, index) => {
+    const footprint = atomText(node[1]) || `unknown_${index + 1}`
+    const at = child(node, 'at')
+    const ref = children(node, 'property').find((property) => property[1] === 'Reference')?.[2] || children(node, 'fp_text').find((fpText) => fpText[1] === 'reference')?.[2] || `FP${index + 1}`
+    const x = atomNumber(at?.[1])
+    const y = atomNumber(at?.[2])
+    const rotation = atomNumber(at?.[3])
+    const pads = children(node, 'pad').map((pad, padIndex) => padFromTree(pad, { ref, footprint, x, y, rotation }, netByNumber, padIndex))
+    const bounds = padBounds(pads, x, y)
+    const courtyards = courtyardPolygonsFromTree(node, { x, y, rotation })
+    return {
+      id: `fp_${index + 1}`,
+      ref,
+      footprint,
+      value: children(node, 'property').find((property) => property[1] === 'Value')?.[2] || null,
+      x,
+      y,
+      rotation,
+      width: round(bounds.widthMm || polygonWidth(courtyards) || footprintWidthHint(footprint)),
+      height: round(bounds.heightMm || polygonHeight(courtyards) || footprintHeightHint(footprint)),
+      pads,
+      padCount: pads.length,
+      modelCount: children(node, 'model').length,
+      hasCourtyard: courtyards.length > 0,
+      courtyards,
+    }
+  })
+}
+
+function padFromTree(pad, footprint, netByNumber, index) {
+  const name = atomText(pad[1]) || `${index + 1}`
+  const at = child(pad, 'at')
+  const size = child(pad, 'size')
+  const net = child(pad, 'net')
+  const local = { x: atomNumber(at?.[1]), y: atomNumber(at?.[2]) }
+  const center = transformLocalPoint(local, footprint)
+  const netNumber = net ? atomNumber(net[1], null) : null
+  const netName = netNameFromNode(net, netByNumber)
+  const layersNode = child(pad, 'layers')
+  return {
+    id: `${footprint.ref}:${name}`,
+    pad: name,
+    name,
+    type: atomText(pad[2]) || 'unknown',
+    shape: atomText(pad[3]) || 'unknown',
+    x: center.x,
+    y: center.y,
+    localX: local.x,
+    localY: local.y,
+    rotation: round((footprint.rotation || 0) + atomNumber(at?.[3])),
+    widthMm: atomNumber(size?.[1], 0.6),
+    heightMm: atomNumber(size?.[2], 0.6),
+    netNumber,
+    netName,
+    layers: layersNode ? layersNode.slice(1).map(atomText) : [],
+    throughHole: atomText(pad[2]) === 'thru_hole',
+    drillMm: atomNumber(child(pad, 'drill')?.[1], 0),
+  }
+}
+
+function edgeCutsOutlineTree(tree) {
+  const lines = children(tree, 'gr_line')
+    .filter((line) => child(line, 'layer')?.[1] === 'Edge.Cuts')
+    .map((line) => ({ start: pointNode(child(line, 'start')), end: pointNode(child(line, 'end')) }))
+  return orderSegments(lines)
+}
+
+function parseTracksTree(tree, netByNumber) {
+  return children(tree, 'segment').map((segment, index) => {
+    const netNumber = atomNumber(child(segment, 'net')?.[1], null)
+    return { id: `track_${index + 1}`, start: pointNode(child(segment, 'start')), end: pointNode(child(segment, 'end')), widthMm: atomNumber(child(segment, 'width')?.[1]), layer: child(segment, 'layer')?.[1] || 'F.Cu', netNumber, netName: netNameFromNode(child(segment, 'net'), netByNumber) }
+  })
+}
+
+function parseViasTree(tree, netByNumber) {
+  return children(tree, 'via').map((via, index) => {
+    const netNumber = atomNumber(child(via, 'net')?.[1], null)
+    const layersNode = child(via, 'layers')
+    return { id: `via_${index + 1}`, ...pointNode(child(via, 'at')), diameterMm: atomNumber(child(via, 'size')?.[1]), drillMm: atomNumber(child(via, 'drill')?.[1]), layers: layersNode ? layersNode.slice(1).map(atomText) : [], netNumber, netName: netNameFromNode(child(via, 'net'), netByNumber), viaType: child(via, 'type')?.[1] || 'through' }
+  })
+}
+
+function parseZonesTree(tree, netByNumber) {
+  return children(tree, 'zone').map((zone, index) => {
+    const netNumber = atomNumber(child(zone, 'net')?.[1], null)
+    return { id: `zone_${index + 1}`, netNumber, netName: child(zone, 'net_name')?.[1] || netNameFromNode(child(zone, 'net'), netByNumber), layer: child(zone, 'layer')?.[1] || null, polygon: descendants(zone, 'xy').map(pointNode) }
+  })
+}
+
+function netNameFromNode(netNode, netByNumber) {
+  if (!netNode) return null
+  const numeric = atomNumber(netNode[1], null)
+  if (numeric !== null) return atomText(netNode[2]) || netByNumber.get(numeric) || null
+  return atomText(netNode[1]) || null
+}
+
+function parseMountingHolesTree(tree) {
+  const circles = children(tree, 'gr_circle').filter((circle) => child(circle, 'layer')?.[1] === 'Edge.Cuts').map((circle, index) => {
+    const center = pointNode(child(circle, 'center'))
+    const end = pointNode(child(circle, 'end'))
+    return { id: `hole_${index + 1}`, x: center.x, y: center.y, diameterMm: round(Math.hypot(end.x - center.x, end.y - center.y) * 2) }
+  })
+  const npths = children(tree, 'footprint').flatMap((fp, fpIndex) => children(fp, 'pad').filter((pad) => pad[2] === 'np_thru_hole').map((pad, padIndex) => {
+    const at = pointNode(child(pad, 'at'))
+    return { id: `npth_${fpIndex + 1}_${padIndex + 1}`, x: at.x, y: at.y, diameterMm: atomNumber(child(pad, 'drill')?.[1]) }
+  }))
+  return [...circles, ...npths]
+}
+
+function pointNode(node) {
+  return { x: atomNumber(node?.[1]), y: atomNumber(node?.[2]) }
+}
+
+function orderSegments(lines) {
+  if (!lines.length) return []
+  const ordered = [lines[0].start, lines[0].end]
+  const remaining = lines.slice(1)
+  while (remaining.length) {
+    const last = ordered[ordered.length - 1]
+    const index = remaining.findIndex((line) => samePoint(line.start, last) || samePoint(line.end, last))
+    if (index < 0) break
+    const [line] = remaining.splice(index, 1)
+    ordered.push(samePoint(line.start, last) ? line.end : line.start)
+  }
+  const deduped = ordered.filter((point, index, list) => index === 0 || !samePoint(point, list[index - 1]))
+  if (deduped.length > 2 && samePoint(deduped[0], deduped[deduped.length - 1])) deduped.pop()
+  return deduped
+}
+
+function courtyardPolygonsFromTree(footprintNode, transform) {
+  const polygons = []
+  for (const rect of children(footprintNode, 'fp_rect').filter((node) => child(node, 'layer')?.[1]?.includes('.CrtYd'))) {
+    const start = transformLocalPoint(pointNode(child(rect, 'start')), transform)
+    const end = transformLocalPoint(pointNode(child(rect, 'end')), transform)
+    polygons.push([
+      { x: start.x, y: start.y },
+      { x: end.x, y: start.y },
+      { x: end.x, y: end.y },
+      { x: start.x, y: end.y },
+    ])
+  }
+  for (const poly of children(footprintNode, 'fp_poly').filter((node) => child(node, 'layer')?.[1]?.includes('.CrtYd'))) {
+    const pts = children(child(poly, 'pts'), 'xy').map((point) => transformLocalPoint(pointNode(point), transform))
+    if (pts.length >= 3) polygons.push(pts)
+  }
+  return polygons
+}
+
+function polygonWidth(polygons) {
+  const points = polygons.flat()
+  if (!points.length) return 0
+  const bounds = polygonBounds(points)
+  return bounds.maxX - bounds.minX
+}
+
+function polygonHeight(polygons) {
+  const points = polygons.flat()
+  if (!points.length) return 0
+  const bounds = polygonBounds(points)
+  return bounds.maxY - bounds.minY
+}
+
+function parseFootprints(content, netByNumber) {
+  return sExprBlocks(content, '(footprint').map((block, index) => {
+    const footprint = block.match(/^\(footprint\s+"([^"]+)"/)?.[1] || `unknown_${index + 1}`
+    const at = block.match(/\(at\s+([-\d.]+)\s+([-\d.]+)(?:\s+([-\d.]+))?/)
+    const ref = block.match(/\(property\s+"Reference"\s+"([^"]+)"/)?.[1] || block.match(/\(fp_text\s+reference\s+"([^"]+)"/)?.[1] || `FP${index + 1}`
+    const x = Number(at?.[1] || 0)
+    const y = Number(at?.[2] || 0)
+    const rotation = Number(at?.[3] || 0)
+    const pads = parsePads(block, { ref, footprint, x, y, rotation }, netByNumber)
+    const bounds = padBounds(pads, x, y)
+    return {
+      id: `fp_${index + 1}`,
+      ref,
+      footprint,
+      value: block.match(/\(property\s+"Value"\s+"([^"]+)"/)?.[1] || null,
+      x,
+      y,
+      rotation,
+      width: round(bounds.widthMm || footprintWidthHint(footprint)),
+      height: round(bounds.heightMm || footprintHeightHint(footprint)),
+      pads,
+      padCount: pads.length,
+      modelCount: [...block.matchAll(/\(model\s+"?([^"\s)]+)"?/g)].length,
+      hasCourtyard: /\(fp_(?:line|rect|poly)[\s\S]*?\(layer\s+"[FB]\.CrtYd"\)/.test(block),
+    }
+  })
+}
+
+function parsePads(footprintBlock, footprint, netByNumber) {
+  return sExprBlocks(footprintBlock, '(pad').map((block, index) => {
+    const name = block.match(/^\(pad\s+"([^"]*)"/)?.[1] || `${index + 1}`
+    const at = block.match(/\(at\s+([-\d.]+)\s+([-\d.]+)(?:\s+([-\d.]+))?/)
+    const size = block.match(/\(size\s+([-\d.]+)\s+([-\d.]+)\)/)
+    const net = block.match(/\(net\s+(\d+)\s+"([^"]*)"\)/)
+    const local = { x: Number(at?.[1] || 0), y: Number(at?.[2] || 0) }
+    const center = transformLocalPoint(local, footprint)
+    const shape = block.match(/^\(pad\s+"[^"]*"\s+\S+\s+(\S+)/)?.[1] || 'unknown'
+    const layers = [...block.matchAll(/"([^"]*\.Cu|[^"]*\.Mask|[^"]*\.Paste)"/g)].map((match) => match[1])
+    return {
+      id: `${footprint.ref}:${name}`,
+      pad: name,
+      name,
+      shape,
+      x: center.x,
+      y: center.y,
+      localX: local.x,
+      localY: local.y,
+      rotation: round((footprint.rotation || 0) + Number(at?.[3] || 0)),
+      widthMm: Number(size?.[1] || 0),
+      heightMm: Number(size?.[2] || 0),
+      netNumber: net ? Number(net[1]) : null,
+      netName: net?.[2] || (net ? netByNumber.get(Number(net[1])) : null) || null,
+      layers,
+      throughHole: /^\(pad\s+"[^"]*"\s+thru_hole/.test(block),
+    }
+  })
+}
+
+function parseTracks(content, netByNumber) {
+  return [...content.matchAll(/\(segment\s+\(start\s+([-\d.]+)\s+([-\d.]+)\)\s+\(end\s+([-\d.]+)\s+([-\d.]+)\)\s+\(width\s+([-\d.]+)\)\s+\(layer\s+"([^"]+)"\)\s+\(net\s+(\d+)\)/g)]
+    .map((match, index) => ({ id: `track_${index + 1}`, start: { x: Number(match[1]), y: Number(match[2]) }, end: { x: Number(match[3]), y: Number(match[4]) }, widthMm: Number(match[5]), layer: match[6], netNumber: Number(match[7]), netName: netByNumber.get(Number(match[7])) || null }))
+}
+
+function parseVias(content, netByNumber) {
+  return sExprBlocks(content, '(via').map((block, index) => {
+    const at = block.match(/\(at\s+([-\d.]+)\s+([-\d.]+)\)/)
+    const size = block.match(/\(size\s+([-\d.]+)\)/)
+    const drill = block.match(/\(drill\s+([-\d.]+)\)/)
+    const net = block.match(/\(net\s+(\d+)\)/)
+    const layers = [...block.matchAll(/"([^"]+\.Cu)"/g)].map((match) => match[1])
+    return { id: `via_${index + 1}`, x: Number(at?.[1] || 0), y: Number(at?.[2] || 0), diameterMm: Number(size?.[1] || 0), drillMm: Number(drill?.[1] || 0), layers, netNumber: net ? Number(net[1]) : null, netName: net ? netByNumber.get(Number(net[1])) || null : null, viaType: /\(type\s+microvia\)/.test(block) ? 'microvia' : 'through' }
+  })
+}
+
+function parseZones(content, netByNumber) {
+  return sExprBlocks(content, '(zone').map((block, index) => {
+    const net = block.match(/\(net\s+(\d+)\)/)
+    const layer = block.match(/\(layer\s+"([^"]+)"\)/)?.[1] || null
+    const polygon = [...block.matchAll(/\(xy\s+([-\d.]+)\s+([-\d.]+)\)/g)].map((match) => ({ x: Number(match[1]), y: Number(match[2]) }))
+    const netNumber = net ? Number(net[1]) : null
+    return { id: `zone_${index + 1}`, netNumber, netName: block.match(/\(net_name\s+"([^"]+)"/)?.[1] || netByNumber.get(netNumber) || null, layer, polygon }
+  })
+}
+
+function parseMountingHoles(content) {
+  const edgeCircles = [...content.matchAll(/\(gr_circle\s+\(center\s+([-\d.]+)\s+([-\d.]+)\)\s+\(end\s+([-\d.]+)\s+([-\d.]+)\)[\s\S]*?\(layer\s+"Edge.Cuts"\)/g)]
+    .map((match, index) => ({ id: `hole_${index + 1}`, x: Number(match[1]), y: Number(match[2]), diameterMm: round(Math.hypot(Number(match[3]) - Number(match[1]), Number(match[4]) - Number(match[2])) * 2) }))
+  const npths = sExprBlocks(content, '(pad').filter((block) => /np_thru_hole/.test(block)).map((block, index) => {
+    const at = block.match(/\(at\s+([-\d.]+)\s+([-\d.]+)/)
+    const drill = block.match(/\(drill\s+([-\d.]+)/)
+    return { id: `npth_${index + 1}`, x: Number(at?.[1] || 0), y: Number(at?.[2] || 0), diameterMm: Number(drill?.[1] || 0) }
+  })
+  return [...edgeCircles, ...npths]
+}
+
+function edgeCutsOutline(content) {
+  const lines = [...content.matchAll(/\(gr_line\s+\(start\s+([-\d.]+)\s+([-\d.]+)\)\s+\(end\s+([-\d.]+)\s+([-\d.]+)\)[\s\S]*?\(layer\s+"Edge.Cuts"\)/g)]
+    .map((match) => ({ start: { x: Number(match[1]), y: Number(match[2]) }, end: { x: Number(match[3]), y: Number(match[4]) } }))
+  if (!lines.length) return []
+  const ordered = [lines[0].start, lines[0].end]
+  const remaining = lines.slice(1)
+  while (remaining.length) {
+    const last = ordered[ordered.length - 1]
+    const index = remaining.findIndex((line) => samePoint(line.start, last) || samePoint(line.end, last))
+    if (index < 0) break
+    const [line] = remaining.splice(index, 1)
+    ordered.push(samePoint(line.start, last) ? line.end : line.start)
+  }
+  const deduped = ordered.filter((point, index, list) => index === 0 || !samePoint(point, list[index - 1]))
+  if (deduped.length > 2 && samePoint(deduped[0], deduped[deduped.length - 1])) deduped.pop()
+  return deduped
+}
+
+function sExprBlocks(content, token) {
+  const blocks = []
+  let start = content.indexOf(token)
+  while (start >= 0) {
+    const end = findClosingParen(content, start)
+    if (end < 0) break
+    blocks.push(content.slice(start, end + 1))
+    start = content.indexOf(token, end + 1)
+  }
+  return blocks
+}
+
+function findClosingParen(text, start) {
+  let depth = 0
+  for (let index = start; index < text.length; index += 1) {
+    if (text[index] === '(') depth += 1
+    if (text[index] === ')') depth -= 1
+    if (depth === 0) return index
+  }
+  return -1
+}
+
+function transformLocalPoint(local, footprint) {
+  const radians = ((footprint.rotation || 0) * Math.PI) / 180
+  const x = local.x * Math.cos(radians) + local.y * Math.sin(radians)
+  const y = -local.x * Math.sin(radians) + local.y * Math.cos(radians)
+  return { x: round(footprint.x + x), y: round(footprint.y + y) }
+}
+
+function padBounds(pads, fallbackX, fallbackY) {
+  if (!pads.length) return { widthMm: 0, heightMm: 0 }
+  const minX = Math.min(...pads.map((pad) => pad.x - pad.widthMm / 2), fallbackX)
+  const maxX = Math.max(...pads.map((pad) => pad.x + pad.widthMm / 2), fallbackX)
+  const minY = Math.min(...pads.map((pad) => pad.y - pad.heightMm / 2), fallbackY)
+  const maxY = Math.max(...pads.map((pad) => pad.y + pad.heightMm / 2), fallbackY)
+  return { widthMm: maxX - minX, heightMm: maxY - minY }
+}
+
+function footprintWidthHint(name) {
+  if (/RJ45/i.test(name)) return 16
+  if (/USB/i.test(name)) return 9
+  if (/QFN|TQFP|QFP/i.test(name)) return 8
+  if (/0603|0402|0805/i.test(name)) return 1.6
+  return 3
+}
+
+function footprintHeightHint(name) {
+  if (/RJ45/i.test(name)) return 14
+  if (/USB/i.test(name)) return 7
+  if (/QFN|TQFP|QFP/i.test(name)) return 8
+  if (/0603|0402|0805/i.test(name)) return 0.9
+  return 3
+}
+
+function samePoint(a, b) {
+  return Math.abs(a.x - b.x) < 0.001 && Math.abs(a.y - b.y) < 0.001
+}

@@ -1,0 +1,11 @@
+{
+  "id": "real_board_robotics_category_pcb_evidence_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "ROBOTICS_CONTROLLER_PROOF_WAS_OUTLINE_ONLY_WITH_MISSING_USB_CAN_UART_PWM_COMPONENT_AND_NET_EVIDENCE",
+  "boardId": "odd-shaped-robotics-controller",
+  "detectionRule": "An odd-shaped robotics controller proof has no placed USB/MCU/CAN/header refs, no CAN/UART/PWM names, or no routed copper evidence.",
+  "rootCause": "The custom-outline generator preserved mechanical intent but the category proof had not yet emitted controller-specific PCB placement and routing evidence.",
+  "fixStrategy": "Emit review-required robotics PCB evidence with USB-C service connector, control MCU, CAN transceiver, expansion header, VUSB, +3V3, GND, CANH/CANL, UART, and PWM net intent using a KiCad-validated placement topology.",
+  "regressionTest": "test:real-board-proof verifies the robotics proof has expected refs, CAN/UART/PWM named nets, routed tracks, zero KiCad DRC errors, and no manufacturing ZIP claim.",
+  "futureAutoApplyRule": "For odd-shaped robotics categories, keep component placement inside the validated outline and require mechanical/connector review before manufacturing readiness promotion."
+}

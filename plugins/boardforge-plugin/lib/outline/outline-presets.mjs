@@ -99,7 +99,7 @@ export const OUTLINE_PRESETS = Object.freeze([
     mode: 'DRONE_STACK',
     name: 'Drone stack',
     family: 'flight_controller',
-    description: 'Drone flight-controller outline with 20x20, 25.5x25.5, and 30.5x30.5 hole intent.',
+    description: 'Drone flight-controller outline with one locked stack mounting pattern. Use 30.5x30.5 by default unless the job explicitly requests another pattern.',
     statusExpectation: 'VALID',
     widthMm: 42,
     heightMm: 42,
@@ -234,17 +234,17 @@ function regularPolygon({ width, height, sides }) {
 
 function generatePresetHoles({ preset, width, height }) {
   if (preset.mode === 'DRONE_STACK') {
-    const c = width / 2
-    const patterns = [20, 25.5, 30.5].filter((spacing) => spacing < width - 4)
-    return patterns.flatMap((spacing) => {
-      const d = spacing / 2
-      return [
-        { ref: `H${spacing}-1`, x: c - d, y: c - d, diameterMm: 2.2, patternMm: spacing },
-        { ref: `H${spacing}-2`, x: c + d, y: c - d, diameterMm: 2.2, patternMm: spacing },
-        { ref: `H${spacing}-3`, x: c + d, y: c + d, diameterMm: 2.2, patternMm: spacing },
-        { ref: `H${spacing}-4`, x: c - d, y: c + d, diameterMm: 2.2, patternMm: spacing },
-      ]
-    })
+    const cx = width / 2
+    const cy = height / 2
+    const supportedPatterns = [30.5, 25.5, 20]
+    const spacing = supportedPatterns.find((candidate) => candidate <= Math.min(width, height) - 7) || 20
+    const d = spacing / 2
+    return [
+      { ref: `H${spacing}-1`, x: cx - d, y: cy - d, diameterMm: 2.2, patternMm: spacing },
+      { ref: `H${spacing}-2`, x: cx + d, y: cy - d, diameterMm: 2.2, patternMm: spacing },
+      { ref: `H${spacing}-3`, x: cx + d, y: cy + d, diameterMm: 2.2, patternMm: spacing },
+      { ref: `H${spacing}-4`, x: cx - d, y: cy + d, diameterMm: 2.2, patternMm: spacing },
+    ]
   }
   if (preset.mode === 'L_SHAPE') {
     return [

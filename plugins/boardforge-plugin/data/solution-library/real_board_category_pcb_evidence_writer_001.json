@@ -1,0 +1,11 @@
+{
+  "id": "real_board_category_pcb_evidence_writer_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "CATEGORY_BOARD_HAD_VALID_OUTLINE_BUT_ZERO_PLACED_REFS_ZERO_NETS_ZERO_TRACKS",
+  "boardId": "usb-c-esp32-sensor",
+  "detectionRule": "A category board proof has expected BOM refs but the generated .kicad_pcb has no non-hole footprints, no named electrical nets, or no tracks.",
+  "rootCause": "The real-board proof flow reached mechanical KiCad generation before category PCB evidence writing existed for the requested board family.",
+  "fixStrategy": "Write review-required category PCB evidence with expected refs, named nets, proof footprints, routed copper segments, and a parseable embedded KiCad symbol graph. Keep manufacturing blocked until exact library bindings and selected MPN evidence are generated.",
+  "regressionTest": "test:real-board-proof verifies the USB-C ESP32 proof contains U1/J1/U2/J2, named nets, a KiCad-loadable symbol graph, routed tracks, and no DRC errors.",
+  "futureAutoApplyRule": "For category boards, never stop at outline-only if a safe proof placement/routing scaffold can be emitted; keep manufacturing blocked until verified footprint, pin-map, sourcing, and DRC/ERC evidence is complete."
+}

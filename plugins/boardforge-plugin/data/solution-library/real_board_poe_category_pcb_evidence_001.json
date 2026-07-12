@@ -1,0 +1,11 @@
+{
+  "id": "real_board_poe_category_pcb_evidence_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "POE_ETHERNET_PROOF_WAS_OUTLINE_ONLY_WITH_MISSING_RJ45_PD_MCU_SENSOR_REFS_AND_ETHERNET_NET_INTENT",
+  "boardId": "poe-ethernet-sensor",
+  "detectionRule": "A PoE Ethernet proof has no placed J1/U1/U2/J2 refs, no POE_VIN or named Ethernet pair nets, or no routed copper evidence.",
+  "rootCause": "The proof flow had only generic mechanical output for the PoE category, which could not demonstrate edge connector, power front-end, logic, and sensor-region intent.",
+  "fixStrategy": "Emit review-required category PCB evidence using the KiCad-validated two-layer topology with RJ45/PoE, PD controller, MCU, I2C header, POE_VIN, ETH_TX_P, and ETH_TX_N naming. Keep IEEE 802.3, isolation, and selected-library claims blocked until independently verified.",
+  "regressionTest": "test:real-board-proof verifies the PoE proof includes J1/U1/U2/J2, PoE/Ethernet named nets, routed tracks, zero KiCad DRC errors, and no manufacturing ZIP claim.",
+  "futureAutoApplyRule": "For PoE categories, require explicit edge RJ45 placement, power-front-end intent, Ethernet pair naming, and an external compliance-review blocker before any readiness promotion."
+}

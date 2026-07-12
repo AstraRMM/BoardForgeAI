@@ -1,0 +1,11 @@
+{
+  "id": "real_board_industrial_io_category_pcb_evidence_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "INDUSTRIAL_IO_PROOF_WAS_OUTLINE_ONLY_WITH_MISSING_FIELD_LOGIC_SEPARATION_EVIDENCE",
+  "boardId": "industrial-io-board",
+  "detectionRule": "An industrial I/O proof has no terminal/opto/relay/logic refs, no VIN_24V or FIELD_GND intent, or no routed copper evidence.",
+  "rootCause": "The real-board proof flow had mechanical output but no category-specific placed-reference, named-net, and routed-copper evidence for this board family.",
+  "fixStrategy": "Emit review-required industrial proof placement with explicit field-input, relay-output, logic-ground, and high/low-voltage review intent. Do not claim isolation or field safety certification.",
+  "regressionTest": "test:real-board-proof verifies category-specific placed refs, named nets, routed tracks, zero KiCad DRC errors, and no manufacturing ZIP claim.",
+  "futureAutoApplyRule": "Never promote category proof routing evidence beyond engineering review until a verified schematic graph, selected library assets, placement validation, sourcing, and category safety review are complete."
+}

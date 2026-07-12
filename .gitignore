@@ -68,3 +68,13 @@ BoardForge_New_Board_Fixtures/
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+
+# BoardForge local proof/output caches
+plugins/boardforge-plugin/.boardforge/
+plugins/boardforge-plugin/tmp*/
+
+# Local background-test process markers
+tmp-*.pid
+tmp-*.exit

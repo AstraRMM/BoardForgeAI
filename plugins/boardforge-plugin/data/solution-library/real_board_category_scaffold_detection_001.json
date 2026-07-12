@@ -1,0 +1,11 @@
+{
+  "id": "real_board_category_scaffold_detection_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "CATEGORY_BOARD_HAS_LOADABLE_BUT_TEXT_ONLY_SCHEMATIC_AND_OUTLINE_ONLY_PCB",
+  "boardId": "drone-stack-board",
+  "detectionRule": "Category proof has expected BOM refs but zero schematic symbol instances, zero non-hole footprints, or zero routed tracks.",
+  "rootCause": "A loadable KiCad schematic/PCB scaffold can pass basic file and ERC/DRC checks while still failing to prove real category schematic, placement, and routing generation.",
+  "fixStrategy": "Inspect generated KiCad files for actual symbols, expected refs, non-hole footprints, named nets, tracks, and vias; emit exact category blockers until the engine writes those artifacts.",
+  "regressionTest": "test:real-board-proof verifies category boards record category-generation readiness and do not mistake scaffolds for completed designs.",
+  "futureAutoApplyRule": "Any category board with BOM intent but no symbol graph or placed refs must remain engineering-review required and must not export a manufacturing ZIP."
+}

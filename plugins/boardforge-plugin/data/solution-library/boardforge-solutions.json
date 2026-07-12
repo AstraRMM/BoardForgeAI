@@ -1,0 +1,4859 @@
+[
+  {
+    "createdAt": "2026-06-25T19:36:44.017Z",
+    "updatedAt": "2026-06-25T19:36:44.017Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [],
+      "conditions": [
+        "existing-board-trace",
+        "fixed-outline"
+      ]
+    },
+    "safetyRules": [
+      "Do not change footprints",
+      "Do not remove parts",
+      "Do not move mounting holes"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_original_spec_protection_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "placement",
+    "problemSignature": {
+      "errorCode": "ORIGINAL_SPEC_DRIFT",
+      "symptoms": [
+        "footprint/package substitution risk",
+        "part deletion risk"
+      ]
+    },
+    "rootCause": "Routing experiments can mutate BOM identity unless original spec is audited first.",
+    "fixSummary": "Audit and lock original parts, footprints, pads, nets, board outline, and mounting holes before routing.",
+    "recipe": [
+      "Compare derivative against original reference",
+      "Restore changed footprints/packages/pads/nets",
+      "Reject route runs if original spec is not verified"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "LOW_SPEED_SIGNAL",
+        "GATE_DRIVE",
+        "CURRENT_SENSE"
+      ],
+      "conditions": [
+        "dense-routing"
+      ]
+    },
+    "safetyRules": [
+      "Do not fake routing",
+      "Do not rollback unrelated retained copper"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_retained_copper_transaction_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "GOOD_COPPER_ROLLED_BACK_BY_BATCH_FAILURE",
+      "symptoms": [
+        "one failed net resets board",
+        "retained segments drop to zero"
+      ]
+    },
+    "rootCause": "Batch-level rollback erased valid routes when one candidate failed DRC.",
+    "fixSummary": "Route one net transactionally, prove retained copper, and rollback only the failed candidate.",
+    "recipe": [
+      "Scan retained copper before route",
+      "Write one route",
+      "Rescan KiCad file",
+      "Run local DRC",
+      "Rollback only failed net"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller"
+      ],
+      "netRoles": [
+        "HIGH_CURRENT_POWER",
+        "GATE_DRIVE",
+        "CURRENT_SENSE_KELVIN"
+      ],
+      "conditions": [
+        "8-layer-pcb"
+      ]
+    },
+    "safetyRules": [
+      "Do not route current sense through switching copper",
+      "Do not route VBAT as thin signal trace"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_8_layer_policy_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "netclass",
+    "problemSignature": {
+      "errorCode": "TWO_LAYER_ROUTING_ON_8_LAYER_ESC",
+      "symptoms": [
+        "routes crowd F.Cu/B.Cu",
+        "control nets near phase copper"
+      ]
+    },
+    "rootCause": "Router selected layers by convenience instead of ESC electrical role.",
+    "fixSummary": "Use explicit 8-layer ESC layer roles for power, return, control, rails, and protected sense routing.",
+    "recipe": [
+      "Classify net role",
+      "Select layer from ESC role policy",
+      "Reject sensitive control routes on In2.Cu unless justified"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "HIGH_CURRENT_POWER",
+        "GND",
+        "CURRENT_SENSE_KELVIN"
+      ],
+      "conditions": [
+        "through-via-only"
+      ]
+    },
+    "safetyRules": [
+      "No blind vias",
+      "No buried vias",
+      "No microvias",
+      "No via-in-pad"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_via_policy_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "FORBIDDEN_OR_ILLEGAL_VIA",
+      "drcFamily": "via_clearance",
+      "symptoms": [
+        "via in keepout",
+        "via too close to pad",
+        "via-in-pad risk"
+      ]
+    },
+    "rootCause": "Via placement guessed sites without class-specific keepout and pad clearance checks.",
+    "fixSummary": "Use standard through vias only, class by signal/power/stitching/sense, and reject illegal sites before writing.",
+    "recipe": [
+      "Classify via class",
+      "Check pad/hole/edge/keepout clearance",
+      "Use via arrays for high current",
+      "Reject blind/buried/micro/via-in-pad"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "SWD_DEBUG",
+        "I2C",
+        "GATE_DRIVE"
+      ],
+      "conditions": [
+        "dense-pad-field"
+      ]
+    },
+    "safetyRules": [
+      "Do not weaken pad-to-pad verifier",
+      "Reject wrong-layer SMD contact"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_pad_contact_not_near_pad_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "NEAR_PAD_FAKE_CONTACT",
+      "drcFamily": "unconnected_items",
+      "symptoms": [
+        "floating generated track island",
+        "track stops near pad"
+      ]
+    },
+    "rootCause": "Route generator stopped near pad geometry while verifier correctly required copper contact.",
+    "fixSummary": "Generate pad-edge contact and escape geometry that physically touches pad copper on the correct layer.",
+    "recipe": [
+      "Extract pad copper geometry",
+      "Generate legal pad-edge contact",
+      "Stitch escape to main route",
+      "Reject floating generated copper"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "LOW_SPEED_SIGNAL",
+        "GATE_DRIVE",
+        "CURRENT_SENSE"
+      ],
+      "conditions": [
+        "existing-drc-debt"
+      ]
+    },
+    "safetyRules": [
+      "Do not globally suppress DRC",
+      "Do not call imported DRC fixed by hiding generated errors"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_generated_drc_repair_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "problemSignature": {
+      "errorCode": "DRC_ERROR_REGRESSION",
+      "drcFamily": "clearance",
+      "symptoms": [
+        "route commits then worsens clearance",
+        "candidate rolled back"
+      ]
+    },
+    "rootCause": "Route mutation did not classify generated DRC by exact family before selecting repair.",
+    "fixSummary": "Classify generated DRC separately from imported debt, mutate only the route candidate, and keep other retained copper.",
+    "recipe": [
+      "Run local DRC after candidate",
+      "Map DRC objects to generated route",
+      "Dogleg/shift/change layer/move via",
+      "Rollback only unrepaired candidate"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "power"
+      ],
+      "netRoles": [
+        "HIGH_CURRENT_POWER",
+        "MOTOR_PHASE"
+      ],
+      "conditions": [
+        "replacement-required"
+      ]
+    },
+    "safetyRules": [
+      "No theoretical replacements",
+      "No fake stock",
+      "Do not commit secrets"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_sourcing_gate_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "sourcing",
+    "problemSignature": {
+      "errorCode": "UNVERIFIED_REPLACEMENT_PART",
+      "symptoms": [
+        "theoretical footprint replacement",
+        "missing stock proof"
+      ]
+    },
+    "rootCause": "Replacement flow could select parts without live stock or manual verification.",
+    "fixSummary": "Gate replacements on exact MPN, supplier SKU, stock, lifecycle, ratings, pinout, and footprint compatibility.",
+    "recipe": [
+      "Extract current MPN",
+      "Search supplier or import manual stock file",
+      "Verify ratings/pinout/footprint",
+      "Reject unverified stock"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.019Z",
+    "updatedAt": "2026-06-25T19:36:44.019Z",
+    "implementation": {
+      "filesChanged": [],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller"
+      ],
+      "netRoles": [
+        "BOOTSTRAP",
+        "GATE_DRIVE"
+      ],
+      "conditions": [
+        "dense-power-stage",
+        "existing-drc-debt"
+      ]
+    },
+    "safetyRules": [
+      "Do not suppress switching-node clearance",
+      "Do not change footprint/package",
+      "Rollback only failed bootstrap candidate"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "medium",
+    "id": "esc_bootstrap_generated_drc_promotion_guard_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "problemSignature": {
+      "errorCode": "BOOTSTRAP_ROUTE_GENERATED_CLEARANCE",
+      "drcFamily": "clearance",
+      "symptoms": [
+        "bootstrap route retained but creates BOOT_SEL or switching-pad clearance errors"
+      ]
+    },
+    "rootCause": "Bootstrap/support routes can satisfy pad contact while still violating dense switching-node clearance against existing generated or pad copper.",
+    "fixSummary": "Before promoting bootstrap routes, map generated DRC objects back to the candidate and require clean/repairable clearance against BOOT_SEL, SW pads, and nearby gate-drive copper.",
+    "recipe": [
+      "Run local DRC after bootstrap candidate",
+      "Map clearance items to candidate net",
+      "Try alternate pad edge or dogleg",
+      "Rollback candidate if generated clearance remains"
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/esc-routelet-success.mjs",
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs"
+      ],
+      "functionsAdded": [
+        "parseKiCadUnconnectedItems",
+        "extractRatsnestEndpointPairs",
+        "verifyUnconnectedItemResolved",
+        "routeByExactUnconnectedItem",
+        "commitOnlyConnectivityProgress"
+      ],
+      "testsAdded": [
+        "test:esc-parse-kicad-unconnected-items",
+        "test:esc-ratsnest-endpoint-routing",
+        "test:esc-route-commit-requires-unconnected-reduction"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "GATE_DRIVE",
+        "BOOTSTRAP",
+        "CURRENT_SENSE",
+        "CONTROL_SIGNAL",
+        "HIGH_CURRENT_POWER"
+      ],
+      "conditions": [
+        "existing-board-trace",
+        "fixed-outline",
+        "through-via-only"
+      ]
+    },
+    "safetyRules": [
+      "Do not count segments as success",
+      "Do not commit no-proof copper",
+      "Do not weaken pad-contact verification",
+      "Do not fake DRC/ERC pass"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_route_by_ratsnest_not_net_label_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "UNCONNECTED_NOT_REDUCED",
+      "drcFamily": "unconnected_items",
+      "symptoms": [
+        "segments retained while KiCad unconnected count stays flat",
+        "copper drawn on a named net without resolving exact ratsnest item"
+      ]
+    },
+    "rootCause": "Router treated net labels as the work queue and committed copper without proving that the exact KiCad disconnected pad-to-pad item disappeared.",
+    "fixSummary": "Use KiCad unconnected_items as the routing source of truth; route exact source/target endpoint pairs and commit only when the item disappears, unconnected count drops, island count drops, or KiCad confirms connectivity.",
+    "recipe": [
+      "Run KiCad DRC and parse unconnected_items.",
+      "Map each unconnected item to exact source and target pads.",
+      "Route one exact ratsnest item transactionally.",
+      "Rerun KiCad DRC.",
+      "Commit only if that exact unconnected item disappears or net island/unconnected count decreases.",
+      "Rollback copper that adds segments without KiCad connectivity proof."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs"
+      ],
+      "functionsAdded": [
+        "consumeRatsnestQueueWithPhysicalRouter"
+      ],
+      "testsAdded": [
+        "test:esc-ratsnest-queue-feeds-router",
+        "test:esc-ratsnest-items-physically-attempted",
+        "test:esc-no-queued-not-attempted-final-state"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "CONTROL_SIGNAL",
+        "GATE_DRIVE",
+        "BOOTSTRAP",
+        "CURRENT_SENSE",
+        "HIGH_CURRENT_POWER"
+      ],
+      "conditions": [
+        "ratsnest-driven-routing",
+        "existing-board-trace"
+      ]
+    },
+    "safetyRules": [
+      "Do not count queue creation as routing",
+      "Do not count segments as success",
+      "Rollback candidates without KiCad connectivity proof"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_ratsnest_queue_must_drive_physical_router_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "RATSNEST_QUEUE_NOT_CONSUMED",
+      "drcFamily": "unconnected_items",
+      "symptoms": [
+        "KiCad unconnected items parsed",
+        "ratsnest queue populated",
+        "physical route attempt count remains zero"
+      ]
+    },
+    "rootCause": "BoardForge built the exact KiCad ratsnest work queue but stopped after audit/queue generation instead of passing queued endpoint pairs to the physical route generator.",
+    "fixSummary": "The ratsnest queue must feed routeByExactUnconnectedItem and every queued item must end as committed, rolled back, precheck rejected, blocked with exact reason, or deferred with checkpoint.",
+    "recipe": [
+      "Parse KiCad unconnected_items into exact endpoint pairs.",
+      "Pass queued endpoint pairs into the physical route generator.",
+      "Count precheck rejected, physically attempted, written, committed, rolled back, blocked, and resolved outcomes.",
+      "Reject QUEUED_NOT_ATTEMPTED as a final state unless a checkpoint is saved for runtime limit."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "lib/esc-routelet-success.mjs",
+        "tests/ratsnest-supervisor.test.mjs"
+      ],
+      "functionsAdded": [
+        "repairConnectingRatsnestRoute",
+        "mutateRouteToFixDrc",
+        "precheckRatsnestRouteCandidateAgainstDrc",
+        "diffKiCadUnconnectedItems"
+      ],
+      "testsAdded": [
+        "test:esc-repair-connecting-route-before-rollback",
+        "test:esc-drc-aware-ratsnest-routing",
+        "test:esc-unconnected-item-diff"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "CONTROL_SIGNAL",
+        "GATE_DRIVE",
+        "BOOTSTRAP",
+        "CURRENT_SENSE"
+      ],
+      "conditions": [
+        "ratsnest-driven-routing",
+        "existing-drc-debt"
+      ]
+    },
+    "safetyRules": [
+      "Do not keep DRC-unsafe copper",
+      "Do not rollback connecting routes before repair attempts",
+      "Rollback only the failed candidate"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_repair_connecting_route_before_rollback_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "problemSignature": {
+      "errorCode": "CONNECTING_ROUTE_DRC_UNSAFE",
+      "drcFamily": "generated_route_drc_regression",
+      "symptoms": [
+        "route resolves exact ratsnest item",
+        "raw KiCad DRC worsens",
+        "candidate rolled back without local repair"
+      ]
+    },
+    "rootCause": "BoardForge rolled back routes that connected exact KiCad ratsnest items because generated DRC worsened, without attempting local route repair or mutation first.",
+    "fixSummary": "If a route connects the exact KiCad ratsnest item, classify generated DRC and attempt dogleg/layer/via/clearance repair before rollback.",
+    "recipe": [
+      "Write exact ratsnest candidate transactionally.",
+      "Verify exact unconnected item disappeared.",
+      "If DRC worsens, classify generated DRC instead of immediate rollback.",
+      "Try alternate layer, dogleg, via relocation/no-via, and clearance mutations.",
+      "Commit repaired route only if connectivity proof remains and DRC is not worse."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "lib/solution-library/esc-solutions.mjs"
+      ],
+      "functionsAdded": [
+        "repairConnectedRouteBundle",
+        "shoveRouteAroundObstacle",
+        "rerouteSegmentWithDogleg",
+        "rerouteSegmentOnAlternateLayer",
+        "moveViaToLegalSite",
+        "splitRouteIntoMultiSegmentBundle",
+        "repairConnectedRouteRouteClearance",
+        "repairRoutePadClearance",
+        "repairCopperEdgeClearance",
+        "repairRouteKeepoutConflict",
+        "transactionalRerouteGeneratedCopper",
+        "selectEscRouteWidthForNet"
+      ],
+      "testsAdded": [
+        "test:esc-connected-route-drc-repair-engine",
+        "test:esc-shove-route-around-obstacle",
+        "test:esc-reroute-generated-copper-transaction",
+        "test:esc-net-role-width-selection",
+        "test:esc-signal-net-not-routed-as-high-current"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "CONTROL_SIGNAL",
+        "GATE_DRIVE",
+        "BOOTSTRAP",
+        "CURRENT_SENSE",
+        "REGULATED_RAIL"
+      ],
+      "conditions": [
+        "ratsnest-driven-routing",
+        "connected-candidate-drc-regression",
+        "retained-generated-copper"
+      ]
+    },
+    "safetyRules": [
+      "Do not globally suppress DRC",
+      "Do not change footprints/packages/outline",
+      "No forbidden vias",
+      "Rollback only failed repaired bundle"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_connected_route_drc_repair_engine_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "problemSignature": {
+      "errorCode": "CONNECTED_ROUTE_DRC_UNSAFE_REPAIR_FAILED",
+      "drcFamily": "generated_route_drc_regression",
+      "symptoms": [
+        "exact ratsnest item connects transiently",
+        "candidate creates generated DRC",
+        "route is rolled back after failed generic repair"
+      ]
+    },
+    "rootCause": "BoardForge could temporarily connect exact KiCad ratsnest items, but the local repair loop did not classify generated DRC precisely enough to shove, dogleg, change layer, adjust width, or transactionally reroute blocking generated copper.",
+    "fixSummary": "Run a local DRC-clean repair engine for connected candidates: classify generated DRC, apply net-role widths, dogleg/shove/change layer/move via, and transactionally reroute BoardForge-generated copper before final rollback.",
+    "recipe": [
+      "Audit transiently connected candidates and classify generated DRC by family.",
+      "Select trace width from net role instead of using high-current defaults for signals.",
+      "Try dogleg, route shove, alternate layer, via relocation, and multi-segment bundles.",
+      "If generated copper blocks the route, transactionally reroute only generated copper and preserve original board spec.",
+      "Commit only if exact connectivity remains and generated DRC is repaired or improved."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/single-ratsnest-solver.mjs",
+        "tests/single-ratsnest-solver.test.mjs",
+        "lib/solution-library/esc-solutions.mjs"
+      ],
+      "functionsAdded": [
+        "buildMicroRouteProblemModel",
+        "buildSingleNetObstacleMap",
+        "inflateObstaclesForNetRole",
+        "searchMultiSegmentRoute",
+        "searchViaAssistedRoute",
+        "scoreRouteByDrcRisk",
+        "findClearanceAwarePathForRatsnestItem",
+        "solveSingleRatsnestItemToCompletion"
+      ],
+      "testsAdded": [
+        "test:esc-single-ratsnest-solve-to-completion",
+        "test:esc-clearance-aware-single-net-pathfinder",
+        "test:esc-m1-c-vdd-route-clean",
+        "test:esc-single-net-drc-repair-budget",
+        "test:esc-no-smoke-test-final-state",
+        "test:solution-library-single-ratsnest-solve"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "REGULATED_RAIL",
+        "GATE_DRIVE",
+        "BOOTSTRAP",
+        "CONTROL_SIGNAL",
+        "CURRENT_SENSE"
+      ],
+      "conditions": [
+        "exact-ratsnest-routing",
+        "existing-drc-debt",
+        "through-via-only-policy",
+        "fixed-outline"
+      ]
+    },
+    "safetyRules": [
+      "Do not treat candidate generation as routing progress.",
+      "Do not keep routes without exact KiCad connectivity proof.",
+      "Do not weaken DRC/ERC gates.",
+      "Do not change footprints, packages, board outline, mounting holes, pads, or nets.",
+      "Use standard through vias only."
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "esc_single_ratsnest_item_solve_to_completion_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "SINGLE_RATSNEST_SMOKE_TESTING",
+      "drcFamily": "generated_route_drc_regression",
+      "netRole": "REGULATED_RAIL",
+      "symptoms": [
+        "exact ratsnest item connects transiently",
+        "only a tiny number of doglegs/layer changes are tried",
+        "route is rolled back without an exhausted local search",
+        "segment count changes but exact KiCad connectivity does not improve"
+      ]
+    },
+    "rootCause": "BoardForge was smoke-testing routes instead of solving one exact ratsnest item to DRC-clean completion or mathematically proving the geometry was blocked.",
+    "fixSummary": "For every exact ratsnest item, build a micro-route model, run clearance-aware pathfinding and local DRC repair with a real search budget, then commit only when KiCad connectivity is proven or return exact physical blocker geometry.",
+    "recipe": [
+      "Select one exact KiCad unconnected item as the work unit.",
+      "Build a micro-route model from scanned KiCad pads, layers, tracks, vias, keepouts, and board outline.",
+      "Run clearance-aware obstacle inflation by net-role width and clearance before writing copper.",
+      "Search direct, dogleg, multi-segment, alternate-layer, and via-assisted paths with a real budget.",
+      "If a candidate connects but fails DRC, classify and locally repair it before rollback.",
+      "Commit only when exact KiCad connectivity is proven and generated DRC is clean or exactly reviewed.",
+      "If blocked, report exact layer/object/corridor geometry and the forbidden change required."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/router-backend-detection.mjs",
+        "tests/external-routing-workflow.test.mjs"
+      ],
+      "functionsAdded": [
+        "detectJavaRuntime",
+        "detectFreerouting",
+        "summarizeBackendDetection"
+      ],
+      "testsAdded": [
+        "test:external-routing-backend",
+        "test:java-detection",
+        "test:freerouting-detection"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "ANY"
+      ],
+      "conditions": [
+        "external-autorouter-desired"
+      ]
+    },
+    "safetyRules": [
+      "Do not modify PCB during backend detection",
+      "Do not fake DSN/SES support"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "external_router_backend_detection_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "EXTERNAL_ROUTER_BACKEND_UNRESOLVED",
+      "symptoms": [
+        "Java missing",
+        "FreeRouting missing",
+        "DSN/SES workflow unknown"
+      ]
+    },
+    "rootCause": "BoardForge previously stopped at an audit result instead of installing/detecting a real backend and separating router availability from DSN/SES workflow availability.",
+    "fixSummary": "Detect Java, FreeRouting, and DSN/SES workflow independently; select automated routing only when all are present, otherwise generate a manual GUI bridge.",
+    "recipe": [
+      "Probe Java.",
+      "Probe FreeRouting.",
+      "Probe DSN/SES export/import.",
+      "Select automated workflow only when all prerequisites are satisfied."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/freerouting.mjs",
+        "tests/external-routing-workflow.test.mjs"
+      ],
+      "functionsAdded": [
+        "freeroutingInstallRecord",
+        "parseFreeroutingProbeOutput"
+      ],
+      "testsAdded": [
+        "test:freerouting-detection",
+        "test:java-detection"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller"
+      ],
+      "netRoles": [
+        "ANY"
+      ],
+      "conditions": [
+        "freerouting-2.2.4",
+        "windows"
+      ]
+    },
+    "safetyRules": [
+      "Keep tools local and reversible",
+      "Record exact Java path/version"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "freerouting_java_setup_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "FREEROUTING_JAVA_RUNTIME_REQUIRED",
+      "symptoms": [
+        "java not on PATH",
+        "FreeRouting JAR class version newer than Java runtime"
+      ]
+    },
+    "rootCause": "FreeRouting v2.2.4 is built with Java 25 and fails under Java 21 with UnsupportedClassVersionError.",
+    "fixSummary": "Install a portable Java 25 runtime in project tools and run FreeRouting with that explicit java.exe path.",
+    "recipe": [
+      "Install portable Java 25.",
+      "Run java -jar freerouting.jar with the Java 25 binary.",
+      "Treat Java 21 class-version failure as a runtime mismatch, not router failure."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/kicad-dsn-ses-workflow.mjs",
+        "tests/external-routing-workflow.test.mjs"
+      ],
+      "functionsAdded": [
+        "detectDsnSesWorkflow"
+      ],
+      "testsAdded": [
+        "test:dsn-ses-workflow-detection"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "ANY"
+      ],
+      "conditions": [
+        "kicad-cli-no-specctra"
+      ]
+    },
+    "safetyRules": [
+      "Do not invent DSN files",
+      "Do not claim automated import without a verified API"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "kicad_dsn_ses_workflow_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "KICAD_CLI_NO_DSN_SES",
+      "symptoms": [
+        "KiCad CLI export lacks DSN",
+        "KiCad CLI import lacks SES"
+      ]
+    },
+    "rootCause": "Installed KiCad 10 CLI exposes PCB export/import commands but not Specctra DSN export or Specctra Session import.",
+    "fixSummary": "Detect CLI/Python/GUI DSN/SES paths separately and use the KiCad GUI manual bridge when CLI automation is unavailable.",
+    "recipe": [
+      "Inspect KiCad CLI export/import help.",
+      "Inspect Python API if available.",
+      "If GUI is available, generate exact manual Specctra DSN/SES bridge steps."
+    ]
+  },
+  {
+    "createdAt": "2026-06-25T19:36:44.023Z",
+    "updatedAt": "2026-06-25T19:36:44.023Z",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/kicad-dsn-ses-workflow.mjs",
+        "tests/external-routing-workflow.test.mjs"
+      ],
+      "functionsAdded": [
+        "buildManualDsnSesWorkflow",
+        "buildFreeroutingCommand"
+      ],
+      "testsAdded": [
+        "test:external-router-manual-workflow-report",
+        "test:freerouting-command-builder"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "ANY"
+      ],
+      "conditions": [
+        "manual-kicad-gui-bridge"
+      ]
+    },
+    "safetyRules": [
+      "Backup before import",
+      "Validate no forbidden vias",
+      "Verify original spec and unconnected reduction after import"
+    ],
+    "evidence": {
+      "before": {},
+      "after": {},
+      "tests": []
+    },
+    "status": "active",
+    "confidence": "high",
+    "id": "external_router_manual_gui_fallback_001",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing",
+    "problemSignature": {
+      "errorCode": "MANUAL_GUI_DSN_SES_BRIDGE_REQUIRED",
+      "symptoms": [
+        "FreeRouting runnable",
+        "KiCad CLI cannot export/import DSN/SES"
+      ]
+    },
+    "rootCause": "A real autorouter is installed, but KiCad automation cannot hand off DSN/SES from the command line on this machine.",
+    "fixSummary": "Generate a precise manual KiCad PCB Editor workflow plus exact FreeRouting command using project-local Java and JAR paths.",
+    "recipe": [
+      "Export Specctra DSN from KiCad PCB Editor.",
+      "Run FreeRouting with -de input.dsn -do output.ses.",
+      "Import Specctra Session in KiCad PCB Editor.",
+      "Run BoardForge DRC/ERC validation."
+    ]
+  },
+  {
+    "createdAt": "2026-06-26T09:40:15.387Z",
+    "updatedAt": "2026-06-26T09:40:15.387Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "status": "active",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "FreeRouting SES import",
+        "KiCad post-route DRC"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "drc": {
+          "violations": 1519,
+          "unconnected": 239,
+          "severity": {
+            "error": 1089,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "track_width",
+              199
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "drill_out_of_range",
+              111
+            ],
+            [
+              "copper_edge_clearance",
+              72
+            ],
+            [
+              "via_diameter",
+              63
+            ],
+            [
+              "hole_clearance",
+              57
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "malformed_courtyard",
+              18
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "after": {
+        "drc": {
+          "violations": 1268,
+          "unconnected": 239,
+          "severity": {
+            "error": 838,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "hole_clearance",
+              125
+            ],
+            [
+              "copper_edge_clearance",
+              76
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "drill_out_of_range",
+              48
+            ],
+            [
+              "malformed_courtyard",
+              20
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "tests": [
+        "post-freerouting-drc-classification",
+        "repair-imported-track-widths",
+        "repair-imported-via-dimensions"
+      ]
+    },
+    "id": "freerouting_ses_direct_import_001",
+    "problemType": "routing",
+    "fixSummary": "Import FreeRouting SES network_out directly into KiCad PCB tracks/vias when GUI SES import is unreliable.",
+    "confidence": "high"
+  },
+  {
+    "createdAt": "2026-06-26T09:40:15.387Z",
+    "updatedAt": "2026-06-26T09:40:15.387Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "status": "active",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "FreeRouting SES import",
+        "KiCad post-route DRC"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "drc": {
+          "violations": 1519,
+          "unconnected": 239,
+          "severity": {
+            "error": 1089,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "track_width",
+              199
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "drill_out_of_range",
+              111
+            ],
+            [
+              "copper_edge_clearance",
+              72
+            ],
+            [
+              "via_diameter",
+              63
+            ],
+            [
+              "hole_clearance",
+              57
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "malformed_courtyard",
+              18
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "after": {
+        "drc": {
+          "violations": 1268,
+          "unconnected": 239,
+          "severity": {
+            "error": 838,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "hole_clearance",
+              125
+            ],
+            [
+              "copper_edge_clearance",
+              76
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "drill_out_of_range",
+              48
+            ],
+            [
+              "malformed_courtyard",
+              20
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "tests": [
+        "post-freerouting-drc-classification",
+        "repair-imported-track-widths",
+        "repair-imported-via-dimensions"
+      ]
+    },
+    "id": "post_freerouting_track_width_repair_001",
+    "problemType": "DRC",
+    "fixSummary": "Normalize imported FreeRouting track widths to KiCad board minimum while preserving route connectivity.",
+    "confidence": "high"
+  },
+  {
+    "createdAt": "2026-06-26T09:40:15.387Z",
+    "updatedAt": "2026-06-26T09:40:15.387Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "status": "active",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "FreeRouting SES import",
+        "KiCad post-route DRC"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "drc": {
+          "violations": 1519,
+          "unconnected": 239,
+          "severity": {
+            "error": 1089,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "track_width",
+              199
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "drill_out_of_range",
+              111
+            ],
+            [
+              "copper_edge_clearance",
+              72
+            ],
+            [
+              "via_diameter",
+              63
+            ],
+            [
+              "hole_clearance",
+              57
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "malformed_courtyard",
+              18
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "after": {
+        "drc": {
+          "violations": 1268,
+          "unconnected": 239,
+          "severity": {
+            "error": 838,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "hole_clearance",
+              125
+            ],
+            [
+              "copper_edge_clearance",
+              76
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "drill_out_of_range",
+              48
+            ],
+            [
+              "malformed_courtyard",
+              20
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "tests": [
+        "post-freerouting-drc-classification",
+        "repair-imported-track-widths",
+        "repair-imported-via-dimensions"
+      ]
+    },
+    "id": "post_freerouting_via_dimension_repair_001",
+    "problemType": "DRC",
+    "fixSummary": "Normalize imported FreeRouting through vias to legal KiCad diameter and drill constraints.",
+    "confidence": "high"
+  },
+  {
+    "createdAt": "2026-06-26T09:40:15.387Z",
+    "updatedAt": "2026-06-26T09:40:15.387Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "status": "active",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "FreeRouting SES import",
+        "KiCad post-route DRC"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "drc": {
+          "violations": 1519,
+          "unconnected": 239,
+          "severity": {
+            "error": 1089,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "track_width",
+              199
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "drill_out_of_range",
+              111
+            ],
+            [
+              "copper_edge_clearance",
+              72
+            ],
+            [
+              "via_diameter",
+              63
+            ],
+            [
+              "hole_clearance",
+              57
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "malformed_courtyard",
+              18
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "after": {
+        "drc": {
+          "violations": 1268,
+          "unconnected": 239,
+          "severity": {
+            "error": 838,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "hole_clearance",
+              125
+            ],
+            [
+              "copper_edge_clearance",
+              76
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "drill_out_of_range",
+              48
+            ],
+            [
+              "malformed_courtyard",
+              20
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "tests": [
+        "post-freerouting-drc-classification",
+        "repair-imported-track-widths",
+        "repair-imported-via-dimensions"
+      ]
+    },
+    "id": "post_freerouting_clearance_repair_001",
+    "problemType": "DRC",
+    "fixSummary": "Classify remaining imported-route clearance and copper-edge issues for local reroute/nudge repair.",
+    "confidence": "medium"
+  },
+  {
+    "createdAt": "2026-06-26T09:40:15.387Z",
+    "updatedAt": "2026-06-26T09:40:15.387Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "status": "active",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "FreeRouting SES import",
+        "KiCad post-route DRC"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "drc": {
+          "violations": 1519,
+          "unconnected": 239,
+          "severity": {
+            "error": 1089,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "track_width",
+              199
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "drill_out_of_range",
+              111
+            ],
+            [
+              "copper_edge_clearance",
+              72
+            ],
+            [
+              "via_diameter",
+              63
+            ],
+            [
+              "hole_clearance",
+              57
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "malformed_courtyard",
+              18
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "after": {
+        "drc": {
+          "violations": 1268,
+          "unconnected": 239,
+          "severity": {
+            "error": 838,
+            "warning": 430
+          },
+          "topTypes": [
+            [
+              "clearance",
+              499
+            ],
+            [
+              "silk_overlap",
+              199
+            ],
+            [
+              "silk_over_copper",
+              199
+            ],
+            [
+              "hole_clearance",
+              125
+            ],
+            [
+              "copper_edge_clearance",
+              76
+            ],
+            [
+              "solder_mask_bridge",
+              57
+            ],
+            [
+              "drill_out_of_range",
+              48
+            ],
+            [
+              "malformed_courtyard",
+              20
+            ],
+            [
+              "silk_edge_clearance",
+              17
+            ],
+            [
+              "lib_footprint_mismatch",
+              11
+            ],
+            [
+              "shorting_items",
+              9
+            ],
+            [
+              "courtyards_overlap",
+              4
+            ],
+            [
+              "text_height",
+              2
+            ],
+            [
+              "track_dangling",
+              1
+            ],
+            [
+              "text_thickness",
+              1
+            ]
+          ]
+        }
+      },
+      "tests": [
+        "post-freerouting-drc-classification",
+        "repair-imported-track-widths",
+        "repair-imported-via-dimensions"
+      ]
+    },
+    "id": "freerouting_second_pass_after_width_repair_001",
+    "problemType": "routing",
+    "fixSummary": "After route-dimension normalization, rerun DRC and use remaining unconnected/clearance data for second-pass routing or local repair.",
+    "confidence": "medium"
+  },
+  {
+    "id": "post_freerouting_clustered_clearance_repair_001",
+    "createdAt": "2026-06-26T10:17:10.497Z",
+    "updatedAt": "2026-06-26T10:17:10.497Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Cluster post-FreeRouting clearance DRC by family, area, net, and offending route object before local reroute/nudge.",
+    "status": "active",
+    "confidence": "medium",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting import",
+        "routed copper retained",
+        "footprints locked"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not change footprints",
+      "Do not discard imported routing globally"
+    ]
+  },
+  {
+    "id": "post_freerouting_hole_clearance_repair_001",
+    "createdAt": "2026-06-26T10:17:10.497Z",
+    "updatedAt": "2026-06-26T10:17:10.497Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Classify hole-clearance clusters into via relocation, segment dogleg, or footprint-hole review before mutation.",
+    "status": "active",
+    "confidence": "medium",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting import",
+        "routed copper retained",
+        "footprints locked"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not change footprints",
+      "Do not discard imported routing globally"
+    ]
+  },
+  {
+    "id": "post_freerouting_copper_edge_repair_001",
+    "createdAt": "2026-06-26T10:17:10.497Z",
+    "updatedAt": "2026-06-26T10:17:10.497Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Cluster copper-edge violations and repair only by moving imported copper inward, never by changing Edge.Cuts.",
+    "status": "active",
+    "confidence": "medium",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting import",
+        "routed copper retained",
+        "footprints locked"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not change footprints",
+      "Do not discard imported routing globally"
+    ]
+  },
+  {
+    "id": "post_freerouting_solder_mask_bridge_classification_001",
+    "createdAt": "2026-06-26T10:17:10.497Z",
+    "updatedAt": "2026-06-26T10:17:10.497Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Classify solder-mask bridge issues as route-owned or footprint-review; do not edit footprints during post-route cleanup.",
+    "status": "active",
+    "confidence": "medium",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting import",
+        "routed copper retained",
+        "footprints locked"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not change footprints",
+      "Do not discard imported routing globally"
+    ]
+  },
+  {
+    "id": "post_freerouting_cluster_geometry_mutation_001",
+    "createdAt": "2026-06-26T11:57:14.806Z",
+    "updatedAt": "2026-06-26T11:57:14.806Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Transactional dogleg mutation of imported route segment, accepted only when KiCad DRC decreases without unconnected regression.",
+    "status": "active",
+    "confidence": "medium",
+    "evidence": {
+      "before": {
+        "violations": 1273,
+        "unconnected": 239,
+        "severity": {
+          "error": 843,
+          "warning": 430
+        },
+        "types": {
+          "clearance": 499,
+          "hole_clearance": 125,
+          "shorting_items": 9,
+          "malformed_courtyard": 25,
+          "courtyards_overlap": 4,
+          "copper_edge_clearance": 76,
+          "drill_out_of_range": 48,
+          "solder_mask_bridge": 57,
+          "track_dangling": 1,
+          "silk_edge_clearance": 17,
+          "lib_footprint_mismatch": 11,
+          "text_height": 2,
+          "text_thickness": 1,
+          "silk_overlap": 199,
+          "silk_over_copper": 199
+        }
+      },
+      "after": {
+        "violations": 1267,
+        "unconnected": 239,
+        "severity": {
+          "error": 837,
+          "warning": 430
+        },
+        "types": {
+          "clearance": 500,
+          "hole_clearance": 125,
+          "shorting_items": 9,
+          "malformed_courtyard": 21,
+          "courtyards_overlap": 4,
+          "copper_edge_clearance": 73,
+          "drill_out_of_range": 48,
+          "solder_mask_bridge": 57,
+          "track_dangling": 1,
+          "silk_edge_clearance": 17,
+          "lib_footprint_mismatch": 11,
+          "text_height": 2,
+          "text_thickness": 1,
+          "silk_overlap": 199,
+          "silk_over_copper": 199
+        }
+      },
+      "mutations": 2
+    },
+    "safetyRules": [
+      "Commit only if DRC decreases",
+      "Preserve endpoints/net",
+      "No forbidden vias",
+      "No outline/footprint edits"
+    ]
+  },
+  {
+    "id": "post_freerouting_edge_nudge_repair_001",
+    "createdAt": "2026-06-26T11:57:14.806Z",
+    "updatedAt": "2026-06-26T11:57:14.806Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Directed dogleg/nudge away from Edge.Cuts for imported copper-edge clusters.",
+    "status": "active",
+    "confidence": "medium",
+    "evidence": {
+      "before": {
+        "violations": 1273,
+        "unconnected": 239,
+        "severity": {
+          "error": 843,
+          "warning": 430
+        },
+        "types": {
+          "clearance": 499,
+          "hole_clearance": 125,
+          "shorting_items": 9,
+          "malformed_courtyard": 25,
+          "courtyards_overlap": 4,
+          "copper_edge_clearance": 76,
+          "drill_out_of_range": 48,
+          "solder_mask_bridge": 57,
+          "track_dangling": 1,
+          "silk_edge_clearance": 17,
+          "lib_footprint_mismatch": 11,
+          "text_height": 2,
+          "text_thickness": 1,
+          "silk_overlap": 199,
+          "silk_over_copper": 199
+        }
+      },
+      "after": {
+        "violations": 1267,
+        "unconnected": 239,
+        "severity": {
+          "error": 837,
+          "warning": 430
+        },
+        "types": {
+          "clearance": 500,
+          "hole_clearance": 125,
+          "shorting_items": 9,
+          "malformed_courtyard": 21,
+          "courtyards_overlap": 4,
+          "copper_edge_clearance": 73,
+          "drill_out_of_range": 48,
+          "solder_mask_bridge": 57,
+          "track_dangling": 1,
+          "silk_edge_clearance": 17,
+          "lib_footprint_mismatch": 11,
+          "text_height": 2,
+          "text_thickness": 1,
+          "silk_overlap": 199,
+          "silk_over_copper": 199
+        }
+      },
+      "mutations": 2
+    },
+    "safetyRules": [
+      "Commit only if DRC decreases",
+      "Preserve endpoints/net",
+      "No forbidden vias",
+      "No outline/footprint edits"
+    ]
+  },
+  {
+    "id": "post_freerouting_dogleg_clearance_repair_001",
+    "createdAt": "2026-06-26T11:57:14.806Z",
+    "updatedAt": "2026-06-26T11:57:14.806Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "DRC",
+    "fixSummary": "Replace one offending imported segment with same-net dogleg segments while preserving endpoints.",
+    "status": "active",
+    "confidence": "medium",
+    "evidence": {
+      "before": {
+        "violations": 1273,
+        "unconnected": 239,
+        "severity": {
+          "error": 843,
+          "warning": 430
+        },
+        "types": {
+          "clearance": 499,
+          "hole_clearance": 125,
+          "shorting_items": 9,
+          "malformed_courtyard": 25,
+          "courtyards_overlap": 4,
+          "copper_edge_clearance": 76,
+          "drill_out_of_range": 48,
+          "solder_mask_bridge": 57,
+          "track_dangling": 1,
+          "silk_edge_clearance": 17,
+          "lib_footprint_mismatch": 11,
+          "text_height": 2,
+          "text_thickness": 1,
+          "silk_overlap": 199,
+          "silk_over_copper": 199
+        }
+      },
+      "after": {
+        "violations": 1267,
+        "unconnected": 239,
+        "severity": {
+          "error": 837,
+          "warning": 430
+        },
+        "types": {
+          "clearance": 500,
+          "hole_clearance": 125,
+          "shorting_items": 9,
+          "malformed_courtyard": 21,
+          "courtyards_overlap": 4,
+          "copper_edge_clearance": 73,
+          "drill_out_of_range": 48,
+          "solder_mask_bridge": 57,
+          "track_dangling": 1,
+          "silk_edge_clearance": 17,
+          "lib_footprint_mismatch": 11,
+          "text_height": 2,
+          "text_thickness": 1,
+          "silk_overlap": 199,
+          "silk_over_copper": 199
+        }
+      },
+      "mutations": 2
+    },
+    "safetyRules": [
+      "Commit only if DRC decreases",
+      "Preserve endpoints/net",
+      "No forbidden vias",
+      "No outline/footprint edits"
+    ]
+  },
+  {
+    "createdAt": "2026-06-26T12:58:56.852Z",
+    "updatedAt": "2026-06-26T12:58:56.852Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting SES import",
+        "through-via-only policy",
+        "fixed outline"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not move mounting holes",
+      "Do not use blind/buried/micro/via-in-pad",
+      "Promote only DRC-improving mutations"
+    ],
+    "id": "post_freerouting_legal_via_site_search_001",
+    "problemType": "DRC/post-route repair",
+    "problemSignature": {
+      "errorCode": "POST_FREEROUTING_HOLE_CLEARANCE_VIA",
+      "drcFamily": "hole_clearance",
+      "symptoms": [
+        "FreeRouting through vias violate hole clearance",
+        "random doglegs do not repair via-owned DRC"
+      ]
+    },
+    "rootCause": "Post-FreeRouting repair lacked a legal through-via site search and could not move vias while preserving attached route connectivity.",
+    "fixSummary": "Build a post-route legal-site map, rank nearby legal through-via locations, relocate imported vias, update attached segment endpoints, and promote only DRC-improving mutations.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs"
+      ],
+      "functionsAdded": [
+        "buildLegalSiteMapForPostRouteRepair",
+        "findNearestLegalThroughViaSite",
+        "rankLegalViaSites",
+        "relocateImportedViaToLegalSite"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-legal-site-map",
+        "test:post-freerouting-legal-via-site-search",
+        "test:post-freerouting-via-relocation-connectivity"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "hole_clearance": 125,
+        "totalViolations": 1267
+      },
+      "after": {
+        "hole_clearance": 112,
+        "totalViolations": 1264
+      },
+      "tests": [
+        "post-freerouting-legal-site-map",
+        "post-freerouting-legal-via-site-search"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "createdAt": "2026-06-26T12:58:56.852Z",
+    "updatedAt": "2026-06-26T12:58:56.852Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting SES import",
+        "through-via-only policy",
+        "fixed outline"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not move mounting holes",
+      "Do not use blind/buried/micro/via-in-pad",
+      "Promote only DRC-improving mutations"
+    ],
+    "id": "post_freerouting_legal_waypoint_search_001",
+    "problemType": "DRC/post-route repair",
+    "problemSignature": {
+      "errorCode": "POST_FREEROUTING_SEGMENT_CLEARANCE",
+      "drcFamily": "clearance/copper_edge_clearance",
+      "symptoms": [
+        "generic doglegs roll back repeatedly",
+        "segment repairs need scored legal waypoints"
+      ]
+    },
+    "rootCause": "Dogleg generation guessed offsets without proving candidate waypoint legality against board, pad, via, and route obstacles.",
+    "fixSummary": "Generate and rank legal dogleg waypoints using the post-route obstacle map before rerouting imported segments.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs"
+      ],
+      "functionsAdded": [
+        "findLegalDoglegWaypoints",
+        "rerouteSegmentThroughLegalWaypoints",
+        "rankSegmentRepairCandidates"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-legal-waypoint-search",
+        "test:post-freerouting-scored-cluster-mutation"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "rolledBackDoglegs": 46
+      },
+      "after": {
+        "legalWaypointCandidatesTested": 44
+      }
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "createdAt": "2026-06-26T12:58:56.852Z",
+    "updatedAt": "2026-06-26T12:58:56.852Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller",
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting SES import",
+        "through-via-only policy",
+        "fixed outline"
+      ]
+    },
+    "safetyRules": [
+      "Do not change Edge.Cuts",
+      "Do not move mounting holes",
+      "Do not use blind/buried/micro/via-in-pad",
+      "Promote only DRC-improving mutations"
+    ],
+    "id": "post_freerouting_cluster_scored_mutation_001",
+    "problemType": "DRC/post-route repair",
+    "problemSignature": {
+      "errorCode": "POST_FREEROUTING_REPAIR_PROMOTION_GATE",
+      "drcFamily": "clustered_route_generated_drc",
+      "symptoms": [
+        "classification-only passes",
+        "local mutations retained only by segment count"
+      ]
+    },
+    "rootCause": "Post-route cleanup needed a candidate promotion gate based on KiCad DRC family/total reduction, not mutation existence.",
+    "fixSummary": "Run candidate mutations on temporary board files, rerun KiCad DRC, and promote only mutations that reduce the target family or total DRC.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs"
+      ],
+      "functionsAdded": [
+        "buildLegalSiteMapForPostRouteRepair",
+        "relocateImportedViaToLegalSite",
+        "rerouteSegmentThroughLegalWaypoints"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-scored-cluster-mutation"
+      ]
+    },
+    "evidence": {
+      "before": {
+        "totalViolations": 1267,
+        "hole_clearance": 125
+      },
+      "after": {
+        "totalViolations": 1264,
+        "hole_clearance": 112
+      }
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "post_freerouting_collateral_damage_guard_001",
+    "createdAt": "2026-06-26T13:24:13.398Z",
+    "updatedAt": "2026-06-26T13:24:13.398Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller",
+    "problemType": "DRC/post-route repair",
+    "problemSignature": {
+      "errorCode": "POST_FREEROUTING_COLLATERAL_DRC_REGRESSION",
+      "drcFamily": "multi-family DRC",
+      "symptoms": [
+        "hole clearance improves while shorting worsens",
+        "track crossing appears after via relocation",
+        "solder mask bridge count increases after local repair"
+      ]
+    },
+    "rootCause": "Post-FreeRouting repair promotion accepted target-family reductions without a weighted multi-family DRC score or critical-family regression guard.",
+    "fixSummary": "Add weighted DRC health scoring, before/after comparison, critical-family collateral damage detection, and rollback of repairs that worsen shorts, crossings, unconnected, forbidden vias, outline, mounting holes, or part/footprint/package state.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs",
+        "tests/post-freerouting-repair.test.mjs",
+        "package.json"
+      ],
+      "functionsAdded": [
+        "scoreDrcHealth",
+        "compareDrcHealthBeforeAfter",
+        "shouldPromotePostRouteRepair",
+        "rollbackCollateralDamage",
+        "auditCleanup4ViaRelocations"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-multi-family-drc-score",
+        "test:post-freerouting-collateral-damage-guard",
+        "test:post-freerouting-repair-promotion-gate"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "local geometry mutation",
+        "through-via-only policy"
+      ]
+    },
+    "recipe": [
+      "Score DRC before and after every candidate repair",
+      "Reject any candidate that worsens shorting, track crossing, unconnected, forbidden via, outline, mounting holes, or part/footprint/package families",
+      "Promote only weighted-score improvements with no critical-family regression",
+      "Rollback candidate geometry when collateral damage appears"
+    ],
+    "safetyRules": [
+      "Do not promote target-family-only improvements",
+      "Do not allow shorting or track crossing regression",
+      "Do not fake DRC pass",
+      "Do not modify locked board spec"
+    ],
+    "evidence": {
+      "before": {
+        "hole_clearance": 125,
+        "shorting_items": 9,
+        "tracks_crossing": 0,
+        "totalViolations": 1267
+      },
+      "candidateAfter": {
+        "hole_clearance": 112,
+        "shorting_items": 14,
+        "tracks_crossing": 2,
+        "totalViolations": 1264
+      },
+      "guardedAfter": {
+        "totalViolations": 1266,
+        "unconnected": 239
+      },
+      "tests": [
+        "post-freerouting-multi-family-drc-score",
+        "post-freerouting-collateral-damage-guard",
+        "post-freerouting-repair-promotion-gate"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "post_freerouting_guarded_family_rotation_001",
+    "createdAt": "2026-06-26T15:06:32.050Z",
+    "updatedAt": "2026-06-26T15:06:32.050Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller",
+    "problemType": "DRC/post-route repair",
+    "problemSignature": {
+      "errorCode": "POST_FREEROUTING_REPAIR_SCHEDULER_STUCK_ON_EDGE",
+      "drcFamily": "copper_edge_clearance/hole_clearance/clearance",
+      "symptoms": [
+        "guarded repair batch spends all candidates on copper edge clusters",
+        "no repairs committed despite legal-site engine",
+        "other DRC families never attempted"
+      ]
+    },
+    "rootCause": "Post-route repair scheduler selected the first prioritized family repeatedly, starving hole-clearance and clearance clusters that had promotable legal-site candidates.",
+    "fixSummary": "Rotate repair families under the collateral-damage promotion gate so copper-edge, hole-clearance, clearance, solder-mask, and dangling-track clusters all get candidate budgets.",
+    "implementation": {
+      "filesChanged": [
+        "tests/post-freerouting-repair.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:post-freerouting-rollback-collateral-damage"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded local repair",
+        "multiple DRC families remain"
+      ]
+    },
+    "recipe": [
+      "Run family-rotated candidate selection instead of exhausting one family",
+      "Score every candidate with shouldPromotePostRouteRepair",
+      "Commit only weighted-score improvements with no critical regression",
+      "Continue to next family when all candidates are rejected"
+    ],
+    "safetyRules": [
+      "Do not trade hole clearance for shorts/crossings",
+      "Do not change locked board spec",
+      "Do not commit generated PCB artifacts"
+    ],
+    "evidence": {
+      "before": {
+        "violations": 1268,
+        "weightedScore": 487499,
+        "hole_clearance": 125,
+        "clearance": 500,
+        "shorting_items": 9
+      },
+      "after": {
+        "violations": 1259,
+        "weightedScore": 486124,
+        "hole_clearance": 118,
+        "clearance": 499,
+        "shorting_items": 9
+      },
+      "candidateRejections": {
+        "collateralDamagePrevented": 40
+      },
+      "tests": [
+        "post-freerouting-rollback-collateral-damage"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "post_freerouting_precise_forbidden_via_scan_001",
+    "createdAt": "2026-06-26T18:52:53.466Z",
+    "updatedAt": "2026-06-26T18:52:53.466Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route validation",
+    "problemSignature": {
+      "errorCode": "FORBIDDEN_VIA_TEXT_SCAN_FALSE_POSITIVE",
+      "drcFamily": "forbidden_via",
+      "symptoms": [
+        "post-route summary flagged forbidden via text hit",
+        "hit came from footprint description URL containing microchip.com",
+        "actual KiCad via blocks remained standard through vias"
+      ]
+    },
+    "rootCause": "The post-route summary scanned the whole PCB text for blind/buried/micro terms instead of scanning only KiCad via blocks.",
+    "fixSummary": "Scan forbidden via terms only inside KiCad via S-expression blocks and ignore footprint descriptions, URLs, and documentation text.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs",
+        "tests/post-freerouting-repair.test.mjs",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "scanForbiddenViasInPcbText"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-precise-forbidden-via-scan"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-route cleanup",
+        "through-via-only policy",
+        "PCB text validation"
+      ]
+    },
+    "recipe": [
+      "Parse KiCad PCB text by S-expression via blocks",
+      "Detect blind, buried, microvia, or via-in-pad terms only inside via blocks",
+      "Ignore footprint descriptions and documentation URLs",
+      "Use this scan before promotion and final reporting"
+    ],
+    "safetyRules": [
+      "Do not weaken forbidden via policy",
+      "Do not count documentation text as geometry",
+      "Do not promote a route if a real via block uses forbidden technology"
+    ],
+    "evidence": {
+      "before": {
+        "falsePositive": "microchip.com footprint description counted as forbidden via hit"
+      },
+      "after": {
+        "falsePositiveRejected": true,
+        "realBlindViaDetected": true
+      },
+      "tests": [
+        "post-FreeRouting forbidden via scan ignores footprint descriptions"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_prescore_candidate_filter_001",
+    "createdAt": "2026-06-26T19:44:43.142Z",
+    "updatedAt": "2026-06-26T19:44:43.142Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route repair throughput",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_PRESCORE_CANDIDATE_FILTER_001",
+      "symptoms": [
+        "post-route repair candidate yield was too low and full KiCad DRC was spent on low-probability candidates"
+      ]
+    },
+    "rootCause": "BoardForge generated legal-looking route mutations without predicting collateral or target-family improvement before expensive DRC.",
+    "fixSummary": "Add preScorePostRouteRepairCandidate and predicted DRC deltas to reject bad candidates before full KiCad DRC.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs",
+        "tests/post-freerouting-repair.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "preScorePostRouteRepairCandidate",
+        "predictCandidateDrcDeltas",
+        "predictCriticalFamilyRegression"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-candidate-prescore",
+        "test:post-freerouting-critical-regression-prediction"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded local repair",
+        "high DRC candidate rejection rate"
+      ]
+    },
+    "recipe": [
+      "Rank clusters by repairability",
+      "Generate candidate mutations",
+      "Pre-score target-family improvement and collateral risk",
+      "Run full KiCad DRC only for pre-score-approved candidates",
+      "Promote only through the multi-family DRC gate"
+    ],
+    "safetyRules": [
+      "Do not replace full KiCad DRC with pre-score",
+      "Do not permit shorts/crossings/unconnected regressions",
+      "Do not modify locked board spec"
+    ],
+    "evidence": {
+      "before": {
+        "cleanup7CandidatesTested": 119,
+        "cleanup7RepairsCommitted": 1
+      },
+      "after": {
+        "cleanup8bCandidatesSentToFullDrc": 10,
+        "cleanup8bRepairsCommitted": 2,
+        "drc": "1261 -> 1255",
+        "weightedScore": "486289 -> 485869"
+      },
+      "tests": [
+        "test:post-freerouting-candidate-prescore",
+        "test:post-freerouting-critical-regression-prediction"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_high_yield_cluster_selection_001",
+    "createdAt": "2026-06-26T19:44:43.142Z",
+    "updatedAt": "2026-06-26T19:44:43.142Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route repair throughput",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_HIGH_YIELD_CLUSTER_SELECTION_001",
+      "symptoms": [
+        "guarded repair batches spent candidate budget on low-yield/review-only clusters"
+      ]
+    },
+    "rootCause": "Cluster selection did not rank route-generated clusters by expected safe repairability.",
+    "fixSummary": "Add high-yield cluster selection that prefers safe route-generated hole, clearance, and copper-edge clusters and defers review-only clusters.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs",
+        "tests/post-freerouting-repair.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "selectHighYieldClusters",
+        "deferLowYieldClustersWithReason"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-high-yield-cluster-selection"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded local repair",
+        "high DRC candidate rejection rate"
+      ]
+    },
+    "recipe": [
+      "Rank clusters by repairability",
+      "Generate candidate mutations",
+      "Pre-score target-family improvement and collateral risk",
+      "Run full KiCad DRC only for pre-score-approved candidates",
+      "Promote only through the multi-family DRC gate"
+    ],
+    "safetyRules": [
+      "Do not replace full KiCad DRC with pre-score",
+      "Do not permit shorts/crossings/unconnected regressions",
+      "Do not modify locked board spec"
+    ],
+    "evidence": {
+      "before": {
+        "cleanup7CandidatesTested": 119,
+        "cleanup7RepairsCommitted": 1
+      },
+      "after": {
+        "cleanup8bCandidatesSentToFullDrc": 10,
+        "cleanup8bRepairsCommitted": 2,
+        "drc": "1261 -> 1255",
+        "weightedScore": "486289 -> 485869"
+      },
+      "tests": [
+        "test:post-freerouting-high-yield-cluster-selection"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_repairability_ranking_001",
+    "createdAt": "2026-06-26T19:44:43.142Z",
+    "updatedAt": "2026-06-26T19:44:43.142Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route repair throughput",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_REPAIRABILITY_RANKING_001",
+      "symptoms": [
+        "repair scheduler needed a reusable score for selecting clusters before mutation"
+      ]
+    },
+    "rootCause": "Clusters were processed mostly by family order instead of repairability evidence.",
+    "fixSummary": "Rank clusters using family priority, auto-repair safety, density penalty, and review-only penalty before candidate generation.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs",
+        "tests/post-freerouting-repair.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "rankPostRouteClustersByRepairability"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-repairability-ranking"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded local repair",
+        "high DRC candidate rejection rate"
+      ]
+    },
+    "recipe": [
+      "Rank clusters by repairability",
+      "Generate candidate mutations",
+      "Pre-score target-family improvement and collateral risk",
+      "Run full KiCad DRC only for pre-score-approved candidates",
+      "Promote only through the multi-family DRC gate"
+    ],
+    "safetyRules": [
+      "Do not replace full KiCad DRC with pre-score",
+      "Do not permit shorts/crossings/unconnected regressions",
+      "Do not modify locked board spec"
+    ],
+    "evidence": {
+      "before": {
+        "cleanup7CandidatesTested": 119,
+        "cleanup7RepairsCommitted": 1
+      },
+      "after": {
+        "cleanup8bCandidatesSentToFullDrc": 10,
+        "cleanup8bRepairsCommitted": 2,
+        "drc": "1261 -> 1255",
+        "weightedScore": "486289 -> 485869"
+      },
+      "tests": [
+        "test:post-freerouting-repairability-ranking"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_prescore_scaled_repair_pass_001",
+    "createdAt": "2026-06-26T20:24:18.009Z",
+    "updatedAt": "2026-06-26T20:24:18.009Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route repair throughput",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_PRESCORE_SCALED_REPAIR_PASS_001",
+      "symptoms": [
+        "Corrected pre-score needed to scale beyond a small proof pass on real post-FreeRouting ESC DRC clusters."
+      ]
+    },
+    "rootCause": "The previous capped pass validated pre-score correctness but only attempted 4 clusters and 10 full DRC candidates.",
+    "fixSummary": "Scale high-yield pre-scored repair over more clusters while keeping full KiCad DRC and collateral-damage promotion gate as the final acceptance rule.",
+    "implementation": {
+      "filesChanged": [
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded pre-score repair",
+        "remaining unconnected items"
+      ]
+    },
+    "recipe": [
+      "Run high-yield cluster selection",
+      "Pre-score mutation candidates",
+      "Run full KiCad DRC only on selected candidates",
+      "Promote only through collateral guard",
+      "Trigger exact-ratsnest pass only after stable DRC improvement"
+    ],
+    "safetyRules": [
+      "Do not weaken promotion gate",
+      "Do not attack unconnected while critical DRC families are unstable",
+      "Do not push board artifacts"
+    ],
+    "evidence": {
+      "before": {
+        "violations": 1257,
+        "weightedScore": 485899,
+        "hole_clearance": 116
+      },
+      "after": {
+        "violations": 1242,
+        "weightedScore": 483694,
+        "hole_clearance": 104
+      },
+      "repairsCommitted": 10,
+      "fullDrcCandidates": 30,
+      "collateralDamagePrevented": 11
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_drc_checkpoint_batching_001",
+    "createdAt": "2026-06-26T20:24:18.009Z",
+    "updatedAt": "2026-06-26T20:24:18.009Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route repair throughput",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_DRC_CHECKPOINT_BATCHING_001",
+      "symptoms": [
+        "Large post-route DRC repair passes need checkpoints so good repairs are not lost during long KiCad DRC batches."
+      ]
+    },
+    "rootCause": "Full-board KiCad DRC is expensive and long repair batches can timeout or be interrupted.",
+    "fixSummary": "Checkpoint the PCB every 5 committed guarded repairs and retain the current work board separately from candidate boards.",
+    "implementation": {
+      "filesChanged": [
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded pre-score repair",
+        "remaining unconnected items"
+      ]
+    },
+    "recipe": [
+      "Run high-yield cluster selection",
+      "Pre-score mutation candidates",
+      "Run full KiCad DRC only on selected candidates",
+      "Promote only through collateral guard",
+      "Trigger exact-ratsnest pass only after stable DRC improvement"
+    ],
+    "safetyRules": [
+      "Do not weaken promotion gate",
+      "Do not attack unconnected while critical DRC families are unstable",
+      "Do not push board artifacts"
+    ],
+    "evidence": {
+      "checkpointEveryCommittedRepairs": 5,
+      "outputBoard": "FN-ESC1_boardforge_routed_postroute_cleanup9_scaled_prescore_guarded.kicad_pcb"
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_safe_unconnected_trigger_001",
+    "createdAt": "2026-06-26T20:24:18.009Z",
+    "updatedAt": "2026-06-26T20:24:18.009Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "DRC/post-route repair throughput",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_SAFE_UNCONNECTED_TRIGGER_001",
+      "symptoms": [
+        "Remaining unconnected routing should only start after post-route DRC is trending safely downward."
+      ]
+    },
+    "rootCause": "Routing new ratsnest items into a high-DRC board can trade connectivity for shorts, crossings, or clearance debt.",
+    "fixSummary": "Trigger unconnected routing only after weighted DRC improves, critical families stay stable, forbidden vias remain zero, and at least 10 DRC repairs commit.",
+    "implementation": {
+      "filesChanged": [
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": []
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "guarded pre-score repair",
+        "remaining unconnected items"
+      ]
+    },
+    "recipe": [
+      "Run high-yield cluster selection",
+      "Pre-score mutation candidates",
+      "Run full KiCad DRC only on selected candidates",
+      "Promote only through collateral guard",
+      "Trigger exact-ratsnest pass only after stable DRC improvement"
+    ],
+    "safetyRules": [
+      "Do not weaken promotion gate",
+      "Do not attack unconnected while critical DRC families are unstable",
+      "Do not push board artifacts"
+    ],
+    "evidence": {
+      "triggered": true,
+      "exactItemsAttempted": 0,
+      "reason": "trigger reached after cleanup9; exact-ratsnest writer queued for next autonomous stage"
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_guarded_exact_ratsnest_writer_001",
+    "createdAt": "2026-06-26T20:45:00.000Z",
+    "updatedAt": "2026-06-26T20:45:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "post-route unconnected reduction",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_RATSNEST_WRITER_NEEDS_PROMOTION_GATE",
+      "symptoms": [
+        "FreeRouting leaves exact KiCad unconnected items after DRC repair",
+        "New routes must not trade connectivity for shorts or crossings"
+      ]
+    },
+    "rootCause": "Remaining post-route ratsnest work needs the same multi-family promotion guard as DRC cleanup.",
+    "fixSummary": "Rank exact KiCad unconnected items and commit route candidates only when exact connectivity improves without weighted DRC or critical-family regression.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json"
+      ],
+      "functionsAdded": [
+        "runGuardedExactRatsnestPostRouteWriter",
+        "rankPostRouteUnconnectedItems",
+        "routeExactUnconnectedItemWithPromotionGate",
+        "diffUnconnectedItemSets"
+      ],
+      "testsAdded": [
+        "test:postroute-guarded-ratsnest-writer",
+        "test:postroute-unconnected-item-ranking",
+        "test:postroute-unconnected-set-diff-gate",
+        "test:postroute-ratsnest-route-promotion-gate"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "CONTROL_SIGNAL",
+        "REGULATED_RAIL",
+        "GATE_DRIVE",
+        "BOOTSTRAP"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "remaining KiCad unconnected items",
+        "critical DRC families stable"
+      ]
+    },
+    "recipe": [
+      "Parse exact KiCad unconnected items",
+      "Rank easy signal, rail, gate, and bootstrap pairs first",
+      "Write candidate route transactionally",
+      "Diff unconnected item sets",
+      "Promote only when exact connectivity improves and weighted DRC does not worsen"
+    ],
+    "safetyRules": [
+      "Do not commit routes without exact KiCad connectivity proof",
+      "Do not worsen shorting, crossings, or unconnected count",
+      "Do not introduce forbidden vias",
+      "Do not change original spec"
+    ],
+    "evidence": {
+      "before": {
+        "unconnected": 239,
+        "weightedDrcScore": 483694
+      },
+      "after": {
+        "writerImplemented": true
+      },
+      "tests": [
+        "test:postroute-guarded-ratsnest-writer",
+        "test:postroute-ratsnest-route-promotion-gate"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "self_driving_board_trace_supervisor_001",
+    "createdAt": "2026-06-26T20:45:00.000Z",
+    "updatedAt": "2026-06-26T20:45:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "all",
+    "problemType": "workflow supervisor",
+    "problemSignature": {
+      "errorCode": "MIDLOOP_USER_PROMPT_DEPENDENCY",
+      "symptoms": [
+        "BoardForge reported internal next actions instead of diagnosing, fixing, testing, and resuming"
+      ]
+    },
+    "rootCause": "Routing and repair tools existed, but no persistent supervisor converted blockers into internal work plans.",
+    "fixSummary": "Add a self-driving supervisor facade that diagnoses blockers, ranks next autonomous work, avoids user prompts, and resumes exact-ratsnest or guarded DRC repair.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json"
+      ],
+      "functionsAdded": [
+        "runBoardForgeSelfDrivingSupervisor"
+      ],
+      "testsAdded": [
+        "test:self-driving-supervisor"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "flight-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [],
+      "conditions": [
+        "autonomous board trace",
+        "post-route repair",
+        "remaining blockers"
+      ]
+    },
+    "recipe": [
+      "Scan current DRC/ERC/unconnected state",
+      "Load applicable solutions",
+      "Diagnose blockers into module-level work plans",
+      "Run the next safe autonomous action",
+      "Ask user only for forbidden design decisions"
+    ],
+    "safetyRules": [
+      "Never ask for another prompt for internal engineering work",
+      "Keep original board protected",
+      "Require explicit user approval for forbidden changes"
+    ],
+    "evidence": {
+      "before": {
+        "invalidFinalStates": [
+          "needs_next_prompt",
+          "classification_only",
+          "low_yield_stop"
+        ]
+      },
+      "after": {
+        "userPromptRequired": false,
+        "nextAction": "runGuardedExactRatsnestPostRouteWriter"
+      },
+      "tests": [
+        "test:self-driving-supervisor"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_physical_writer_handoff_001",
+    "createdAt": "2026-06-26T21:18:00.000Z",
+    "updatedAt": "2026-06-26T21:18:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "post-route unconnected reduction",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_PHYSICAL_WRITER_BACKEND_NOT_ATTACHED",
+      "symptoms": [
+        "Guarded exact-ratsnest writer ranked easy items but blocked before writing copper",
+        "writeCandidate adapter was missing from supervisor handoff"
+      ]
+    },
+    "rootCause": "The guarded ratsnest gate had parser, ranking, and promotion logic, but no physical KiCad writer adapter.",
+    "fixSummary": "Attach a physical post-route route-bundle writer that writes candidate copper to a branch file, runs DRC when available, and promotes only through the exact-ratsnest DRC gate.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json"
+      ],
+      "functionsAdded": [
+        "writePostRouteRatsnestBundle",
+        "routeExactUnconnectedItemPhysical",
+        "buildLocalRouteBundleForUnconnectedItem",
+        "applyRouteBundleToKicadPcb",
+        "rollbackRouteBundle"
+      ],
+      "testsAdded": [
+        "test:postroute-physical-writer-handoff",
+        "test:postroute-write-ratsnest-bundle",
+        "test:postroute-ratsnest-writer-commits-only-with-proof",
+        "test:postroute-ratsnest-writer-rolls-back-unsafe-route"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "CONTROL_SIGNAL",
+        "REGULATED_RAIL",
+        "GATE_DRIVE",
+        "BOOTSTRAP"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "remaining exact KiCad unconnected items",
+        "candidate route must be transactional"
+      ]
+    },
+    "recipe": [
+      "Build a local route bundle for the exact source/target pads",
+      "Write the bundle to a candidate board while preserving imported FreeRouting copper",
+      "Run KiCad DRC on the candidate",
+      "Promote only if exact connectivity improves and critical DRC families do not worsen",
+      "Rollback candidate copper when DRC collateral appears"
+    ],
+    "safetyRules": [
+      "Do not retain physical routes that introduce shorts or track crossings",
+      "Do not use forbidden via types",
+      "Do not change board outline, mounting holes, parts, footprints, packages, pads, or nets",
+      "Do not push candidate board files to Git"
+    ],
+    "evidence": {
+      "before": {
+        "physicalRouteAttempts": 0,
+        "reason": "post_route_physical_writer_not_configured"
+      },
+      "after": {
+        "physicalRouteAttempts": 3,
+        "routeBundlesWritten": 3,
+        "routesCommitted": 0,
+        "rollbacks": 3,
+        "reason": "candidate routes resolved exact items transiently but failed collateral DRC guard"
+      },
+      "tests": [
+        "test:postroute-physical-writer-handoff",
+        "test:postroute-write-ratsnest-bundle",
+        "test:postroute-ratsnest-writer-commits-only-with-proof",
+        "test:postroute-ratsnest-writer-rolls-back-unsafe-route"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "post_freerouting_cleanup_shorts_before_ratsnest_001",
+    "createdAt": "2026-06-26T21:48:00.000Z",
+    "updatedAt": "2026-06-26T21:48:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "post-route DRC cleanup",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_SHORTS_BLOCK_SAFE_RATSNEST_WRITES",
+      "drcFamily": "shorting_items",
+      "symptoms": [
+        "Exact ratsnest writer can transiently resolve items but creates shorting or track-crossing collateral",
+        "Post-FreeRouting board has existing shorting_items that make new route promotion unsafe"
+      ]
+    },
+    "rootCause": "Remaining FreeRouting-imported shorts made the post-route board too unstable for additional exact-ratsnest writes; the supervisor needed to prioritize route-generated short cleanup first.",
+    "fixSummary": "Pause exact-ratsnest writes while shorts remain, extract route-owned short candidates, remove or reroute only the exact offending generated route object transactionally, and promote only if shorts or weighted DRC improve without critical-family regression.",
+    "implementation": {
+      "filesChanged": [
+        "lib/external-routing/post-freerouting-repair.mjs",
+        "tests/post-freerouting-repair.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "planPostFreeRoutingCleanupPriority",
+        "extractPostRouteShortRepairCandidates",
+        "removeRouteObjectByUuid",
+        "shouldPromotePostRouteShortCleanup"
+      ],
+      "testsAdded": [
+        "test:post-freerouting-cleanup-priority",
+        "test:postroute-shorts-before-ratsnest",
+        "test:postroute-transactional-drc-cleanup",
+        "test:postroute-preserve-freerouting-copper",
+        "test:postroute-no-new-shorts",
+        "test:solution-library-postroute-cleanup"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "MOTOR_PHASE",
+        "SWITCHING_NODE",
+        "CONTROL_SIGNAL",
+        "REGULATED_RAIL"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "remaining shorting_items",
+        "remaining exact KiCad unconnected items",
+        "imported route copper must be preserved transactionally"
+      ]
+    },
+    "recipe": [
+      "Run KiCad DRC and count shorting_items before attempting new ratsnest writes.",
+      "Pause exact-ratsnest writer while route-generated shorts remain.",
+      "Extract shorting_items whose offending object is an imported segment or via with a UUID.",
+      "Apply one transactional mutation to the exact route object only.",
+      "Run KiCad DRC on the candidate board.",
+      "Promote only if shorts decrease or weighted DRC improves and no critical family worsens.",
+      "Rollback the single candidate if the promotion gate fails."
+    ],
+    "safetyRules": [
+      "Do not remove unrelated FreeRouting copper",
+      "Do not keep mutations that increase shorts, track crossings, forbidden vias, or unconnected count beyond the configured bound",
+      "Do not change board outline, mounting holes, parts, footprints, packages, pads, or nets",
+      "Do not push candidate board files to Git"
+    ],
+    "evidence": {
+      "before": {
+        "inputBoard": "FN-ESC1_boardforge_routed_postroute_cleanup10_ratsnest_guarded.kicad_pcb",
+        "shorting_items": 9,
+        "tracks_crossing": 0,
+        "unconnected": 239
+      },
+      "after": {
+        "mode": "shorts-first cleanup enabled before new ratsnest writes"
+      },
+      "tests": [
+        "test:post-freerouting-cleanup-priority",
+        "test:postroute-shorts-before-ratsnest",
+        "test:postroute-transactional-drc-cleanup",
+        "test:postroute-preserve-freerouting-copper",
+        "test:postroute-no-new-shorts",
+        "test:solution-library-postroute-cleanup"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_no_babysitting_supervisor_001",
+    "createdAt": "2026-06-26T23:48:00.000Z",
+    "updatedAt": "2026-06-26T23:48:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC / motor-controller / dense-mixed-signal",
+    "problemType": "workflow supervisor",
+    "problemSignature": {
+      "errorCode": "POSTROUTE_MIDLOOP_USER_PROMPT_DEPENDENCY",
+      "symptoms": [
+        "BoardForge completed one cleanup stage and returned a next action instead of continuing",
+        "Short cleanup created reconnect work that should be scheduled internally"
+      ]
+    },
+    "rootCause": "Post-route cleanup lacked a persistent state machine that moves from shorts cleanup to short-fix disconnect reroute, DRC cleanup, exact-ratsnest reduction, ERC repair, and export review without user babysitting.",
+    "fixSummary": "Add a post-route autonomous supervisor state machine that selects the next allowed action, writes resume state, suppresses mid-loop prompt states, and asks the user only when a forbidden design change is required.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "identifyShortFixDisconnects",
+        "selectNextAutonomousPostRouteAction",
+        "continueAfterCleanupStage",
+        "preventMidLoopUserPrompt",
+        "runEscPostRouteAutonomousSupervisor"
+      ],
+      "testsAdded": [
+        "test:postroute-unconnected-diff-after-short-repair",
+        "test:postroute-reroute-short-fix-disconnects",
+        "test:postroute-short-count-stays-zero",
+        "test:postroute-no-recreate-short",
+        "test:postroute-autonomous-supervisor",
+        "test:postroute-no-midloop-user-prompt",
+        "test:postroute-auto-select-next-action",
+        "test:postroute-resume-state",
+        "test:solution-library-postroute-no-babysitting"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "MOTOR_PHASE",
+        "SWITCHING_NODE",
+        "CONTROL_SIGNAL",
+        "REGULATED_RAIL",
+        "GATE_DRIVE",
+        "BOOTSTRAP"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "remaining DRC/ERC issues",
+        "remaining exact KiCad unconnected items",
+        "no forbidden design decision required"
+      ]
+    },
+    "recipe": [
+      "Scan current DRC/ERC and unconnected state.",
+      "If shorts exist, run shorts-first cleanup.",
+      "If short cleanup created disconnects, reroute those exact disconnects before generic ratsnest work.",
+      "If severe generated DRC remains, run guarded local DRC cleanup.",
+      "If exact unconnected items remain and critical families are stable, run guarded exact-ratsnest reduction.",
+      "Write supervisor resume state after every stage.",
+      "Suppress mid-loop user prompt final states unless a forbidden change is required."
+    ],
+    "safetyRules": [
+      "Do not ask the user for internal next actions",
+      "Do not reintroduce shorts or track crossings",
+      "Do not use forbidden vias",
+      "Do not change board outline, mounting holes, parts, footprints, packages, pads, or nets",
+      "Do not push board artifacts to Git"
+    ],
+    "evidence": {
+      "before": {
+        "cleanup12": "shorts fixed, next action required short-fix disconnect reroute"
+      },
+      "after": {
+        "supervisorStateMachine": true,
+        "userPromptRequired": false
+      },
+      "tests": [
+        "test:postroute-autonomous-supervisor",
+        "test:postroute-no-midloop-user-prompt",
+        "test:postroute-auto-select-next-action",
+        "test:postroute-resume-state"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "postroute_remaining_short_fix_disconnects_block_and_continue_001",
+    "createdAt": "2026-06-27T00:46:05.265Z",
+    "updatedAt": "2026-06-27T00:46:05.265Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing / DRC / supervisor",
+    "problemSignature": {
+      "errorCode": "SHORT_FIX_DISCONNECTS_CAN_TRAP_SUPERVISOR",
+      "drcFamily": "unconnected_items",
+      "netRole": "SWITCHING_NODE",
+      "symptoms": [
+        "short cleanup removes unsafe segments and creates exact disconnects",
+        "some reconnect candidates reintroduce shorts or fail promotion",
+        "supervisor can loop on exhausted disconnects instead of moving to next safe cleanup stage"
+      ]
+    },
+    "rootCause": "Short-fix disconnect rerouting needed a blocked-with-proof state so exhausted unsafe reconnects do not keep the autonomous post-route supervisor stuck on one stage.",
+    "fixSummary": "Treat resolved or blocked short-fix disconnects as handled, preserve shorts at zero, and continue automatically to generated-route DRC cleanup when remaining reconnects cannot pass the promotion gate.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:postroute-reroute-remaining-short-fix-disconnects"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "SWITCHING_NODE",
+        "MOTOR_PHASE",
+        "GATE_DRIVE"
+      ],
+      "conditions": [
+        "post-FreeRouting cleanup",
+        "shorts-first repair",
+        "fixed board outline",
+        "through-via-only policy"
+      ]
+    },
+    "recipe": [
+      "Remove or reroute shorting generated copper first",
+      "Diff unconnected items created by short cleanup",
+      "Attempt exact short-safe reconnects under the promotion gate",
+      "Commit only if shorts remain zero and weighted DRC improves",
+      "Mark exhausted reconnects blocked with exact proof",
+      "Continue to the next autonomous DRC cleanup stage without user prompting"
+    ],
+    "safetyRules": [
+      "Do not reintroduce shorts",
+      "Do not use forbidden vias",
+      "Do not change board outline or mounting holes",
+      "Do not change parts, footprints, packages, pads, or nets",
+      "Do not loop forever on blocked reconnects"
+    ],
+    "evidence": {
+      "before": {
+        "board": "FN-ESC1_boardforge_routed_postroute_cleanup13_reroute_short_fixes.kicad_pcb",
+        "unconnected": 245,
+        "shorts": 0,
+        "weightedDrc": 470059
+      },
+      "after": {
+        "board": "FN-ESC1_boardforge_routed_postroute_cleanup14_continue_supervisor.kicad_pcb",
+        "unconnected": 243,
+        "shorts": 0,
+        "weightedDrc": 456149,
+        "blockedDisconnects": [
+          "/M4_B_SW",
+          "/M4_A_SW",
+          "/M3_C_SW",
+          "/M3_A_SW"
+        ],
+        "nextStage": "repair_generated_severe_clearance"
+      },
+      "tests": [
+        "npm run test:postroute-reroute-remaining-short-fix-disconnects",
+        "npm run test:postroute-short-count-stays-zero",
+        "npm run test:postroute-auto-select-next-action",
+        "npm run test:postroute-no-midloop-user-prompt"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_supervisor_must_execute_not_queue_001",
+    "createdAt": "2026-06-27T01:25:46.675Z",
+    "updatedAt": "2026-06-27T01:25:46.675Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "supervisor / workflow / DRC repair",
+    "problemSignature": {
+      "errorCode": "SUPERVISOR_QUEUED_ACTION_RETURNED_AS_FINAL",
+      "symptoms": [
+        "nextStage selected but not executed",
+        "esc_postroute_cleaned_continue_autonomously used as final state",
+        "user must provide another prompt for allowed internal cleanup stage"
+      ]
+    },
+    "rootCause": "The post-route supervisor treated selected internal stages as valid user-facing stopping points instead of executing them in a daemon loop.",
+    "fixSummary": "Add a daemon supervisor contract that executes queued stages, suppresses mid-loop final states, writes runtime checkpoints only at real execution boundaries, and rejects continue_autonomously as a valid final state.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "runEscPostRouteDaemonSupervisor",
+        "isValidEscPostRouteFinalState"
+      ],
+      "testsAdded": [
+        "test:postroute-supervisor-executes-queued-action",
+        "test:postroute-no-continue-autonomously-final-state",
+        "test:postroute-daemon-loop",
+        "test:postroute-runtime-checkpoint-resume",
+        "test:postroute-stage-batch-minimums",
+        "test:postroute-valid-final-states-only",
+        "test:solution-library-supervisor-execute-not-queue"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal",
+        "existing-board-trace"
+      ],
+      "netRoles": [
+        "all"
+      ],
+      "conditions": [
+        "post-route cleanup remaining",
+        "internal next action selected",
+        "no forbidden design decision required"
+      ]
+    },
+    "recipe": [
+      "Scan current board and choose the next internal stage",
+      "Execute the selected stage immediately",
+      "Write checkpoint after the stage",
+      "Re-scan DRC/ERC and select the next stage",
+      "Continue until ready, exact blockers, forbidden user decision, or runtime checkpoint"
+    ],
+    "safetyRules": [
+      "Do not expose queued internal actions as final state",
+      "Do not hide runtime limits",
+      "Rollback candidates that worsen weighted DRC or critical families",
+      "Never request user input for allowed internal repair work"
+    ],
+    "evidence": {
+      "before": {
+        "board": "FN-ESC1_boardforge_routed_postroute_cleanup14_continue_supervisor.kicad_pcb",
+        "nextStage": "repair_generated_severe_clearance",
+        "returnedToUser": true
+      },
+      "after": {
+        "board": "FN-ESC1_boardforge_routed_postroute_cleanup15_severe_clearance_repair.kicad_pcb",
+        "stageExecuted": "repair_generated_severe_clearance",
+        "state": "runtime_limit_reached_resume_written",
+        "shorts": 0,
+        "unconnected": 243,
+        "weightedDrc": 456149
+      },
+      "tests": [
+        "npm run test:postroute-supervisor-executes-queued-action",
+        "npm run test:postroute-daemon-loop",
+        "npm run test:postroute-valid-final-states-only"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_stage_exhaustion_skip_001",
+    "createdAt": "2026-06-27T01:45:00-04:00",
+    "updatedAt": "2026-06-27T01:45:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_supervisor_stall",
+    "problemSignature": {
+      "stage": "repair_generated_severe_clearance",
+      "attempted": 21,
+      "committed": 0,
+      "weightedDrcBefore": 456149,
+      "weightedDrcAfter": 456149,
+      "resumeCommandWasStageLabel": true
+    },
+    "rootCause": "The daemon supervisor marked runtime checkpoint after a zero-commit stage but pointed resume back to the same exhausted stage, allowing an infinite no-progress loop.",
+    "fixSummary": "Detect zero-commit/no-improvement stages, mark them TEMP_EXHAUSTED_NO_PROGRESS for the current run, skip them in the stage selector, select the next allowed family, and write an executable npm resume command instead of a stage label.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "markStageTemporarilyExhausted",
+        "shouldSkipExhaustedStageThisRun",
+        "selectNextStageAfterNoProgress",
+        "recordStageNoProgressReason",
+        "isZeroCommitStageResult",
+        "buildPostRouteSupervisorResumeCommand"
+      ],
+      "testsAdded": [
+        "test:postroute-stage-exhaustion-skip",
+        "test:postroute-no-repeat-zero-commit-stage",
+        "test:postroute-real-resume-command",
+        "test:postroute-daemon-runs-multiple-stages",
+        "test:postroute-select-next-after-no-progress",
+        "test:solution-library-stage-exhaustion-skip"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all"
+      ],
+      "conditions": [
+        "post-route daemon stage attempted candidates",
+        "stage committed no repairs",
+        "weighted DRC and unconnected did not improve",
+        "another allowed repair family remains"
+      ]
+    },
+    "recipe": [
+      "After every daemon stage, compare attempts, commits, weighted DRC, and unconnected deltas",
+      "If attempts > 0 and commits = 0 with no retained improvement, mark the stage TEMP_EXHAUSTED_NO_PROGRESS",
+      "Add the stage to exhaustedStagesThisRun",
+      "Re-run stage selection while skipping exhausted stages for this invocation",
+      "Write an executable npm resume command with the board path and --resume"
+    ],
+    "safetyRules": [
+      "Do not permanently disable the stage; other geometry changes may make it repairable later",
+      "Do not resume to a naked stage label",
+      "Do not accept a zero-commit stage as progress",
+      "Keep shorts, forbidden vias, outline, holes, parts, footprints, packages, pads, and nets protected"
+    ],
+    "evidence": {
+      "before": {
+        "stage": "repair_generated_severe_clearance",
+        "attempted": 21,
+        "committed": 0,
+        "resumeCommand": "repair_generated_severe_clearance"
+      },
+      "after": {
+        "lastStageResult": "TEMP_EXHAUSTED_NO_PROGRESS",
+        "exhaustedStagesThisRun": [
+          "repair_generated_severe_clearance"
+        ],
+        "nextStage": "repair_generated_hole_clearance",
+        "resumeCommandPattern": "npm run boardforge:postroute-supervisor -- --board <board> --resume"
+      },
+      "tests": [
+        "npm run test:postroute-stage-exhaustion-skip",
+        "npm run test:postroute-no-repeat-zero-commit-stage",
+        "npm run test:postroute-real-resume-command",
+        "npm run test:postroute-daemon-runs-multiple-stages"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_resume_state_must_execute_if_budget_available_001",
+    "createdAt": "2026-06-27T02:20:00-04:00",
+    "updatedAt": "2026-06-27T02:20:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_daemon_false_runtime_checkpoint",
+    "problemSignature": {
+      "previousStage": "repair_generated_severe_clearance",
+      "nextStageSelected": "repair_generated_hole_clearance",
+      "resumeStateWritten": true,
+      "actualRuntimeExhaustionProven": false
+    },
+    "rootCause": "BoardForge treated a stage boundary or resume-state write as a runtime checkpoint even when wall-clock/tool budget was still available, causing the daemon to stop after selecting the next internal stage.",
+    "fixSummary": "Add explicit runtime-budget checks and execute the selected next stage when budget remains. Runtime checkpoint is only valid when budget is actually exhausted, an external process cannot continue synchronously, or the environment blocks execution.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "shouldStopForRuntimeLimit",
+        "hasActualRuntimeBudgetRemaining",
+        "executeNextStageIfBudgetAvailable"
+      ],
+      "testsAdded": [
+        "test:postroute-runtime-checkpoint-only-on-budget-exhaustion",
+        "test:postroute-execute-next-stage-if-budget-remains",
+        "test:postroute-resume-command-is-executable",
+        "test:solution-library-resume-execute-if-budget"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all"
+      ],
+      "conditions": [
+        "post-route daemon has selected an allowed next stage",
+        "runtime budget remains",
+        "no forbidden user decision is required"
+      ]
+    },
+    "recipe": [
+      "After writing resume state, check actual elapsed runtime against configured budget and reserve",
+      "If budget remains and the next stage is allowed, execute the stage immediately",
+      "Use runtime_limit_reached_resume_written only when runtime/tool/environment limit is real",
+      "Keep checkpoint state as recovery data, not as a normal stopping point"
+    ],
+    "safetyRules": [
+      "Do not use resume state as a substitute for execution",
+      "Do not continue if a forbidden board/spec/via change is required",
+      "Maintain original-spec protection and DRC promotion gates across each executed stage"
+    ],
+    "evidence": {
+      "before": {
+        "nextStage": "repair_generated_hole_clearance",
+        "finalState": "runtime_limit_reached_resume_written",
+        "runtimeExhaustionVerified": false
+      },
+      "after": {
+        "nextStageExecuted": "repair_generated_hole_clearance",
+        "runtimeCheckpointOnlyOnBudgetExhaustion": true
+      },
+      "tests": [
+        "npm run test:postroute-runtime-checkpoint-only-on-budget-exhaustion",
+        "npm run test:postroute-execute-next-stage-if-budget-remains",
+        "npm run test:postroute-resume-command-is-executable"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_continue_productive_stage_until_exhausted_001",
+    "createdAt": "2026-06-27T02:45:00-04:00",
+    "updatedAt": "2026-06-27T02:45:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_daemon_under_runs_productive_stage",
+    "problemSignature": {
+      "stage": "repair_generated_copper_edge_clearance",
+      "committed": 3,
+      "weightedDrcBefore": 456164,
+      "weightedDrcAfter": 456094,
+      "stageStoppedDespiteSafeCommits": true
+    },
+    "rootCause": "BoardForge stopped after a productive post-route cleanup stage committed only a few safe fixes instead of continuing that same productive stage until exhausted, complete, or preempted by a higher-priority issue.",
+    "fixSummary": "Detect productive stage results and keep the same stage selected when it safely commits improvements, so the daemon continues bounded batches until the stage stops producing progress.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "isProductivePostRouteStageResult",
+        "selectNextStageAfterProductiveCommit"
+      ],
+      "testsAdded": [
+        "test:postroute-continue-productive-stage",
+        "test:postroute-copper-edge-repair-continues-after-commit",
+        "test:postroute-copper-edge-keeps-shorts-zero",
+        "test:postroute-stage-exhaustion-after-productivity",
+        "test:postroute-auto-next-stage-after-copper-edge",
+        "test:solution-library-continue-productive-stage"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all"
+      ],
+      "conditions": [
+        "post-route cleanup stage committed safe repairs",
+        "weighted DRC or target DRC family improved",
+        "critical families did not worsen",
+        "runtime budget remains"
+      ]
+    },
+    "recipe": [
+      "After each stage, check committed repairs and target-family/weighted-score deltas",
+      "If the stage safely improved the board and stageComplete is not true, repeat the same stage",
+      "Continue bounded batches until no safe commits are found",
+      "Only then mark the stage exhausted and select the next allowed stage"
+    ],
+    "safetyRules": [
+      "Do not continue a productive stage if shorts, forbidden vias, outline, holes, parts, footprints, packages, pads, or nets regress",
+      "Do not treat segment count as progress",
+      "Rollback individual candidates that fail the promotion gate"
+    ],
+    "evidence": {
+      "before": {
+        "stage": "repair_generated_copper_edge_clearance",
+        "committed": 3,
+        "nextStageReturnedToUser": true
+      },
+      "after": {
+        "sameStageRepeatedWhenProductive": true,
+        "nextStage": "repair_generated_copper_edge_clearance"
+      },
+      "tests": [
+        "npm run test:postroute-continue-productive-stage",
+        "npm run test:postroute-copper-edge-repair-continues-after-commit",
+        "npm run test:postroute-copper-edge-keeps-shorts-zero"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_progress_is_not_final_state_001",
+    "createdAt": "2026-06-27T03:00:00-04:00",
+    "updatedAt": "2026-06-27T03:00:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_daemon_progress_return",
+    "problemSignature": {
+      "invalidFinalState": "cleanup continued; board still not fully traced",
+      "nextInternalActionKnown": true,
+      "userActionRequired": false
+    },
+    "rootCause": "The daemon returned a progress/status summary while the board was not fully traced and an allowed internal next action was known.",
+    "fixSummary": "Treat progress-state phrases as invalid internal states. The daemon may only return for ready/export, exact user approval, fatal environment blocker, or true runtime checkpoint.",
+    "implementation": {
+      "filesChanged": [
+        "lib/jobs.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:postroute-progress-not-final-state",
+        "test:postroute-ratsnest-reduction-after-cleanup",
+        "test:solution-library-progress-not-final"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all"
+      ],
+      "conditions": [
+        "board is not fully traced",
+        "next internal action is allowed",
+        "no forbidden user decision is required"
+      ]
+    },
+    "recipe": [
+      "Suppress progress-only final states",
+      "If a productive stage remains, execute it",
+      "If a cleanup stage exhausts, select and execute the next stage",
+      "Return only on true final state or true runtime/environment checkpoint"
+    ],
+    "safetyRules": [
+      "Do not hide true runtime limits",
+      "Do not continue through forbidden board/spec/via changes",
+      "Do not count progress summaries as completion"
+    ],
+    "evidence": {
+      "before": {
+        "state": "cleanup continued; board still not fully traced",
+        "nextInternalAction": "continue repair_generated_copper_edge_clearance"
+      },
+      "after": {
+        "progressStateReturnsBlocked": true,
+        "productiveStageExecuted": "repair_generated_copper_edge_clearance"
+      },
+      "tests": [
+        "npm run test:postroute-progress-not-final-state",
+        "npm run test:postroute-continue-productive-copper-edge-until-exhausted"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "postroute_cli_must_execute_stage_not_select_001",
+    "createdAt": "2026-06-27T04:00:00-04:00",
+    "updatedAt": "2026-06-27T04:00:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_supervisor_cli_selector_only",
+    "problemSignature": {
+      "cli": "bin/boardforge-postroute-supervisor.mjs",
+      "selectedNextStage": "run_guarded_exact_ratsnest_reduction",
+      "stageExecuted": false,
+      "resumeStateWritten": true
+    },
+    "rootCause": "The post-route supervisor CLI selected the next stage and wrote resume state, but did not call stage executors, so autonomous cleanup still required user babysitting.",
+    "fixSummary": "Add a daemon CLI loop with a stage executor map. The CLI now scans DRC, selects a stage, executes the mapped worker, checkpoints, and repeats until a valid final state or true runtime checkpoint.",
+    "implementation": {
+      "filesChanged": [
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "createPostRouteStageExecutors",
+        "runExactRatsnestReductionStage",
+        "runPostRouteSupervisorCli"
+      ],
+      "testsAdded": [
+        "test:postroute-cli-executes-selected-stage",
+        "test:postroute-cli-stage-executor-map",
+        "test:postroute-cli-daemon-loop",
+        "test:postroute-cli-no-selector-only-exit",
+        "test:postroute-cli-exact-ratsnest-stage-executes",
+        "test:postroute-cli-runtime-checkpoint-real-command",
+        "test:solution-library-cli-stage-execution"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "post-freerouting-cleanup",
+        "dense-routed-board"
+      ],
+      "netRoles": [
+        "all"
+      ],
+      "conditions": [
+        "post-route supervisor has selected an internal stage",
+        "no forbidden user decision is required",
+        "CLI resume command is invoked"
+      ]
+    },
+    "recipe": [
+      "Run KiCad DRC on latest board",
+      "Select the next post-route stage",
+      "Dispatch to a stage executor instead of returning",
+      "Write checkpoint after execution",
+      "Continue until valid final state or true runtime budget checkpoint"
+    ],
+    "safetyRules": [
+      "Do not commit board files to plugin repo",
+      "Do not promote candidates that introduce shorts, forbidden vias, or original-spec changes",
+      "Do not use selector-only resume as a final state"
+    ],
+    "evidence": {
+      "before": {
+        "cliBehavior": "select/write state only",
+        "nextStage": "run_guarded_exact_ratsnest_reduction"
+      },
+      "after": {
+        "cliBehavior": "stage executor daemon loop",
+        "executorMap": true,
+        "exactRatsnestExecutor": true
+      },
+      "tests": [
+        "npm run test:postroute-cli-executes-selected-stage",
+        "npm run test:postroute-cli-runtime-checkpoint-real-command"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "exact_ratsnest_stage_real_batch_budget_001",
+    "createdAt": "2026-06-27T05:00:00-04:00",
+    "updatedAt": "2026-06-27T05:00:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_exact_ratsnest_smoke_test_budget",
+    "problemSignature": {
+      "badAttempts": 3,
+      "unconnectedRemaining": 243,
+      "badFinalState": "runtime_limit_reached_resume_written",
+      "runtimeActuallyExpired": false
+    },
+    "rootCause": "The post-route exact-ratsnest CLI stage inherited a tiny generic stage budget, allowing three route attempts to be reported as a runtime checkpoint even though the board still had hundreds of unconnected items.",
+    "fixSummary": "Separate exact-ratsnest batch controls from generic stage budget. Default ESC post-route ratsnest reduction now selects 100 items, requires a 50-attempt real batch unless fewer are routeable, and records measured runtime before using runtime checkpoint state.",
+    "implementation": {
+      "filesChanged": [
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:exact-ratsnest-real-batch-budget",
+        "test:exact-ratsnest-no-three-attempt-final",
+        "test:exact-ratsnest-runtime-checkpoint-requires-real-timeout",
+        "test:exact-ratsnest-attempts-50-or-proves-blocked",
+        "test:exact-ratsnest-cli-budget-args",
+        "test:postroute-supervisor-does-not-smoke-test-ratsnest"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "signal/control",
+        "gate-drive",
+        "bootstrap",
+        "regulated rails",
+        "local power"
+      ],
+      "conditions": [
+        "unconnected items remain",
+        "exact ratsnest stage selected",
+        "no forbidden user approval required"
+      ]
+    },
+    "recipe": [
+      "Use --exact-ratsnest-items default 100",
+      "Use --min-ratsnest-attempts default 50",
+      "Do not derive ratsnest item count from a smoke-test stage budget",
+      "Only report runtime checkpoint when measured runtime budget is exhausted",
+      "If zero commits after a real batch, report blocker categories instead of claiming progress"
+    ],
+    "safetyRules": [
+      "Shorts must remain zero",
+      "Forbidden vias must remain zero",
+      "Original board outline, holes, parts, footprints, packages, nets, and pads must remain unchanged",
+      "Rollback unsafe candidates individually"
+    ],
+    "evidence": {
+      "before": {
+        "itemsAttempted": 3,
+        "itemsCommitted": 0,
+        "unconnectedBefore": 243,
+        "unconnectedAfter": 243,
+        "state": "runtime_limit_reached_resume_written"
+      },
+      "after": {
+        "defaultItemsToSelect": 100,
+        "minimumItemsAttempted": 50,
+        "runtimeCheckpointRequiresMeasuredTimeout": true
+      },
+      "tests": [
+        "npm run test:exact-ratsnest-real-batch-budget",
+        "npm run test:exact-ratsnest-no-three-attempt-final"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "exact_ratsnest_continue_productive_batches_001",
+    "createdAt": "2026-06-27T18:10:00-04:00",
+    "updatedAt": "2026-06-27T18:10:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_exact_ratsnest_productive_batch_stop",
+    "problemSignature": {
+      "previousBatch": {
+        "itemsAttempted": 100,
+        "routesCommitted": 6,
+        "unconnectedBefore": 243,
+        "unconnectedAfter": 237,
+        "shortsAfter": 0,
+        "forbiddenVias": 0
+      },
+      "runtimeExpired": false,
+      "unconnectedRemaining": 237
+    },
+    "rootCause": "BoardForge treated one productive exact-ratsnest batch as a user-facing stop even though unconnected items remained and runtime had not expired.",
+    "fixSummary": "Carry a productive exact-ratsnest stage forward in the daemon loop. If a batch commits routes or reduces unconnected items, immediately run another real batch unless safety issues, exhaustion, final routing, or real runtime limit stops it.",
+    "implementation": {
+      "filesChanged": [
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:exact-ratsnest-continues-after-productive-batch",
+        "test:exact-ratsnest-multiple-batches",
+        "test:exact-ratsnest-stops-only-when-exhausted",
+        "test:solution-library-ratsnest-continue-productive"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all routeable exact ratsnest items"
+      ],
+      "conditions": [
+        "exact-ratsnest batch committed one or more routes",
+        "unconnected items remain",
+        "shorts remain zero",
+        "forbidden vias remain zero",
+        "runtime budget remains"
+      ]
+    },
+    "recipe": [
+      "Detect productive exact-ratsnest result",
+      "Keep selected stage as run_guarded_exact_ratsnest_reduction for the next daemon loop",
+      "Run another 100-item batch",
+      "Stop only on exhaustion, safety regression, no unconnected items, or true runtime limit"
+    ],
+    "safetyRules": [
+      "Shorts must remain zero",
+      "Forbidden vias must remain zero",
+      "No board outline, mounting hole, part, footprint, package, pad, or net changes",
+      "Rollback unsafe candidates individually"
+    ],
+    "evidence": {
+      "before": {
+        "itemsAttempted": 100,
+        "routesCommitted": 6,
+        "unconnectedAfter": 237,
+        "state": "progress returned"
+      },
+      "after": {
+        "productiveStageContinues": true,
+        "testedMultipleBatches": true
+      },
+      "tests": [
+        "npm run test:exact-ratsnest-continues-after-productive-batch"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "exact_ratsnest_auto_resume_until_exhausted_001",
+    "createdAt": "2026-06-27T19:10:00-04:00",
+    "updatedAt": "2026-06-27T19:10:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_exact_ratsnest_productive_runtime_resume",
+    "problemSignature": {
+      "previousBatch": {
+        "itemsAttempted": 99,
+        "routesCommitted": 1,
+        "unconnectedBefore": 237,
+        "unconnectedAfter": 236,
+        "shortsAfter": 0,
+        "forbiddenVias": 0,
+        "runtimeLimit": "real_stage_runtime_reached"
+      },
+      "unconnectedRemaining": 236
+    },
+    "rootCause": "The supervisor remembered only the exact PRODUCTIVE_STAGE_COMMITTED status, so a productive batch that also reached a real stage runtime limit was not automatically resumed as productive work.",
+    "fixSummary": "Treat PRODUCTIVE_STAGE_COMMITTED status prefixes as productive exact-ratsnest results, including productive runtime checkpoints, so resume continues exact-ratsnest batches until exhausted or final.",
+    "implementation": {
+      "filesChanged": [
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:exact-ratsnest-auto-resume-after-productive-batch"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all routeable exact ratsnest items"
+      ],
+      "conditions": [
+        "exact-ratsnest batch committed one or more routes",
+        "stage runtime expired after productive work",
+        "unconnected items remain",
+        "shorts remain zero",
+        "forbidden vias remain zero"
+      ]
+    },
+    "recipe": [
+      "Read prior supervisor state on resume",
+      "If last exact-ratsnest stage status starts with PRODUCTIVE_STAGE_COMMITTED, continue exact-ratsnest first",
+      "Run another real 100-item batch from the latest board",
+      "Stop only on exhaustion, safety regression, final route state, forbidden decision, or true runtime checkpoint"
+    ],
+    "safetyRules": [
+      "Shorts must remain zero",
+      "Forbidden vias must remain zero",
+      "No board outline, mounting hole, part, footprint, package, pad, or net changes",
+      "Rollback unsafe candidates individually"
+    ],
+    "evidence": {
+      "before": {
+        "lastStageResult": "PRODUCTIVE_STAGE_COMMITTED_STAGE_RUNTIME_EXHAUSTED",
+        "autoResumeProductiveStage": false
+      },
+      "after": {
+        "productiveStagePrefixDetected": true,
+        "autoResumeProductiveStage": true
+      },
+      "tests": [
+        "npm run test:exact-ratsnest-auto-resume-after-productive-batch"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "remaining_blockers_require_manifest_and_strategy_001",
+    "createdAt": "2026-06-27T20:35:00-04:00",
+    "updatedAt": "2026-06-27T20:35:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "exact_remaining_blockers_without_manifest",
+    "problemSignature": {
+      "finalState": "esc_routed_with_exact_remaining_blockers",
+      "unconnectedRemaining": 236,
+      "lastExactRatsnestAttempts": 72,
+      "lastExactRatsnestCommits": 0,
+      "manifestWritten": false
+    },
+    "rootCause": "BoardForge returned an exact-blockers final state without proving which nets, pads, route attempts, DRC families, and possible fixes remained.",
+    "fixSummary": "When exact-ratsnest batches exhaust, build a remaining blocker manifest from KiCad unconnected items and failed route attempts, write JSON and Markdown reports, categorize failures, and record the next evidence-based strategy.",
+    "implementation": {
+      "filesChanged": [
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "buildRemainingBlockerManifest",
+        "categorizeExactRatsnestFailures"
+      ],
+      "testsAdded": [
+        "test:remaining-blocker-manifest-required",
+        "test:exact-ratsnest-failure-categorization",
+        "test:exact-blockers-state-requires-manifest"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "all remaining exact ratsnest items"
+      ],
+      "conditions": [
+        "exact-ratsnest stage attempted a real batch",
+        "zero routes committed",
+        "unconnected items remain",
+        "shorts remain zero",
+        "forbidden vias remain zero"
+      ]
+    },
+    "recipe": [
+      "Parse all remaining KiCad unconnected items",
+      "Map failed route attempts to blocker categories",
+      "Write boardforge-esc-remaining-blocker-manifest.json",
+      "Write BoardForge_ESC_Remaining_Blocker_Manifest.md",
+      "Select next strategy from failure evidence",
+      "Only return exact-blockers state after manifest exists"
+    ],
+    "safetyRules": [
+      "Do not change board outline, mounting holes, parts, footprints, packages, nets, or pads",
+      "Do not use forbidden via types",
+      "Do not globally suppress DRC/ERC",
+      "Do not claim exact blockers without JSON/Markdown evidence"
+    ],
+    "evidence": {
+      "before": {
+        "state": "esc_routed_with_exact_remaining_blockers",
+        "manifest": null
+      },
+      "after": {
+        "state": "esc_routed_with_exact_remaining_blockers_AND_manifest_written",
+        "manifestRequired": true
+      },
+      "tests": [
+        "npm run test:remaining-blocker-manifest-required",
+        "npm run test:exact-ratsnest-failure-categorization",
+        "npm run test:exact-blockers-state-requires-manifest"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "transactional_reroute_blocking_generated_copper_001",
+    "createdAt": "2026-06-27T21:20:00-04:00",
+    "updatedAt": "2026-06-27T21:20:00-04:00",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "short_risk_blockers_require_generated_copper_displacement",
+    "problemSignature": {
+      "remainingUnconnected": 236,
+      "failedExactRatsnestAttempts": 72,
+      "failureFamily": "shortRisk",
+      "selectedStrategy": "transactional_reroute_of_blocking_generated_copper"
+    },
+    "rootCause": "Remaining exact-ratsnest routes failed because candidate routes would cross or short against existing generated FreeRouting/BoardForge copper, but the supervisor did not have a mutating executor for the selected displacement strategy.",
+    "fixSummary": "Add a transactional generated-copper reroute executor that identifies non-target-net routed segments near the blocked ratsnest corridor, temporarily removes the blocking segment, attempts the blocked exact route, runs KiCad DRC, and commits only if shorts remain zero and connectivity/DRC improves.",
+    "implementation": {
+      "filesChanged": [
+        "bin/boardforge-postroute-supervisor.mjs",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "runTransactionalRerouteOfBlockingGeneratedCopper",
+        "identifyGeneratedCopperBlockingRatsnest"
+      ],
+      "testsAdded": [
+        "test:transactional-reroute-generated-copper",
+        "test:blocking-generated-copper-identification",
+        "test:solution-library-transactional-generated-copper"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "dense-routed-board",
+        "post-freerouting-cleanup"
+      ],
+      "netRoles": [
+        "signal",
+        "control",
+        "gate-drive",
+        "bootstrap",
+        "telemetry",
+        "reset"
+      ],
+      "conditions": [
+        "remaining exact ratsnest attempts fail with shortRisk",
+        "short count is currently zero",
+        "forbidden vias are zero",
+        "existing generated copper is near the blocked corridor"
+      ]
+    },
+    "recipe": [
+      "Load blocker manifest",
+      "Pick shortRisk blockers on easier signal/control nets first",
+      "Find nearby non-target-net generated routed segments",
+      "Transactionally remove or displace one generated object",
+      "Attempt the blocked exact ratsnest route",
+      "Run KiCad DRC",
+      "Commit only if shorts stay zero and exact connectivity/DRC improves",
+      "Rollback local transaction otherwise"
+    ],
+    "safetyRules": [
+      "Do not globally delete FreeRouting copper",
+      "Only touch specific generated copper tied to a blocker row",
+      "Shorts must remain zero",
+      "Forbidden vias must remain zero",
+      "No board outline, mounting hole, part, footprint, package, pad, or net changes"
+    ],
+    "evidence": {
+      "before": {
+        "executorWired": false,
+        "selectedStrategy": "transactional_reroute_of_blocking_generated_copper"
+      },
+      "after": {
+        "executorWired": true,
+        "transactionalRollbackOnUnsafe": true
+      },
+      "tests": [
+        "npm run test:transactional-reroute-generated-copper",
+        "npm run test:blocking-generated-copper-identification"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  },
+  {
+    "id": "freerouting_bulk_boardforge_finish_workflow_001",
+    "createdAt": "2026-06-27T00:00:00.000Z",
+    "updatedAt": "2026-06-27T00:00:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "routing_workflow",
+    "problemSignature": {
+      "symptoms": [
+        "dense board routing is inefficient when BoardForge attempts full-board routing alone",
+        "FreeRouting completes bulk routing but leaves DRC and regional blockers",
+        "remaining blockers require intelligent post-route finishing"
+      ]
+    },
+    "rootCause": "BoardForge should not attempt to replace a mature full-board autorouter for dense boards. FreeRouting can route the bulk, while BoardForge should supervise, validate, repair, and finish the difficult remaining regions.",
+    "fixSummary": "Use FreeRouting as the bulk router, then use BoardForge/Codex for post-route cleanup, exact ratsnest completion, regional rip-up, blocker manifests, and final manufacturing validation.",
+    "implementation": {
+      "filesChanged": [
+        "data/solution-library/boardforge-solutions.json",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:solution-library-freerouting-bulk-boardforge-finish"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal",
+        "dense-routed-board"
+      ],
+      "netRoles": [
+        "signal",
+        "control",
+        "gate-drive",
+        "bootstrap",
+        "current-sense",
+        "regulated-rail",
+        "power"
+      ],
+      "conditions": [
+        "KiCad board has dense routing constraints",
+        "external router backend is available",
+        "original board spec must be preserved",
+        "post-route DRC and exact ratsnest leftovers remain"
+      ]
+    },
+    "recipe": [
+      "preflight_board_rules",
+      "classify_nets_and_constraints",
+      "export_dsn_for_freerouting",
+      "run_freerouting_bulk_route",
+      "import_ses_result",
+      "validate_kicad_drc_erc_connectivity",
+      "repair_shorts_first",
+      "repair_generated_clearance_edge_hole_dangling",
+      "exact_ratsnest_reduction",
+      "blocker_manifest_if_exhausted",
+      "regional_ripup_reroute",
+      "control_region_finish",
+      "manual_route_plan_for_remaining_blockers",
+      "manufacturing_export_review"
+    ],
+    "safetyRules": [
+      "Work only on derivative copies",
+      "Do not change board outline or mounting holes without approval",
+      "Do not change parts, footprints, packages, symbols, MPNs, pads, or required nets without approval",
+      "Do not use blind, buried, micro, or via-in-pad routing unless explicitly approved",
+      "Do not globally wipe routed copper after a successful FreeRouting import",
+      "Commit finishing repairs only when DRC/connectivity safety gates pass"
+    ],
+    "evidence": {
+      "before": {
+        "bulkRouter": "BoardForge-only attempts stalled on dense full-board routing",
+        "unconnectedBeforeFreeRouting": 499
+      },
+      "after": {
+        "bulkRouter": "FreeRouting",
+        "postRouteFinisher": "BoardForge/Codex",
+        "freeRoutingImportedSegments": 1847,
+        "freeRoutingImportedVias": 63,
+        "unconnectedAfterFreeRoutingImport": 239
+      },
+      "tests": [
+        "npm run test:solution-library-freerouting-bulk-boardforge-finish"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "control_region_cherrypick_from_diagnostic_branch_001",
+    "createdAt": "2026-06-27T00:00:00.000Z",
+    "updatedAt": "2026-06-27T00:00:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "postroute_control_region_finish",
+    "problemSignature": {
+      "symptoms": [
+        "broad control-region rip-up resolves some exact items",
+        "diagnostic rip-up branch increases total unconnected count",
+        "remaining control-region route candidates often reintroduce shorts"
+      ],
+      "safeBaseline": "FN-ESC1_boardforge_routed_postroute_cleanup26_transactional_generated_copper_reroute.kicad_pcb",
+      "diagnosticBranch": "FN-ESC1_boardforge_routed_postroute_cleanup28_exact_ratsnest_reduction.kicad_pcb"
+    },
+    "rootCause": "A broad control-region rip-up branch proved some exact routes were possible, but it increased total unconnected too much to promote. Successful diagnostic geometry must be cherry-picked into the safe baseline one net at a time.",
+    "fixSummary": "Use the safe post-FreeRouting baseline, diff against the diagnostic rip-up branch, cherry-pick only successful control routes, then apply manual route-plan rows one net at a time with transaction rollback.",
+    "implementation": {
+      "filesChanged": [
+        "data/solution-library/boardforge-solutions.json",
+        "tests/ratsnest-supervisor.test.mjs",
+        "package.json"
+      ],
+      "functionsAdded": [],
+      "testsAdded": [
+        "test:solution-library-control-region-cherrypick"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal"
+      ],
+      "netRoles": [
+        "signal",
+        "control",
+        "regulated-rail",
+        "clock",
+        "telemetry",
+        "debug"
+      ],
+      "conditions": [
+        "diagnostic regional rip-up is useful but destructive",
+        "safe baseline has fewer unconnected items",
+        "manual route plan exists for control-region blockers"
+      ]
+    },
+    "recipe": [
+      "Keep the safe baseline as the promotion source",
+      "Diff diagnostic branch against safe baseline",
+      "Identify added route geometry and removed destructive route geometry",
+      "Apply candidate routes one net at a time to the safe baseline",
+      "Run KiCad DRC after each candidate",
+      "Commit only if exact connectivity improves and shorts remain zero",
+      "Rollback candidates that reintroduce shorts or do not reduce exact unconnected items",
+      "Write a human KiCad work order for remaining blockers"
+    ],
+    "safetyRules": [
+      "Do not promote a diagnostic branch whose unconnected count regresses",
+      "Do not apply broad regional rip-up as a production board change",
+      "Shorts must remain zero",
+      "Forbidden vias must remain zero",
+      "No board outline, mounting hole, part, footprint, package, pad, or net changes"
+    ],
+    "evidence": {
+      "before": {
+        "cleanup26Unconnected": 236,
+        "cleanup28Unconnected": 279,
+        "cleanup28ExactItemsResolvedAfterRipup": 10
+      },
+      "after": {
+        "cleanup28PromotionBlocked": true,
+        "safeBaselinePreserved": true,
+        "humanWorkOrderWritten": true
+      },
+      "tests": [
+        "npm run test:solution-library-control-region-cherrypick"
+      ]
+    },
+    "status": "active",
+    "confidence": "high"
+  },
+  {
+    "id": "router_ensemble_boardforge_finish_workflow_001",
+    "createdAt": "2026-06-28T00:00:00.000Z",
+    "updatedAt": "2026-06-28T00:00:00.000Z",
+    "sourceBoard": "FN-ESC1",
+    "boardType": "ESC",
+    "problemType": "production_routing_architecture",
+    "problemSignature": {
+      "symptoms": [
+        "single external router leaves dense leftovers",
+        "local exact routing exhausts on shortRisk",
+        "dense control regions require routeability optimization, regional reroute, or placement nudge"
+      ]
+    },
+    "rootCause": "BoardForge was acting too much like a single-router wrapper. Dense boards need an ensemble router manager plus an AI finishing ladder that compares router outputs, repairs route debt, escalates through routeability optimization, and proves the smallest design relaxation if routing remains physically blocked.",
+    "fixSummary": "Add a multi-router backend manager, result scorer, routeability optimizer, controlled component nudge planner, regional rip-up/reroute planner, exact ratsnest finisher policy, and minimum design relaxation report.",
+    "implementation": {
+      "filesChanged": [
+        "lib/routing/*",
+        "bin/boardforge-route-ensemble.mjs",
+        "bin/boardforge-route-finish.mjs",
+        "bin/boardforge-routeability-optimize.mjs",
+        "bin/boardforge-controlled-placement-nudge.mjs",
+        "bin/boardforge-regional-reroute.mjs",
+        "bin/boardforge-minimum-relaxation-report.mjs",
+        "tests/routing-upgrade.test.mjs",
+        "package.json",
+        "data/solution-library/boardforge-solutions.json"
+      ],
+      "functionsAdded": [
+        "runRouterBackendManager",
+        "detectRouterBackends",
+        "scoreRouterResult",
+        "analyzeRouteability",
+        "runControlledComponentNudge",
+        "runRegionalRipupReroute",
+        "buildExactRatsnestFinisherPlan",
+        "buildMinimumDesignRelaxationOptions"
+      ],
+      "testsAdded": [
+        "test:router-backend-manager",
+        "test:router-result-scorer",
+        "test:router-ensemble-selects-best-safe-result",
+        "test:routeability-optimizer",
+        "test:controlled-component-nudge",
+        "test:regional-ripup-reroute",
+        "test:exact-ratsnest-finisher",
+        "test:minimum-design-relaxation-report",
+        "test:manual-copy-never-modified"
+      ]
+    },
+    "applicability": {
+      "boardTypes": [
+        "ESC",
+        "motor-controller",
+        "dense-mixed-signal",
+        "dense-routed-board"
+      ],
+      "netRoles": [
+        "signal",
+        "control",
+        "regulated-rail",
+        "gate-drive",
+        "bootstrap",
+        "current-sense",
+        "power"
+      ],
+      "conditions": [
+        "external router is useful but incomplete",
+        "remaining exact routes fail due to shortRisk or congestion",
+        "manual copy must remain untouched",
+        "AI continuation branch is available"
+      ]
+    },
+    "recipe": [
+      "project_safe_copy",
+      "board_integrity_audit",
+      "net_class_and_role_classification",
+      "routeability_precheck",
+      "DSN export",
+      "router backend ensemble",
+      "import and score router results",
+      "choose best safe candidate",
+      "shorts-first cleanup",
+      "generated DRC cleanup",
+      "exact-ratsnest reduction",
+      "blocker manifest",
+      "transactional generated-copper reroute",
+      "regional rip-up/reroute",
+      "controlled component nudge",
+      "reroute after placement/corridor improvement",
+      "final exact ratsnest reduction",
+      "DRC/ERC repair/classification",
+      "manufacturing export review",
+      "JLCPCB/Gerber/BOM/CPL package"
+    ],
+    "safetyRules": [
+      "Never modify manual handoff copies",
+      "Work only in AI continuation branches for experiments",
+      "Reject forbidden vias",
+      "Reject board outline changes without approval",
+      "Reject mounting-hole movement without approval",
+      "Reject part, footprint, package, pad, net, symbol, or MPN changes without approval",
+      "Do not hide DRC/ERC failures"
+    ],
+    "evidence": {
+      "before": {
+        "singleRouterWrapper": true,
+        "remainingEscUnconnected": 236
+      },
+      "after": {
+        "routerBackendManager": true,
+        "routeabilityOptimizer": true,
+        "controlledNudgePlanner": true,
+        "regionalReroutePlanner": true,
+        "minimumRelaxationReport": true
+      },
+      "tests": [
+        "npm run test:router-backend-manager",
+        "npm run test:routeability-optimizer",
+        "npm run test:minimum-design-relaxation-report"
+      ]
+    },
+    "status": "active",
+    "confidence": "medium"
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "id": "real_board_usb_header_mounting_clearance_fix_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "USB_CATEGORY_PROOF_HEADER_TOO_CLOSE_TO_MOUNTING_HOLE_CAUSES_NPTH_COURTYARD_AND_MASK_DRC",
+  "boardId": "usb-c-esp32-sensor",
+  "detectionRule": "A category PCB proof has KiCad DRC errors where a connector/header pad or courtyard overlaps a mounting-hole NPTH keepout or solder-mask clearance region.",
+  "rootCause": "The first USB-C ESP32 proof placement put the debug/header connector too close to the upper-right mounting hole, creating clearance, courtyard, and solder-mask bridge errors even though the logical category scaffold was useful.",
+  "fixStrategy": "Keep the useful category refs/nets/tracks, but move the header inward before writing the PCB so its pads and courtyard clear mounting-hole keepouts under KiCad DRC.",
+  "regressionTest": "test:real-board-proof verifies the USB-C ESP32 proof has J1/U2/U1/J2 placed, routed evidence present, and zero KiCad DRC errors.",
+  "futureAutoApplyRule": "Before committing category proof placement, reserve mounting-hole keepout/courtyard space and nudge nearby headers inward instead of accepting a route or placement that KiCad DRC rejects."
+}

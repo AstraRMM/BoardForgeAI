@@ -1,0 +1,11 @@
+{
+  "id": "real_board_full_category_generation_gap_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "FULL_CATEGORY_SCHEMATIC_PLACEMENT_ROUTING_NOT_PROVEN",
+  "boardId": "industrial-io-board",
+  "detectionRule": "A board proof has valid Edge.Cuts but no evidence for category schematic, component placement, and routed nets.",
+  "rootCause": "The proof harness can generate real outline KiCad projects before the category engine can prove full schematic/placement/routing for arbitrary board prompts.",
+  "fixStrategy": "Use this blocker to prioritize category schematic synthesis, footprint binding, placement constraints, and endpoint-aware routing in the engine before manufacturing ZIP claims.",
+  "regressionTest": "test:real-board-proof verifies these projects are not marked manufacturing-ready without evidence.",
+  "futureAutoApplyRule": "When full schematic/placement/routing evidence is missing, mark PASS_ENGINEERING_REVIEW_REQUIRED or BLOCKED_WITH_EXACT_REASON instead of manufacturing-ready."
+}

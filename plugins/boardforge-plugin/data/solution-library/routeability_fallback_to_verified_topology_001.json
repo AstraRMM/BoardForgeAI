@@ -1,0 +1,41 @@
+{
+  "id": "routeability_fallback_to_verified_topology_001",
+  "status": "active",
+  "confidence": "high",
+  "rootCause": "True outline-aware REV_F placement routed but exhausted with remaining unconnected items; repeated straight-line finishers caused DRC regressions.",
+  "fixSummary": "When aggressive/new placement cannot reach connectivity closure, BoardForge should fall back to the nearest verified clean topology, preserve manufacturing validity, and record the failed placement as routeability training evidence.",
+  "evidence": {
+    "protectedProjects": {
+      "ESC untouched": true,
+      "FC untouched": true,
+      "protected files modified": false
+    },
+    "projectFolder": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT",
+    "outlineAwareAttemptBoard": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT_boardforge_freerouting_bulk.kicad_pcb",
+    "completedManufacturingBoard": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\BF-SENSOR-HUB-01_REV_F_completed_manufacturing_candidate.kicad_pcb",
+    "completionMethod": "verified_clean_compact_route_topology_fallback_after_outline_aware_attempt_exhausted",
+    "completionNote": "REV_F generated and routed a true outline-aware placement, but it exhausted at 20-23 unconnected. BoardForge then promoted the nearest verified clean compact topology as the completed manufacturing candidate and saved the failure mode for the finisher roadmap.",
+    "selectedShape": "compact rounded rectangle fallback",
+    "selectedDensity": "manufacturing-safe",
+    "areaRevD": 2604,
+    "areaRevE": 2291.21,
+    "areaRevFCompleted": 2291.21,
+    "areaReductionVsRevD": 12.0,
+    "areaReductionVsRevE": 0.0,
+    "shorts": 0,
+    "unconnected": 0,
+    "forbiddenVias": 0,
+    "drcViolations": 0,
+    "ercViolations": 0,
+    "manufacturingExported": true,
+    "manufacturingZip": "C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\BF-SENSOR-HUB-01_REV_F_OUTLINE_AWARE_PLACEMENT\\manufacturing\\BF-SENSOR-HUB-01_REV_F_JLCPCB.zip",
+    "zipFileCount": 30,
+    "lessons": [
+      "true_outline_aware_placement_reroute_001",
+      "physical_silkscreen_labeling_as_product_feature_001",
+      "routeability_fallback_to_verified_topology_001",
+      "connector_geometry_routeability_score_001"
+    ],
+    "nextImprovement": "clearance-aware exact finisher plus routeability scoring that expands connector corridors before FreeRouting."
+  }
+}

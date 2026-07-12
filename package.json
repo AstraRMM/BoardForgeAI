@@ -361,6 +361,8 @@
         "boardforge:digikey-live-sourcing-proof": "node plugins/boardforge-plugin/bin/boardforge-digikey-live-sourcing-proof.mjs",
         "test:website-visual-qa": "node scripts/boardforge-website-visual-qa.mjs",
         "report:99:full": "node ./plugins/boardforge-plugin/bin/boardforge-report-99.mjs",
+        "boardforge:real-board-proof": "node ./plugins/boardforge-plugin/bin/boardforge-real-board-proof.mjs",
+        "test:real-board-proof": "node --test ./plugins/boardforge-plugin/tests/real-board-proof.test.mjs",
         "test:readiness-gap-audit": "node --test --test-name-pattern \"readiness gap audit\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:readiness-99-scorecard": "node --test --test-name-pattern \"readiness 99 scorecard\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:digikey-quote-client": "node --test --test-name-pattern \"DigiKey quote depth\" ./plugins/boardforge-plugin/tests/*.test.mjs",

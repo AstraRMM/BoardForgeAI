@@ -1,0 +1,65 @@
+{
+  "id": "verified_parts_pinmap_equivalence_001",
+  "createdAt": "2026-06-28",
+  "updatedAt": "2026-06-28",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_D",
+  "boardType": "synthetic-robotics-sensor-hub",
+  "problemType": "part_verification",
+  "problemSignature": {
+    "prior": "clean REV_C used fixture/common placeholders"
+  },
+  "rootCause": "BoardForge could generate a real schematic and clean routed manufacturing candidate, but still relied on fixture/common placeholders without strict symbol-to-footprint pin-map equivalence and sourcing status.",
+  "fixSummary": "Add verified part selection, explicit placeholder labeling, sourcing status, and symbol-footprint pin-map equivalence checks before routing or manufacturing export.",
+  "implementation": {
+    "filesChanged": [
+      "tests/rev-d-verification.test.mjs",
+      "package.json"
+    ],
+    "functionsAdded": [
+      "symbol_footprint_pinmap_equivalence_checker"
+    ],
+    "testsAdded": [
+      "test:verified-part-selection",
+      "test:symbol-footprint-pinmap-equivalence"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "synthetic-fixture",
+      "production-board"
+    ],
+    "netRoles": [
+      "all"
+    ],
+    "conditions": [
+      "manufacturing-export"
+    ]
+  },
+  "recipe": [
+    "select MPN candidates",
+    "mark sourcing status",
+    "validate symbol pins against footprint pads",
+    "block critical failures before routing"
+  ],
+  "safetyRules": [
+    "no fake stock",
+    "no silent placeholders",
+    "no manufacturing export with critical pin-map failure"
+  ],
+  "evidence": {
+    "before": {
+      "placeholders": "undisclosed fixture/common"
+    },
+    "after": {
+      "silentPlaceholders": 0,
+      "pinMapFailures": 0,
+      "drc": 0,
+      "erc": 0
+    },
+    "tests": [
+      "test:verified-part-selection"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

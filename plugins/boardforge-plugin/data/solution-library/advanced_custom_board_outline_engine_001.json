@@ -1,0 +1,74 @@
+{
+  "id": "advanced_custom_board_outline_engine_001",
+  "createdAt": "2026-06-28",
+  "updatedAt": "2026-06-28",
+  "sourceBoard": "BF-SENSOR-HUB-01_REV_E",
+  "boardType": "synthetic-robotics-sensor-hub",
+  "problemType": "mechanical_outline_quality",
+  "problemSignature": {
+    "prior": "large generic rectangle"
+  },
+  "rootCause": "BoardForge could create a clean routed/manufacturing candidate, but used a huge generic rectangle outline with excessive empty space and weak mechanical/product design.",
+  "fixSummary": "Add a custom board outline engine with parametric shapes, shrink-wrap sizing, mounting-hole constraints, connector-edge intent, Edge.Cuts validation, and manufacturing validation.",
+  "implementation": {
+    "filesChanged": [
+      "lib/outline/board-outline-engine.mjs",
+      "lib/outline/edgecuts-writer.mjs",
+      "lib/outline/outline-validator.mjs",
+      "lib/outline/shrinkwrap-outline.mjs",
+      "lib/outline/outline-presets.mjs"
+    ],
+    "functionsAdded": [
+      "generateOutlineCandidate",
+      "validateOutlinePolygon",
+      "edgeCutsSegments",
+      "shrinkWrapBox"
+    ],
+    "testsAdded": [
+      "test:outline-engine",
+      "test:edgecuts-writer",
+      "test:outline-validator",
+      "test:shrinkwrap-outline"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "sensor-hub",
+      "robotics",
+      "wearable",
+      "drone-stack"
+    ],
+    "netRoles": [
+      "all"
+    ],
+    "conditions": [
+      "new-board-generation"
+    ]
+  },
+  "recipe": [
+    "compute physical geometry bbox",
+    "generate candidate outlines",
+    "validate Edge.Cuts",
+    "score area/DRC/manufacturability",
+    "promote only DRC-clean candidate"
+  ],
+  "safetyRules": [
+    "do not promote outlines with copper-edge clearance violations",
+    "mounting holes must remain inside board"
+  ],
+  "evidence": {
+    "before": {
+      "areaMm2": 2604
+    },
+    "after": {
+      "areaMm2": 2291.21,
+      "drc": 0,
+      "erc": 0
+    },
+    "tests": [
+      "test:outline-engine"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}
