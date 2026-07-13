@@ -1,3 +1,5 @@
+import { getAuthEnvironment } from '../../lib/auth'
+
 const cards = [
   ['browser E2E passed', 'Setup, pairing, guided workflow, sourcing UI, manufacturable/sourcable actions, import protection, and publish gate.'],
   ['Mouser live sourcing passed', 'Live Mouser lookup is available where configured and never silently becomes fake stock.'],
@@ -10,11 +12,15 @@ const cards = [
 ]
 
 export function EvidenceDashboard() {
+  const auth = getAuthEnvironment()
+  const authCard = auth.ready
+    ? ['account and pairing services', 'Authentication configuration is present. Sign-in and authenticated plugin pairing still require live smoke-test evidence.', 'configured']
+    : ['account and pairing services', `Production authentication is blocked until ${auth.missing.join(', ')} is configured and the database migration is complete.`, 'setup required']
   return (
     <section className="bf-proof-grid">
-      {cards.map(([card, body]) => (
+      {[authCard, ...cards].map(([card, body, status]) => (
         <div key={card} className="bf-proof-card">
-          <span>proof card</span>
+          <span>{status || 'proof card'}</span>
           <h3>{card}</h3>
           <p>{body}</p>
           <small>Includes artifact path, test name, pass/fail, date, proof, and limitation.</small>
