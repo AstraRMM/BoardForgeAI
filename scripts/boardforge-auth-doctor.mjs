@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 
 loadLocalEnv('.env.local')
 
-const required = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL']
+const required = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'BETTER_AUTH_API_KEY', 'BOARDFORGE_AUTH_ORIGIN', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_BOARDFORGE_APP_URL']
 const configured = Object.fromEntries(required.map((key) => [key, Boolean(process.env[key])]))
-const report = { status: 'BOARD_FORGE_AUTH_DOCTOR_COMPLETED', configured, database: { reachable: false, authTables: false, boardforgeTables: false }, endpoints: { localEngine: 'not_checked', pairing: 'not_checked' }, nextAction: null }
+const report = { status: 'BOARD_FORGE_AUTH_DOCTOR_COMPLETED', configured, dash: { installed: await exists('node_modules/@better-auth/infra/package.json'), configured: false }, database: { reachable: false, authTables: false, boardforgeTables: false }, endpoints: { auth: 'not_checked', localEngine: 'not_checked', pairing: 'not_checked' }, nextAction: null }
+report.dash.configured = (await readFile('apps/web/src/lib/auth.ts', 'utf8')).includes('dash({ apiKey: process.env.BETTER_AUTH_API_KEY! })')
 
 if (configured.DATABASE_URL) {
   try {
@@ -25,12 +26,14 @@ if (configured.DATABASE_URL) {
 const localUrl = process.env.BOARDFORGE_LOCAL_ENGINE_URL || 'http://127.0.0.1:47321'
 report.endpoints.localEngine = await reach(`${localUrl}/auth/status`)
 if (configured.BETTER_AUTH_URL) report.endpoints.pairing = await reach(`${process.env.BETTER_AUTH_URL.replace(/\/$/, '')}/api/auth/plugin/pairing/claim`)
-report.nextAction = !required.every((key) => configured[key]) ? 'Configure the missing Vercel environment variables.' : !report.database.reachable ? 'Make DATABASE_URL reachable from this environment.' : !report.database.authTables ? 'Run npm run boardforge:auth-migrate -- --apply.' : 'Auth database is reachable; sign in and pair a test device.'
+if (configured.BETTER_AUTH_URL) report.endpoints.auth = await reach(`${process.env.BETTER_AUTH_URL.replace(/\/$/, '')}/api/auth/get-session`)
+report.nextAction = !required.every((key) => configured[key]) ? 'Configure the missing Vercel environment variables.' : !report.dash.installed || !report.dash.configured ? 'Install/configure the Better Auth Dash plugin.' : !report.database.reachable ? 'Make DATABASE_URL reachable from this environment.' : !report.database.authTables ? 'Run npm run boardforge:auth-migrate -- --apply.' : 'Auth database is reachable; sign in and pair a test device.'
 
 await mkdir('tmp/auth', { recursive: true })
 await writeFile('tmp/auth/BoardForge_Auth_Doctor_Report.json', `${JSON.stringify(report, null, 2)}\n`)
 console.log(JSON.stringify(report, null, 2))
 
 async function reach(url) { try { const response = await fetch(url, { signal: AbortSignal.timeout(3000), redirect: 'manual' }); return { reachable: true, statusCode: response.status } } catch { return { reachable: false } } }
+async function exists(file) { try { await access(file); return true } catch { return false } }
 function safeError(error) { return error instanceof Error ? error.message.replace(/(postgres(?:ql)?:\/\/)[^\s]+/gi, '$1[REDACTED]') : 'Unknown database error' }
 function loadLocalEnv(file) { const result = spawnSync(process.execPath, ['-e', `const fs=require('fs');if(fs.existsSync(process.argv[1]))process.stdout.write(fs.readFileSync(process.argv[1],'utf8'))`, file], { encoding: 'utf8' }); for (const line of (result.stdout || '').split(/\r?\n/)) { const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/); if (match && !process.env[match[1]]) process.env[match[1]] = match[2].replace(/^["']|["']$/g, '') } }

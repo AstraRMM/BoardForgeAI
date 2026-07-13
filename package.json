@@ -36,6 +36,10 @@
         "boardforge:auth-doctor": "node ./scripts/boardforge-auth-doctor.mjs",
         "boardforge:auth-migrate": "node ./scripts/boardforge-auth-migrate.mjs",
         "boardforge:auth-smoke-test": "node ./scripts/boardforge-auth-smoke-test.mjs",
+        "boardforge:auth-secret": "node ./scripts/boardforge-generate-auth-secret.mjs",
+        "boardforge:vercel-auth-env-check": "node ./scripts/boardforge-vercel-env-check.mjs",
+        "boardforge:print-vercel-auth-commands": "node ./scripts/boardforge-print-vercel-env-commands.mjs",
+        "test:auth-config": "node --test ./plugins/boardforge-plugin/tests/auth-config.test.mjs",
         "boardforge:alpha-demo": "node ./plugins/boardforge-plugin/bin/boardforge-alpha-demo-package.mjs",
         "boardforge:package-alpha": "powershell -ExecutionPolicy Bypass -File ./tools/boardforge-installer/Build_BoardForge_Local_Alpha_Package.ps1 && node scripts/boardforge-build-microsoft-store-package.mjs",
         "boardforge:microsoft-store-package": "node scripts/boardforge-build-microsoft-store-package.mjs",
@@ -383,6 +387,7 @@
         "boardforge:91-to-99-hardening": "node ./plugins/boardforge-plugin/bin/boardforge-91-to-99-hardening.mjs"
     },
     "dependencies": {
+        "@better-auth/infra": "^0.3.6",
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.6.1",
         "better-auth": "^1.6.23",

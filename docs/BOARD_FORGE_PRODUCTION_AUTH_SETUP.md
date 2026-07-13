@@ -8,7 +8,10 @@ Add these variables to **Production**, **Preview**, and the environment used for
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/boardforge
 BETTER_AUTH_SECRET=long-random-secret
 BETTER_AUTH_URL=https://www.boardforge-ai.com
+BETTER_AUTH_API_KEY=<Better Auth Dash server key>
 BOARDFORGE_AUTH_ORIGIN=https://www.boardforge-ai.com
+NEXT_PUBLIC_APP_URL=https://www.boardforge-ai.com
+NEXT_PUBLIC_BOARDFORGE_APP_URL=https://www.boardforge-ai.com
 ```
 
 Generate a secret in PowerShell:
@@ -41,6 +44,7 @@ npm run boardforge:auth-doctor
 3. Open `/settings/plugin`, generate a pairing code, then use `boardforge auth pair --code BF-XXXX-XXXX-XXXX` on the tester machine.
 4. Revoke the device from settings and verify the next local heartbeat reports `revoked_or_invalid`.
 5. Run `BOARDFORGE_AUTH_SMOKE_URL=https://www.boardforge-ai.com npm run boardforge:auth-smoke-test`.
+6. Retry Better Auth Dash after the deployment. The Dash key stays server-only.
 
 ## Rollback
 
