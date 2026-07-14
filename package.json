@@ -275,7 +275,7 @@
         "test:custom-editor-viewport": "node --test scripts/custom-editor-geometry.test.ts",
         "test:custom-editor-tools": "node --test scripts/custom-editor-geometry.test.ts",
         "test:custom-editor-selection": "node --test scripts/custom-editor-geometry.test.ts",
-        "test:custom-editor-draw": "node --test scripts/custom-editor-geometry.test.ts",
+        "test:custom-editor-draw": "node --test scripts/custom-editor-draw.test.ts",
         "test:custom-editor-fill": "node --test scripts/custom-editor-geometry.test.ts",
         "test:custom-editor-history": "node --test scripts/custom-editor-geometry.test.ts",
         "test:custom-outline-presets": "node --test --test-name-pattern \"custom outline presets\" ./plugins/boardforge-plugin/tests/*.test.mjs",

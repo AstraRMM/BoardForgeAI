@@ -1,0 +1,36 @@
+{
+  "schema": "boardforge.custom-editor-qa.v1",
+  "date": "2026-07-14",
+  "branch": "boardforge-platform-productization",
+  "status": "PASSED_WITH_RELEASE_LIMITATIONS",
+  "build": "passed",
+  "unitTests": { "passed": 18, "failed": 0 },
+  "playwrightTests": { "passed": 7, "failed": 0 },
+  "capturedStates": [
+    "default",
+    "zoomed-in",
+    "zoomed-out",
+    "panned",
+    "selected-point",
+    "selected-edge",
+    "draw-preview",
+    "fill-section-preview",
+    "mobile"
+  ],
+  "verified": [
+    "viewport-independent geometry edits",
+    "draw preview and transaction",
+    "edge selection and actions",
+    "stable point identity",
+    "Fill Whole Board",
+    "Fill Section safety and locality",
+    "undo and redo",
+    "open-area truthfulness"
+  ],
+  "remaining": [
+    "touch pinch and two-finger pan",
+    "connector-edge export metadata",
+    "fillet and notch edge operations",
+    "cross-platform pixel-diff baselines"
+  ]
+}

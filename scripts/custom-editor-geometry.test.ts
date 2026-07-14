@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in type stripping requires the extension; the app bundler intentionally does not.
 // @ts-expect-error TS5097 -- test-only direct TypeScript execution under Node 24.
-import { applySnap, boardToScreenPoint, commitHistory, createHistory, getScreenSpaceHitTolerance, hasSelfIntersection, insertPointIntoEdge, isClosedPath, minimalGapClosure, pathMetrics, redoHistory, screenToBoardPoint, simplifyPath, stableId, undoHistory, winding, zoomAtScreenPoint, type Point } from '../apps/web/src/lib/custom-editor/geometry.ts'
+import { applySnap, boardToScreenPoint, commitHistory, createHistory, getScreenSpaceHitTolerance, hasSelfIntersection, insertPointIntoEdge, isClosedPath, minimalGapClosure, pathMetrics, proposeFillSection, redoHistory, screenToBoardPoint, simplifyPath, stableId, undoHistory, winding, zoomAtScreenPoint, type Point } from '../apps/web/src/lib/custom-editor/geometry.ts'
 
 const frame = { left: 40, top: 25, cssWidth: 800, cssHeight: 600, pixelWidth: 1600, pixelHeight: 1200 }
 const point = (id: string, x: number, y: number): Point => ({ id, x, y })
@@ -66,4 +66,49 @@ test('geometry history is immutable and does not include viewport state', () => 
   assert.deepEqual(undoHistory(changed).present, ['a'])
   assert.deepEqual(redoHistory(undoHistory(changed)).present, ['a', 'b'])
   assert.deepEqual(initial, { past: [], present: ['a'], future: [] })
+})
+
+test('Fill Section uses stable endpoints and only replaces the selected local chain', () => {
+  const outline = [point('a', 0, 0), point('notch-a', 3, 0), point('notch-tip', 5, 3), point('notch-b', 7, 0), point('b', 10, 0), point('c', 10, 10), point('d', 0, 10)]
+  const proposal = proposeFillSection(outline, ['notch-a', 'notch-b'], { style: 'straight', replace: 'forward' })
+  assert.equal(proposal.safe, true)
+  assert.deepEqual(proposal.removedPointIds, ['notch-tip'])
+  assert.deepEqual(proposal.addedPoints, [])
+  assert.deepEqual(proposal.points.map(p => p.id), ['notch-a', 'notch-b', 'b', 'c', 'd', 'a'])
+  assert.deepEqual(proposal.addedEdges, [['notch-a', 'notch-b']])
+  assert.equal(proposal.metrics.area, 100)
+})
+
+test('rounded and smooth Fill Section proposals add stable preview points without mutating input', () => {
+  const outline = [point('a', 0, 0), point('arc', 5, -4), point('b', 10, 0), point('c', 10, 10), point('d', 0, 10)]
+  const snapshot = structuredClone(outline)
+  for (const style of ['rounded', 'smooth'] as const) {
+    const proposal = proposeFillSection(outline, ['a', 'b'], { style, replace: 'forward', intermediatePoints: 3 })
+    assert.equal(proposal.safe, true)
+    assert.equal(proposal.addedPoints.length, 3)
+    assert.ok(proposal.addedPoints.every(p => p.id.startsWith(`fill-${style}-`)))
+    assert.deepEqual(proposal.removedPointIds, ['arc'])
+  }
+  assert.deepEqual(outline, snapshot)
+})
+
+test('minimum-distance chooses the shorter boundary chain and preserves concavity elsewhere', () => {
+  const outline = [point('a', 0, 0), point('local', 2, -1), point('b', 4, 0), point('c', 8, 0), point('concave', 5, 4), point('d', 8, 8), point('e', 0, 8)]
+  const proposal = proposeFillSection(outline, ['a', 'b'], { style: 'minimum-distance' })
+  assert.deepEqual(proposal.removedPointIds, ['local'])
+  assert.ok(proposal.points.some(p => p.id === 'concave'))
+  assert.equal(proposal.safe, true)
+})
+
+test('Fill Section blocks self-intersection and unsafe hole containment or clearance', () => {
+  const crossing = [point('a', 0, 0), point('remove', 6, -4), point('b', 10, 0), point('c', 10, 10), point('d', 4, -2), point('e', 0, 10)]
+  const crossed = proposeFillSection(crossing, ['a', 'b'], { replace: 'forward' })
+  assert.equal(crossed.safe, false)
+  assert.match(crossed.warnings.join(' '), /self-intersect/)
+
+  const square = [point('a', 0, 0), point('bulge', 5, -5), point('b', 10, 0), point('c', 10, 10), point('d', 0, 10)]
+  const holes = proposeFillSection(square, ['a', 'b'], { replace: 'forward', holes: [{ id: 'outside-after-fill', x: 5, y: -2 }, { id: 'too-close', x: 5, y: 2, radius: 1.5 }], holeClearance: 1 })
+  assert.equal(holes.safe, false)
+  assert.match(holes.warnings.join(' '), /outside-after-fill/)
+  assert.match(holes.warnings.join(' '), /too-close/)
 })

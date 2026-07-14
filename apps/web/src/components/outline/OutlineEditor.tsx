@@ -5,13 +5,15 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, WheelEvent as Re
 import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers3, MousePointer2, Pencil, Plus, Redo2, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Undo2, Wand2, ZoomIn, ZoomOut } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
 import styles from './OutlineEditor.module.css'
+import { createDrawDraft } from '../../lib/custom-editor/draw'
+import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
 
-type Point = { x: number; y: number }
+type Point = { id?: string; x: number; y: number }
 type Hole = { ref: string; x: number; y: number; diameterMm: number; keepoutMm?: number; plating?: 'plated' | 'non-plated'; locked?: boolean }
 type Mode = 'select' | 'add-point' | 'draw' | 'pan' | 'fill'
 type Viewport = { zoom: number; panX: number; panY: number; minZoom: number; maxZoom: number }
 type GeometrySnapshot = { points: Point[]; holes: Hole[]; preset: string; closed: boolean }
-type SelectedObject = { type: 'point'; index: number } | { type: 'hole'; ref: string } | null
+type SelectedObject = { type: 'point'; id: string } | { type: 'hole'; ref: string } | { type: 'edge'; startId: string; endId: string } | null
 type AutoFixProposal = {
   points: Point[]
   holes: Hole[]
@@ -64,12 +66,19 @@ export function OutlineEditor() {
   const [holes, setHoles] = useState<Hole[]>([])
   const [selectedObject, setSelectedObject] = useState<SelectedObject>(null)
   const [multiSelect, setMultiSelect] = useState(false)
+  const [selectedPointIds, setSelectedPointIds] = useState<string[]>([])
   const [snap, setSnap] = useState(true)
   const [mode, setMode] = useState<Mode>('select')
   const [closed, setClosed] = useState(false)
   const [viewport, setViewport] = useState<Viewport>({ zoom: 1, panX: -10, panY: -10, minZoom: 0.25, maxZoom: 8 })
   const [history, setHistory] = useState<GeometrySnapshot[]>([])
   const [future, setFuture] = useState<GeometrySnapshot[]>([])
+  const [drawRaw, setDrawRaw] = useState<Point[]>([])
+  const [drawTolerance, setDrawTolerance] = useState(.5)
+  const [drawSmoothing, setDrawSmoothing] = useState(0)
+  const [drawCloseRequested, setDrawCloseRequested] = useState(false)
+  const [fillProposal, setFillProposal] = useState<FillSectionProposal | null>(null)
+  const [fillStyle, setFillStyle] = useState<FillSectionStyle>('straight')
   const [status, setStatus] = useState<string>('Ready - choose a preset, edit points, or draw a custom outline.')
   const [copied, setCopied] = useState(false)
   const [showPromptPanel, setShowPromptPanel] = useState(false)
@@ -90,9 +99,13 @@ export function OutlineEditor() {
   const edgeLength = useMemo(() => totalEdgeLength(points), [points])
   const holesInside = useMemo(() => holes.filter((hole) => pointInPolygon(hole, points)).length, [holes, points])
   const areaText = closed && points.length >= 3 ? `${(areaMm2 / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
-  const selectedPoint = selectedObject?.type === 'point' ? selectedObject.index : null
+  const selectedPoint = selectedObject?.type === 'point' ? points.findIndex((point) => point.id === selectedObject.id) : null
   const selectedHole = selectedObject?.type === 'hole' ? holes.find((hole) => hole.ref === selectedObject.ref) || null : null
-  const selectedAnchor = selectedObject?.type === 'point' ? points[selectedObject.index] : selectedHole
+  const selectedEdge = selectedObject?.type === 'edge' ? {
+    start: points.find((point) => point.id === selectedObject.startId), end: points.find((point) => point.id === selectedObject.endId),
+  } : null
+  const selectedAnchor = selectedObject?.type === 'point' ? points.find((point) => point.id === selectedObject.id) : selectedObject?.type === 'edge' && selectedEdge?.start && selectedEdge.end ? { x: (selectedEdge.start.x + selectedEdge.end.x) / 2, y: (selectedEdge.start.y + selectedEdge.end.y) / 2 } : selectedHole
+  const drawDraft = useMemo(() => drawRaw.length ? createDrawDraft(drawRaw, { simplificationTolerance: drawTolerance, smoothingIterations: drawSmoothing, closeRequested: drawCloseRequested }) : null, [drawRaw, drawTolerance, drawSmoothing, drawCloseRequested])
 
   function snapshot(): GeometrySnapshot {
     return { points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), preset, closed }
@@ -273,8 +286,8 @@ export function OutlineEditor() {
       setStatus('Point added without changing zoom or pan.'); return
     }
     if (mode === 'draw') {
-      checkpoint(); drawingRef.current = true; setSelectedObject(null); setClosed(false)
-      setPoints((current) => appendDrawPoint(current, p, snap ? 2 : 1.2)); setStatus('Drawing outline. Release to finish the stroke.'); return
+      drawingRef.current = true; setSelectedObject(null); setDrawRaw([{ ...p, id: newGeometryId('point') }]); setDrawCloseRequested(false)
+      setStatus('Drawing outline. Release to preview and simplify.'); return
     }
     if (mode === 'fill') { setStatus('Choose Fill Whole Board or select endpoints for Fill Section.'); return }
     const hit = nearestPoint(points, p)
@@ -284,7 +297,10 @@ export function OutlineEditor() {
 
     const tolerance = 12 / Math.max(1, svgRef.current?.getBoundingClientRect().width || 1) * (100 / viewport.zoom)
     if (hit.distance < tolerance) {
-      setSelectedObject({ type: 'point', index: hit.index })
+      const id = points[hit.index].id!
+      if (event.shiftKey || multiSelect) setSelectedPointIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id].slice(-2))
+      else setSelectedPointIds([id])
+      setSelectedObject({ type: 'point', id })
       setStatus(`Selected point ${hit.index + 1}. Drag to move it or use the object menu for exact edits.`)
       return
     }
@@ -293,9 +309,16 @@ export function OutlineEditor() {
       setStatus(`Selected ${holeHit.hole.ref}. Drag to move it or edit diameter/keepout in the object menu.`)
       return
     }
+    const edgeHit = nearestEdge(points, p, closed)
+    if (edgeHit && edgeHit.distance < tolerance) {
+      setSelectedObject({ type: 'edge', startId: edgeHit.start.id!, endId: edgeHit.end.id! })
+      setStatus(`Selected edge ${edgeHit.index + 1}. Use the edge inspector to straighten, split, or add a midpoint.`)
+      return
+    }
 
     if (mode === 'select') {
       setSelectedObject(null)
+      setSelectedPointIds([])
       setStatus('Selection cleared. Click an outline point or mounting hole to edit it.')
       return
     }
@@ -312,22 +335,30 @@ export function OutlineEditor() {
     }
     if (mode === 'select' && selectedObject && event.buttons === 1) {
       if (selectedObject.type === 'point') {
-        setPoints((current) => current.map((point, index) => (index === selectedObject.index ? p : point)))
-      } else {
+        setPoints((current) => current.map((point) => (point.id === selectedObject.id ? { ...point, ...p } : point)))
+      } else if (selectedObject.type === 'hole') {
         setHoles((current) => current.map((hole) => (hole.ref === selectedObject.ref ? { ...hole, ...p } : hole)))
       }
       setAutoFixProposal(null)
       return
     }
     if (mode === 'draw' && drawingRef.current && event.buttons === 1) {
-      setPoints((current) => appendDrawPoint(current, p, snap ? 2 : 1.2))
-      setAutoFixProposal(null)
+      setDrawRaw((current) => appendDrawPoint(current, p, snap ? 2 : 1.2)); setAutoFixProposal(null)
     }
   }
+
+  function acceptDrawDraft() {
+    if (!drawDraft?.acceptReady) { setStatus(drawDraft?.preview.warnings[0] || 'Draw preview is not ready.'); return }
+    checkpoint(); setPoints(drawDraft.points.map((point) => ({ ...point }))); setClosed(drawDraft.preview.closed); setDrawRaw([]); setMode('select')
+    setStatus(`Draw accepted: ${drawDraft.preview.rawPointCount} samples simplified to ${drawDraft.preview.previewPointCount} points.`)
+  }
+
+  function cancelDrawDraft() { setDrawRaw([]); setDrawCloseRequested(false); setStatus('Draw preview canceled. Geometry unchanged.') }
 
   function endPointer(event: ReactPointerEvent<SVGSVGElement>) {
     panRef.current = null
     drawingRef.current = false
+    if (mode === 'draw' && drawRaw.length) setStatus('Draw preview ready. Close, simplify, smooth, accept, or cancel.')
     try {
       event.currentTarget.releasePointerCapture(event.pointerId)
     } catch {
@@ -345,10 +376,18 @@ export function OutlineEditor() {
     setStatus('Fill Whole Board preview ready. Accept repair to apply the proposed closure.')
   }
 
-  function fillSection() {
+  function fillSection(requestedStyle: FillSectionStyle = fillStyle) {
     setMode('fill')
-    if (!selectedObject || selectedObject.type !== 'point') { setStatus('Select two endpoints or a connected open section to fill.'); return }
-    setStatus('Fill Section needs two selected endpoints. Shift-click endpoint selection is the next supported refinement.')
+    if (selectedPointIds.length !== 2) { setStatus('Select two endpoints or a connected open section to fill.'); return }
+    const identified = points.filter((point): point is Point & { id: string } => Boolean(point.id))
+    const proposal = proposeFillSection(identified as never, selectedPointIds as [string, string], { style: requestedStyle, holes: holes.map((hole) => ({ id: hole.ref, x: hole.x, y: hole.y, radius: hole.diameterMm / 2 + (hole.keepoutMm || 0) })) })
+    setFillStyle(requestedStyle); setFillProposal(proposal); setStatus(proposal.safe ? 'Fill Section preview ready. Unrelated geometry is preserved.' : `Fill Section blocked: ${proposal.warnings[0]}`)
+  }
+
+  function acceptFillSection() {
+    if (!fillProposal?.safe) return
+    checkpoint(); setPoints(fillProposal.points.map((point) => ({ ...point }))); setFillProposal(null); setSelectedPointIds([]); setSelectedObject(null); setClosed(true)
+    setStatus('Fill Section accepted as one undoable geometry transaction.')
   }
 
   function deletePoint(index: number) {
@@ -370,15 +409,33 @@ export function OutlineEditor() {
   function duplicatePoint(index: number) {
     const point = points[index]
     if (!point) return
-    const duplicate = { x: point.x + 3, y: point.y + 3 }
+    const duplicate = { id: newGeometryId('point'), x: point.x + 3, y: point.y + 3 }
     setPoints((current) => {
       const next = [...current]
       next.splice(index + 1, 0, duplicate)
       return next
     })
-    setSelectedObject({ type: 'point', index: index + 1 })
+    setSelectedObject({ type: 'point', id: duplicate.id })
     setAutoFixProposal(null)
     setStatus(`Duplicated point ${index + 1}.`)
+  }
+
+  function addEdgeMidpoint(startId: string, endId: string) {
+    const startIndex = points.findIndex((point) => point.id === startId)
+    const end = points.find((point) => point.id === endId)
+    if (startIndex < 0 || !end) return
+    const start = points[startIndex]
+    const midpoint: Point = { id: newGeometryId('point'), x: Number(((start.x + end.x) / 2).toFixed(2)), y: Number(((start.y + end.y) / 2).toFixed(2)) }
+    checkpoint(); setPoints((current) => { const next = [...current]; next.splice(startIndex + 1, 0, midpoint); return next })
+    setSelectedObject({ type: 'point', id: midpoint.id! }); setStatus('Midpoint inserted into the selected edge without changing the viewport.')
+  }
+
+  function straightenEdge(startId: string, endId: string) {
+    const start = points.find((point) => point.id === startId); const end = points.find((point) => point.id === endId)
+    if (!start || !end) return
+    checkpoint(); const horizontal = Math.abs(end.x - start.x) >= Math.abs(end.y - start.y)
+    setPoints((current) => current.map((point) => point.id === endId ? { ...point, ...(horizontal ? { y: start.y } : { x: start.x }) } : point))
+    setStatus('Selected edge straightened. Geometry validation updated.')
   }
 
   function smoothPoint(index: number) {
@@ -442,7 +499,9 @@ export function OutlineEditor() {
   function deleteSelected() {
     if (!selectedObject) return
     if (selectedObject.type === 'point') {
-      deletePoint(selectedObject.index)
+      deletePoint(points.findIndex((point) => point.id === selectedObject.id))
+    } else if (selectedObject.type === 'edge') {
+      setStatus('Delete edge is blocked because it would open the outline. Use Fill Section to replace it.')
     } else {
       deleteHole(selectedObject.ref)
     }
@@ -451,7 +510,9 @@ export function OutlineEditor() {
   function duplicateSelected() {
     if (!selectedObject) return
     if (selectedObject.type === 'point') {
-      duplicatePoint(selectedObject.index)
+      duplicatePoint(points.findIndex((point) => point.id === selectedObject.id))
+    } else if (selectedObject.type === 'edge') {
+      addEdgeMidpoint(selectedObject.startId, selectedObject.endId)
     } else {
       duplicateHole(selectedObject.ref)
     }
@@ -460,7 +521,9 @@ export function OutlineEditor() {
   function snapSelected() {
     if (!selectedObject) return
     if (selectedObject.type === 'point') {
-      snapPoint(selectedObject.index)
+      snapPoint(points.findIndex((point) => point.id === selectedObject.id))
+    } else if (selectedObject.type === 'edge') {
+      setStatus('Snap applies to points and holes; select an edge endpoint to snap it.')
     } else {
       snapHole(selectedObject.ref)
     }
@@ -625,7 +688,7 @@ export function OutlineEditor() {
           <button title="Move the view without changing geometry." type="button" className={mode === 'pan' ? 'active' : ''} onClick={() => setMode('pan')}><Hand size={16} /> Pan</button>
           <button title="Snap edits to the board grid." type="button" className={snap ? 'active' : ''} onClick={() => setSnap(!snap)}><Grid2X2 size={16} /> Snap</button>
           <button title="Close the entire outline." type="button" onClick={fillWholeBoard}><Wand2 size={16} /> Fill Whole Board</button>
-          <button title="Close only a selected section." type="button" onClick={fillSection}><Wand2 size={16} /> Fill Section</button>
+          <button title="Close only a selected section." type="button" onClick={() => fillSection()}><Wand2 size={16} /> Fill Section</button>
           <button type="button" onClick={addHole}><ShieldCheck size={16} /> Add hole</button>
           <button type="button" onClick={runAutoFixGeometry}><Wand2 size={16} /> Auto-Fix Geometry</button>
           <button type="button" onClick={resetCanvas}><RotateCcw size={16} /> Reset</button>
@@ -672,6 +735,10 @@ export function OutlineEditor() {
           </defs>
           <rect x={viewport.panX - 200} y={viewport.panY - 200} width={500} height={500} fill="url(#bf-outline-grid)" />
           {points.length > 1 && <polyline className="bf-editor-open-path" points={toSvgPoints(points)} />}
+          {points.slice(0, closed ? points.length : -1).map((point, index) => { const end = points[(index + 1) % points.length]; return <line key={`edge-${point.id}-${end.id}`} className="bf-editor-edge" stroke="rgba(255,255,255,.08)" strokeWidth="12" x1={point.x} y1={point.y} x2={end.x} y2={end.y} /> })}
+          {drawDraft && drawDraft.points.length > 1 && <polyline className={styles.drawPreview} points={toSvgPoints(drawDraft.points)} />}
+          {fillProposal && <polyline className={styles.fillPreview} points={toSvgPoints(fillProposal.points)} />}
+          {selectedObject?.type === 'edge' && selectedEdge?.start && selectedEdge.end && <line className={styles.selectedEdge} x1={selectedEdge.start.x} y1={selectedEdge.start.y} x2={selectedEdge.end.x} y2={selectedEdge.end.y} />}
           {closed && points.length > 2 && <polygon className={validation.valid ? 'bf-editor-polygon valid' : 'bf-editor-polygon blocked'} points={toSvgPoints(points)} filter="url(#bf-outline-editor-shadow)" />}
           {points.length > 2 && (
             <g className="bf-editor-annotations">
@@ -688,7 +755,7 @@ export function OutlineEditor() {
             </g>
           ))}
           {points.map((point, index) => (
-            <g key={`${point.x}-${point.y}-${index}`} className={selectedPoint === index ? 'bf-editor-point selected' : 'bf-editor-point'}>
+            <g key={point.id} data-point-id={point.id} className={selectedPoint === index ? 'bf-editor-point selected' : 'bf-editor-point'}>
               <circle cx={point.x} cy={point.y} r={selectedPoint === index ? 2.35 : 1.65} />
               <text x={point.x + 2.4} y={point.y - 2.2}>{index + 1}</text>
             </g>
@@ -703,7 +770,8 @@ export function OutlineEditor() {
           {selectedAnchor && (
             <SelectionMenu
               selectedObject={selectedObject}
-              point={selectedObject?.type === 'point' ? points[selectedObject.index] : null}
+              point={selectedObject?.type === 'point' ? points.find((point) => point.id === selectedObject.id) || null : null}
+              pointIndex={selectedPoint ?? -1}
               hole={selectedHole}
               multiSelect={multiSelect}
               setMultiSelect={setMultiSelect}
@@ -717,6 +785,9 @@ export function OutlineEditor() {
               onDuplicateHole={duplicateHole}
               onSnapHole={snapHole}
               onUpdateHole={updateHole}
+              onAddEdgeMidpoint={addEdgeMidpoint}
+              onStraightenEdge={straightenEdge}
+              edgeLength={selectedEdge?.start && selectedEdge.end ? distance(selectedEdge.start, selectedEdge.end) : null}
             />
           )}
           {autoFixProposal && (
@@ -733,6 +804,24 @@ export function OutlineEditor() {
               </div>
             </div>
           )}
+          {drawDraft && !drawingRef.current && <div className={styles.drawPanel}>
+            <strong>Draw preview</strong>
+            <span>{drawDraft.preview.rawPointCount} points simplified to {drawDraft.preview.previewPointCount} points · {drawDraft.preview.closed ? 'Closed' : 'Open'}</span>
+            {drawDraft.preview.warnings.map((warning) => <span key={warning} className={styles.warning}>{warning}</span>)}
+            <div>
+              <button type="button" disabled={!drawDraft.acceptReady} onClick={acceptDrawDraft}>Accept</button>
+              <button type="button" onClick={() => setDrawTolerance((value) => Math.min(5, value + .35))}>Simplify More</button>
+              <button type="button" onClick={() => setDrawSmoothing((value) => Math.min(3, value + 1))}>Smooth</button>
+              <button type="button" onClick={() => setDrawCloseRequested(true)}>Close Shape</button>
+              <button type="button" onClick={cancelDrawDraft}>Cancel</button>
+            </div>
+          </div>}
+          {fillProposal && <div className={styles.drawPanel}>
+            <strong>Fill Section preview</strong><span>{fillProposal.removedPointIds.length} replaced · {fillProposal.addedPoints.length} added</span>
+            {fillProposal.warnings.map((warning) => <span key={warning} className={styles.warning}>{warning}</span>)}
+            <div>{(['straight','rounded','smooth','minimum-distance'] as FillSectionStyle[]).map((style) => <button type="button" key={style} onClick={() => fillSection(style)}>{style === 'straight' ? 'Straight Fill' : style}</button>)}</div>
+            <div><button type="button" disabled={!fillProposal.safe} onClick={acceptFillSection}>Accept Fill</button><button type="button" onClick={() => setFillProposal(null)}>Reject</button></div>
+          </div>}
           </div>
         </div>
         <aside className="bf-outline-score-card">
@@ -817,6 +906,7 @@ export function OutlineEditor() {
 function SelectionMenu({
   selectedObject,
   point,
+  pointIndex,
   hole,
   multiSelect,
   setMultiSelect,
@@ -830,9 +920,13 @@ function SelectionMenu({
   onDuplicateHole,
   onSnapHole,
   onUpdateHole,
+  onAddEdgeMidpoint,
+  onStraightenEdge,
+  edgeLength,
 }: {
   selectedObject: SelectedObject
   point: Point | null
+  pointIndex: number
   hole: Hole | null
   multiSelect: boolean
   setMultiSelect: (value: boolean) => void
@@ -846,6 +940,9 @@ function SelectionMenu({
   onDuplicateHole: (ref: string) => void
   onSnapHole: (ref: string) => void
   onUpdateHole: (ref: string, patch: Partial<Hole>) => void
+  onAddEdgeMidpoint: (startId: string, endId: string) => void
+  onStraightenEdge: (startId: string, endId: string) => void
+  edgeLength: number | null
 }) {
   if (!selectedObject) return null
 
@@ -853,19 +950,19 @@ function SelectionMenu({
     return (
       <div className="bf-selection-menu" onPointerDown={(event) => event.stopPropagation()}>
         <div className="bf-selection-menu-head">
-          <span>Selected point {selectedObject.index + 1}</span>
+          <span>Selected point {pointIndex + 1}</span>
           <button type="button" onClick={onClose}>Clear</button>
         </div>
         <div className="bf-selection-fields">
-          <label>X mm<input type="number" step="0.1" value={point.x} onChange={(event) => onUpdatePoint(selectedObject.index, { x: Number(event.target.value) })} /></label>
-          <label>Y mm<input type="number" step="0.1" value={point.y} onChange={(event) => onUpdatePoint(selectedObject.index, { y: Number(event.target.value) })} /></label>
+          <label>X mm<input type="number" step="0.1" value={point.x} onChange={(event) => onUpdatePoint(pointIndex, { x: Number(event.target.value) })} /></label>
+          <label>Y mm<input type="number" step="0.1" value={point.y} onChange={(event) => onUpdatePoint(pointIndex, { y: Number(event.target.value) })} /></label>
         </div>
         <div className="bf-selection-actions">
-          <button type="button" onClick={() => onSnapPoint(selectedObject.index)}>Snap to grid</button>
-          <button type="button" onClick={() => onDuplicatePoint(selectedObject.index)}><Copy size={14} /> Duplicate</button>
-          <button type="button" onClick={() => onSmoothPoint(selectedObject.index)}>Smooth corner</button>
+          <button type="button" onClick={() => onSnapPoint(pointIndex)}>Snap to grid</button>
+          <button type="button" onClick={() => onDuplicatePoint(pointIndex)}><Copy size={14} /> Duplicate</button>
+          <button type="button" onClick={() => onSmoothPoint(pointIndex)}>Smooth corner</button>
           <button type="button" onClick={() => setMultiSelect(!multiSelect)}>{multiSelect ? 'Stop select more' : 'Select more'}</button>
-          <button type="button" className="danger" onClick={() => onDeletePoint(selectedObject.index)}><Trash2 size={14} /> Delete point</button>
+          <button type="button" className="danger" onClick={() => onDeletePoint(pointIndex)}><Trash2 size={14} /> Delete point</button>
         </div>
       </div>
     )
@@ -894,6 +991,19 @@ function SelectionMenu({
         </div>
       </div>
     )
+  }
+
+  if (selectedObject.type === 'edge') {
+    return <div className="bf-selection-menu" onPointerDown={(event) => event.stopPropagation()}>
+      <div className="bf-selection-menu-head"><span>Selected edge</span><button type="button" onClick={onClose}>Clear</button></div>
+      <span>Length: {edgeLength?.toFixed(2)} mm</span>
+      <div className="bf-selection-actions">
+        <button type="button" onClick={() => onStraightenEdge(selectedObject.startId, selectedObject.endId)}>Straighten</button>
+        <button type="button" onClick={() => onAddEdgeMidpoint(selectedObject.startId, selectedObject.endId)}>Add midpoint</button>
+        <button type="button" onClick={() => onAddEdgeMidpoint(selectedObject.startId, selectedObject.endId)}>Split edge</button>
+        <button type="button" disabled title="Connector intent metadata is not supported by the current export schema.">Connector edge</button>
+      </div>
+    </div>
   }
 
   return null
@@ -1280,6 +1390,17 @@ function nearestPoint(points: Point[], target: Point) {
   }, { index: -1, distance: Number.POSITIVE_INFINITY })
 }
 
+function nearestEdge(points: Point[], target: Point, closed: boolean) {
+  const count = closed ? points.length : Math.max(0, points.length - 1)
+  let best: { index: number; start: Point; end: Point; distance: number } | null = null
+  for (let index = 0; index < count; index += 1) {
+    const start = points[index]; const end = points[(index + 1) % points.length]
+    const edgeDistance = distanceToSegment(target, start, end)
+    if (!best || edgeDistance < best.distance) best = { index, start, end, distance: edgeDistance }
+  }
+  return best
+}
+
 function nearestHole(holes: Hole[], target: Point) {
   if (!holes.length) return null
   return holes.reduce<{ hole: Hole; distance: number } | null>((best, hole) => {
@@ -1302,7 +1423,8 @@ function chooseNewHolePosition(points: Point[], holes: Hole[]) {
 }
 
 function insertPoint(points: Point[], point: Point) {
-  if (points.length < 3) return [...points, point]
+  const identified = { ...point, id: point.id || newGeometryId('point') }
+  if (points.length < 3) return [...points, identified]
   let bestIndex = points.length
   let bestDistance = Number.POSITIVE_INFINITY
   points.forEach((start, index) => {
@@ -1314,14 +1436,14 @@ function insertPoint(points: Point[], point: Point) {
     }
   })
   const next = [...points]
-  next.splice(bestIndex, 0, point)
+  next.splice(bestIndex, 0, identified)
   return next
 }
 
 function appendDrawPoint(points: Point[], point: Point, threshold: number) {
   const last = points[points.length - 1]
   if (last && distance(last, point) < threshold) return points
-  return [...points, point]
+  return [...points, { ...point, id: point.id || newGeometryId('point') }]
 }
 
 function countIntersections(points: Point[]) {
@@ -1397,12 +1519,17 @@ function distanceToSegment(point: Point, start: Point, end: Point) {
   return distance(point, { x: start.x + t * dx, y: start.y + t * dy })
 }
 
-function toSvgPoints(points: Point[]) {
+function toSvgPoints(points: readonly Point[]) {
   return points.map((point) => `${point.x},${point.y}`).join(' ')
 }
 
 function clonePoints(points: Point[]) {
-  return points.map((point) => ({ ...point }))
+  return points.map((point) => ({ ...point, id: point.id || newGeometryId('point') }))
+}
+
+function newGeometryId(kind: 'point' | 'hole') {
+  const token = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  return `${kind}-${token}`
 }
 
 function labelForPreset(id: string) {

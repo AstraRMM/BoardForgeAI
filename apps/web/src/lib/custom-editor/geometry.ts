@@ -122,6 +122,102 @@ export function minimalGapClosure<T extends XY>(points: readonly T[]): { points:
   return { points: candidate, addedEdge: [points[points.length - 1], points[0]], safe: !hasSelfIntersection(candidate, true) }
 }
 
+export type FillSectionStyle = 'straight' | 'rounded' | 'smooth' | 'minimum-distance'
+export type FillSectionHole = Readonly<XY & { id?: string; radius?: number }>
+export type FillSectionOptions = Readonly<{
+  style?: FillSectionStyle
+  /** Which ordered boundary chain is removed. Defaults to the shorter chain. */
+  replace?: 'forward' | 'backward' | 'shorter'
+  holes?: readonly FillSectionHole[]
+  holeClearance?: number
+  intermediatePoints?: number
+}>
+export type FillSectionProposal = Readonly<{
+  points: readonly Point[]
+  safe: boolean
+  style: FillSectionStyle
+  endpointIds: readonly [string, string]
+  removedPointIds: readonly string[]
+  addedPoints: readonly Point[]
+  addedEdges: readonly (readonly [string, string])[]
+  warnings: readonly string[]
+  metrics: ReturnType<typeof pathMetrics>
+}>
+
+function chainLength(points: readonly Point[]): number {
+  let total = 0
+  for (let i = 1; i < points.length; i += 1) total += distance(points[i - 1], points[i])
+  return total
+}
+
+function pointInPolygon(point: XY, polygon: readonly XY[]): boolean {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i]; const b = polygon[j]
+    if (perpendicularDistance(point, a, b) <= EPSILON && point.x >= Math.min(a.x, b.x) - EPSILON && point.x <= Math.max(a.x, b.x) + EPSILON && point.y >= Math.min(a.y, b.y) - EPSILON && point.y <= Math.max(a.y, b.y) + EPSILON) return true
+    if ((a.y > point.y) !== (b.y > point.y) && point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
+}
+
+function minimumEdgeDistance(point: XY, polygon: readonly XY[]): number {
+  let minimum = Infinity
+  for (let i = 0; i < polygon.length; i += 1) minimum = Math.min(minimum, perpendicularDistance(point, polygon[i], polygon[(i + 1) % polygon.length]))
+  return minimum
+}
+
+/**
+ * Proposes replacing exactly one boundary chain between two stable-ID endpoints.
+ * Existing points on the complementary chain retain identity and order. The result
+ * is never applied by this helper; callers must require `safe` before accepting it.
+ */
+export function proposeFillSection(points: readonly Point[], endpointIds: readonly [string, string], options: FillSectionOptions = {}): FillSectionProposal {
+  const style = options.style ?? 'straight'
+  const warnings: string[] = []
+  const empty = (message: string): FillSectionProposal => ({ points: [...points], safe: false, style, endpointIds, removedPointIds: [], addedPoints: [], addedEdges: [], warnings: [message], metrics: pathMetrics(points, true) })
+  if (points.length < 3) return empty('A fill section requires an outline with at least three points.')
+  const first = points.findIndex(point => point.id === endpointIds[0]); const second = points.findIndex(point => point.id === endpointIds[1])
+  if (first < 0 || second < 0 || first === second) return empty('Select two distinct existing endpoints by stable ID.')
+
+  const forward: Point[] = []
+  for (let i = first; ; i = (i + 1) % points.length) { forward.push(points[i]); if (i === second) break }
+  const backward: Point[] = []
+  for (let i = first; ; i = (i - 1 + points.length) % points.length) { backward.push(points[i]); if (i === second) break }
+  const replace = options.replace ?? 'shorter'
+  const removedChain = replace === 'forward' ? forward : replace === 'backward' ? backward : chainLength(forward) <= chainLength(backward) ? forward : backward
+  const keptChain = removedChain === forward ? [...backward].reverse() : [...forward].reverse()
+  const start = removedChain[0]; const end = removedChain[removedChain.length - 1]
+  const intermediateCount = Math.max(0, Math.min(32, Math.floor(options.intermediatePoints ?? (style === 'straight' || style === 'minimum-distance' ? 0 : 4))))
+  const removedInterior = removedChain.slice(1, -1)
+  const addedPoints: Point[] = []
+  if (intermediateCount) {
+    const control = removedInterior.length ? removedInterior.reduce((best, point) => perpendicularDistance(point, start, end) > perpendicularDistance(best, start, end) ? point : best, removedInterior[0]) : { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
+    for (let i = 1; i <= intermediateCount; i += 1) {
+      const t = i / (intermediateCount + 1); const u = 1 - t
+      const amount = style === 'smooth' ? t * t * (3 - 2 * t) : t
+      const linear = { x: start.x + (end.x - start.x) * amount, y: start.y + (end.y - start.y) * amount }
+      const bulge = 4 * t * u
+      const x = linear.x + bulge * (control.x - (start.x + end.x) / 2)
+      const y = linear.y + bulge * (control.y - (start.y + end.y) / 2)
+      addedPoints.push({ id: stableId(`fill-${style}`, { x, y }, i), x, y })
+    }
+  }
+  const candidate = [start, ...addedPoints, end, ...keptChain.slice(1, -1)]
+  if (hasSelfIntersection(candidate, true)) warnings.push('Proposed fill would self-intersect the outline.')
+  const clearance = Math.max(0, options.holeClearance ?? 0)
+  for (const hole of options.holes ?? []) {
+    if (!pointInPolygon(hole, candidate)) warnings.push(`Hole${hole.id ? ` ${hole.id}` : ''} would fall outside the filled outline.`)
+    else if (minimumEdgeDistance(hole, candidate) + EPSILON < (hole.radius ?? 0) + clearance) warnings.push(`Hole${hole.id ? ` ${hole.id}` : ''} would violate edge clearance.`)
+  }
+  const ids = [start.id, ...addedPoints.map(point => point.id), end.id]
+  return {
+    points: candidate, safe: warnings.length === 0, style, endpointIds,
+    removedPointIds: removedInterior.map(point => point.id), addedPoints,
+    addedEdges: ids.slice(0, -1).map((id, index) => [id, ids[index + 1]] as const),
+    warnings, metrics: pathMetrics(candidate, true),
+  }
+}
+
 export type History<T> = Readonly<{ past: readonly T[]; present: T; future: readonly T[] }>
 export function createHistory<T>(present: T): History<T> { return { past: [], present, future: [] } }
 export function commitHistory<T>(history: History<T>, next: T): History<T> { return Object.is(history.present, next) ? history : { past: [...history.past, history.present], present: next, future: [] } }
