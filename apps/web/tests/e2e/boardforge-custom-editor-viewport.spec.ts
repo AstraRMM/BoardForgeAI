@@ -1,0 +1,51 @@
+import { expect, test } from '@playwright/test'
+
+test.describe('custom editor viewport interactions', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/custom-board-generator') })
+
+  test('Add Point preserves viewport and Select does not add geometry', async ({ page }) => {
+    const editor = page.getByRole('img', { name: /Custom board outline editor/i })
+    const initialViewBox = await editor.getAttribute('viewBox')
+    await page.getByRole('button', { name: /Add point/i }).first().click()
+    const box = await editor.boundingBox()
+    if (!box) throw new Error('editor bounds missing')
+    for (const [x, y] of [[.18, .32], [.38, .32], [.38, .58], [.18, .58]]) await page.mouse.click(box.x + box.width * x, box.y + box.height * y)
+    await expect(page.getByText('Outline points', { exact: true }).locator('..').getByText('4', { exact: true })).toBeVisible()
+    expect(await editor.getAttribute('viewBox')).toBe(initialViewBox)
+    await page.getByRole('button', { name: /^Select$/i }).first().click()
+    await page.mouse.click(box.x + box.width * .18, box.y + box.height * .32)
+    expect(await editor.getAttribute('viewBox')).toBe(initialViewBox)
+    await expect(page.getByText('Outline points', { exact: true }).locator('..').getByText('4', { exact: true })).toBeVisible()
+  })
+
+  test('manual zoom and pan never mutate geometry', async ({ page }) => {
+    await page.getByLabel(/Preset/i).selectOption('l-shape')
+    const editor = page.getByRole('img', { name: /Custom board outline editor/i })
+    const pointsBefore = await editor.locator('.bf-editor-point').count()
+    await page.getByTitle('Zoom In').click()
+    await expect(page.getByLabel('Zoom percentage')).toHaveText('125%')
+    const zoomedViewBox = await editor.getAttribute('viewBox')
+    await page.getByRole('button', { name: /^Pan$/i }).click()
+    const box = await editor.boundingBox()
+    if (!box) throw new Error('editor bounds missing')
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 30); await page.mouse.up()
+    expect(await editor.getAttribute('viewBox')).not.toBe(zoomedViewBox)
+    expect(await editor.locator('.bf-editor-point').count()).toBe(pointsBefore)
+  })
+
+  test('Fill Whole Board previews, accepts, and is undoable without view changes', async ({ page }) => {
+    const editor = page.getByRole('img', { name: /Custom board outline editor/i })
+    await page.getByRole('button', { name: /Add point/i }).first().click()
+    const box = await editor.boundingBox(); if (!box) throw new Error('editor bounds missing')
+    for (const [x, y] of [[.18, .32], [.38, .32], [.38, .58], [.18, .58]]) await page.mouse.click(box.x + box.width * x, box.y + box.height * y)
+    const viewBefore = await editor.getAttribute('viewBox')
+    await page.getByRole('button', { name: /Fill Whole Board/i }).click()
+    await expect(page.getByText(/Fill Whole Board preview ready/i)).toBeVisible()
+    await page.getByRole('button', { name: /Accept repair/i }).click()
+    expect(await editor.getAttribute('viewBox')).toBe(viewBefore)
+    await expect(page.getByText(/cm2/).first()).toBeVisible()
+    await page.getByRole('button', { name: /^Undo$/i }).click()
+    await expect(page.getByText(/Area unavailable/i)).toBeVisible()
+  })
+})

@@ -1,0 +1,34 @@
+.viewportControls {
+  position: absolute;
+  z-index: 8;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid rgba(124, 245, 208, .26);
+  border-radius: 10px;
+  background: rgba(7, 17, 24, .92);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .3);
+}
+
+.viewportControls button,
+.viewportControls output {
+  min-width: 34px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #eafff8;
+}
+
+.viewportControls output {
+  min-width: 52px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+@media (max-width: 720px) {
+  .viewportControls { left: 8px; right: 8px; top: 8px; flex-wrap: wrap; }
+}

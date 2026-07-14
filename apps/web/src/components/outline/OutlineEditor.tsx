@@ -1,13 +1,16 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
-import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Layers3, MousePointer2, Pencil, Plus, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Wand2 } from 'lucide-react'
+import type { CSSProperties, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
+import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers3, MousePointer2, Pencil, Plus, Redo2, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Undo2, Wand2, ZoomIn, ZoomOut } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
+import styles from './OutlineEditor.module.css'
 
 type Point = { x: number; y: number }
 type Hole = { ref: string; x: number; y: number; diameterMm: number; keepoutMm?: number; plating?: 'plated' | 'non-plated'; locked?: boolean }
-type Mode = 'select' | 'add-point' | 'draw'
+type Mode = 'select' | 'add-point' | 'draw' | 'pan' | 'fill'
+type Viewport = { zoom: number; panX: number; panY: number; minZoom: number; maxZoom: number }
+type GeometrySnapshot = { points: Point[]; holes: Hole[]; preset: string; closed: boolean }
 type SelectedObject = { type: 'point'; index: number } | { type: 'hole'; ref: string } | null
 type AutoFixProposal = {
   points: Point[]
@@ -54,6 +57,8 @@ const presetPoints: Record<string, Point[]> = {
 export function OutlineEditor() {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const drawingRef = useRef(false)
+  const panRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
+  const spacePressedRef = useRef(false)
   const [preset, setPreset] = useState('blank-custom')
   const [points, setPoints] = useState<Point[]>([])
   const [holes, setHoles] = useState<Hole[]>([])
@@ -61,24 +66,61 @@ export function OutlineEditor() {
   const [multiSelect, setMultiSelect] = useState(false)
   const [snap, setSnap] = useState(true)
   const [mode, setMode] = useState<Mode>('select')
+  const [closed, setClosed] = useState(false)
+  const [viewport, setViewport] = useState<Viewport>({ zoom: 1, panX: -10, panY: -10, minZoom: 0.25, maxZoom: 8 })
+  const [history, setHistory] = useState<GeometrySnapshot[]>([])
+  const [future, setFuture] = useState<GeometrySnapshot[]>([])
   const [status, setStatus] = useState<string>('Ready - choose a preset, edit points, or draw a custom outline.')
   const [copied, setCopied] = useState(false)
   const [showPromptPanel, setShowPromptPanel] = useState(false)
   const [autoFixProposal, setAutoFixProposal] = useState<AutoFixProposal | null>(null)
 
   const box = useMemo(() => bounds(points), [points])
-  const viewBox = `${box.minX - 10} ${box.minY - 10} ${Math.max(36, box.width + 20)} ${Math.max(36, box.height + 20)}`
-  const validation = useMemo(() => validateOutline(points, holes), [points, holes])
+  const viewBox = `${viewport.panX} ${viewport.panY} ${100 / viewport.zoom} ${70 / viewport.zoom}`
+  const validation = useMemo(() => {
+    const result = validateOutline(points, holes)
+    if (closed || points.length < 3) return result
+    const checks = result.checks.map((check) => check.label === 'Closed outline' ? { ...check, pass: false, reason: 'The path is open. Use Fill Whole Board or Auto-Fix Geometry.' } : check)
+    return { ...result, valid: false, risk: 'Blocked' as const, routeability: Math.min(result.routeability, 45), checks, blockers: ['Geometry incomplete - use Fill or Auto-Fix Geometry.', ...result.blockers] }
+  }, [points, holes, closed])
   const metrics = useMemo(() => buildBoardMetrics(points, holes), [points, holes])
   const prompt = useMemo(() => buildCodexPrompt({ preset, points, holes, validation, metrics }), [preset, points, holes, validation, metrics])
   const statusTone = validation.valid ? 'valid' : 'blocked'
   const areaMm2 = useMemo(() => Math.abs(polygonArea(points)), [points])
   const edgeLength = useMemo(() => totalEdgeLength(points), [points])
   const holesInside = useMemo(() => holes.filter((hole) => pointInPolygon(hole, points)).length, [holes, points])
-  const areaText = validation.valid ? `${(areaMm2 / 100).toFixed(1)} cm2` : 'Unavailable until valid'
+  const areaText = closed && points.length >= 3 ? `${(areaMm2 / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
   const selectedPoint = selectedObject?.type === 'point' ? selectedObject.index : null
   const selectedHole = selectedObject?.type === 'hole' ? holes.find((hole) => hole.ref === selectedObject.ref) || null : null
   const selectedAnchor = selectedObject?.type === 'point' ? points[selectedObject.index] : selectedHole
+
+  function snapshot(): GeometrySnapshot {
+    return { points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), preset, closed }
+  }
+
+  function checkpoint() {
+    setHistory((current) => [...current.slice(-99), snapshot()])
+    setFuture([])
+  }
+
+  function restoreSnapshot(value: GeometrySnapshot) {
+    setPoints(clonePoints(value.points)); setHoles(value.holes.map((hole) => ({ ...hole })))
+    setPreset(value.preset); setClosed(value.closed); setSelectedObject(null); setAutoFixProposal(null)
+  }
+
+  function undo() {
+    const previous = history[history.length - 1]
+    if (!previous) return
+    setFuture((current) => [snapshot(), ...current]); setHistory((current) => current.slice(0, -1)); restoreSnapshot(previous)
+    setStatus('Undid geometry edit. Viewport preserved.')
+  }
+
+  function redo() {
+    const next = future[0]
+    if (!next) return
+    setHistory((current) => [...current, snapshot()]); setFuture((current) => current.slice(1)); restoreSnapshot(next)
+    setStatus('Redid geometry edit. Viewport preserved.')
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -87,6 +129,9 @@ export function OutlineEditor() {
       if (isTyping) return
 
       const key = event.key.toLowerCase()
+      if (event.code === 'Space') spacePressedRef.current = true
+      if ((event.ctrlKey || event.metaKey) && key === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); return }
+      if ((event.ctrlKey || event.metaKey) && key === 'y') { event.preventDefault(); redo(); return }
       if (key === 'escape') {
         setSelectedObject(null)
         setStatus('Selection cleared.')
@@ -160,10 +205,13 @@ export function OutlineEditor() {
     }
 
     window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    const onKeyUp = (event: KeyboardEvent) => { if (event.code === 'Space') spacePressedRef.current = false }
+    window.addEventListener('keyup', onKeyUp)
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp) }
   })
 
   function choosePreset(nextPreset: string) {
+    checkpoint()
     setPreset(nextPreset)
     const nextPoints = clonePoints(presetPoints[nextPreset] || [])
     setPoints(nextPoints)
@@ -171,11 +219,33 @@ export function OutlineEditor() {
     setSelectedObject(null)
     setAutoFixProposal(null)
     setMode('select')
+    setClosed(nextPreset !== 'blank-custom')
     setStatus(nextPreset === 'blank-custom' ? 'Blank canvas ready. Add points or draw a custom outline.' : `Loaded ${labelForPreset(nextPreset)}. Outline is ready for edit and validation.`)
   }
 
   function resetCanvas() {
     choosePreset(preset)
+  }
+
+  function resetView() { setViewport((current) => ({ ...current, zoom: 1, panX: -10, panY: -10 })); setStatus('View reset. Geometry unchanged.') }
+  function fitBoard() {
+    const padding = 10
+    const zoom = clamp(Math.min(100 / Math.max(36, box.width + padding * 2), 70 / Math.max(30, box.height + padding * 2)), viewport.minZoom, viewport.maxZoom)
+    setViewport((current) => ({ ...current, zoom, panX: box.minX - padding, panY: box.minY - padding }))
+    setStatus('Fit Board applied by user. Geometry unchanged.')
+  }
+  function zoomAt(factor: number, clientX?: number, clientY?: number) {
+    const svg = svgRef.current
+    setViewport((current) => {
+      const nextZoom = clamp(current.zoom * factor, current.minZoom, current.maxZoom)
+      if (nextZoom === current.zoom) return current
+      const rect = svg?.getBoundingClientRect()
+      const rx = rect && clientX !== undefined ? clamp((clientX - rect.left) / rect.width, 0, 1) : .5
+      const ry = rect && clientY !== undefined ? clamp((clientY - rect.top) / rect.height, 0, 1) : .5
+      const worldX = current.panX + rx * 100 / current.zoom
+      const worldY = current.panY + ry * 70 / current.zoom
+      return { ...current, zoom: nextZoom, panX: worldX - rx * 100 / nextZoom, panY: worldY - ry * 70 / nextZoom }
+    })
   }
 
   function canvasPoint(event: ReactPointerEvent<SVGSVGElement>) {
@@ -191,20 +261,36 @@ export function OutlineEditor() {
   function startPointer(event: ReactPointerEvent<SVGSVGElement>) {
     event.currentTarget.setPointerCapture(event.pointerId)
     const p = canvasPoint(event)
+    if (mode === 'pan' || spacePressedRef.current || event.button === 1) {
+      panRef.current = { x: event.clientX, y: event.clientY, panX: viewport.panX, panY: viewport.panY }
+      return
+    }
+    if (mode === 'add-point') {
+      if (points.some((point) => distance(point, p) < .25)) { setStatus('Point not added: duplicate or zero-length edge.'); return }
+      checkpoint()
+      const nextPoints = insertPoint(points, p)
+      setPoints(nextPoints); setSelectedObject(null); setAutoFixProposal(null)
+      setStatus('Point added without changing zoom or pan.'); return
+    }
+    if (mode === 'draw') {
+      checkpoint(); drawingRef.current = true; setSelectedObject(null); setClosed(false)
+      setPoints((current) => appendDrawPoint(current, p, snap ? 2 : 1.2)); setStatus('Drawing outline. Release to finish the stroke.'); return
+    }
+    if (mode === 'fill') { setStatus('Choose Fill Whole Board or select endpoints for Fill Section.'); return }
     const hit = nearestPoint(points, p)
     const holeHit = nearestHole(holes, p)
 
     if (event.shiftKey) setMultiSelect(true)
 
-    if (holeHit && holeHit.distance < Math.max(3.8, holeHit.hole.diameterMm * 1.9)) {
-      setSelectedObject({ type: 'hole', ref: holeHit.hole.ref })
-      setStatus(`Selected ${holeHit.hole.ref}. Drag to move it or edit diameter/keepout in the object menu.`)
-      return
-    }
-
-    if (hit.distance < 3.5) {
+    const tolerance = 12 / Math.max(1, svgRef.current?.getBoundingClientRect().width || 1) * (100 / viewport.zoom)
+    if (hit.distance < tolerance) {
       setSelectedObject({ type: 'point', index: hit.index })
       setStatus(`Selected point ${hit.index + 1}. Drag to move it or use the object menu for exact edits.`)
+      return
+    }
+    if (holeHit && holeHit.distance < Math.max(tolerance, holeHit.hole.diameterMm / 2)) {
+      setSelectedObject({ type: 'hole', ref: holeHit.hole.ref })
+      setStatus(`Selected ${holeHit.hole.ref}. Drag to move it or edit diameter/keepout in the object menu.`)
       return
     }
 
@@ -214,27 +300,17 @@ export function OutlineEditor() {
       return
     }
 
-    if (mode === 'add-point') {
-      const nextPoints = insertPoint(points, p)
-      const selectedIndex = nearestPoint(nextPoints, p).index
-      setPoints(nextPoints)
-      setSelectedObject({ type: 'point', index: selectedIndex })
-      setAutoFixProposal(null)
-      setStatus('Point added. Use Select to move, duplicate, delete, or set exact coordinates.')
-      return
-    }
-
-    if (mode === 'draw') {
-      drawingRef.current = true
-      setSelectedObject(null)
-      setPoints((current) => insertPoint(current, p))
-      setStatus('Drawing outline. Release anytime and continue from the same shape.')
-    }
   }
 
   function movePointer(event: ReactPointerEvent<SVGSVGElement>) {
     const p = canvasPoint(event)
-    if (selectedObject && event.buttons === 1) {
+    if (panRef.current) {
+      const rect = svgRef.current?.getBoundingClientRect(); if (!rect) return
+      const dx = (event.clientX - panRef.current.x) / rect.width * (100 / viewport.zoom)
+      const dy = (event.clientY - panRef.current.y) / rect.height * (70 / viewport.zoom)
+      setViewport((current) => ({ ...current, panX: panRef.current!.panX - dx, panY: panRef.current!.panY - dy })); return
+    }
+    if (mode === 'select' && selectedObject && event.buttons === 1) {
       if (selectedObject.type === 'point') {
         setPoints((current) => current.map((point, index) => (index === selectedObject.index ? p : point)))
       } else {
@@ -250,12 +326,29 @@ export function OutlineEditor() {
   }
 
   function endPointer(event: ReactPointerEvent<SVGSVGElement>) {
+    panRef.current = null
     drawingRef.current = false
     try {
       event.currentTarget.releasePointerCapture(event.pointerId)
     } catch {
       // Pointer may already be released by the browser.
     }
+  }
+
+  function onWheel(event: ReactWheelEvent<SVGSVGElement>) {
+    event.preventDefault(); zoomAt(Math.exp(-event.deltaY * .0015), event.clientX, event.clientY)
+  }
+
+  function fillWholeBoard() {
+    if (points.length < 3) { setStatus('Fill blocked: add at least three boundary points.'); return }
+    setMode('fill'); setAutoFixProposal({ points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), changes: ['Close the open path with the minimal edge from the last endpoint to the first. Existing concavity and holes are preserved.'], before: validation, after: validateOutline(points, holes) })
+    setStatus('Fill Whole Board preview ready. Accept repair to apply the proposed closure.')
+  }
+
+  function fillSection() {
+    setMode('fill')
+    if (!selectedObject || selectedObject.type !== 'point') { setStatus('Select two endpoints or a connected open section to fill.'); return }
+    setStatus('Fill Section needs two selected endpoints. Shift-click endpoint selection is the next supported refinement.')
   }
 
   function deletePoint(index: number) {
@@ -381,8 +474,10 @@ export function OutlineEditor() {
 
   function acceptAutoFixGeometry() {
     if (!autoFixProposal) return
+    checkpoint()
     setPoints(autoFixProposal.points)
     setHoles(autoFixProposal.holes)
+    if (autoFixProposal.changes.some((change) => change.startsWith('Close the open path'))) setClosed(true)
     setSelectedObject(null)
     setAutoFixProposal(null)
     setStatus(`Auto-Fix accepted. ${autoFixProposal.changes.join(' ') || 'No geometry changes were needed.'}`)
@@ -524,13 +619,18 @@ export function OutlineEditor() {
       </div>
       <div className="bf-outline-generator-shell">
         <aside className="bf-outline-tool-rail" aria-label="Outline tools">
-          <button type="button" className={mode === 'select' ? 'active' : ''} onClick={() => setMode('select')}><MousePointer2 size={16} /> Select</button>
-          <button type="button" className={mode === 'add-point' ? 'active' : ''} onClick={() => setMode('add-point')}><Plus size={16} /> Add point</button>
-          <button type="button" className={mode === 'draw' ? 'active' : ''} onClick={() => setMode('draw')}><Pencil size={16} /> Draw</button>
-          <button type="button" className={snap ? 'active' : ''} onClick={() => setSnap(!snap)}><Grid2X2 size={16} /> Snap</button>
+          <button title="Select and edit points, holes, and edges." type="button" className={mode === 'select' ? 'active' : ''} onClick={() => setMode('select')}><MousePointer2 size={16} /> Select</button>
+          <button title="Insert one point without changing the view." type="button" className={mode === 'add-point' ? 'active' : ''} onClick={() => setMode('add-point')}><Plus size={16} /> Add point</button>
+          <button title="Draw a freehand outline. Release to preview and simplify." type="button" className={mode === 'draw' ? 'active' : ''} onClick={() => setMode('draw')}><Pencil size={16} /> Draw</button>
+          <button title="Move the view without changing geometry." type="button" className={mode === 'pan' ? 'active' : ''} onClick={() => setMode('pan')}><Hand size={16} /> Pan</button>
+          <button title="Snap edits to the board grid." type="button" className={snap ? 'active' : ''} onClick={() => setSnap(!snap)}><Grid2X2 size={16} /> Snap</button>
+          <button title="Close the entire outline." type="button" onClick={fillWholeBoard}><Wand2 size={16} /> Fill Whole Board</button>
+          <button title="Close only a selected section." type="button" onClick={fillSection}><Wand2 size={16} /> Fill Section</button>
           <button type="button" onClick={addHole}><ShieldCheck size={16} /> Add hole</button>
           <button type="button" onClick={runAutoFixGeometry}><Wand2 size={16} /> Auto-Fix Geometry</button>
           <button type="button" onClick={resetCanvas}><RotateCcw size={16} /> Reset</button>
+          <button type="button" disabled={!history.length} onClick={undo}><Undo2 size={16} /> Undo</button>
+          <button type="button" disabled={!future.length} onClick={redo}><Redo2 size={16} /> Redo</button>
           <span>Units: mm</span>
         </aside>
         <div className="bf-outline-canvas-panel">
@@ -545,6 +645,13 @@ export function OutlineEditor() {
             <button type="button" className={!validation.valid ? 'blocked' : ''} onClick={() => callLocal('generate')} aria-disabled={!validation.valid}><Download size={16} /> Generate KiCad outline</button>
           </div>
           <div className="bf-outline-studio">
+        <div className={styles.viewportControls} aria-label="Viewport controls">
+          <button title="Zoom Out" type="button" onClick={() => zoomAt(1 / 1.25)}><ZoomOut size={15} /></button>
+          <output aria-label="Zoom percentage">{Math.round(viewport.zoom * 100)}%</output>
+          <button title="Zoom In" type="button" onClick={() => zoomAt(1.25)}><ZoomIn size={15} /></button>
+          <button title="Fit the current outline into the viewport." type="button" onClick={fitBoard}>Fit Board</button>
+          <button title="Reset the view without changing geometry." type="button" onClick={resetView}>Reset View</button>
+        </div>
         <svg
           ref={svgRef}
           viewBox={viewBox}
@@ -553,6 +660,7 @@ export function OutlineEditor() {
           onPointerMove={movePointer}
           onPointerUp={endPointer}
           onPointerCancel={endPointer}
+          onWheel={onWheel}
           role="img"
           aria-label="Custom board outline editor"
         >
@@ -562,9 +670,9 @@ export function OutlineEditor() {
               <feDropShadow dx="0" dy="10" stdDeviation="8" floodColor="#000" floodOpacity=".4" />
             </filter>
           </defs>
-          <rect x={box.minX - 10} y={box.minY - 10} width={Math.max(36, box.width + 20)} height={Math.max(36, box.height + 20)} fill="url(#bf-outline-grid)" />
+          <rect x={viewport.panX - 200} y={viewport.panY - 200} width={500} height={500} fill="url(#bf-outline-grid)" />
           {points.length > 1 && <polyline className="bf-editor-open-path" points={toSvgPoints(points)} />}
-          {points.length > 2 && <polygon className={validation.valid ? 'bf-editor-polygon valid' : 'bf-editor-polygon blocked'} points={toSvgPoints(points)} filter="url(#bf-outline-editor-shadow)" />}
+          {closed && points.length > 2 && <polygon className={validation.valid ? 'bf-editor-polygon valid' : 'bf-editor-polygon blocked'} points={toSvgPoints(points)} filter="url(#bf-outline-editor-shadow)" />}
           {points.length > 2 && (
             <g className="bf-editor-annotations">
               <line x1={box.minX + box.width * 0.22} y1={box.minY - 2} x2={box.minX + box.width * 0.17} y2={box.minY - 8} />
