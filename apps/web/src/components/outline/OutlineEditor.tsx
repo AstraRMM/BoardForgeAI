@@ -746,7 +746,7 @@ export function OutlineEditor() {
           </defs>
           <rect x={viewport.panX - 200} y={viewport.panY - 200} width={500} height={500} fill="url(#bf-outline-grid)" />
           {points.length > 1 && <polyline className="bf-editor-open-path" points={toSvgPoints(points)} />}
-          {points.slice(0, closed ? points.length : -1).map((point, index) => { const end = points[(index + 1) % points.length]; return <line key={`edge-${point.id}-${end.id}`} className="bf-editor-edge" stroke="rgba(255,255,255,.08)" strokeWidth="12" x1={point.x} y1={point.y} x2={end.x} y2={end.y} /> })}
+          {points.slice(0, closed ? points.length : -1).map((point, index) => { const end = points[(index + 1) % points.length]; return <line key={`edge-${point.id}-${end.id}`} className={`${styles.editorEdge} bf-editor-edge`} x1={point.x} y1={point.y} x2={end.x} y2={end.y} /> })}
           {drawDraft && drawDraft.points.length > 1 && <polyline className={styles.drawPreview} points={toSvgPoints(drawDraft.points)} />}
           {fillProposal && <polyline className={styles.fillPreview} points={toSvgPoints(fillProposal.points)} />}
           {selectedObject?.type === 'edge' && selectedEdge?.start && selectedEdge.end && <line className={styles.selectedEdge} x1={selectedEdge.start.x} y1={selectedEdge.start.y} x2={selectedEdge.end.x} y2={selectedEdge.end.y} />}

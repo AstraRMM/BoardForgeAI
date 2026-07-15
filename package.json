@@ -6,8 +6,8 @@
     "scripts": {
         "dev": "next dev",
         "dev:web": "next dev",
-        "build": "next build",
-        "build:web": "next build",
+        "build": "next build --webpack",
+        "build:web": "next build --webpack",
         "lint": "eslint .",
         "start": "next start",
         "test:plugin": "node --test ./plugins/boardforge-plugin/tests/*.test.mjs",
@@ -410,7 +410,11 @@
         "typecheck": "tsc --noEmit",
         "boardforge:browser-pcb-editor": "playwright test --config=apps/web/playwright.config.ts apps/web/tests/e2e/boardforge-browser-pcb-editor-m4.spec.ts",
         "boardforge:pcb-roundtrip": "node scripts/generate-m4-pcb-proof.mjs && node --test plugins/boardforge-plugin/tests/pcb-candidate-pipeline.test.mjs",
-        "boardforge:m4-pcb-reports": "node scripts/generate-m4-pcb-reports.mjs && node --test scripts/m4-pcb-reports.test.mjs"
+        "boardforge:m4-pcb-reports": "node scripts/generate-m4-pcb-reports.mjs && node --test scripts/m4-pcb-reports.test.mjs",
+        "boardforge:m4-candidate-proof": "node scripts/generate-m4-pcb-proof.mjs",
+        "boardforge:m4-closure-gate": "node scripts/run-m4-closure-gate.mjs",
+        "boardforge:m4-performance": "node scripts/run-m4-browser-performance.mjs",
+        "boardforge:m4-visual-qa": "node scripts/run-m4-visual-qa.mjs"
     },
     "dependencies": {
         "@better-auth/infra": "^0.3.6",

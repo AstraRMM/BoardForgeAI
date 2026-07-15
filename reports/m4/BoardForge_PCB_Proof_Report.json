@@ -1,115 +1,716 @@
 {
-  "schema": "boardforge.m4.pcb-proof/v1",
-  "generatedAt": "2026-07-15T11:54:47.813Z",
-  "proofRoot": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a",
-  "sourcePath": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\original.kicad_pcb",
-  "candidatePath": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb",
-  "sourceHash": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
-  "candidateHash": "cf086369c8645fed7d8d7912336897feef70def16f65f6a7be4d512e8c01c188",
-  "sourceUnchanged": true,
-  "transaction": {
-    "version": 1,
-    "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
-    "operations": [
-      {
-        "op": "move_footprint",
-        "uuid": "10000000-0000-4000-8000-000000000010",
-        "x": 34,
-        "y": 32
+  "schema": "boardforge.m4.pcb-proof/v2",
+  "generatedAt": "2026-07-15T12:45:09.982Z",
+  "proofRoot": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof",
+  "proofs": [
+    {
+      "name": "move-rotate-footprint",
+      "sourcePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\original.kicad_pcb",
+      "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\original.kicad_pcb",
+      "sourceHashBefore": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceHashAfter": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceUnchanged": true,
+      "candidateHash": "3291788c9e01f2c125edce549a72995f87069e961894d125ab3ae45869b6aff9",
+      "transaction": {
+        "version": 1,
+        "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+        "operations": [
+          {
+            "op": "move_footprint",
+            "uuid": "10000000-0000-4000-8000-000000000010",
+            "x": 34,
+            "y": 32
+          },
+          {
+            "op": "rotate_footprint",
+            "uuid": "10000000-0000-4000-8000-000000000010",
+            "angle": 90
+          }
+        ]
       },
-      {
-        "op": "rotate_footprint",
-        "uuid": "10000000-0000-4000-8000-000000000010",
-        "angle": 90
-      },
-      {
-        "op": "add_track",
-        "uuid": "71000000-0000-4000-8000-000000000001",
-        "start": [
-          34,
-          32
-        ],
-        "end": [
-          48,
-          36
-        ],
-        "width": 0.25,
-        "layer": "F.Cu",
-        "net": 1
-      },
-      {
-        "op": "add_via",
-        "uuid": "71000000-0000-4000-8000-000000000002",
-        "at": [
-          48,
-          36
-        ],
-        "size": 0.8,
-        "drill": 0.4,
-        "layers": [
-          "F.Cu",
-          "B.Cu"
-        ],
-        "net": 1
-      }
-    ]
-  },
-  "rustReload": {
-    "passed": true,
-    "unsupported": 0
-  },
-  "validation": {
-    "id": "m4-pcb-proof",
-    "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
-    "candidateHash": "cf086369c8645fed7d8d7912336897feef70def16f65f6a7be4d512e8c01c188",
-    "rust": {
-      "status": "PASSED",
-      "reparsed": true,
-      "unsupported": 0
-    },
-    "kicad": {
-      "file": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb",
-      "reportFile": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt",
-      "syntax": [
-        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
-        "pcb",
-        "drc",
-        "--exit-code-violations",
-        "--output",
-        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt",
-        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb"
+      "structuralDiff": [
+        {
+          "operation_index": 0,
+          "uuid": "10000000-0000-4000-8000-000000000010",
+          "kind": "footprint",
+          "before": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 30 30 0) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))",
+          "after": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 34.000000 32.000000 0.000000) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))"
+        },
+        {
+          "operation_index": 1,
+          "uuid": "10000000-0000-4000-8000-000000000010",
+          "kind": "footprint",
+          "before": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 34.000000 32.000000 0.000000) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))",
+          "after": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 34.000000 32.000000 90.000000) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))"
+        }
       ],
-      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
-      "args": [
-        "pcb",
-        "drc",
-        "--exit-code-violations",
-        "--output",
-        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt",
-        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb"
-      ],
-      "pid": 8444,
-      "exitCode": 5,
-      "signal": null,
-      "timedOut": false,
-      "spawnError": null,
-      "stdout": "Found 4 violations\r\nFound 1 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt\r\n",
-      "stderr": "7:54:47 AM: Error: Cannot enumerate files in directory 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\colors' (error 5: Access is denied.)\r\n7:54:47 AM: Error: Cannot enumerate files in directory 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\colors' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\kicad_common.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\kicad.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\fpedit.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\3d_viewer.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\pcbnew.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\cvpcb.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\symbol_editor.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\eeschema.json' (error 5: Access is denied.)\r\n",
-      "cleanup": {
-        "attempted": false,
-        "method": null,
-        "status": null,
-        "error": null
+      "rustReload": {
+        "passed": true,
+        "unsupported": 0
       },
-      "durationMs": 690.787,
-      "status": "VIOLATIONS_FOUND",
-      "available": true,
-      "version": "10.0.3",
-      "explicitBlocker": false,
-      "timeoutMs": 15000
+      "boardForgeLiveDrc": {
+        "status": "NOT_RUN_BROWSER_ONLY",
+        "honestLimitation": true
+      },
+      "validation": {
+        "id": "move-rotate-footprint",
+        "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "candidateHash": "3291788c9e01f2c125edce549a72995f87069e961894d125ab3ae45869b6aff9",
+        "rust": {
+          "status": "PASSED",
+          "reparsed": true,
+          "unsupported": 0
+        },
+        "kicad": {
+          "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\original.kicad_pcb",
+          "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\kicad-cli-report.txt",
+          "syntax": [
+            "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\original.kicad_pcb"
+          ],
+          "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+          "args": [
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\original.kicad_pcb"
+          ],
+          "pid": 23464,
+          "exitCode": 5,
+          "signal": null,
+          "timedOut": false,
+          "spawnError": null,
+          "stdout": "Found 3 violations\r\nFound 1 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\move-rotate-footprint\\.boardforge\\candidates\\move-rotate-footprint\\kicad-cli-report.txt\r\n",
+          "stderr": "",
+          "cleanup": {
+            "attempted": false,
+            "method": null,
+            "status": null,
+            "error": null
+          },
+          "durationMs": 6963.07,
+          "status": "VIOLATIONS_FOUND",
+          "available": true,
+          "version": "10.0.3",
+          "explicitBlocker": false,
+          "timeoutMs": 75000
+        },
+        "erc": "ERC_WARNINGS_CLASSIFIED",
+        "promotable": true,
+        "validatedAt": "2026-07-15T12:44:31.727Z"
+      },
+      "finalStatus": "KICAD_CANDIDATE_VALID_WITH_WARNINGS"
     },
-    "erc": "ERC_WARNINGS_CLASSIFIED",
-    "promotable": true,
-    "validatedAt": "2026-07-15T11:54:47.761Z"
-  }
+    {
+      "name": "duplicate-footprint",
+      "sourcePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\original.kicad_pcb",
+      "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\original.kicad_pcb",
+      "sourceHashBefore": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceHashAfter": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceUnchanged": true,
+      "candidateHash": "882065628effced6572ad0bf7e4fc42b4b42329070e8abddaa6bde1f1e7e7c44",
+      "transaction": {
+        "version": 1,
+        "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+        "operations": [
+          {
+            "op": "duplicate_footprint",
+            "uuid": "10000000-0000-4000-8000-000000000010",
+            "new_uuid": "72000000-0000-4000-8000-000000000001",
+            "x": 36,
+            "y": 36
+          }
+        ]
+      },
+      "structuralDiff": [
+        {
+          "operation_index": 0,
+          "uuid": "72000000-0000-4000-8000-000000000001",
+          "kind": "footprint",
+          "before": null,
+          "after": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 36.000000 36.000000 0.000000) (uuid \"72000000-0000-4000-8000-000000000001\") (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))"
+        }
+      ],
+      "rustReload": {
+        "passed": true,
+        "unsupported": 0
+      },
+      "boardForgeLiveDrc": {
+        "status": "NOT_RUN_BROWSER_ONLY",
+        "honestLimitation": true
+      },
+      "validation": {
+        "id": "duplicate-footprint",
+        "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "candidateHash": "882065628effced6572ad0bf7e4fc42b4b42329070e8abddaa6bde1f1e7e7c44",
+        "rust": {
+          "status": "PASSED",
+          "reparsed": true,
+          "unsupported": 0
+        },
+        "kicad": {
+          "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\original.kicad_pcb",
+          "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\kicad-cli-report.txt",
+          "syntax": [
+            "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\original.kicad_pcb"
+          ],
+          "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+          "args": [
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\original.kicad_pcb"
+          ],
+          "pid": 28284,
+          "exitCode": 5,
+          "signal": null,
+          "timedOut": false,
+          "spawnError": null,
+          "stdout": "Found 3 violations\r\nFound 1 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\duplicate-footprint\\.boardforge\\candidates\\duplicate-footprint\\kicad-cli-report.txt\r\n",
+          "stderr": "",
+          "cleanup": {
+            "attempted": false,
+            "method": null,
+            "status": null,
+            "error": null
+          },
+          "durationMs": 6929.337,
+          "status": "VIOLATIONS_FOUND",
+          "available": true,
+          "version": "10.0.3",
+          "explicitBlocker": false,
+          "timeoutMs": 75000
+        },
+        "erc": "ERC_WARNINGS_CLASSIFIED",
+        "promotable": true,
+        "validatedAt": "2026-07-15T12:44:39.287Z"
+      },
+      "finalStatus": "KICAD_CANDIDATE_VALID_WITH_WARNINGS"
+    },
+    {
+      "name": "route-track-between-pads",
+      "sourcePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\original.kicad_pcb",
+      "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\original.kicad_pcb",
+      "sourceHashBefore": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceHashAfter": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceUnchanged": true,
+      "candidateHash": "3e821df788f2a7b373aa9c97437354e800c16e45f0338f746e5cc22f4c8a8e3f",
+      "transaction": {
+        "version": 1,
+        "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+        "operations": [
+          {
+            "op": "add_track",
+            "uuid": "72000000-0000-4000-8000-000000000002",
+            "start": [
+              30,
+              30
+            ],
+            "end": [
+              44,
+              30
+            ],
+            "width": 0.25,
+            "layer": "F.Cu",
+            "net": 1
+          }
+        ]
+      },
+      "structuralDiff": [
+        {
+          "operation_index": 0,
+          "uuid": "72000000-0000-4000-8000-000000000002",
+          "kind": "track",
+          "before": null,
+          "after": "(segment (start 30.000000 30.000000) (end 44.000000 30.000000) (width 0.250000) (layer \"F.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000002\"))"
+        }
+      ],
+      "rustReload": {
+        "passed": true,
+        "unsupported": 0
+      },
+      "boardForgeLiveDrc": {
+        "status": "NOT_RUN_BROWSER_ONLY",
+        "honestLimitation": true
+      },
+      "validation": {
+        "id": "route-track-between-pads",
+        "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "candidateHash": "3e821df788f2a7b373aa9c97437354e800c16e45f0338f746e5cc22f4c8a8e3f",
+        "rust": {
+          "status": "PASSED",
+          "reparsed": true,
+          "unsupported": 0
+        },
+        "kicad": {
+          "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\original.kicad_pcb",
+          "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\kicad-cli-report.txt",
+          "syntax": [
+            "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\original.kicad_pcb"
+          ],
+          "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+          "args": [
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\original.kicad_pcb"
+          ],
+          "pid": 24284,
+          "exitCode": 5,
+          "signal": null,
+          "timedOut": false,
+          "spawnError": null,
+          "stdout": "Found 3 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\route-track-between-pads\\.boardforge\\candidates\\route-track-between-pads\\kicad-cli-report.txt\r\n",
+          "stderr": "",
+          "cleanup": {
+            "attempted": false,
+            "method": null,
+            "status": null,
+            "error": null
+          },
+          "durationMs": 6831.816,
+          "status": "VIOLATIONS_FOUND",
+          "available": true,
+          "version": "10.0.3",
+          "explicitBlocker": false,
+          "timeoutMs": 75000
+        },
+        "erc": "ERC_WARNINGS_CLASSIFIED",
+        "promotable": true,
+        "validatedAt": "2026-07-15T12:44:46.694Z"
+      },
+      "finalStatus": "KICAD_CANDIDATE_VALID_WITH_WARNINGS"
+    },
+    {
+      "name": "insert-via-change-layer",
+      "sourcePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\original.kicad_pcb",
+      "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\original.kicad_pcb",
+      "sourceHashBefore": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceHashAfter": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceUnchanged": true,
+      "candidateHash": "835a76f65d375c1cca552610139e4afd322e9f23070222394abd9ff00cac1ee9",
+      "transaction": {
+        "version": 1,
+        "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+        "operations": [
+          {
+            "op": "add_track",
+            "uuid": "72000000-0000-4000-8000-000000000003",
+            "start": [
+              30,
+              30
+            ],
+            "end": [
+              38,
+              34
+            ],
+            "width": 0.25,
+            "layer": "F.Cu",
+            "net": 1
+          },
+          {
+            "op": "add_via",
+            "uuid": "72000000-0000-4000-8000-000000000004",
+            "at": [
+              38,
+              34
+            ],
+            "size": 0.8,
+            "drill": 0.4,
+            "layers": [
+              "F.Cu",
+              "B.Cu"
+            ],
+            "net": 1
+          },
+          {
+            "op": "add_track",
+            "uuid": "72000000-0000-4000-8000-000000000005",
+            "start": [
+              38,
+              34
+            ],
+            "end": [
+              46,
+              34
+            ],
+            "width": 0.25,
+            "layer": "B.Cu",
+            "net": 1
+          }
+        ]
+      },
+      "structuralDiff": [
+        {
+          "operation_index": 0,
+          "uuid": "72000000-0000-4000-8000-000000000003",
+          "kind": "track",
+          "before": null,
+          "after": "(segment (start 30.000000 30.000000) (end 38.000000 34.000000) (width 0.250000) (layer \"F.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000003\"))"
+        },
+        {
+          "operation_index": 1,
+          "uuid": "72000000-0000-4000-8000-000000000004",
+          "kind": "via",
+          "before": null,
+          "after": "(via (at 38.000000 34.000000) (size 0.800000) (drill 0.400000) (layers \"F.Cu\" \"B.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000004\"))"
+        },
+        {
+          "operation_index": 2,
+          "uuid": "72000000-0000-4000-8000-000000000005",
+          "kind": "track",
+          "before": null,
+          "after": "(segment (start 38.000000 34.000000) (end 46.000000 34.000000) (width 0.250000) (layer \"B.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000005\"))"
+        }
+      ],
+      "rustReload": {
+        "passed": true,
+        "unsupported": 0
+      },
+      "boardForgeLiveDrc": {
+        "status": "NOT_RUN_BROWSER_ONLY",
+        "honestLimitation": true
+      },
+      "validation": {
+        "id": "insert-via-change-layer",
+        "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "candidateHash": "835a76f65d375c1cca552610139e4afd322e9f23070222394abd9ff00cac1ee9",
+        "rust": {
+          "status": "PASSED",
+          "reparsed": true,
+          "unsupported": 0
+        },
+        "kicad": {
+          "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\original.kicad_pcb",
+          "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\kicad-cli-report.txt",
+          "syntax": [
+            "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\original.kicad_pcb"
+          ],
+          "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+          "args": [
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\original.kicad_pcb"
+          ],
+          "pid": 9432,
+          "exitCode": 5,
+          "signal": null,
+          "timedOut": false,
+          "spawnError": null,
+          "stdout": "Found 3 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\insert-via-change-layer\\.boardforge\\candidates\\insert-via-change-layer\\kicad-cli-report.txt\r\n",
+          "stderr": "",
+          "cleanup": {
+            "attempted": false,
+            "method": null,
+            "status": null,
+            "error": null
+          },
+          "durationMs": 6869.48,
+          "status": "VIOLATIONS_FOUND",
+          "available": true,
+          "version": "10.0.3",
+          "explicitBlocker": false,
+          "timeoutMs": 75000
+        },
+        "erc": "ERC_WARNINGS_CLASSIFIED",
+        "promotable": true,
+        "validatedAt": "2026-07-15T12:44:54.023Z"
+      },
+      "finalStatus": "KICAD_CANDIDATE_VALID_WITH_WARNINGS"
+    },
+    {
+      "name": "delete-redraw-track",
+      "sourcePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\original.kicad_pcb",
+      "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\original.kicad_pcb",
+      "sourceHashBefore": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceHashAfter": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceUnchanged": true,
+      "candidateHash": "be2539b6e9f7d50dc5d3d3673fcc0c8f52cc70524a063749a0a297f628e88f79",
+      "transaction": {
+        "version": 1,
+        "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+        "operations": [
+          {
+            "op": "delete_track",
+            "uuid": "10000000-0000-4000-8000-000000000011"
+          },
+          {
+            "op": "add_track",
+            "uuid": "72000000-0000-4000-8000-000000000006",
+            "start": [
+              30,
+              30
+            ],
+            "end": [
+              40,
+              32
+            ],
+            "width": 0.3,
+            "layer": "F.Cu",
+            "net": 1
+          }
+        ]
+      },
+      "structuralDiff": [
+        {
+          "operation_index": 0,
+          "uuid": "10000000-0000-4000-8000-000000000011",
+          "kind": "segment",
+          "before": "(segment (start 30 30) (end 40 30) (width 0.25) (layer \"F.Cu\") (net 1) (uuid 10000000-0000-4000-8000-000000000011))",
+          "after": null
+        },
+        {
+          "operation_index": 1,
+          "uuid": "72000000-0000-4000-8000-000000000006",
+          "kind": "track",
+          "before": null,
+          "after": "(segment (start 30.000000 30.000000) (end 40.000000 32.000000) (width 0.300000) (layer \"F.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000006\"))"
+        }
+      ],
+      "rustReload": {
+        "passed": true,
+        "unsupported": 0
+      },
+      "boardForgeLiveDrc": {
+        "status": "NOT_RUN_BROWSER_ONLY",
+        "honestLimitation": true
+      },
+      "validation": {
+        "id": "delete-redraw-track",
+        "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "candidateHash": "be2539b6e9f7d50dc5d3d3673fcc0c8f52cc70524a063749a0a297f628e88f79",
+        "rust": {
+          "status": "PASSED",
+          "reparsed": true,
+          "unsupported": 0
+        },
+        "kicad": {
+          "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\original.kicad_pcb",
+          "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\kicad-cli-report.txt",
+          "syntax": [
+            "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\original.kicad_pcb"
+          ],
+          "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+          "args": [
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\original.kicad_pcb"
+          ],
+          "pid": 28236,
+          "exitCode": 5,
+          "signal": null,
+          "timedOut": false,
+          "spawnError": null,
+          "stdout": "Found 3 violations\r\nFound 1 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\delete-redraw-track\\.boardforge\\candidates\\delete-redraw-track\\kicad-cli-report.txt\r\n",
+          "stderr": "",
+          "cleanup": {
+            "attempted": false,
+            "method": null,
+            "status": null,
+            "error": null
+          },
+          "durationMs": 7642.931,
+          "status": "VIOLATIONS_FOUND",
+          "available": true,
+          "version": "10.0.3",
+          "explicitBlocker": false,
+          "timeoutMs": 75000
+        },
+        "erc": "ERC_WARNINGS_CLASSIFIED",
+        "promotable": true,
+        "validatedAt": "2026-07-15T12:45:02.376Z"
+      },
+      "finalStatus": "KICAD_CANDIDATE_VALID_WITH_WARNINGS"
+    },
+    {
+      "name": "mixed-edit-transaction",
+      "sourcePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\original.kicad_pcb",
+      "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\original.kicad_pcb",
+      "sourceHashBefore": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceHashAfter": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+      "sourceUnchanged": true,
+      "candidateHash": "8082929f75016543409a1e86aa9fb9d8097560bee13fcf78570035d1da69442a",
+      "transaction": {
+        "version": 1,
+        "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+        "operations": [
+          {
+            "op": "move_footprint",
+            "uuid": "10000000-0000-4000-8000-000000000010",
+            "x": 33,
+            "y": 31
+          },
+          {
+            "op": "rotate_footprint",
+            "uuid": "10000000-0000-4000-8000-000000000010",
+            "angle": 45
+          },
+          {
+            "op": "add_track",
+            "uuid": "72000000-0000-4000-8000-000000000007",
+            "start": [
+              33,
+              31
+            ],
+            "end": [
+              46,
+              35
+            ],
+            "width": 0.25,
+            "layer": "F.Cu",
+            "net": 1
+          },
+          {
+            "op": "add_via",
+            "uuid": "72000000-0000-4000-8000-000000000008",
+            "at": [
+              46,
+              35
+            ],
+            "size": 0.8,
+            "drill": 0.4,
+            "layers": [
+              "F.Cu",
+              "B.Cu"
+            ],
+            "net": 1
+          }
+        ]
+      },
+      "structuralDiff": [
+        {
+          "operation_index": 0,
+          "uuid": "10000000-0000-4000-8000-000000000010",
+          "kind": "footprint",
+          "before": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 30 30 0) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))",
+          "after": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 33.000000 31.000000 0.000000) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))"
+        },
+        {
+          "operation_index": 1,
+          "uuid": "10000000-0000-4000-8000-000000000010",
+          "kind": "footprint",
+          "before": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 33.000000 31.000000 0.000000) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))",
+          "after": "(footprint \"BoardForge:TEST\" (layer \"F.Cu\") (at 33.000000 31.000000 45.000000) (uuid 10000000-0000-4000-8000-000000000010) (property \"Reference\" \"U1\" (at 0 -3 0) (layer \"F.SilkS\")) (pad \"1\" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers \"*.Cu\" \"*.Mask\") (net 1 \"SIMPLE-2LAYER_NET\")))"
+        },
+        {
+          "operation_index": 2,
+          "uuid": "72000000-0000-4000-8000-000000000007",
+          "kind": "track",
+          "before": null,
+          "after": "(segment (start 33.000000 31.000000) (end 46.000000 35.000000) (width 0.250000) (layer \"F.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000007\"))"
+        },
+        {
+          "operation_index": 3,
+          "uuid": "72000000-0000-4000-8000-000000000008",
+          "kind": "via",
+          "before": null,
+          "after": "(via (at 46.000000 35.000000) (size 0.800000) (drill 0.400000) (layers \"F.Cu\" \"B.Cu\") (net 1) (uuid \"72000000-0000-4000-8000-000000000008\"))"
+        }
+      ],
+      "rustReload": {
+        "passed": true,
+        "unsupported": 0
+      },
+      "boardForgeLiveDrc": {
+        "status": "NOT_RUN_BROWSER_ONLY",
+        "honestLimitation": true
+      },
+      "validation": {
+        "id": "mixed-edit-transaction",
+        "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "candidateHash": "8082929f75016543409a1e86aa9fb9d8097560bee13fcf78570035d1da69442a",
+        "rust": {
+          "status": "PASSED",
+          "reparsed": true,
+          "unsupported": 0
+        },
+        "kicad": {
+          "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\original.kicad_pcb",
+          "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\kicad-cli-report.txt",
+          "syntax": [
+            "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\original.kicad_pcb"
+          ],
+          "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+          "args": [
+            "pcb",
+            "drc",
+            "--exit-code-violations",
+            "--output",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\kicad-cli-report.txt",
+            "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\original.kicad_pcb"
+          ],
+          "pid": 25836,
+          "exitCode": 5,
+          "signal": null,
+          "timedOut": false,
+          "spawnError": null,
+          "stdout": "Found 4 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M4_Closure_Proof\\mixed-edit-transaction\\.boardforge\\candidates\\mixed-edit-transaction\\kicad-cli-report.txt\r\n",
+          "stderr": "",
+          "cleanup": {
+            "attempted": false,
+            "method": null,
+            "status": null,
+            "error": null
+          },
+          "durationMs": 6899.922,
+          "status": "VIOLATIONS_FOUND",
+          "available": true,
+          "version": "10.0.3",
+          "explicitBlocker": false,
+          "timeoutMs": 75000
+        },
+        "erc": "ERC_WARNINGS_CLASSIFIED",
+        "promotable": true,
+        "validatedAt": "2026-07-15T12:45:09.886Z"
+      },
+      "finalStatus": "KICAD_CANDIDATE_VALID_WITH_WARNINGS"
+    }
+  ]
 }

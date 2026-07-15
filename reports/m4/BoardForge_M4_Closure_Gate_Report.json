@@ -1,0 +1,72 @@
+{
+  "schema": "boardforge.m4.closure-gate/v1",
+  "generatedAt": "2026-07-15T12:45:10.012Z",
+  "status": "PASSED",
+  "checks": [
+    {
+      "name": "production-build",
+      "command": "cmd /c npm run build:web",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "\n> boardforge-ai@0.1.0-alpha.1 build:web\n> next build --webpack\n\n▲ Next.js 16.2.10 (webpack)\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 8.4s\n  Running TypeScript ...\n  Finished TypeScript in 16.8s ...\n  Collecting page data using 11 workers ...\n  Generating static pages using 11 workers (0/36) ...\n  Generating static pages using 11 workers (9/36) \r\n  Generating static pages using 11 workers (18/36) \r\n  Generating static pages using 11 workers (27/36) \r\n✓ Generating static pages using 11 workers (36/36) in 1985ms\n  Finalizing page optimization ...\n  Collecting build traces ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /alpha-readiness\n├ ƒ /api/ai/board-plan\n├ ƒ /api/auth/[...all]\n├ ƒ /api/auth/plugin/heartbeat\n├ ƒ /api/auth/plugin/pairing/claim\n├ ƒ /api/auth/plugin/pairing/start\n├ ƒ /api/auth/plugin/pairing/verify\n├ ƒ /api/auth/plugin/revoke\n├ ƒ /api/auth/plugin/status\n├ ƒ /api/local-engine/kicad/candidate\n├ ○ /custom-board-generator\n├ ○ /dashboard\n├ ○ /demo\n├ ○ /docs\n├ ○ /docs/installer-return-codes\n├ ○ /downloads\n├ ○ /evidence\n├ ○ /import\n├ ○ /login\n├ ○ /new-board\n├ ○ /pcb-workspace\n├ ○ /plugin/connect\n├ ○ /pricing\n├ ○ /projects\n├ ƒ /projects/[id]\n├ ○ /readiness\n├ ○ /reports\n├ ○ /schematic-workspace\n├ ○ /settings\n├ ○ /settings/billing\n├ ○ /settings/devices\n├ ○ /settings/plugin\n├ ○ /setup\n├ ○ /signup\n└ ○ /upload-kicad\n\n\nƒ Proxy (Middleware)\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": ""
+    },
+    {
+      "name": "rust-format",
+      "command": "cargo fmt --manifest-path rust/Cargo.toml --all -- --check",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "rust-clippy",
+      "command": "cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets --all-features -- -D warnings",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.25s\n"
+    },
+    {
+      "name": "rust-tests",
+      "command": "cargo test --manifest-path rust/Cargo.toml --workspace",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "abel_kinds ... ok\ntest edit::tests::preserves_unknown_order_and_rejects_duplicates ... ok\ntest edit::tests::moves_and_edits_label ... ok\ntest edit::tests::moves_symbol ... ok\ntest edit::tests::rotates_symbol ... ok\ntest edit::tests::adds_and_deletes_wire ... ok\ntest pcb::tests::rejects_non_pcb_roots ... ok\ntest edit::tests::rejects_stale_atomically ... ok\ntest pcb::tests::indexes_full_pcb_surface_without_losing_raw_nodes ... ok\ntest pcb::tests::preserve_mode_is_byte_exact_and_canonical_keeps_unknown_precision_and_uuid ... ok\ntest pcb_edit::tests::rejects_stale_source_and_object ... ok\ntest pcb_edit::tests::adds_drags_and_deletes_copper ... ok\ntest pcb_edit::tests::rejects_duplicate_uuid_and_invalid_via ... ok\ntest pcb_edit::tests::transaction_is_atomic_on_late_failure ... ok\ntest pcb_view::tests::emits_exact_browser_schema_and_stable_ids ... ok\ntest pcb_edit::tests::footprint_edits_keep_stable_identity_and_unknowns ... ok\ntest pcb_edit::tests::validation_hook_can_abort_before_candidate_serialization ... ok\ntest pcb_edit::tests::duplicate_gets_new_stable_identity ... ok\ntest pcb_view::tests::multi_pad_net_uses_minimum_spanning_airwires ... ok\ntest pcb_view::tests::fully_routed_net_has_no_airwires ... ok\ntest pcb_view::tests::via_assisted_route_connects_copper_layers ... ok\ntest pcb_view::tests::two_pad_net_emits_one_deterministic_airwire ... ok\ntest project::tests::parses_typed_fields_and_preserves_unknown_json_at_each_boundary ... ok\ntest project::tests::preserve_mode_is_byte_identical_while_unmodified ... ok\ntest raw::tests::parses_and_canonicalizes_nested_kicad ... ok\ntest pcb_view::tests::partial_route_hides_completed_connection_and_deletion_restores_it ... ok\ntest project::tests::preserve_mode_serializes_mutations_without_losing_unknown_fields ... ok\ntest schematic::tests::parses_header_symbols_properties_pins_and_power ... ok\ntest raw::tests::rejects_truncated_input ... ok\ntest project::tests::canonical_output_is_deterministic_and_parse_write_reparse_equal ... ok\ntest schematic::tests::classifies_items_and_reports_unknown_raw_nodes ... ok\ntest schematic::tests::rejects_invalid_documents ... ok\ntest schematic::tests::preserve_is_byte_exact_and_canonical_is_structurally_equal ... ok\n\ntest result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+      "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s\n     Running unittests src\\lib.rs (rust\\target\\debug\\deps\\boardforge_core-9d35ce9f02dba5d7.exe)\n     Running unittests src\\lib.rs (rust\\target\\debug\\deps\\boardforge_geometry-01f5e058916ac27b.exe)\n     Running unittests src\\bin\\geometry-parity.rs (rust\\target\\debug\\deps\\geometry_parity-b959e8148761a57b.exe)\n     Running unittests src\\lib.rs (rust\\target\\debug\\deps\\boardforge_kicad-8a788432a90dddd3.exe)\n     Running unittests src\\bin\\boardforge-kicad.rs (rust\\target\\debug\\deps\\boardforge_kicad-828197a0e9945537.exe)\n     Running unittests src\\lib.rs (rust\\target\\debug\\deps\\boardforge_wasm-19e6262a19e66cb1.exe)\n   Doc-tests boardforge_core\n   Doc-tests boardforge_geometry\n   Doc-tests boardforge_kicad\n   Doc-tests boardforge_wasm\n"
+    },
+    {
+      "name": "typecheck",
+      "command": "cmd /c npm run typecheck",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "\n> boardforge-ai@0.1.0-alpha.1 typecheck\n> tsc --noEmit\n\n",
+      "stderr": ""
+    },
+    {
+      "name": "candidate-source-protection",
+      "command": "node --test plugins/boardforge-plugin/tests/pcb-candidate-pipeline.test.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "✔ PCB edits serialize through Rust into an isolated validated candidate (299.6462ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 516.5362\n",
+      "stderr": ""
+    },
+    {
+      "name": "candidate-proof",
+      "command": "node scripts/generate-m4-pcb-proof.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"proofRoot\": \"C:\\\\Users\\\\luifi\\\\Desktop\\\\BoardForge_Phase2B_M4_Closure_Proof\",\n  \"proofs\": [\n    {\n      \"name\": \"move-rotate-footprint\",\n      \"status\": \"KICAD_CANDIDATE_VALID_WITH_WARNINGS\",\n      \"kicad\": \"VIOLATIONS_FOUND\",\n      \"sourceUnchanged\": true\n    },\n    {\n      \"name\": \"duplicate-footprint\",\n      \"status\": \"KICAD_CANDIDATE_VALID_WITH_WARNINGS\",\n      \"kicad\": \"VIOLATIONS_FOUND\",\n      \"sourceUnchanged\": true\n    },\n    {\n      \"name\": \"route-track-between-pads\",\n      \"status\": \"KICAD_CANDIDATE_VALID_WITH_WARNINGS\",\n      \"kicad\": \"VIOLATIONS_FOUND\",\n      \"sourceUnchanged\": true\n    },\n    {\n      \"name\": \"insert-via-change-layer\",\n      \"status\": \"KICAD_CANDIDATE_VALID_WITH_WARNINGS\",\n      \"kicad\": \"VIOLATIONS_FOUND\",\n      \"sourceUnchanged\": true\n    },\n    {\n      \"name\": \"delete-redraw-track\",\n      \"status\": \"KICAD_CANDIDATE_VALID_WITH_WARNINGS\",\n      \"kicad\": \"VIOLATIONS_FOUND\",\n      \"sourceUnchanged\": true\n    },\n    {\n      \"name\": \"mixed-edit-transaction\",\n      \"status\": \"KICAD_CANDIDATE_VALID_WITH_WARNINGS\",\n      \"kicad\": \"VIOLATIONS_FOUND\",\n      \"sourceUnchanged\": true\n    }\n  ]\n}\n",
+      "stderr": ""
+    }
+  ],
+  "invariants": {
+    "productionEditorBuilt": true,
+    "sourceUnchanged": true,
+    "rustReload": true,
+    "kicadCliRan": true,
+    "candidateOnly": true,
+    "cssModulesPure": true
+  },
+  "proofCount": 6
+}

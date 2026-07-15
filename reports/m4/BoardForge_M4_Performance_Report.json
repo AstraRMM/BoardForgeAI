@@ -1,0 +1,50 @@
+{
+  "schema": "boardforge.m4.browser-performance/v1",
+  "generatedAt": "2026-07-15T12:25:59.060Z",
+  "environment": "headless Chromium synthetic SVG primitive benchmark",
+  "results": [
+    {
+      "primitiveCount": 1000,
+      "status": "INTERACTIVE_TARGET_MET",
+      "initialLoadMs": 4.699999999254942,
+      "panZoomFrameMeanMs": 16.130000000074507,
+      "panZoomFrameMaxMs": 18.09999999962747,
+      "selectionLatencyMs": 0.40000000037252903,
+      "hitTestLatencyMs": 0.8000000007450581
+    },
+    {
+      "primitiveCount": 10000,
+      "status": "INTERACTIVE_TARGET_MET",
+      "initialLoadMs": 37.5,
+      "panZoomFrameMeanMs": 17.470000000018626,
+      "panZoomFrameMaxMs": 27.5,
+      "selectionLatencyMs": 0.09999999962747097,
+      "hitTestLatencyMs": 1.5
+    },
+    {
+      "primitiveCount": 50000,
+      "status": "PERFORMANCE_DEGRADED",
+      "initialLoadMs": 174.2000000011176,
+      "panZoomFrameMeanMs": 52.56499999994412,
+      "panZoomFrameMaxMs": 173.59999999962747,
+      "selectionLatencyMs": 1.300000000745058,
+      "hitTestLatencyMs": 11.099999999627471
+    },
+    {
+      "primitiveCount": 100000,
+      "status": "PERFORMANCE_DEGRADED",
+      "initialLoadMs": 443.59999999962747,
+      "panZoomFrameMeanMs": 101.92000000001863,
+      "panZoomFrameMaxMs": 603.3000000007451,
+      "selectionLatencyMs": 6.900000000372529,
+      "hitTestLatencyMs": 48.40000000037253
+    }
+  ],
+  "notMeasured": {
+    "livePcbDrcRecalculation": true,
+    "transactionApplication": true,
+    "rustSerialization": true
+  },
+  "claim60Fps": false,
+  "interpretation": "Transform frame timing is measured; this is not a claim that the complete editor sustains 60 FPS under equivalent real-board workload."
+}

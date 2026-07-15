@@ -11,7 +11,7 @@ export type PcbViolation = Readonly<{id:PcbId;at:PcbPoint;severity:'error'|'warn
 export type RustPcbViewV1 = Readonly<{
  schema:'boardforge.pcb-view/v1';documentId:string;revision:number;sourceSha256:string;units:'mm';title:string
  bounds:Readonly<{min:PcbPoint;max:PcbPoint}>;layers:PcbLayer[];footprints:PcbFootprint[];tracks:PcbTrack[];vias:PcbVia[];graphics:PcbGraphic[]
- ratsnest:ReadonlyArray<Readonly<{id:PcbId;start:PcbPoint;end:PcbPoint;net:string}>>;violations:PcbViolation[];unsupportedCount:number
+ ratsnest:ReadonlyArray<Readonly<{id:PcbId;start:PcbPoint;end:PcbPoint;net:string}>>;unconnectedCount:number;violations:PcbViolation[];unsupportedCount:number
 }>
 
 export type PcbTransactionOperationV1 =
@@ -30,5 +30,5 @@ export function assertRustPcbView(value:unknown):RustPcbViewV1 {
  for(const key of ['layers','footprints','tracks','vias','graphics','ratsnest','violations'] as const)if(!Array.isArray(v[key]))throw new Error(`Rust PCB view is missing ${key}`)
  return v as RustPcbViewV1
 }
-export function pcbObject(view:RustPcbViewV1,id:PcbId){return view.footprints.find(x=>x.id===id)||view.tracks.find(x=>x.id===id)||view.vias.find(x=>x.id===id)||view.graphics.find(x=>x.id===id)}
+export function pcbObject(view:RustPcbViewV1,id:PcbId){return view.footprints.find(x=>x.id===id)||view.footprints.flatMap(x=>x.pads).find(x=>x.id===id)||view.tracks.find(x=>x.id===id)||view.vias.find(x=>x.id===id)||view.graphics.find(x=>x.id===id)}
 export function newTransaction(view:RustPcbViewV1,operation:PcbTransactionOperationV1):RustPcbTransactionV1{return{schema:'boardforge.pcb-transaction/v1',id:crypto.randomUUID(),baseRevision:view.revision,baseSourceSha256:view.sourceSha256,operation}}

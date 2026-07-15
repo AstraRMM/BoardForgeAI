@@ -4,6 +4,7 @@ use crate::{
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +22,7 @@ pub struct PcbBrowserViewV1 {
     pub vias: Vec<PcbViewVia>,
     pub graphics: Vec<PcbViewGraphic>,
     pub ratsnest: Vec<PcbViewRatsnest>,
+    pub unconnected_count: usize,
     pub violations: Vec<PcbViewViolation>,
     pub unsupported_count: usize,
 }
@@ -155,6 +157,8 @@ impl PcbBrowserViewV1 {
             points.extend(g.points.iter().copied());
         }
         let bounds = bounds(&points);
+        let ratsnest = ratsnest(board, &footprints, &tracks, &vias);
+        let unconnected_count = ratsnest.len();
         Self {
             schema: "boardforge.pcb-view/v1",
             document_id: format!("pcb:{}", &board.parsed.source_sha256[..16]),
@@ -168,10 +172,160 @@ impl PcbBrowserViewV1 {
             tracks,
             vias,
             graphics,
-            ratsnest: vec![],
+            ratsnest,
+            unconnected_count,
             violations: vec![],
             unsupported_count: board.unsupported().len(),
         }
+    }
+}
+
+/// Derives a conservative ratsnest from pads, straight tracks, and vias. Zones and
+/// track arcs are intentionally excluded until their copper geometry is modeled.
+fn ratsnest(
+    board: &PcbDocument,
+    footprints: &[PcbViewFootprint],
+    tracks: &[PcbViewTrack],
+    vias: &[PcbViewVia],
+) -> Vec<PcbViewRatsnest> {
+    #[derive(Clone)]
+    struct Node {
+        at: PcbPoint,
+        layers: Vec<String>,
+        pad: bool,
+    }
+    let net_names = board
+        .nets
+        .iter()
+        .map(|n| (n.code.clone(), n.name.clone()))
+        .collect::<HashMap<_, _>>();
+    let normalize = |net: &str| {
+        net_names
+            .get(net)
+            .cloned()
+            .unwrap_or_else(|| net.to_owned())
+    };
+    let mut by_net = BTreeMap::<String, Vec<Node>>::new();
+    for footprint in footprints {
+        let radians = footprint.rotation.to_radians();
+        let (sin, cos) = radians.sin_cos();
+        for pad in &footprint.pads {
+            if let Some(net) = &pad.net {
+                by_net.entry(normalize(net)).or_default().push(Node {
+                    at: PcbPoint {
+                        x: footprint.at.x + pad.at.x * cos - pad.at.y * sin,
+                        y: footprint.at.y + pad.at.x * sin + pad.at.y * cos,
+                    },
+                    layers: pad.layers.clone(),
+                    pad: true,
+                });
+            }
+        }
+    }
+    for track in tracks {
+        if let Some(net) = &track.net {
+            let nodes = by_net.entry(normalize(net)).or_default();
+            nodes.push(Node {
+                at: track.start,
+                layers: vec![track.layer.clone()],
+                pad: false,
+            });
+            nodes.push(Node {
+                at: track.end,
+                layers: vec![track.layer.clone()],
+                pad: false,
+            });
+        }
+    }
+    for via in vias {
+        if let Some(net) = &via.net {
+            by_net.entry(normalize(net)).or_default().push(Node {
+                at: via.at,
+                layers: via.layers.to_vec(),
+                pad: false,
+            });
+        }
+    }
+
+    let mut result = Vec::new();
+    for (net, nodes) in by_net {
+        let mut union = UnionFind::new(nodes.len());
+        // Coincident copper joins only when a layer overlaps. A via's layer pair
+        // therefore bridges front/back endpoints without pretending all layers join.
+        for a in 0..nodes.len() {
+            for b in (a + 1)..nodes.len() {
+                if coincident(nodes[a].at, nodes[b].at)
+                    && layers_overlap(&nodes[a].layers, &nodes[b].layers)
+                {
+                    union.join(a, b);
+                }
+            }
+        }
+        // Each segment contributes two consecutive nodes after all pad nodes.
+        let pad_count = nodes.iter().take_while(|n| n.pad).count();
+        let track_node_end = pad_count
+            + tracks
+                .iter()
+                .filter(|track| track.net.as_deref().map(&normalize) == Some(net.clone()))
+                .count()
+                * 2;
+        let mut i = pad_count;
+        while i + 1 < track_node_end {
+            union.join(i, i + 1);
+            i += 2;
+        }
+        let pads = (0..pad_count).collect::<Vec<_>>();
+        let mut candidates = Vec::new();
+        for (position, &a) in pads.iter().enumerate() {
+            for &b in pads.iter().skip(position + 1) {
+                if union.root(a) != union.root(b) {
+                    let dx = nodes[a].at.x - nodes[b].at.x;
+                    let dy = nodes[a].at.y - nodes[b].at.y;
+                    candidates.push((dx * dx + dy * dy, a, b));
+                }
+            }
+        }
+        candidates.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
+        let mut ordinal = 0;
+        for (_, a, b) in candidates {
+            if union.root(a) == union.root(b) {
+                continue;
+            }
+            union.join(a, b);
+            result.push(PcbViewRatsnest {
+                id: format!("ratsnest-{net}-{ordinal}"),
+                start: nodes[a].at,
+                end: nodes[b].at,
+                net: net.clone(),
+            });
+            ordinal += 1;
+        }
+    }
+    result
+}
+
+fn coincident(a: PcbPoint, b: PcbPoint) -> bool {
+    (a.x - b.x).abs() <= 1e-6 && (a.y - b.y).abs() <= 1e-6
+}
+fn layers_overlap(a: &[String], b: &[String]) -> bool {
+    a.iter()
+        .any(|x| b.contains(x) || x == "*.Cu" || b.iter().any(|y| y == "*.Cu"))
+}
+struct UnionFind(Vec<usize>);
+impl UnionFind {
+    fn new(len: usize) -> Self {
+        Self((0..len).collect())
+    }
+    fn root(&mut self, mut x: usize) -> usize {
+        while self.0[x] != x {
+            self.0[x] = self.0[self.0[x]];
+            x = self.0[x];
+        }
+        x
+    }
+    fn join(&mut self, a: usize, b: usize) {
+        let (a, b) = (self.root(a), self.root(b));
+        self.0[b] = a;
     }
 }
 
@@ -410,6 +564,17 @@ fn bounds(points: &[PcbPoint]) -> PcbBounds {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn view(body: &str) -> PcbBrowserViewV1 {
+        let source = format!(
+            r#"(kicad_pcb (version 1) (layers (0 "F.Cu" signal) (31 "B.Cu" signal)) (net 1 "N") {body})"#
+        );
+        PcbBrowserViewV1::from_document(&PcbDocument::parse(source).unwrap(), 1, "ratsnest")
+    }
+    fn pad(id: &str, x: f64, y: f64, layer: &str) -> String {
+        format!(
+            r#"(footprint "P" (layer "{layer}") (at {x} {y}) (uuid "f{id}") (pad "1" thru_hole circle (at 0 0) (size 1 1) (layers "{layer}") (net 1 "N") (uuid "p{id}")))"#
+        )
+    }
     #[test]
     fn emits_exact_browser_schema_and_stable_ids() {
         let pcb=PcbDocument::parse(r#"(kicad_pcb (version 1) (layers (0 "F.Cu" signal)) (footprint "R" (layer "F.Cu") (at 10 20 90) (uuid "f1") (property "Reference" "R1") (pad "1" thru_hole circle (at 1 2) (size 2 2) (layers "F.Cu") (uuid "p1"))) (segment (start 0 0) (end 5 5) (width 0.2) (layer "F.Cu") (net 1) (uuid "t1")))"#).unwrap();
@@ -420,5 +585,71 @@ mod tests {
         assert_eq!(json["footprints"][0]["id"], "f1");
         assert_eq!(json["tracks"][0]["id"], "t1");
         assert!(json.get("unsupportedCount").is_some());
+    }
+
+    #[test]
+    fn two_pad_net_emits_one_deterministic_airwire() {
+        let v = view(&format!(
+            "{} {}",
+            pad("a", 0., 0., "F.Cu"),
+            pad("b", 10., 0., "F.Cu")
+        ));
+        assert_eq!(v.ratsnest.len(), 1);
+        assert_eq!(v.unconnected_count, 1);
+        assert_eq!(v.ratsnest[0].id, "ratsnest-N-0");
+        assert_eq!(v.ratsnest[0].start.x, 0.);
+        assert_eq!(v.ratsnest[0].end.x, 10.);
+    }
+
+    #[test]
+    fn multi_pad_net_uses_minimum_spanning_airwires() {
+        let v = view(&format!(
+            "{} {} {}",
+            pad("a", 0., 0., "F.Cu"),
+            pad("b", 5., 0., "F.Cu"),
+            pad("c", 12., 0., "F.Cu")
+        ));
+        assert_eq!(v.ratsnest.len(), 2);
+        assert_eq!((v.ratsnest[0].start.x, v.ratsnest[0].end.x), (0., 5.));
+        assert_eq!((v.ratsnest[1].start.x, v.ratsnest[1].end.x), (5., 12.));
+    }
+
+    #[test]
+    fn partial_route_hides_completed_connection_and_deletion_restores_it() {
+        let pads = format!(
+            "{} {} {}",
+            pad("a", 0., 0., "F.Cu"),
+            pad("b", 5., 0., "F.Cu"),
+            pad("c", 12., 0., "F.Cu")
+        );
+        let routed = view(&format!(
+            r#"{pads} (segment (start 0 0) (end 5 0) (width .2) (layer "F.Cu") (net 1) (uuid "t"))"#
+        ));
+        assert_eq!(routed.ratsnest.len(), 1);
+        assert_eq!(
+            (routed.ratsnest[0].start.x, routed.ratsnest[0].end.x),
+            (5., 12.)
+        );
+        assert_eq!(view(&pads).ratsnest.len(), 2);
+    }
+
+    #[test]
+    fn fully_routed_net_has_no_airwires() {
+        let v = view(&format!(
+            r#"{} {} (segment (start 0 0) (end 10 0) (width .2) (layer "F.Cu") (net 1) (uuid "t"))"#,
+            pad("a", 0., 0., "F.Cu"),
+            pad("b", 10., 0., "F.Cu")
+        ));
+        assert!(v.ratsnest.is_empty());
+    }
+
+    #[test]
+    fn via_assisted_route_connects_copper_layers() {
+        let v = view(&format!(
+            r#"{} {} (segment (start 0 0) (end 5 0) (width .2) (layer "F.Cu") (net 1) (uuid "t1")) (via (at 5 0) (size .8) (drill .4) (layers "F.Cu" "B.Cu") (net 1) (uuid "v")) (segment (start 5 0) (end 10 0) (width .2) (layer "B.Cu") (net 1) (uuid "t2"))"#,
+            pad("a", 0., 0., "F.Cu"),
+            pad("b", 10., 0., "B.Cu")
+        ));
+        assert!(v.ratsnest.is_empty());
     }
 }
