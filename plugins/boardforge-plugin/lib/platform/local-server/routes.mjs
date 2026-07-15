@@ -31,10 +31,12 @@ import { writeQuoteReadinessReport } from '../../sourcing/quote-readiness-report
 import { writeAlternativePartReport } from '../../sourcing/alternative-part-report.mjs'
 import { runMakeSourcableWorkflow } from '../../workflows/make-sourcable-workflow.mjs'
 import { outlinePresetsResponse, createOutlineSeed, validateOutlineSeed, generateOutlineKiCadProject, readOutlineStatus, readOutlineReports } from '../../outline/custom-outline-workflow.mjs'
+import { createKiCadCandidateService } from '../kicad/candidate-transaction-service.mjs'
 
-export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
+export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator } = {}) {
   const api = createLocalArtifactApi({ rootDir })
   const jobs = createJobQueue({ rootDir, api })
+  const kicadCandidates = createKiCadCandidateService({ rootDir, ...(kicadValidator ? { kicadValidator } : {}) })
 
   return async function routeLocalServer({ method, pathname, payload = {}, query = new URLSearchParams() }) {
     try {
@@ -46,6 +48,26 @@ export function createLocalServerRouter({ rootDir, logDir, auth } = {}) {
 
       if (method === 'GET' && pathname === '/health') {
         return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_HEALTHY', data: { service: 'BoardForge Local Engine Service', rootDir, localhostOnly: true } })
+      }
+      if (method === 'POST' && pathname === '/v2/kicad/candidates') return okResponse({ status: 'KICAD_CANDIDATE_READY', data: await kicadCandidates.apply(payload) })
+      if (method === 'POST' && pathname === '/kicad/v2/candidate/write') return okResponse({ status: 'KICAD_CANDIDATE_READY', data: await kicadCandidates.apply({ ...payload, id: payload.id || payload.candidateId, sourceHash: payload.sourceHash || payload.baseDocumentHash }) })
+      if (method === 'POST' && pathname === '/kicad/v2/candidate/validate') return okResponse({ status: 'KICAD_CANDIDATE_VALIDATION_RECORDED', data: await kicadCandidates.validate(payload.id || payload.candidateId) })
+      if (method === 'POST' && pathname === '/kicad/v2/candidate/promote') return okResponse({ status: 'KICAD_CANDIDATE_PROMOTED_LOCAL', data: await kicadCandidates.promote(payload.id || payload.candidateId) })
+      if (method === 'POST' && pathname === '/kicad/v2/candidate/discard') return okResponse({ status: 'KICAD_CANDIDATE_DISCARDED', data: await kicadCandidates.discard(payload.id || payload.candidateId) })
+      const contractCandidateRoute = pathname.match(/^\/kicad\/v2\/candidate\/([^/]+)\/(status|reports|discard)$/)
+      if (contractCandidateRoute) {
+        const [, id, action] = contractCandidateRoute
+        if (method === 'GET' && action === 'status') return okResponse({ status: 'KICAD_CANDIDATE_STATUS', data: await kicadCandidates.status(id) })
+        if (method === 'GET' && action === 'reports') return okResponse({ status: 'KICAD_CANDIDATE_REPORTS', data: await kicadCandidates.reports(id) })
+        if (method === 'POST' && action === 'discard') return okResponse({ status: 'KICAD_CANDIDATE_DISCARDED', data: await kicadCandidates.discard(id) })
+      }
+      const candidateRoute = pathname.match(/^\/v2\/kicad\/candidates\/([^/]+)\/(status|reports|promote-as-local|discard)$/)
+      if (candidateRoute) {
+        const [, id, action] = candidateRoute
+        if (method === 'GET' && action === 'status') return okResponse({ status: 'KICAD_CANDIDATE_STATUS', data: await kicadCandidates.status(id) })
+        if (method === 'GET' && action === 'reports') return okResponse({ status: 'KICAD_CANDIDATE_REPORTS', data: await kicadCandidates.reports(id) })
+        if (method === 'POST' && action === 'promote-as-local') return okResponse({ status: 'KICAD_CANDIDATE_PROMOTED_LOCAL', data: await kicadCandidates.promote(id) })
+        if (method === 'POST' && action === 'discard') return okResponse({ status: 'KICAD_CANDIDATE_DISCARDED', data: await kicadCandidates.discard(id) })
       }
       if (method === 'GET' && pathname === '/status') {
         return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_STATUS', data: { ...(await api.status()), port: 38991, logDir, version: 'local-alpha', workspace: rootDir, entitlement: canRunPremiumAction('create_project') } })
