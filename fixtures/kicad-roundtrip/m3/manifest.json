@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "fixtureCount": 24,
+  "fixtures": [
+    {
+      "directory": "01-minimal-project",
+      "type": "pro"
+    },
+    {
+      "directory": "02-project-netclasses",
+      "type": "pro"
+    },
+    {
+      "directory": "03-project-text-variables",
+      "type": "pro"
+    },
+    {
+      "directory": "04-project-unknown-json",
+      "type": "pro"
+    },
+    {
+      "directory": "05-simple-mcu",
+      "type": "sch"
+    },
+    {
+      "directory": "06-usb-c",
+      "type": "sch"
+    },
+    {
+      "directory": "07-can-node",
+      "type": "sch"
+    },
+    {
+      "directory": "08-regulator",
+      "type": "sch"
+    },
+    {
+      "directory": "09-hierarchical-sheet",
+      "type": "sch"
+    },
+    {
+      "directory": "10-global-power",
+      "type": "sch"
+    },
+    {
+      "directory": "11-bus-entry",
+      "type": "sch"
+    },
+    {
+      "directory": "12-no-connect-junction",
+      "type": "sch"
+    },
+    {
+      "directory": "13-unknown-schematic-node",
+      "type": "sch"
+    },
+    {
+      "directory": "14-simple-2layer",
+      "type": "pcb"
+    },
+    {
+      "directory": "15-four-layer",
+      "type": "pcb"
+    },
+    {
+      "directory": "16-custom-edge-cuts",
+      "type": "pcb"
+    },
+    {
+      "directory": "17-arcs-fillets-notches",
+      "type": "pcb"
+    },
+    {
+      "directory": "18-zones-keepouts",
+      "type": "pcb"
+    },
+    {
+      "directory": "19-3d-models",
+      "type": "pcb"
+    },
+    {
+      "directory": "20-dimensions-graphics",
+      "type": "pcb"
+    },
+    {
+      "directory": "21-diffpair-netclass",
+      "type": "pcb"
+    },
+    {
+      "directory": "22-imported-complex",
+      "type": "pcb"
+    },
+    {
+      "directory": "23-unknown-pcb-node",
+      "type": "pcb"
+    },
+    {
+      "directory": "24-mixed-generated-imported",
+      "type": "pcb"
+    }
+  ]
+}

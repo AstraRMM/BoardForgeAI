@@ -1,0 +1,493 @@
+{
+  "generatedAt": "2026-07-15T00:46:11.561Z",
+  "fixtureCount": 24,
+  "rustAvailable": true,
+  "kicadAvailable": false,
+  "totalDurationMs": 1013.375,
+  "passingNodeReparse": 24,
+  "passingRustReparse": 24,
+  "passingParity": 24,
+  "unsupportedTotal": 6,
+  "results": [
+    {
+      "fixture": "01-minimal-project",
+      "file": "minimal-project.kicad_pro",
+      "extension": ".kicad_pro",
+      "bytes": 403,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 30.363
+    },
+    {
+      "fixture": "02-project-netclasses",
+      "file": "project-netclasses.kicad_pro",
+      "extension": ".kicad_pro",
+      "bytes": 461,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 1,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 46.613
+    },
+    {
+      "fixture": "03-project-text-variables",
+      "file": "project-text-variables.kicad_pro",
+      "extension": ".kicad_pro",
+      "bytes": 468,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 1,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 38.457
+    },
+    {
+      "fixture": "04-project-unknown-json",
+      "file": "project-unknown-json.kicad_pro",
+      "extension": ".kicad_pro",
+      "bytes": 466,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 1,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 63.352
+    },
+    {
+      "fixture": "05-simple-mcu",
+      "file": "simple-mcu.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 774,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 33.259
+    },
+    {
+      "fixture": "06-usb-c",
+      "file": "usb-c.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 899,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 32.867
+    },
+    {
+      "fixture": "07-can-node",
+      "file": "can-node.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 907,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 30.198
+    },
+    {
+      "fixture": "08-regulator",
+      "file": "regulator.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 840,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 33.532
+    },
+    {
+      "fixture": "09-hierarchical-sheet",
+      "file": "hierarchical-sheet.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 940,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 32.089
+    },
+    {
+      "fixture": "10-global-power",
+      "file": "global-power.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 902,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 26.735
+    },
+    {
+      "fixture": "11-bus-entry",
+      "file": "bus-entry.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 1003,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 30.801
+    },
+    {
+      "fixture": "12-no-connect-junction",
+      "file": "no-connect-junction.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 851,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 26.225
+    },
+    {
+      "fixture": "13-unknown-schematic-node",
+      "file": "unknown-schematic-node.kicad_sch",
+      "extension": ".kicad_sch",
+      "bytes": 887,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 1,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 30.255
+    },
+    {
+      "fixture": "14-simple-2layer",
+      "file": "simple-2layer.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 925,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 36.791
+    },
+    {
+      "fixture": "15-four-layer",
+      "file": "four-layer.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 958,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 198.86
+    },
+    {
+      "fixture": "16-custom-edge-cuts",
+      "file": "custom-edge-cuts.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1059,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 34.755
+    },
+    {
+      "fixture": "17-arcs-fillets-notches",
+      "file": "arcs-fillets-notches.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1054,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 47.992
+    },
+    {
+      "fixture": "18-zones-keepouts",
+      "file": "zones-keepouts.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1107,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 30.758
+    },
+    {
+      "fixture": "19-3d-models",
+      "file": "3d-models.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1126,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 40.637
+    },
+    {
+      "fixture": "20-dimensions-graphics",
+      "file": "dimensions-graphics.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1175,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 35.819
+    },
+    {
+      "fixture": "21-diffpair-netclass",
+      "file": "diffpair-netclass.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 971,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 29.737
+    },
+    {
+      "fixture": "22-imported-complex",
+      "file": "imported-complex.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1040,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 0,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 30.99
+    },
+    {
+      "fixture": "23-unknown-pcb-node",
+      "file": "unknown-pcb-node.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1026,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 1,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 34.106
+    },
+    {
+      "fixture": "24-mixed-generated-imported",
+      "file": "mixed-generated-imported.kicad_pcb",
+      "extension": ".kicad_pcb",
+      "bytes": 1008,
+      "nodeReparse": true,
+      "rust": {
+        "available": true,
+        "reparse": true,
+        "parity": true,
+        "unsupported": 1,
+        "error": null
+      },
+      "kicad": {
+        "available": false,
+        "checked": false,
+        "status": null
+      },
+      "durationMs": 33.375
+    }
+  ]
+}

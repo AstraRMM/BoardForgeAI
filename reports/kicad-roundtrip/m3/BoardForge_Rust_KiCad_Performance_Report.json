@@ -1,0 +1,127 @@
+{
+  "generatedAt": "2026-07-15T00:46:11.561Z",
+  "fixtureCount": 24,
+  "totalDurationMs": 1013.375,
+  "results": [
+    {
+      "fixture": "01-minimal-project",
+      "bytes": 403,
+      "durationMs": 30.363
+    },
+    {
+      "fixture": "02-project-netclasses",
+      "bytes": 461,
+      "durationMs": 46.613
+    },
+    {
+      "fixture": "03-project-text-variables",
+      "bytes": 468,
+      "durationMs": 38.457
+    },
+    {
+      "fixture": "04-project-unknown-json",
+      "bytes": 466,
+      "durationMs": 63.352
+    },
+    {
+      "fixture": "05-simple-mcu",
+      "bytes": 774,
+      "durationMs": 33.259
+    },
+    {
+      "fixture": "06-usb-c",
+      "bytes": 899,
+      "durationMs": 32.867
+    },
+    {
+      "fixture": "07-can-node",
+      "bytes": 907,
+      "durationMs": 30.198
+    },
+    {
+      "fixture": "08-regulator",
+      "bytes": 840,
+      "durationMs": 33.532
+    },
+    {
+      "fixture": "09-hierarchical-sheet",
+      "bytes": 940,
+      "durationMs": 32.089
+    },
+    {
+      "fixture": "10-global-power",
+      "bytes": 902,
+      "durationMs": 26.735
+    },
+    {
+      "fixture": "11-bus-entry",
+      "bytes": 1003,
+      "durationMs": 30.801
+    },
+    {
+      "fixture": "12-no-connect-junction",
+      "bytes": 851,
+      "durationMs": 26.225
+    },
+    {
+      "fixture": "13-unknown-schematic-node",
+      "bytes": 887,
+      "durationMs": 30.255
+    },
+    {
+      "fixture": "14-simple-2layer",
+      "bytes": 925,
+      "durationMs": 36.791
+    },
+    {
+      "fixture": "15-four-layer",
+      "bytes": 958,
+      "durationMs": 198.86
+    },
+    {
+      "fixture": "16-custom-edge-cuts",
+      "bytes": 1059,
+      "durationMs": 34.755
+    },
+    {
+      "fixture": "17-arcs-fillets-notches",
+      "bytes": 1054,
+      "durationMs": 47.992
+    },
+    {
+      "fixture": "18-zones-keepouts",
+      "bytes": 1107,
+      "durationMs": 30.758
+    },
+    {
+      "fixture": "19-3d-models",
+      "bytes": 1126,
+      "durationMs": 40.637
+    },
+    {
+      "fixture": "20-dimensions-graphics",
+      "bytes": 1175,
+      "durationMs": 35.819
+    },
+    {
+      "fixture": "21-diffpair-netclass",
+      "bytes": 971,
+      "durationMs": 29.737
+    },
+    {
+      "fixture": "22-imported-complex",
+      "bytes": 1040,
+      "durationMs": 30.99
+    },
+    {
+      "fixture": "23-unknown-pcb-node",
+      "bytes": 1026,
+      "durationMs": 34.106
+    },
+    {
+      "fixture": "24-mixed-generated-imported",
+      "bytes": 1008,
+      "durationMs": 33.375
+    }
+  ]
+}

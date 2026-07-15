@@ -1,0 +1,35 @@
+# BoardForge M3 KiCad parity report
+
+- Fixtures: 24
+- Node reparses: 24/24
+- Rust available: true
+- Rust reparses: 24/24
+- Node/Rust parity: 24/24
+- Preserved unsupported constructs: 6
+- KiCad CLI available: false
+- Total duration: 1013.375 ms
+
+- 01-minimal-project: Node=PASS, Rust=PASS, parity=PASS, 30.363 ms
+- 02-project-netclasses: Node=PASS, Rust=PASS, parity=PASS, 46.613 ms
+- 03-project-text-variables: Node=PASS, Rust=PASS, parity=PASS, 38.457 ms
+- 04-project-unknown-json: Node=PASS, Rust=PASS, parity=PASS, 63.352 ms
+- 05-simple-mcu: Node=PASS, Rust=PASS, parity=PASS, 33.259 ms
+- 06-usb-c: Node=PASS, Rust=PASS, parity=PASS, 32.867 ms
+- 07-can-node: Node=PASS, Rust=PASS, parity=PASS, 30.198 ms
+- 08-regulator: Node=PASS, Rust=PASS, parity=PASS, 33.532 ms
+- 09-hierarchical-sheet: Node=PASS, Rust=PASS, parity=PASS, 32.089 ms
+- 10-global-power: Node=PASS, Rust=PASS, parity=PASS, 26.735 ms
+- 11-bus-entry: Node=PASS, Rust=PASS, parity=PASS, 30.801 ms
+- 12-no-connect-junction: Node=PASS, Rust=PASS, parity=PASS, 26.225 ms
+- 13-unknown-schematic-node: Node=PASS, Rust=PASS, parity=PASS, 30.255 ms
+- 14-simple-2layer: Node=PASS, Rust=PASS, parity=PASS, 36.791 ms
+- 15-four-layer: Node=PASS, Rust=PASS, parity=PASS, 198.86 ms
+- 16-custom-edge-cuts: Node=PASS, Rust=PASS, parity=PASS, 34.755 ms
+- 17-arcs-fillets-notches: Node=PASS, Rust=PASS, parity=PASS, 47.992 ms
+- 18-zones-keepouts: Node=PASS, Rust=PASS, parity=PASS, 30.758 ms
+- 19-3d-models: Node=PASS, Rust=PASS, parity=PASS, 40.637 ms
+- 20-dimensions-graphics: Node=PASS, Rust=PASS, parity=PASS, 35.819 ms
+- 21-diffpair-netclass: Node=PASS, Rust=PASS, parity=PASS, 29.737 ms
+- 22-imported-complex: Node=PASS, Rust=PASS, parity=PASS, 30.99 ms
+- 23-unknown-pcb-node: Node=PASS, Rust=PASS, parity=PASS, 34.106 ms
+- 24-mixed-generated-imported: Node=PASS, Rust=PASS, parity=PASS, 33.375 ms

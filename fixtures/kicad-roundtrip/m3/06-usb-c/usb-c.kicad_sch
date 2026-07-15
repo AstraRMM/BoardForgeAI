@@ -1,0 +1,7 @@
+(kicad_sch (version 20231120) (generator boardforge) (uuid 10000000-0000-4000-8000-000000000001) (paper "A4") (lib_symbols)
+  (symbol (lib_id "Device:R") (at 80 80 0) (unit 1) (in_bom yes) (on_board yes) (uuid 10000000-0000-4000-8000-000000000002) (property "Reference" "R1" (at 82 78 0) (effects (font (size 1.27 1.27)))) (property "Value" "10k" (at 82 82 0) (effects (font (size 1.27 1.27)))))
+  (wire (pts (xy 60 80) (xy 100 80)) (stroke (width 0) (type default)) (uuid 10000000-0000-4000-8000-000000000003))
+  (junction (at 80 80) (diameter 0) (color 0 0 0 0) (uuid 10000000-0000-4000-8000-000000000004))
+  (label "USB-C_NET" (at 100 80 0) (effects (font (size 1.27 1.27))) (uuid 10000000-0000-4000-8000-000000000005))
+  (global_label "USB_D+" (shape input) (at 60 80 180) (effects (font (size 1.27 1.27))) (uuid 20000000-0000-4000-8000-000000000001))
+  (sheet_instances (path "/" (page "1"))))

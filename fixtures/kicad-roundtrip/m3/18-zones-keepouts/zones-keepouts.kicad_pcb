@@ -1,0 +1,8 @@
+(kicad_pcb (version 20240108) (generator boardforge)
+  (general (thickness 1.6)) (paper "A4") (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (36 "B.SilkS" user "b.silkscreen") (37 "F.SilkS" user "f.silkscreen") (44 "Edge.Cuts" user))
+  (setup (pad_to_mask_clearance 0)) (net 0 "") (net 1 "ZONES-KEEPOUTS_NET")
+  (footprint "BoardForge:TEST" (layer "F.Cu") (at 30 30 0) (uuid 10000000-0000-4000-8000-000000000010) (property "Reference" "U1" (at 0 -3 0) (layer "F.SilkS")) (pad "1" thru_hole circle (at 0 0) (size 2 2) (drill 1) (layers "*.Cu" "*.Mask") (net 1 "ZONES-KEEPOUTS_NET")))
+  (segment (start 30 30) (end 40 30) (width 0.25) (layer "F.Cu") (net 1) (uuid 10000000-0000-4000-8000-000000000011))
+  (via (at 40 30) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net 1) (uuid 10000000-0000-4000-8000-000000000012))
+  (gr_rect (start 20 20) (end 60 45) (stroke (width 0.05) (type default)) (fill none) (layer "Edge.Cuts"))
+  (zone (net 1) (net_name "ZONE_NET") (layer "F.Cu") (hatch edge 0.5) (connect_pads (clearance 0.2)) (min_thickness 0.25) (polygon (pts (xy 22 22) (xy 58 22) (xy 58 43) (xy 22 43)))))

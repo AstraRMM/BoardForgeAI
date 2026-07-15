@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-07-15T00:46:11.561Z",
+  "preservedTotal": 6,
+  "lossRisk": 0,
+  "results": [
+    {
+      "fixture": "02-project-netclasses",
+      "status": "PRESERVED_RAW",
+      "count": 1,
+      "preserved": true,
+      "modified": false,
+      "risk": "none"
+    },
+    {
+      "fixture": "03-project-text-variables",
+      "status": "PRESERVED_RAW",
+      "count": 1,
+      "preserved": true,
+      "modified": false,
+      "risk": "none"
+    },
+    {
+      "fixture": "04-project-unknown-json",
+      "status": "PRESERVED_RAW",
+      "count": 1,
+      "preserved": true,
+      "modified": false,
+      "risk": "none"
+    },
+    {
+      "fixture": "13-unknown-schematic-node",
+      "status": "PRESERVED_RAW",
+      "count": 1,
+      "preserved": true,
+      "modified": false,
+      "risk": "none"
+    },
+    {
+      "fixture": "23-unknown-pcb-node",
+      "status": "PRESERVED_RAW",
+      "count": 1,
+      "preserved": true,
+      "modified": false,
+      "risk": "none"
+    },
+    {
+      "fixture": "24-mixed-generated-imported",
+      "status": "PRESERVED_RAW",
+      "count": 1,
+      "preserved": true,
+      "modified": false,
+      "risk": "none"
+    }
+  ]
+}
