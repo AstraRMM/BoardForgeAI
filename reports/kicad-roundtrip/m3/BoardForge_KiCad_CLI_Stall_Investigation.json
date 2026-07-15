@@ -1,0 +1,9 @@
+{
+  "schema": "boardforge.m3.kicad-cli-stall.v1",
+  "status": "NO_INTERNAL_STALL_REPRODUCED",
+  "cli": { "version": "10.0.3", "completed": 20, "timedOutAt15000Ms": 0, "violationExits": 16, "syntaxOrLoadErrors": 4, "valid": 0 },
+  "timing": { "serialTotalMs": 134662.67, "slowestMs": 14167.455 },
+  "diagnostic": { "deadlineMs": 3000, "timeoutsCleaned": 16, "finding": "Deadline was below normal KiCad startup/validation latency; isolated commands completed in roughly five to seven seconds." },
+  "rootCause": "The apparent stall was silent serial KiCad process startup and validation latency. An internal KiCad deadlock was not reproduced.",
+  "mitigation": ["per-file deadline", "progress output", "stdout/stderr capture", "Windows process-tree cleanup", "distinct timeout, violation, and load-error statuses"]
+}

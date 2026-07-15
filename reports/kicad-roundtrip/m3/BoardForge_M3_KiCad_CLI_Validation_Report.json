@@ -1,0 +1,771 @@
+{
+  "schema": "boardforge.m3.kicad-cli-validation.v1",
+  "generatedAt": "2026-07-15T01:25:21.001Z",
+  "status": "COMPLETED_WITH_VALIDATION_FAILURES",
+  "timeoutMs": 15000,
+  "cli": {
+    "available": true,
+    "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+    "version": "10.0.3",
+    "candidates": [
+      "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "C:\\Program Files\\KiCad\\10\\bin\\kicad-cli.exe",
+      "C:\\Program Files\\KiCad\\9.0\\bin\\kicad-cli.exe",
+      "C:\\Program Files\\KiCad\\8.0\\bin\\kicad-cli.exe",
+      "kicad-cli"
+    ]
+  },
+  "summary": {
+    "passed": 0,
+    "violations": 16,
+    "syntaxOrLoadErrors": 4,
+    "failed": 20,
+    "timedOut": 0,
+    "skipped": 0
+  },
+  "stallFinding": "No bounded CLI stall reproduced. 20 serial KiCad processes consumed 134662.67 ms (slowest 14167.455 ms). The apparent suite stall is consistent with serial KiCad 10 startup/validation latency plus no progress output; an internal KiCad deadlock was not reproduced.",
+  "results": [
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\05-simple-mcu\\simple-mcu.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-mcu.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-mcu.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\05-simple-mcu\\simple-mcu.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-mcu.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\05-simple-mcu\\simple-mcu.kicad_sch"
+      ],
+      "pid": 17288,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 3 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-mcu.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 5374.358,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\06-usb-c\\usb-c.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\usb-c.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\usb-c.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\06-usb-c\\usb-c.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\usb-c.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\06-usb-c\\usb-c.kicad_sch"
+      ],
+      "pid": 43580,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 4 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\usb-c.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 4310.2,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\07-can-node\\can-node.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\can-node.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\can-node.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\07-can-node\\can-node.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\can-node.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\07-can-node\\can-node.kicad_sch"
+      ],
+      "pid": 29832,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 5 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\can-node.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 4053.241,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\08-regulator\\regulator.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\regulator.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\regulator.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\08-regulator\\regulator.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\regulator.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\08-regulator\\regulator.kicad_sch"
+      ],
+      "pid": 20740,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 4 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\regulator.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 4381.676,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\09-hierarchical-sheet\\hierarchical-sheet.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\hierarchical-sheet.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\hierarchical-sheet.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\09-hierarchical-sheet\\hierarchical-sheet.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\hierarchical-sheet.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\09-hierarchical-sheet\\hierarchical-sheet.kicad_sch"
+      ],
+      "pid": 19496,
+      "exitCode": 3,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "",
+      "stderr": "Failed to load schematic\r\n",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 538.621,
+      "status": "SYNTAX_OR_LOAD_ERROR"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\10-global-power\\global-power.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\global-power.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\global-power.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\10-global-power\\global-power.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\global-power.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\10-global-power\\global-power.kicad_sch"
+      ],
+      "pid": 12440,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 4 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\global-power.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 4996.193,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\11-bus-entry\\bus-entry.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\bus-entry.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\bus-entry.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\11-bus-entry\\bus-entry.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\bus-entry.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\11-bus-entry\\bus-entry.kicad_sch"
+      ],
+      "pid": 5904,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 8 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\bus-entry.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 5243.584,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\12-no-connect-junction\\no-connect-junction.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\no-connect-junction.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\no-connect-junction.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\12-no-connect-junction\\no-connect-junction.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\no-connect-junction.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\12-no-connect-junction\\no-connect-junction.kicad_sch"
+      ],
+      "pid": 42980,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 4 violations\r\nSaved ERC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\no-connect-junction.kicad_sch.erc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 8234.775,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\13-unknown-schematic-node\\unknown-schematic-node.kicad_sch",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\unknown-schematic-node.kicad_sch.erc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\unknown-schematic-node.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\13-unknown-schematic-node\\unknown-schematic-node.kicad_sch"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "sch",
+        "erc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\unknown-schematic-node.kicad_sch.erc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\13-unknown-schematic-node\\unknown-schematic-node.kicad_sch"
+      ],
+      "pid": 1916,
+      "exitCode": 3,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "",
+      "stderr": "Failed to load schematic\r\n",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 937.059,
+      "status": "SYNTAX_OR_LOAD_ERROR"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\14-simple-2layer\\simple-2layer.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-2layer.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-2layer.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\14-simple-2layer\\simple-2layer.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-2layer.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\14-simple-2layer\\simple-2layer.kicad_pcb"
+      ],
+      "pid": 18272,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\simple-2layer.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 10687.432,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\15-four-layer\\four-layer.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\four-layer.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\four-layer.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\15-four-layer\\four-layer.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\four-layer.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\15-four-layer\\four-layer.kicad_pcb"
+      ],
+      "pid": 15916,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\four-layer.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 9416.222,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\16-custom-edge-cuts\\custom-edge-cuts.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\custom-edge-cuts.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\custom-edge-cuts.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\16-custom-edge-cuts\\custom-edge-cuts.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\custom-edge-cuts.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\16-custom-edge-cuts\\custom-edge-cuts.kicad_pcb"
+      ],
+      "pid": 28752,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\custom-edge-cuts.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 10884.68,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\17-arcs-fillets-notches\\arcs-fillets-notches.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\arcs-fillets-notches.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\arcs-fillets-notches.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\17-arcs-fillets-notches\\arcs-fillets-notches.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\arcs-fillets-notches.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\17-arcs-fillets-notches\\arcs-fillets-notches.kicad_pcb"
+      ],
+      "pid": 20516,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 3 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\arcs-fillets-notches.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 12967.507,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\18-zones-keepouts\\zones-keepouts.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\zones-keepouts.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\zones-keepouts.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\18-zones-keepouts\\zones-keepouts.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\zones-keepouts.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\18-zones-keepouts\\zones-keepouts.kicad_pcb"
+      ],
+      "pid": 41280,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\zones-keepouts.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 14167.455,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\19-3d-models\\3d-models.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\3d-models.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\3d-models.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\19-3d-models\\3d-models.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\3d-models.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\19-3d-models\\3d-models.kicad_pcb"
+      ],
+      "pid": 23684,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 3 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\3d-models.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 10510.935,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\20-dimensions-graphics\\dimensions-graphics.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\dimensions-graphics.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\dimensions-graphics.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\20-dimensions-graphics\\dimensions-graphics.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\dimensions-graphics.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\20-dimensions-graphics\\dimensions-graphics.kicad_pcb"
+      ],
+      "pid": 17208,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\dimensions-graphics.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 12975.16,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\21-diffpair-netclass\\diffpair-netclass.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\diffpair-netclass.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\diffpair-netclass.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\21-diffpair-netclass\\diffpair-netclass.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\diffpair-netclass.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\21-diffpair-netclass\\diffpair-netclass.kicad_pcb"
+      ],
+      "pid": 37320,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\diffpair-netclass.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 7936.731,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\22-imported-complex\\imported-complex.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\imported-complex.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\imported-complex.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\22-imported-complex\\imported-complex.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\imported-complex.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\22-imported-complex\\imported-complex.kicad_pcb"
+      ],
+      "pid": 40104,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 2 violations\r\nFound 0 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\imported-complex.kicad_pcb.drc.rpt\r\n",
+      "stderr": "",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 5898.174,
+      "status": "VIOLATIONS_FOUND"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\23-unknown-pcb-node\\unknown-pcb-node.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\unknown-pcb-node.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\unknown-pcb-node.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\23-unknown-pcb-node\\unknown-pcb-node.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\unknown-pcb-node.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\23-unknown-pcb-node\\unknown-pcb-node.kicad_pcb"
+      ],
+      "pid": 37984,
+      "exitCode": 3,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "",
+      "stderr": "Failed to load board\r\n",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 681.707,
+      "status": "SYNTAX_OR_LOAD_ERROR"
+    },
+    {
+      "file": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\24-mixed-generated-imported\\mixed-generated-imported.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\mixed-generated-imported.kicad_pcb.drc.rpt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\mixed-generated-imported.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\24-mixed-generated-imported\\mixed-generated-imported.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\reports\\kicad-roundtrip\\m3\\cli-output\\mixed-generated-imported.kicad_pcb.drc.rpt",
+        "C:\\Users\\luifi\\Desktop\\BoardForge_Dev\\boardforge-ai\\fixtures\\kicad-roundtrip\\m3\\24-mixed-generated-imported\\mixed-generated-imported.kicad_pcb"
+      ],
+      "pid": 33132,
+      "exitCode": 3,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "",
+      "stderr": "Failed to load board\r\n",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 466.96,
+      "status": "SYNTAX_OR_LOAD_ERROR"
+    }
+  ],
+  "totalCliDurationMs": 134662.67,
+  "maxCliDurationMs": 14167.455
+}
