@@ -1,6 +1,8 @@
 use boardforge_core::{BoardForgeError, Result};
 use serde::{Deserialize, Serialize};
 
+pub mod pcb;
+
 const EPSILON: f64 = 1e-9;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]

@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 boardforge-core = { path = "../boardforge-core" }
 boardforge-geometry = { path = "../boardforge-geometry" }
+boardforge-kicad = { path = "../boardforge-kicad" }
 serde.workspace = true
 serde-wasm-bindgen.workspace = true
 wasm-bindgen.workspace = true

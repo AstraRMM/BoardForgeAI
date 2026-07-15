@@ -45,6 +45,7 @@ version = "0.1.0"
 dependencies = [
  "boardforge-core",
  "boardforge-geometry",
+ "boardforge-kicad",
  "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",
