@@ -23,6 +23,10 @@ export async function runAutonomousChallenge(options) {
       return outcome('PILOT_REJECTED_ENGINE_IMPROVEMENT_REQUIRED',state,checkpointPath)
     }
     state.phase='board_batches'; state.pilot.accepted=true
+    // The accepted pilot is manifest board index 0. Persist it exactly once and
+    // continue at board 002; never regenerate or silently replace the pilot.
+    if(!state.accepted.some(row=>row.index===0)) state.accepted.push({index:0,boardId:manifest.boards[0].id||'0',evidenceDigest:pilot.acceptance.evidenceDigest,acceptedAt:new Date().toISOString(),pilot:true})
+    state.nextBoardIndex=Math.max(state.nextBoardIndex,1)
     await saveCheckpoint(checkpointPath,state)
   }
   if (state.phase==='pilot_rejected') return outcome('PILOT_REJECTED_ENGINE_IMPROVEMENT_REQUIRED',state,checkpointPath)

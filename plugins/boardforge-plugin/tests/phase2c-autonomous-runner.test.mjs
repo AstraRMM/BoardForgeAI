@@ -25,18 +25,18 @@ test('batch checkpoint resumes at exact next index without replay',async()=>{
   const file=await checkpoint(),seen=[]
   const executeBoard=async board=>{seen.push(board.id);return accepted()}
   const first=await runAutonomousChallenge({manifest,checkpointPath:file,batchSize:1,executePilot:async()=>accepted(),executeBoard})
-  assert.equal(first.status,'BATCH_CHECKPOINT_WRITTEN');assert.deepEqual(seen,['pilot']);assert.match(first.resumeCommand,/--checkpoint/)
+  assert.equal(first.status,'BATCH_CHECKPOINT_WRITTEN');assert.deepEqual(seen,['second']);assert.equal(first.state.accepted[0].pilot,true);assert.match(first.resumeCommand,/--checkpoint/)
   const second=await runAutonomousChallenge({manifest,checkpointPath:file,resume:true,batchSize:2,executePilot:async()=>{throw Error('pilot replayed')},executeBoard})
-  assert.equal(second.status,'CHALLENGE_COMPLETE');assert.deepEqual(seen,['pilot','second','third'])
+  assert.equal(second.status,'CHALLENGE_COMPLETE');assert.deepEqual(seen,['second','third'])
 })
 test('rejection checkpoints same board and requires engine improvement before retry',async()=>{
   const file=await checkpoint(),result=await runAutonomousChallenge({manifest,checkpointPath:file,executePilot:async()=>accepted(),executeBoard:async()=>rejected()})
-  assert.equal(result.status,'BOARD_REJECTED_ENGINE_IMPROVEMENT_REQUIRED');assert.equal(result.state.nextBoardIndex,0);assert.equal(result.state.retries['0'],1)
+  assert.equal(result.status,'BOARD_REJECTED_ENGINE_IMPROVEMENT_REQUIRED');assert.equal(result.state.nextBoardIndex,1);assert.equal(result.state.retries['1'],1)
   assert.equal((await loadCheckpoint(file)).lastFailure.code,'DRC_NOT_ZERO')
 })
 test('watchdog produces a resumable bounded failure at exact board',async()=>{
   const file=await checkpoint(),pilot=await accepted(),result=await runAutonomousChallenge({manifest,checkpointPath:file,watchdogMs:10,executePilot:async()=>pilot,executeBoard:async()=>new Promise(()=>{})})
-  assert.equal(result.state.lastFailure.code,'WATCHDOG_TIMEOUT');assert.equal(result.state.nextBoardIndex,0)
+  assert.equal(result.state.lastFailure.code,'WATCHDOG_TIMEOUT');assert.equal(result.state.nextBoardIndex,1)
 })
 test('acceptance claim without authentic artifact hashes is rejected',async()=>{
   const row=await accepted();row.manufacturingEvidence.artifacts[0].sha256='not-a-hash'

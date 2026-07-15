@@ -1,14 +1,19 @@
 const DEFAULT_TTL_MS = 5 * 60_000
 
 export const preferredPartFamilies = Object.freeze({
+  STM32_MCU: ['STM32F103C8T6','STM32G0B1CBT6'],
+  CAN_TRANSCEIVER: ['SN65HVD230DR','TCAN332DR'],
   ESP32_S3: ['ESP32-S3-WROOM-1-N8R8', 'ESP32-S3-WROOM-1-N8'],
   USB: ['TYPE-C-31-M-12', 'USB4105-GF-A'],
   REGULATOR: ['ME6211C33M5G-N', 'MCP1700T-3302E/TT'],
   SENSOR_CONNECTOR: ['M20-9990645', '20021121-00006T4LF'],
   RES_5K1_0603: ['RC0603FR-075K1L', 'CRCW06035K10FKEA'],
+  CAN_TERM_120R_0603: ['RC0603FR-07120RL'],
+  DECOUPLING_100NF_0603: ['CL10B104KB8NNNC'],
+  CAN_TVS: ['NUP2105LT1G'],
 })
 
-export function createProductionPartResolver({ providers = [], cache = new Map(), ttlMs = DEFAULT_TTL_MS, retries = 1, now = () => Date.now() } = {}) {
+export function createProductionPartResolver({ providers = [], cache = new Map(), ttlMs = DEFAULT_TTL_MS, retries = 1, minimumLiveProviders = 1, now = () => Date.now() } = {}) {
   return async function resolve({ requirement, family }) {
     const candidates = [...new Set([requirement?.mpn, ...(preferredPartFamilies[family] || [])].filter(Boolean))]
     if (!candidates.length) return blocked('NO_APPROVED_CANDIDATE_FAMILY', family)
@@ -24,11 +29,12 @@ export function createProductionPartResolver({ providers = [], cache = new Map()
         observations.push({ mpn, provider: provider.id, ...result })
       }
     }
-    const eligible = observations.filter((row) => row.live === true && row.exact === true && row.lifecycle !== 'Obsolete' && row.lifecycle !== 'Discontinued')
+    const liveCounts=new Map(candidates.map(mpn=>[mpn,new Set(observations.filter(row=>row.mpn===mpn&&row.live===true&&row.exact===true).map(row=>row.provider)).size]))
+    const eligible = observations.filter((row) => row.live === true && row.exact === true && row.lifecycle !== 'Obsolete' && row.lifecycle !== 'Discontinued' && (liveCounts.get(row.mpn)||0)>=minimumLiveProviders)
     eligible.sort((a,b) => score(b,candidates)-score(a,candidates) || candidates.indexOf(a.mpn)-candidates.indexOf(b.mpn) || a.provider.localeCompare(b.provider))
     if (!eligible.length) return { ...blocked('NO_LIVE_EXACT_PRODUCTION_CANDIDATE', family), observations: redactObservations(observations) }
     const selected = eligible[0]
-    return { status:'SELECTED', mpn:selected.mpn, provider:selected.provider, stockStatus:selected.stockStatus, quantityAvailable:selected.quantityAvailable, lifecycle:selected.lifecycle, checkedAt:selected.checkedAt, candidateRank:candidates.indexOf(selected.mpn), observations:redactObservations(observations) }
+    return { status:'SELECTED', mpn:selected.mpn, provider:selected.provider, liveProviders:[...new Set(eligible.filter(row=>row.mpn===selected.mpn).map(row=>row.provider))].sort(), stockStatus:selected.stockStatus, quantityAvailable:selected.quantityAvailable, lifecycle:selected.lifecycle, checkedAt:selected.checkedAt, candidateRank:candidates.indexOf(selected.mpn), observations:redactObservations(observations) }
   }
 }
 

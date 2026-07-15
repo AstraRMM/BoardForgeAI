@@ -42,6 +42,25 @@ export const REAL_BOARD_PROOF_BOARDS = [
     ],
   },
   {
+    id: 'stm32-controller',
+    name: 'STM32 Deterministic Controller',
+    preset: 'mounting-ears', widthMm: 62, heightMm: 38, layers: 4,
+    prompt: 'Make a compact 5V-powered STM32 CAN machine controller with I2C expansion and mounting ears.',
+    intent: ['STM32F103 control', '5V input', 'CAN transceiver', 'I2C expansion'],
+    bom: [
+      bom('U1','STM32F103C8T6','deterministic controller','APPROVED_MAPPING','STM32F103C8T6'),
+      bom('U2','SN65HVD230DR','CAN physical layer','APPROVED_MAPPING','SN65HVD230DR'),
+      bom('U3','MCP1700T-3302E/TT','3.3V regulator','APPROVED_MAPPING','MCP1700T-3302E/TT'),
+      bom('J1','M20-9990245','5V power input','APPROVED_MAPPING','M20-9990245'),
+      bom('J2','M20-9990645','CAN/I2C expansion','APPROVED_MAPPING','M20-9990645'),
+      bom('R1','120R','CAN termination','APPROVED_MAPPING','RC0603FR-07120RL'),
+      bom('C1','100n','MCU decoupling','APPROVED_MAPPING','CL10B104KB8NNNC'),
+      bom('C2','100n','CAN decoupling','APPROVED_MAPPING','CL10B104KB8NNNC'),
+      bom('C3','1u','regulator output bypass','APPROVED_MAPPING','CC0603KRX7R7BB105'),
+      bom('D1','NUP2105LT1G','CAN surge protection','APPROVED_MAPPING','NUP2105LT1G'),
+    ],
+  },
+  {
     id: 'can-sensor-node',
     name: 'CAN Sensor Node',
     preset: 'notched',
@@ -389,6 +408,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }
 
 const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'usb-c-esp32-sensor': usbEsp32CategoryPcbEvidence,
+  'stm32-controller': stm32ControllerCategoryPcbEvidence,
   'can-sensor-node': canSensorNodeCategoryPcbEvidence,
   'poe-ethernet-sensor': poeEthernetSensorCategoryPcbEvidence,
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
@@ -739,6 +759,43 @@ export function usbEsp32CategoryPcbEvidence() {
   return { nets, footprints, segments, vias }
 }
 
+export function stm32ControllerCategoryPcbEvidence() {
+  const evidence = canSensorNodeCategoryPcbEvidence()
+  evidence.nets.find((item)=>item.number===2).name='5V'
+  evidence.nets.push({ number: 9, name: 'CAN_TX' }, { number: 10, name: 'CAN_RX' })
+  const u1 = evidence.footprints.find((item) => item.ref === 'U1')
+  u1.value = 'STM32F103C8T6'
+  u1.footprint = 'Package_QFP:LQFP-48_7x7mm_P0.5mm'
+  u1.pads = u1.pads.slice(0,6).map((item,index)=>({ ...item, number:['24','23','42','43','33','32'][index], ...(index===4?{netNumber:9,netName:'CAN_TX'}:{}), ...(index===5?{netNumber:10,netName:'CAN_RX'}:{}) }))
+  const u2 = evidence.footprints.find((item) => item.ref === 'U2')
+  u2.value = 'SN65HVD230DR'
+  u2.footprint = 'Package_SO:SOIC-8_3.9x4.9mm_P1.27mm'
+  u2.pads = [
+    pad('1', -2.9, -2, 0.7, 0.55, 9, 'CAN_TX'), pad('4', -2.9, 2, 0.7, 0.55, 10, 'CAN_RX'),
+    pad('3', 2.9, -2, 0.7, 0.55, 3, '+3V3'), pad('2', 2.9, 2, 0.7, 0.55, 1, 'GND'),
+    pad('7', 0, -3.6, 0.7, 0.55, 4, 'CANH'), pad('6', 0, 3.6, 0.7, 0.55, 5, 'CANL'),
+  ]
+  const j1 = evidence.footprints.find((item) => item.ref === 'J1')
+  j1.value='5V input'; j1.footprint='Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical'
+  j1.pads=[pad('1',2.4,-2,0.8,0.8,2,'5V'),pad('2',2.4,-4,0.8,0.8,1,'GND')]
+  const j2=evidence.footprints.find((item)=>item.ref==='J2')
+  j2.at={x:56,y:19}; j2.body={w:3,h:14}; j2.value='CAN/I2C header'; j2.pads=[pad('1',-2,-3,1,1,4,'CANH'),pad('2',-1,0,1,1,5,'CANL'),pad('3',0,3,1,1,1,'GND'),pad('4',1,5,1,1,3,'+3V3'),pad('5',2,7,1,1,6,'I2C_SCL'),pad('6',3,9,1,1,7,'I2C_SDA')]
+  evidence.footprints.push(
+    {ref:'U3',value:'MCP1700T-3302E/TT',footprint:'Package_TO_SOT_SMD:SOT-23',at:{x:17,y:14},body:{w:3,h:3},pads:[pad('1',-1.8,1,0.8,0.7,1,'GND'),pad('2',1.8,0,0.8,0.7,3,'+3V3'),pad('3',-1.8,-1,0.8,0.7,2,'5V')]},
+    verticalPassive('C1','100n',20,18,3,'+3V3',1,'GND',1), verticalPassive('C2','100n',41,8,3,'+3V3',1,'GND',2), verticalPassive('C3','1u',22,14,3,'+3V3',1,'GND',1),
+    passiveFootprint('R1','120R',48,6,4,'CANH',5,'CANL'),
+    {ref:'D1',value:'NUP2105LT1G',footprint:'Package_TO_SOT_SMD:SOT-23',at:{x:37,y:24},body:{w:3,h:3},pads:[pad('1',-1.8,-1,0.8,0.7,4,'CANH'),pad('2',-1.8,1,0.8,0.7,1,'GND'),pad('3',1.8,0,0.8,0.7,5,'CANL')]},
+  )
+  evidence.segments=[]; evidence.vias=[]
+  const gnd=[[11.4,15],[15.2,15],[24.6,19],[45.9,21],[20,19],[41,10],[22,15],[35.2,25]]
+  const rail=[[18.8,14],[24.6,17],[45.9,17],[20,17],[41,6],[22,13]]
+  const canh=[[43,15.4],[54,16],[46.9,6],[35.2,23]],canl=[[43,22.6],[55,19],[49.1,6],[38.8,24]]
+  for(const [points,net,layer,bus] of [[gnd,1,'B.Cu',30],[rail,3,'In1.Cu',5],[canh,4,'In2.Cu',14],[canl,5,'In1.Cu',25]]) addLayerTree(evidence,points,net,layer,bus)
+  evidence.segments.push(segment(11.4,17,15.2,13,0.4,2),segment(33.4,19,40.1,17,0.22,9),segment(33.4,21,40.1,21,0.22,10),segment(45.9,21,56,22,0.3,1),segment(45.9,17,57,17,0.3,3,'In2.Cu'),segment(57,17,57,24,0.3,3,'In2.Cu'),segment(24.6,21,24.6,27,0.22,6),segment(24.6,27,58,27,0.22,6),segment(58,27,58,26,0.22,6),segment(33.4,17,33.4,11,0.22,7,'In2.Cu'),segment(33.4,11,45,11,0.22,7,'In2.Cu'),segment(45,11,45,4,0.22,7,'In2.Cu'),segment(45,4,50,4,0.22,7,'In2.Cu'),segment(50,4,50,11,0.22,7,'In2.Cu'),segment(50,11,53,11,0.22,7,'In2.Cu'),segment(53,11,53,28,0.22,7,'B.Cu'),segment(53,28,59,28,0.22,7))
+  evidence.vias.push(via(57,24,3),via(33.4,17,7),via(53,11,7),via(53,28,7))
+  return evidence
+}
+
 function canSensorNodeCategoryPcbEvidence() {
   const nets = [
     { number: 0, name: '' },
@@ -987,7 +1044,7 @@ function categorySchematicComponents(board) {
   const pinMaps = categorySchematicPinMaps(board)
   return board.bom.map((row, index) => {
     const approved = approvedAssetFor(row.mpn)
-    const pinMap = approved?.pinMap || pinMaps[row.ref] || fallbackCategoryPinMap(index)
+    const pinMap = pinMaps[row.ref] || approved?.pinMap || fallbackCategoryPinMap(index)
     return {
       ref: row.ref,
       value: row.value,
@@ -1007,6 +1064,15 @@ function categorySchematicComponents(board) {
 
 function categorySchematicPinMaps(board) {
   const maps = {
+    'stm32-controller': {
+      U1: approvedAssetFor('STM32F103C8T6').pinMap,
+      U2: approvedAssetFor('SN65HVD230DR').pinMap,
+      U3: { 1:'GND', 2:'3V3', 3:'5V' },
+      J1: approvedAssetFor('M20-9990245').pinMap,
+      J2: { 1: 'GND', 2: '3V3', 3: 'CANH', 4: 'CANL', 5: 'I2C_SCL', 6: 'I2C_SDA' },
+      R1: { 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
+      D1: approvedAssetFor('NUP2105LT1G').pinMap,
+    },
     'usb-c-esp32-sensor': {
       U1: { 1: 'GND', 2: '3V3', 3: 'USB_DP', 4: 'USB_DN', 5: 'I2C_SCL', 6: 'I2C_SDA', 7: 'UART_TX', 8: 'UART_RX' },
       J1: { 1: 'GND', 2: 'VUSB', 3: 'USB_DP', 4: 'USB_DN', 5: 'CC1', 6: 'CC2' },
@@ -1168,6 +1234,20 @@ async function runOptionalKiCadReports({ projectDir, files, kicad }) {
   if (validation.erc) base.erc = validation.erc
   if (validation.drc) base.drc = validation.drc
   return base
+}
+
+function passiveFootprint(ref, value, x, y, net1, name1, net2, name2) {
+  return { ref, value, footprint:'Resistor_SMD:R_0603_1608Metric', at:{x,y}, body:{w:2,h:1}, pads:[pad('1',-1.1,0,0.8,0.8,net1,name1),pad('2',1.1,0,0.8,0.8,net2,name2)] }
+}
+
+function verticalPassive(ref,value,x,y,net1,name1,net2,name2,spacing=1) {
+  return {ref,value,footprint:/^C/.test(ref)?'Capacitor_SMD:C_0603_1608Metric':'Resistor_SMD:R_0603_1608Metric',at:{x,y},body:{w:1,h:spacing*2+1},pads:[pad('1',0,-spacing,0.8,0.8,net1,name1),pad('2',0,spacing,0.8,0.8,net2,name2)]}
+}
+
+function addLayerTree(evidence,points,net,layer,busY) {
+  const xs=points.map(([x])=>x)
+  for(const [x,y] of points){ evidence.vias.push(via(x,y,net)); evidence.segments.push(segment(x,y,x,busY,0.3,net,layer)) }
+  evidence.segments.push(segment(Math.min(...xs),busY,Math.max(...xs),busY,0.3,net,layer))
 }
 
 function componentLink(boardId, ref) {
