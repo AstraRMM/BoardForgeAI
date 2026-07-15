@@ -418,12 +418,15 @@
         "boardforge:m4-visual-qa": "node scripts/run-m4-visual-qa.mjs",
         "boardforge:phase2c-challenge-contract": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-contract.test.mjs",
         "test:canonical-component-binding": "node --test plugins/boardforge-plugin/tests/canonical-component-binding.test.mjs",
+        "test:production-part-resolver": "node --test plugins/boardforge-plugin/tests/production-part-resolver.test.mjs",
         "boardforge:phase2c-benchmark": "node scripts/run-phase2c-challenge-benchmark.mjs",
         "test:phase2c-benchmark": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-benchmark.test.mjs scripts/phase2c-challenge-report.test.mjs",
-        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-provider-runtime-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-manufacturing-pipeline.test.mjs",
+        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-provider-runtime-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-manufacturing-pipeline.test.mjs plugins/boardforge-plugin/tests/phase2c-autonomous-runner.test.mjs",
         "boardforge:phase2c-provider-preflight": "node scripts/run-phase2c-autonomous-challenge.mjs --preflight-only",
+        "boardforge:phase2c-pilot": "node scripts/run-phase2c-pilot.mjs",
         "boardforge:phase2c-autonomous-challenge": "node scripts/run-phase2c-autonomous-challenge.mjs",
-        "boardforge:phase2c-record-attempt": "node scripts/record-phase2c-real-board-attempt.mjs"
+        "boardforge:phase2c-record-attempt": "node scripts/record-phase2c-real-board-attempt.mjs",
+        "boardforge:phase2c-resume": "node scripts/resume-phase2c-autonomous-runner.mjs"
     },
     "dependencies": {
         "@better-auth/infra": "^0.3.6",

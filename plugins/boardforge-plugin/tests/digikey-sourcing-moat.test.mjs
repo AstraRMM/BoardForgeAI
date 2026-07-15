@@ -118,6 +118,19 @@ test('DigiKey health distinguishes an expired refreshable token from authenticat
   assert.equal(health.refreshAvailable, true)
 })
 
+test('DigiKey renews an expired client-credentials token without a refresh token', async () => {
+  let stored = { accessToken: 'expired-access', expiresAt: new Date(0).toISOString() }
+  const tokenStore = { read: () => null, readRaw: () => stored, write: (value) => { stored = value } }
+  const fetchImpl = async (_url, request) => {
+    assert.equal(request.body.get('grant_type'), 'client_credentials')
+    return { ok: true, json: async () => ({ access_token: 'renewed-access', expires_in: 1800 }) }
+  }
+  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret' }, fetchImpl, tokenStore })
+  const token = await auth.getValidAccessToken()
+  assert.equal(token.accessToken, 'renewed-access')
+  assert.equal(stored.accessToken, 'renewed-access')
+})
+
 test('DigiKey ProductInformation V4 lookup normalizes mocked exact MPN response', async () => {
   const result = await lookupDigiKeyProductInfoV4({ query: { mpn: 'RC0603FR-0710KL' }, mockResponse: mockDigikey })
   assert.equal(result.selected.manufacturerPartNumber, 'RC0603FR-0710KL')

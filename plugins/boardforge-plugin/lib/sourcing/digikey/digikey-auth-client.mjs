@@ -73,8 +73,15 @@ export function createDigiKeyAuthClient({ env = loadBoardForgeEnv().env, fetchIm
       const cached = tokenStore.read()
       if (cached?.accessToken) return cached
       const expired = tokenStore.readRaw?.()
-      if (!expired?.refreshToken) return null
-      return this.refreshAccessToken({ refreshToken: expired.refreshToken })
+      if (expired?.refreshToken) return this.refreshAccessToken({ refreshToken: expired.refreshToken })
+      // Client-credentials grants do not issue refresh tokens. Renew them by
+      // obtaining another short-lived token instead of turning a healthy
+      // machine-to-machine integration into DIGIKEY_AUTH_REQUIRED on expiry.
+      if (this.isConfigured()) {
+        await this.exchangeClientCredentialsForToken()
+        return tokenStore.read() || tokenStore.readRaw?.() || null
+      }
+      return null
     },
     async refreshAccessToken({ refreshToken } = {}) {
       if (!this.isConfigured()) throw new DigiKeyError('DigiKey credentials are missing.', { status: 'DIGIKEY_NOT_CONFIGURED' })

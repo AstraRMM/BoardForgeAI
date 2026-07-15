@@ -1,0 +1,14 @@
+{
+  "id": "phase2c_pilot_gate_checkpoint_resume_001",
+  "problem": "A large autonomous proving run can waste work, replay accepted boards, or count unauthenticated output when pilot, watchdog, and resume state are implicit.",
+  "rootCause": "Generation and acceptance were not governed by one fail-closed durable state machine.",
+  "fixSummary": "Require an authentic accepted pilot before generation, atomically checkpoint every accepted board, resume the exact manifest index, bound every stage with a watchdog, and stop rejected output for an engine improvement before retry.",
+  "regressions": [
+    "no generation before pilot acceptance",
+    "exact-index batch resume",
+    "same-board retry after rejection",
+    "watchdog checkpoint",
+    "cryptographic artifact authenticity"
+  ],
+  "never": ["Treat file presence as acceptance", "Advance past a rejected board", "Replay accepted boards on resume", "Store credentials in checkpoints"]
+}

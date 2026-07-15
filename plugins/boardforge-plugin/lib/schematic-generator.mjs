@@ -30,7 +30,9 @@ export function generateSchematicModel(board, components = [], input = {}) {
       originalPinMap: pinMap,
       pinMap: schematicPinMap,
       pinCount: Object.keys(schematicPinMap || {}).filter((pin) => schematicPinMap[pin]).length,
-      uuid: crypto.randomUUID(),
+      uuid: component.schematicUuid || crypto.randomUUID(),
+      componentUuid: component.componentUuid || null,
+      bindingId: component.bindingId || null,
     }
   }))
   const powerSymbols = [...new Set(nets.filter((net) => isPowerNet(net.name)).map((net) => net.name))]
@@ -297,6 +299,14 @@ function symbolObject(symbol, projectName) {
 \t\t)
 \t\t(property "Datasheet" ""
 \t\t\t(at ${symbol.at.x} ${symbol.at.y + 10} 0)
+\t\t\t(effects (font (size 1.0 1.0)) hide)
+\t\t)
+\t\t(property "BoardForgeComponentUuid" "${safe(symbol.componentUuid || '')}"
+\t\t\t(at ${symbol.at.x} ${symbol.at.y + 12} 0)
+\t\t\t(effects (font (size 1.0 1.0)) hide)
+\t\t)
+\t\t(property "BoardForgeBindingId" "${safe(symbol.bindingId || '')}"
+\t\t\t(at ${symbol.at.x} ${symbol.at.y + 14} 0)
 \t\t\t(effects (font (size 1.0 1.0)) hide)
 \t\t)
 ${pinInstances}

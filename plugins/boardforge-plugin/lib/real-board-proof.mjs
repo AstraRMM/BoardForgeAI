@@ -11,6 +11,11 @@ import { diagnoseMissingKiCadLibraries } from './kicad-library-resolver.mjs'
 import { buildComponentDatabase } from './component-database.mjs'
 import { createPartLookupService } from './sourcing/part-lookup-service.mjs'
 import { projectCanonicalBinding, resolveCanonicalComponentBinding } from './components/canonical-component-binding.mjs'
+import { verifyReferenceParity } from './components/reference-parity.mjs'
+import { createProductionPartResolver, digikeyProductionProvider, mouserProductionProvider } from './components/production-part-resolver.mjs'
+import { approvedAssetFor } from './components/approved-production-assets.mjs'
+import { loadBoardForgeEnv } from './config/env-loader.mjs'
+import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -29,9 +34,9 @@ export const REAL_BOARD_PROOF_BOARDS = [
     intent: ['USB-C edge connector', 'ESP32-S3 candidate', '3V3 regulator', 'I2C sensor header', 'UART debug header', 'boot/reset buttons'],
     bom: [
       bom('U1', 'ESP32-S3-WROOM-1', 'ESP32-S3 module candidate', 'REQUIRES_LIBRARY_BINDING', 'ESP32-S3-WROOM-1-N8R8'),
-      bom('J1', 'USB-C receptacle', 'USB service/power connector', 'REQUIRES_FOOTPRINT_SELECTION', 'TYPE-C-31-M-12'),
-      bom('U2', '3.3V regulator', 'local rail generation', 'REQUIRES_MPN_SELECTION'),
-      bom('J2', 'I2C/UART header', 'sensor/debug expansion', 'GENERIC_HEADER_OK'),
+      bom('J1', 'USB-C receptacle', 'USB service/power connector', 'APPROVED_MAPPING', 'USB4105-GF-A'),
+      bom('U2', '3.3V regulator', 'local rail generation', 'APPROVED_MAPPING', 'MCP1700T-3302E/TT'),
+      bom('J2', 'I2C/UART header', 'sensor/debug expansion', 'APPROVED_MAPPING', 'M20-9990645'),
       bom('R1', '5.1k', 'USB-C CC1 sink pull-down', 'GENERIC_0603_OK'),
       bom('R2', '5.1k', 'USB-C CC2 sink pull-down', 'GENERIC_0603_OK'),
     ],
@@ -168,7 +173,7 @@ export async function runRealBoardProof(options = {}) {
   const lessons = []
 
   for (const board of proofBoards) {
-    const result = await generateBoardProof({ board, outputRoot, kicad, liveBindings: options.liveBindings === true, canonicalBindingResolver: options.canonicalBindingResolver })
+    const result = await generateBoardProof({ board, outputRoot, kicad, liveBindings: options.liveBindings === true, canonicalBindingResolver: options.canonicalBindingResolver, productionPartResolver: options.productionPartResolver })
     boards.push(result)
     if (result.lessonsSaved?.length) lessons.push(...result.lessonsSaved)
   }
@@ -205,7 +210,7 @@ function normalizeRequestedBoardIds(value) {
   return ids.length ? new Set(ids) : null
 }
 
-async function generateBoardProof({ board, outputRoot, kicad, liveBindings, canonicalBindingResolver }) {
+async function generateBoardProof({ board, outputRoot, kicad, liveBindings, canonicalBindingResolver, productionPartResolver }) {
   const generationStartedAt = Date.now()
   const projectDir = path.join(outputRoot, board.id)
   await mkdir(projectDir, { recursive: true })
@@ -235,7 +240,7 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
   const files = collectKiCadFiles(projectDir)
   const categoryReadiness = await inspectCategoryGenerationReadiness({ projectDir, files, board, categoryPcbEvidence, categorySchematic })
   const validationReports = await runOptionalKiCadReports({ projectDir, files, kicad })
-  const assetBinding = await buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings, canonicalBindingResolver })
+  const assetBinding = await buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings, canonicalBindingResolver, productionPartResolver })
   const mechanicalConstraints = buildMechanicalConstraints({ board, seed, outlineResult })
   await writeFile(path.join(projectDir, 'BoardForge_Mechanical_Constraints.json'), JSON.stringify(mechanicalConstraints, null, 2), 'utf8')
   const outlineValidation = buildOutlineValidationReport({ board, outlineResult })
@@ -249,14 +254,16 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
   await writeFile(path.join(projectDir, 'BoardForge_CLI_Replay_Command.txt'), `npm run boardforge:real-board-proof -- --board ${board.id} --output-root "${outputRoot}"\n`, 'utf8')
   const brief = buildBoardBrief({ board, seed, outlineResult, validationReports, categoryReadiness })
   await writeJsonAndMarkdown(projectDir, 'BoardForge_Board_Brief', brief, renderBriefMarkdown(brief))
-  await writeBomAndSourcing({ projectDir, board })
+  const tables = await writeBomAndSourcing({ projectDir, board, categorySchematic, categoryPcbEvidence, assetBinding })
+  const referenceParity = board.bom.length ? verifyReferenceParity({ bindings: categorySchematic.components, schematic: categorySchematic.components, pcb: categoryPcbEvidence.components, bom: tables.bom, cpl: tables.cpl }) : { status: 'NOT_APPLICABLE', passed: true, blockers: [] }
+  await writeJsonAndMarkdown(projectDir, 'BoardForge_Reference_Parity_Report', referenceParity, `# BoardForge Reference Parity Report\n\n- Status: ${referenceParity.status}\n\n${referenceParity.blockers.map((item) => `- ${item.code}: ${item.surface} ${item.ref}`).join('\n') || '- Canonical bindings = schematic = PCB = BOM = CPL'}\n`)
   const health = buildHealthReport({ board, outlineResult, files, validationReports, categoryReadiness })
   await writeJsonAndMarkdown(projectDir, 'BoardForge_Project_Health_Report', health, renderHealthMarkdown(health))
   const review = buildReviewReport({ board, outlineResult, validationReports, health, categoryReadiness })
   await writeJsonAndMarkdown(projectDir, 'BoardForge_Board_Review_Report', review, renderReviewMarkdown(review))
   const manufacturable = buildMakeManufacturableReport({ board, outlineResult, validationReports, health, categoryReadiness })
   await writeJsonAndMarkdown(projectDir, 'BoardForge_Make_Manufacturable_Report', manufacturable, renderMakeManufacturableMarkdown(manufacturable))
-  const sourcable = buildMakeSourcableReport({ board })
+  const sourcable = buildMakeSourcableReport({ board, assetBinding })
   if (board.bom.length) await writeJsonAndMarkdown(projectDir, 'BoardForge_Make_Sourcable_Report', sourcable, renderMakeSourcableMarkdown(sourcable))
 
   const blockers = buildBlockers({ board, outlineResult, validationReports, health, categoryReadiness, assetBinding })
@@ -282,6 +289,7 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
     categoryGeneration: categoryReadiness,
     categoryPcbEvidence,
     categorySchematic,
+    referenceParity,
     assetBinding,
     sourcing: board.bom.length ? sourcable : { status: 'NOT_APPLICABLE_NO_BOM' },
     manufacturingPackage: { status: 'NOT_GENERATED', reason: 'Proof runner does not create a manufacturing ZIP until schematic, placement, routing, ERC/DRC, and sourcing evidence are all clean.' },
@@ -321,6 +329,7 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
     categoryGeneration: categoryReadiness.summary,
     categoryPcbEvidence,
     categorySchematic,
+    referenceParity,
     assetBinding,
     sourcing: board.bom.length ? sourcable.status : 'NOT_APPLICABLE_NO_BOM',
     manufacturingPackage: evidence.manufacturingPackage,
@@ -348,6 +357,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }
     return { status: 'ALREADY_PRESENT', pcbFile: files.pcb }
   }
   const evidence = evidenceFactory()
+  evidence.footprints = evidence.footprints.map((footprint) => ({ ...footprint, ...componentLink(board.id, footprint.ref) }))
   const categoryText = renderCategoryPcbEvidence(evidence)
   const next = current.replace(/\n\)\s*$/, `\n${categoryText}\n)\n`)
   await writeFile(files.pcb, next, 'utf8')
@@ -361,6 +371,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }
       : 'pcb_footprint_net_track_evidence_without_real_schematic_symbol_graph',
     noManufacturingClaim: true,
     placedRefs: evidence.footprints.map((footprint) => footprint.ref),
+    components: evidence.footprints.map((footprint) => componentLink(board.id, footprint.ref)),
     nets: evidence.nets.map((net) => net.name).filter(Boolean),
     trackCount: evidence.segments.length,
     viaCount: evidence.vias.length,
@@ -620,7 +631,7 @@ function droneStackCategoryPcbEvidence() {
   return { nets, footprints, segments, vias }
 }
 
-function usbEsp32CategoryPcbEvidence() {
+export function usbEsp32CategoryPcbEvidence() {
   const nets = [
     { number: 0, name: '' },
     { number: 1, name: 'GND' },
@@ -632,6 +643,8 @@ function usbEsp32CategoryPcbEvidence() {
     { number: 7, name: 'I2C_SDA' },
     { number: 8, name: 'UART_TX' },
     { number: 9, name: 'UART_RX' },
+    { number: 10, name: 'CC1' },
+    { number: 11, name: 'CC2' },
   ]
   const net = Object.fromEntries(nets.map((item) => [item.name, item.number]))
   const footprints = [
@@ -642,10 +655,16 @@ function usbEsp32CategoryPcbEvidence() {
       at: { x: 8, y: 19 },
       body: { w: 5.8, h: 9 },
       pads: [
-        pad('A1', 2.4, -4, 0.8, 0.8, 0, ''),
+        pad('A1', 2.4, -4, 0.8, 0.8, net.GND, 'GND'),
+        pad('B12', 2.4, -4, 0.8, 0.8, net.GND, 'GND'),
         pad('A4', 2.4, -2, 0.8, 0.8, net.VBUS, 'VBUS'),
+        pad('B9', 2.4, -2, 0.8, 0.8, net.VBUS, 'VBUS'),
         pad('A6', 2.4, 1, 0.55, 0.8, net.USB_D_P, 'USB_D_P'),
+        pad('B6', 2.4, 1, 0.55, 0.8, net.USB_D_P, 'USB_D_P'),
         pad('A7', 2.4, 3, 0.55, 0.8, net.USB_D_N, 'USB_D_N'),
+        pad('B7', 2.4, 3, 0.55, 0.8, net.USB_D_N, 'USB_D_N'),
+        pad('A5', 2.4, 5, 0.55, 0.8, net.CC1, 'CC1'),
+        pad('B5', 2.4, 7, 0.55, 0.8, net.CC2, 'CC2'),
       ],
     },
     {
@@ -655,9 +674,9 @@ function usbEsp32CategoryPcbEvidence() {
       at: { x: 22, y: 17 },
       body: { w: 5.4, h: 4.6 },
       pads: [
-        pad('1', -2, 0, 0.9, 0.8, net.VBUS, 'VBUS'),
-        pad('2', -2, 2, 0.9, 0.8, 0, ''),
-        pad('3', 2.2, 0, 1.1, 1.6, net['+3V3'], '+3V3'),
+        pad('1', -2, 2, 0.9, 0.8, net.GND, 'GND'),
+        pad('2', 2.2, 0, 1.1, 1.6, net['+3V3'], '+3V3'),
+        pad('3', -2, 0, 0.9, 0.8, net.VBUS, 'VBUS'),
       ],
     },
     {
@@ -692,6 +711,8 @@ function usbEsp32CategoryPcbEvidence() {
         pad('6', -2.5, 5, 1, 1, net.UART_RX, 'UART_RX'),
       ],
     },
+    { ref: 'R1', value: '5.1k CC1 sink pull-down', footprint: 'BoardForge_Proof:R_0603', at: { x: 15, y: 27 }, body: { w: 2, h: 1 }, pads: [pad('1', -1.1, 0, 0.8, 0.8, net.CC1, 'CC1'), pad('2', 1.1, 0, 0.8, 0.8, net.GND, 'GND')] },
+    { ref: 'R2', value: '5.1k CC2 sink pull-down', footprint: 'BoardForge_Proof:R_0603', at: { x: 15, y: 30 }, body: { w: 2, h: 1 }, pads: [pad('1', -1.1, 0, 0.8, 0.8, net.CC2, 'CC2'), pad('2', 1.1, 0, 0.8, 0.8, net.GND, 'GND')] },
   ]
   const segments = [
     segment(10.4, 17, 20, 17, 0.45, net.VBUS),
@@ -704,8 +725,17 @@ function usbEsp32CategoryPcbEvidence() {
     segment(40, 23, 49.5, 22, 0.22, net.I2C_SDA),
     segment(40, 25, 49.5, 24, 0.22, net.UART_TX),
     segment(40, 27, 49.5, 26, 0.22, net.UART_RX),
+    segment(10.4, 24, 13.9, 27, 0.2, net.CC1),
+    segment(10.4, 26, 13.9, 30, 0.2, net.CC2),
+    segment(16.1, 27, 16.1, 30, 0.3, net.GND),
+    segment(16.1, 27, 18, 32, 0.3, net.GND),
+    segment(18, 32, 32, 32, 0.3, net.GND),
+    segment(32, 32, 32, 21, 0.3, net.GND),
+    segment(32, 21, 30, 21, 0.3, net.GND),
+    segment(10.4, 15, 20, 19, 0.3, net.GND, 'B.Cu'),
+    segment(20, 19, 30, 21, 0.3, net.GND),
   ]
-  const vias = []
+  const vias = [via(10.4, 15, net.GND), via(20, 19, net.GND)]
   return { nets, footprints, segments, vias }
 }
 
@@ -861,6 +891,8 @@ function renderProofFootprint(footprint) {
     (at ${mm(footprint.at.x)} ${mm(footprint.at.y)} 0)
     (property "Reference" "${escapePcb(footprint.ref)}" (at 0 ${mm(y0 - 1.1)} 0) (layer "F.Fab") (uuid "${stableUuid(`${footprint.ref}-ref`)}") (effects (font (size 0.8 0.8) (thickness 0.12))))
     (property "Value" "${escapePcb(footprint.value)}" (at 0 ${mm(y1 + 1.1)} 0) (layer "F.Fab") hide (uuid "${stableUuid(`${footprint.ref}-value`)}") (effects (font (size 0.7 0.7) (thickness 0.1))))
+    (property "BoardForgeComponentUuid" "${footprint.componentUuid}" (at 0 0 0) (layer "F.Fab") hide (uuid "${stableUuid(`${footprint.ref}-component-link`)}") (effects (font (size 0.7 0.7))))
+    (property "BoardForgeBindingId" "${footprint.bindingId}" (at 0 0 0) (layer "F.Fab") hide (uuid "${stableUuid(`${footprint.ref}-binding-link`)}") (effects (font (size 0.7 0.7))))
     (fp_rect (start ${mm(x0)} ${mm(y0)}) (end ${mm(x1)} ${mm(y1)}) (stroke (width 0.12) (type solid)) (fill none) (layer "F.Fab") (uuid "${stableUuid(`${footprint.ref}-silk`)}"))
     (fp_rect (start ${mm(x0 - 0.35)} ${mm(y0 - 0.35)}) (end ${mm(x1 + 0.35)} ${mm(y1 + 0.35)}) (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (uuid "${stableUuid(`${footprint.ref}-courtyard`)}"))
 ${pads}
@@ -943,6 +975,7 @@ async function writeCategorySchematic({ board, projectDir }) {
     symbolCount: model.symbols.length,
     netCount: model.nets.length,
     componentRefs: model.symbols.map((symbol) => symbol.ref),
+    components: model.symbols.map((symbol) => ({ ref: symbol.ref, componentUuid: symbol.componentUuid, bindingId: symbol.bindingId })),
     limitations: [
       'The category graph uses embedded BoardForge connector symbols to avoid pretending unresolved manufacturer symbols are verified.',
       'Manufacturing remains blocked until exact symbol, pin map, footprint, and selected MPN evidence agree.',
@@ -953,18 +986,21 @@ async function writeCategorySchematic({ board, projectDir }) {
 function categorySchematicComponents(board) {
   const pinMaps = categorySchematicPinMaps(board)
   return board.bom.map((row, index) => {
-    const pinMap = pinMaps[row.ref] || fallbackCategoryPinMap(index)
+    const approved = approvedAssetFor(row.mpn)
+    const pinMap = approved?.pinMap || pinMaps[row.ref] || fallbackCategoryPinMap(index)
     return {
       ref: row.ref,
       value: row.value,
       group: 'CATEGORY_REVIEW_COMPONENT',
       role: row.role,
       symbol: `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
-      footprint: `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
+      footprint: approved?.footprint.libId || `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
       pinMap,
       assetSource: 'BoardForge category proof template',
       assetConfidence: 'ASSUMED_REVIEW_REQUIRED',
       reviewNotes: `${row.verificationStatus}; exact manufacturer symbol, pin map, and footprint must be approved before PCB sync.`,
+      ...componentLink(board.id, row.ref),
+      schematicUuid: stableUuid(`${board.id}-schematic-${row.ref}`),
     }
   })
 }
@@ -1132,6 +1168,10 @@ async function runOptionalKiCadReports({ projectDir, files, kicad }) {
   if (validation.erc) base.erc = validation.erc
   if (validation.drc) base.drc = validation.drc
   return base
+}
+
+function componentLink(boardId, ref) {
+  return { ref, componentUuid: stableUuid(`${boardId}-component-${ref}`), bindingId: createHash('sha256').update(`boardforge-binding:${boardId}:${ref}`).digest('hex') }
 }
 
 async function writeCategoryReviewLibraries(projectDir, symbols) {
@@ -1359,23 +1399,31 @@ function buildMakeManufacturableReport({ board, outlineResult, validationReports
   }
 }
 
-function buildMakeSourcableReport({ board }) {
+function buildMakeSourcableReport({ board, assetBinding }) {
   const rows = board.bom || []
+  const components = new Map((assetBinding?.components || []).map((component) => [component.ref, component]))
+  const sourcingRows = rows.map((row) => {
+    const component = components.get(row.ref)
+    const selection = component?.canonicalBinding?.partSelection
+    const observations = selection?.observations || []
+    const providerEvidence = Object.fromEntries(['digikey','mouser'].map((provider) => {
+      const proof = observations.find((item) => item.provider === provider && item.mpn === selection?.mpn && item.live && item.exact)
+      return [provider, proof ? { live:true, queriedAt:proof.checkedAt, requestId:proof.requestId || `${provider}-${row.ref}-${proof.checkedAt}`, stockStatus:proof.stockStatus, quantityAvailable:proof.quantityAvailable } : null]
+    }))
+    return { ref:row.ref, mpn:selection?.mpn || row.mpn || null, bindingId:component?.canonicalBinding?.binding?.bindingId || null, providers:providerEvidence }
+  })
+  const live = sourcingRows.length > 0 && sourcingRows.every((row) => row.mpn && row.bindingId && row.providers.digikey?.live && row.providers.mouser?.live)
   return {
     schema: 'boardforge.make-sourcable.real-proof.v1',
     boardId: board.id,
-    status: 'SOURCING_REVIEW_REQUIRED',
+    status: live ? 'SOURCING_LIVE_VERIFIED' : 'SOURCING_REVIEW_REQUIRED',
     bomRows: rows.length,
     noFakeStock: true,
-    rows: rows.map((row) => ({
-      ...row,
-      sourcingStatus: 'NOT_LIVE_CHECKED',
-      reason: 'Proof runner records candidate BOM intent only; live Mouser/DigiKey lookup must verify stock and lifecycle before assembly claims.',
-    })),
+    rows: sourcingRows,
   }
 }
 
-async function buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings = false, canonicalBindingResolver }) {
+async function buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings = false, canonicalBindingResolver, productionPartResolver }) {
   if (!board.bom.length) {
     return {
       schema: 'boardforge.schematic-asset-binding.real-proof.v1',
@@ -1407,11 +1455,25 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
   })
   const resolvedCandidates = new Map((componentDatabase.components || []).map((component) => [component.ref, component]))
   const resolver = canonicalBindingResolver || (liveBindings ? defaultCanonicalBindingResolver : null)
+  const lookupService = liveBindings ? createPartLookupService() : null
+  const partResolver = productionPartResolver || (liveBindings ? createProductionPartResolver({ providers:[
+    digikeyProductionProvider(lookupService),
+    mouserProductionProvider(createMouserProvider({env:loadBoardForgeEnv({cwd:REPO_ROOT}).env,liveLookup:true})),
+  ] }) : null)
   const canonicalResults = new Map()
   for (const row of board.bom) {
     const candidate = resolvedCandidates.get(row.ref)
-    if (!row.mpn) {
-      canonicalResults.set(row.ref, { status: 'BLOCKED', blocker: { code: 'EXACT_MPN_REQUIREMENT_MISSING', stage: 'component_selection', ref: row.ref, detail: 'The logical requirement does not select an exact manufacturer part number.' } })
+    let effectiveRow=row, selection=null
+    if (partResolver) {
+      selection=await partResolver({requirement:row,family:productionFamily(board.id,row)})
+      if(selection.status==='SELECTED') effectiveRow={...row,mpn:selection.mpn}
+      else {
+        canonicalResults.set(row.ref, { status: 'BLOCKED', partSelection:selection, blocker: { code: selection?.blocker?.code || 'NO_LIVE_EXACT_PRODUCTION_CANDIDATE', stage: 'component_selection', ref: row.ref, mpn: row.mpn || null, detail: 'Approved production candidates did not produce fresh exact live evidence.' } })
+        continue
+      }
+    }
+    if (!effectiveRow.mpn) {
+      canonicalResults.set(row.ref, { status: 'BLOCKED', partSelection:selection, blocker: { code: selection?.blocker?.code || 'EXACT_MPN_REQUIREMENT_MISSING', stage: 'component_selection', ref: row.ref, detail: 'No exact manufacturer part number has fresh live production evidence.' } })
       continue
     }
     if (!resolver) {
@@ -1419,10 +1481,10 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
       continue
     }
     try {
-      const binding = await resolver({ row, board, candidate })
-      canonicalResults.set(row.ref, { status: 'BOUND', binding, projections: projectCanonicalBinding(binding) })
+      const binding = await resolver({ row:effectiveRow, board, candidate, lookupService, partSelection:selection })
+      canonicalResults.set(row.ref, { status: 'BOUND', partSelection:selection, binding, projections: projectCanonicalBinding(binding) })
     } catch (error) {
-      canonicalResults.set(row.ref, { status: 'BLOCKED', blocker: { code: error.code || 'CANONICAL_BINDING_FAILED', stage: bindingStage(error.code), ref: row.ref, mpn: row.mpn, detail: String(error.code || error.message || error) } })
+      canonicalResults.set(row.ref, { status: 'BLOCKED', partSelection:selection, selectedMpn:effectiveRow.mpn, blocker: { code: error.code || 'CANONICAL_BINDING_FAILED', stage: bindingStage(error.code), ref: row.ref, mpn: effectiveRow.mpn, detail: String(error.code || error.message || error) } })
     }
   }
   const components = board.bom.map((row) => {
@@ -1439,7 +1501,7 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
     pinMap: 'category template net map',
     status: 'REVIEW_REQUIRED',
     reason: 'No selected manufacturer part, verified pin equivalence, or production footprint binding exists yet.',
-    exactMpnRequirement: row.mpn || null,
+    exactMpnRequirement: canonical?.selectedMpn || canonical?.binding?.manufacturerPartNumber || row.mpn || canonical?.partSelection?.mpn || null,
     canonicalBinding: canonical,
     catalogCandidate: candidate ? {
       mpn: candidate.mpn || null,
@@ -1465,11 +1527,12 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
     canonicallyBound: components.filter((component) => component.canonicalBinding?.status === 'BOUND').length,
     canonicalBlocked: components.filter((component) => component.canonicalBinding?.status === 'BLOCKED').length,
   }
+  const canonicalComplete = components.every((component) => component.canonicalBinding?.status === 'BOUND')
   return {
     schema: 'boardforge.schematic-asset-binding.real-proof.v1',
     boardId: board.id,
-    status: 'ASSET_BINDINGS_REVIEW_REQUIRED',
-    manufacturingAllowed: false,
+    status: canonicalComplete ? 'ASSET_BINDINGS_VERIFIED' : 'ASSET_BINDINGS_REVIEW_REQUIRED',
+    manufacturingAllowed: canonicalComplete,
     schematicGraph: {
       status: categorySchematic?.status || 'NOT_GENERATED',
       symbols: categorySchematic?.symbolCount || 0,
@@ -1487,18 +1550,25 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
       'Run live sourcing and an assembly package check before manufacturing export.',
     ],
     noFakeClaims: true,
-    canonicalBindingStatus: components.every((component) => component.canonicalBinding?.status === 'BOUND') ? 'CANONICAL_BINDINGS_COMPLETE' : 'CANONICAL_BINDINGS_BLOCKED',
+    canonicalBindingStatus: canonicalComplete ? 'CANONICAL_BINDINGS_COMPLETE' : 'CANONICAL_BINDINGS_BLOCKED',
     canonicalBlockers: components.flatMap((component) => component.canonicalBinding?.blocker ? [component.canonicalBinding.blocker] : []),
   }
 }
 
-async function defaultCanonicalBindingResolver({ row, candidate }) {
+function productionFamily(boardId,row){if(boardId==='usb-c-esp32-sensor'){if(row.ref==='U1')return'ESP32_S3';if(row.ref==='J1')return'USB';if(row.ref==='U2')return'REGULATOR';if(row.ref==='J2')return'SENSOR_CONNECTOR';if(/^R[12]$/.test(row.ref))return'RES_5K1_0603'}return categoryAssetGroup(boardId,row.ref)}
+
+async function defaultCanonicalBindingResolver({ row, candidate, partSelection }) {
+  const approved=approvedAssetFor(row.mpn)
+  if(approved) candidate={...candidate,mpn:row.mpn,group:candidate?.group, symbol:approved.symbol,footprint:approved.footprint,pinMap:approved.pinMap,package:approved.package,productionAssetApproval:approved.approval}
   if (!candidate?.symbol || !candidate?.footprint || !candidate?.pinMap) {
     const error = new Error('APPROVED_ASSET_METADATA_MISSING'); error.code = 'APPROVED_ASSET_METADATA_MISSING'; throw error
   }
+  const candidateMpn=String(candidate.mpn||'').toLowerCase(), selectedMpn=String(row.mpn||'').toLowerCase()
+  const genericPassive=candidate.group==='RES' && /0603/i.test(String(candidate.package||candidate.footprint?.libId||''))
+  if(candidateMpn && candidateMpn!==selectedMpn && !genericPassive){const error=new Error('APPROVED_ASSET_MPN_MISMATCH');error.code='APPROVED_ASSET_MPN_MISMATCH';throw error}
   return resolveCanonicalComponentBinding({
     requirement: { id: `pilot-${row.ref}`, ref: row.ref, logicalRole: row.role, value: row.value, mpn: row.mpn },
-    lookupService: createPartLookupService(),
+    lookupService: partSelection?.status==='SELECTED' ? {lookup:async()=>({selected:{manufacturerPartNumber:partSelection.mpn,manufacturer:'',provider:partSelection.provider,matchType:'exact',status:partSelection.stockStatus==='OUT_OF_STOCK'?'VERIFIED_OUT_OF_STOCK':'VERIFIED_IN_STOCK',stockStatus:partSelection.stockStatus,quantityAvailable:partSelection.quantityAvailable,lifecycleStatus:partSelection.lifecycle,lastChecked:partSelection.checkedAt},lastChecked:partSelection.checkedAt})} : createPartLookupService(),
     assetResolver: async () => ({ symbol: candidate.symbol, footprint: candidate.footprint, model3d: candidate.model3d, pinMap: candidate.pinMap }),
   })
 }
@@ -1516,7 +1586,7 @@ function categorySchematicNets(board) {
 
 function categoryAssetGroup(boardId, ref) {
   const groups = {
-    'usb-c-esp32-sensor': { U1: 'ESP32_S3', J1: 'USB', U2: 'REGULATOR', J2: 'SENSOR_CONNECTOR' },
+    'usb-c-esp32-sensor': { U1: 'ESP32_S3', J1: 'USB', U2: 'REGULATOR', J2: 'SENSOR_CONNECTOR', R1:'RES', R2:'RES' },
     'can-sensor-node': { U1: 'ESP32_S3', U2: 'CAN_TRANSCEIVER', J1: 'USB', J2: 'POWER_INPUT' },
     'poe-ethernet-sensor': { J1: 'RJ45', U1: 'POE_FRONT_END', U2: 'ESP32_S3', J2: 'SENSOR_CONNECTOR' },
     'odd-shaped-robotics-controller': { U1: 'ESP32_S3', U2: 'CAN_TRANSCEIVER', J1: 'USB', J2: 'ESC_CONNECTOR' },
@@ -1532,7 +1602,7 @@ function buildBlockers({ board, outlineResult, validationReports, health, catego
   if (!outlineResult.validation.valid) items.push(blocker('outline_generation', 'OUTLINE_VALIDATION_BLOCKED', outlineResult.validation.status, 'Run outline auto-fix or regenerate shape.'))
   if (validationReports.erc.errors > 0) items.push(blocker('schematic_generation', 'ERC_ERRORS', `${validationReports.erc.errors} ERC errors`, 'Fix schematic symbol graph and rerun ERC.'))
   if (validationReports.drc.errors > 0) items.push(blocker('pcb_validation', 'DRC_ERRORS', `${validationReports.drc.errors} DRC errors`, 'Run DRC-guided repair before export.'))
-  if (board.bom.length) items.push(blocker('sourcing', 'BOM_NOT_LIVE_VERIFIED', 'Candidate BOM rows are not live-stock verified.', 'Run Make Sourcable with configured supplier credentials.'))
+  if (board.bom.length && assetBinding?.canonicalBindingStatus !== 'CANONICAL_BINDINGS_COMPLETE') items.push(blocker('sourcing', 'BOM_NOT_LIVE_VERIFIED', 'Candidate BOM rows are not live-stock verified.', 'Run Make Sourcable with configured supplier credentials.'))
   if (board.bom.length && assetBinding?.status === 'ASSET_BINDINGS_REVIEW_REQUIRED') {
     items.push(blocker('asset_binding', 'UNVERIFIED_SYMBOL_FOOTPRINT_PINMAP_BINDINGS', 'The proof uses embedded review symbols and proof PCB geometry, not selected manufacturer symbol/footprint/pin-map bindings.', 'Select parts, resolve approved local libraries, verify pin-to-pad equivalence, then rerun ERC/DRC and package validation.'))
   }
@@ -1557,12 +1627,18 @@ function determineFinalStatus({ outlineResult, validationReports, blockers }) {
   return 'PASS_ENGINEERING_REVIEW_REQUIRED'
 }
 
-async function writeBomAndSourcing({ projectDir, board }) {
-  if (!board.bom.length) return
-  const csv = ['Reference,Value,Role,VerificationStatus', ...board.bom.map((row) => `${csvCell(row.ref)},${csvCell(row.value)},${csvCell(row.role)},${csvCell(row.verificationStatus)}`)].join('\n')
+async function writeBomAndSourcing({ projectDir, board, categorySchematic, categoryPcbEvidence, assetBinding }) {
+  if (!board.bom.length) return { bom: [], cpl: [] }
+  const links = new Map(categorySchematic.components.map((row) => [row.ref, row]))
+  const placements = new Map((categoryPcbEvidence.components || []).map((row) => [row.ref, row]))
+  const bom = board.bom.map((row) => ({ ...row, ...links.get(row.ref) }))
+  const cpl = board.bom.map((row) => ({ ref: row.ref, ...placements.get(row.ref) }))
+  const csv = ['Reference,Value,Role,VerificationStatus,ComponentUuid,BindingId', ...bom.map((row) => `${csvCell(row.ref)},${csvCell(row.value)},${csvCell(row.role)},${csvCell(row.verificationStatus)},${row.componentUuid},${row.bindingId}`)].join('\n')
   await writeFile(path.join(projectDir, 'BoardForge_BOM.csv'), csv, 'utf8')
-  const sourcing = buildMakeSourcableReport({ board })
+  await writeFile(path.join(projectDir, 'BoardForge_CPL.csv'), ['Reference,ComponentUuid,BindingId', ...cpl.map((row) => `${row.ref},${row.componentUuid},${row.bindingId}`)].join('\n'), 'utf8')
+  const sourcing = buildMakeSourcableReport({ board, assetBinding })
   await writeJsonAndMarkdown(projectDir, 'BoardForge_BOM_Sourcing_Report', sourcing, renderMakeSourcableMarkdown(sourcing))
+  return { bom, cpl }
 }
 
 async function writeGoldenFixtureRecord({ outputRoot, board, seed, evidence }) {

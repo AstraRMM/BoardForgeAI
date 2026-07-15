@@ -1,0 +1,11 @@
+{
+  "id": "phase2c_live_canonical_part_resolution_001",
+  "schemaVersion": 1,
+  "title": "Resolve production parts before canonical component binding",
+  "problem": "Logical roles and local library candidates were reaching pilot artifacts without an exact live-selected MPN shared by schematic, PCB, BOM, and manufacturing evidence.",
+  "rootCause": "Supplier selection, asset binding, and downstream projections were independent pipelines.",
+  "solution": "Rank bounded approved part families using exact live supplier responses, cache briefly, retry transient failures, then content-address one canonical binding and derive every downstream projection from it.",
+  "regressionTests": ["production-part-resolver.test.mjs", "canonical-component-binding.test.mjs", "real-board-proof.test.mjs"],
+  "limitations": ["A live exact supplier match does not prove an unapproved local symbol or footprint is production-correct.", "Provider outage or missing exact part evidence blocks selection."],
+  "autoApply": true
+}
