@@ -383,6 +383,7 @@
         "test:digikey-supplychain-capability": "node --test --test-name-pattern \"SupplyChain capability\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:import-benchmark-suite": "node --test --test-name-pattern \"import benchmark suite\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:manufacturing-package-authenticity": "node --test --test-name-pattern \"manufacturing package authenticity\" ./plugins/boardforge-plugin/tests/*.test.mjs",
+        "test:phase2c-board-acceptance": "node --test ./plugins/boardforge-plugin/tests/phase2c-board-acceptance-gate.test.mjs",
         "test:jlcpcb-readiness-checker": "node --test --test-name-pattern \"JLCPCB readiness\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:library-coverage-auditor": "node --test --test-name-pattern \"library coverage auditor\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:footprint-confidence-score": "node --test --test-name-pattern \"footprint confidence\" ./plugins/boardforge-plugin/tests/*.test.mjs",
@@ -414,7 +415,12 @@
         "boardforge:m4-candidate-proof": "node scripts/generate-m4-pcb-proof.mjs",
         "boardforge:m4-closure-gate": "node scripts/run-m4-closure-gate.mjs",
         "boardforge:m4-performance": "node scripts/run-m4-browser-performance.mjs",
-        "boardforge:m4-visual-qa": "node scripts/run-m4-visual-qa.mjs"
+        "boardforge:m4-visual-qa": "node scripts/run-m4-visual-qa.mjs",
+        "boardforge:phase2c-challenge-contract": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-contract.test.mjs",
+        "boardforge:phase2c-benchmark": "node scripts/run-phase2c-challenge-benchmark.mjs",
+        "test:phase2c-benchmark": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-benchmark.test.mjs scripts/phase2c-challenge-report.test.mjs",
+        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs",
+        "boardforge:phase2c-autonomous-challenge": "node scripts/run-phase2c-autonomous-challenge.mjs"
     },
     "dependencies": {
         "@better-auth/infra": "^0.3.6",
