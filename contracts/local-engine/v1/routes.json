@@ -1,0 +1,19 @@
+{
+  "contractVersion": "1.0.0",
+  "frozenAt": "2026-07-14",
+  "transport": { "scheme": "http", "host": "127.0.0.1", "defaultPort": 38991, "methods": ["GET", "POST", "OPTIONS"], "contentType": "application/json", "authHeader": "x-boardforge-token" },
+  "responseEnvelope": ["ok", "status", "data", "errors", "warnings", "artifactPaths"],
+  "routes": [
+    "GET /pairing/code", "POST /pairing/verify", "POST /pairing/revoke", "GET /pairing/status",
+    "GET /health", "GET /status", "GET /readiness", "GET /fixtures", "GET /sourcing/status",
+    "GET /integrations/digikey/status", "POST /integrations/digikey/test", "POST /integrations/digikey/lookup", "GET /setup/status",
+    "GET /outline/presets", "POST /outline/seed", "POST /outline/validate", "POST /outline/generate-kicad", "POST /outline/generate-board", "GET /outline/:id/status", "GET /outline/:id/reports",
+    "GET /evidence", "GET /alpha/launch-gate", "POST /import/wizard",
+    "POST /intake/start", "POST /intake/answer", "GET /intake/session/:id", "POST /brief/generate", "POST /brief/approve",
+    "POST /project/create", "GET /project/:id/status", "GET /project/:id/manifest", "GET /project/:id/reports", "GET /project/:id/downloads",
+    "POST /project/:id/publish", "POST /project/:id/archive", "POST /project/:id/keep-local", "POST /project/:id/validate", "POST /project/:id/route", "POST /project/:id/repair", "POST /project/:id/export",
+    "POST /project/:id/review", "POST /project/:id/health", "POST /project/:id/risk", "POST /project/:id/routeability", "POST /project/:id/diff", "POST /project/:id/preview", "POST /project/:id/lessons", "POST /project/:id/blockers", "POST /project/:id/variants", "POST /project/:id/make-manufacturable", "POST /project/:id/sourcing-verify", "POST /project/:id/quote-readiness", "POST /project/:id/alternatives", "POST /project/:id/make-sourcable", "POST /project/:id/timeline",
+    "POST /jobs/start", "GET /jobs/:id", "GET /jobs/:id/log", "POST /jobs/:id/cancel", "POST /jobs/:id/retry", "GET /projects/:id/jobs"
+  ],
+  "knownClientGap": "apps/web/src/lib/boardforge-local-artifact-client.ts advertises only the original artifact subset; routes.json is authoritative for engine parity."
+}

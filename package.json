@@ -390,7 +390,14 @@
         "test:performance-benchmark": "node --test --test-name-pattern \"performance benchmark\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:engineering-copilot-panel": "node --test --test-name-pattern \"engineering copilot\" ./plugins/boardforge-plugin/tests/*.test.mjs",
         "test:demo-package-manifest": "node --test --test-name-pattern \"demo package manifest\" ./plugins/boardforge-plugin/tests/*.test.mjs",
-        "boardforge:91-to-99-hardening": "node ./plugins/boardforge-plugin/bin/boardforge-91-to-99-hardening.mjs"
+        "boardforge:91-to-99-hardening": "node ./plugins/boardforge-plugin/bin/boardforge-91-to-99-hardening.mjs",
+        "boardforge:rust-parity": "node scripts/boardforge-rust-parity.mjs",
+        "boardforge:browser-ecad-e2e": "playwright test --config=apps/web/playwright.config.ts apps/web/tests/e2e/boardforge-browser-ecad.spec.ts",
+        "boardforge:kicad-roundtrip": "node --test plugins/boardforge-plugin/tests/phase2b-contract-kicad.test.mjs",
+        "boardforge:variant-benchmark": "node --test --test-name-pattern \"variant generation\" plugins/boardforge-plugin/tests/*.test.mjs",
+        "boardforge:placement-benchmark": "node --test --test-name-pattern \"placement\" plugins/boardforge-plugin/tests/*.test.mjs",
+        "boardforge:routing-benchmark": "node --test --test-name-pattern \"routing\" plugins/boardforge-plugin/tests/*.test.mjs",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "@better-auth/infra": "^0.3.6",

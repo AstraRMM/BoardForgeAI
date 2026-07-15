@@ -7,6 +7,7 @@ import { outlinePresets } from '../../lib/outline-export'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
 import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
+import { rustPolygonMetrics } from '../../lib/custom-editor/geometry-wasm'
 
 type Point = { id?: string; x: number; y: number }
 type Hole = { ref: string; x: number; y: number; diameterMm: number; keepoutMm?: number; plating?: 'plated' | 'non-plated'; locked?: boolean }
@@ -79,6 +80,8 @@ export function OutlineEditor() {
   const [drawCloseRequested, setDrawCloseRequested] = useState(false)
   const [fillProposal, setFillProposal] = useState<FillSectionProposal | null>(null)
   const [fillStyle, setFillStyle] = useState<FillSectionStyle>('straight')
+  const [rustMetrics, setRustMetrics] = useState<{ area: number; perimeter: number } | null>(null)
+  const [rustGeometryStatus, setRustGeometryStatus] = useState<'loading' | 'active' | 'fallback'>('loading')
   const [status, setStatus] = useState<string>('Ready - choose a preset, edit points, or draw a custom outline.')
   const [copied, setCopied] = useState(false)
   const [showPromptPanel, setShowPromptPanel] = useState(false)
@@ -96,9 +99,9 @@ export function OutlineEditor() {
   const prompt = useMemo(() => buildCodexPrompt({ preset, points, holes, validation, metrics }), [preset, points, holes, validation, metrics])
   const statusTone = validation.valid ? 'valid' : 'blocked'
   const areaMm2 = useMemo(() => Math.abs(polygonArea(points)), [points])
-  const edgeLength = useMemo(() => totalEdgeLength(points), [points])
+  const edgeLength = rustMetrics?.perimeter ?? totalEdgeLength(points)
   const holesInside = useMemo(() => holes.filter((hole) => pointInPolygon(hole, points)).length, [holes, points])
-  const areaText = closed && points.length >= 3 ? `${(areaMm2 / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
+  const areaText = closed && points.length >= 3 ? `${((rustMetrics?.area ?? areaMm2) / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
   const selectedPoint = selectedObject?.type === 'point' ? points.findIndex((point) => point.id === selectedObject.id) : null
   const selectedHole = selectedObject?.type === 'hole' ? holes.find((hole) => hole.ref === selectedObject.ref) || null : null
   const selectedEdge = selectedObject?.type === 'edge' ? {
@@ -106,6 +109,14 @@ export function OutlineEditor() {
   } : null
   const selectedAnchor = selectedObject?.type === 'point' ? points.find((point) => point.id === selectedObject.id) : selectedObject?.type === 'edge' && selectedEdge?.start && selectedEdge.end ? { x: (selectedEdge.start.x + selectedEdge.end.x) / 2, y: (selectedEdge.start.y + selectedEdge.end.y) / 2 } : selectedHole
   const drawDraft = useMemo(() => drawRaw.length ? createDrawDraft(drawRaw, { simplificationTolerance: drawTolerance, smoothingIterations: drawSmoothing, closeRequested: drawCloseRequested }) : null, [drawRaw, drawTolerance, drawSmoothing, drawCloseRequested])
+
+  useEffect(() => {
+    let current = true
+    if (!closed || points.length < 3) { setRustMetrics(null); return () => { current = false } }
+    setRustGeometryStatus('loading')
+    rustPolygonMetrics(points).then((value) => { if (current) { setRustMetrics(value); setRustGeometryStatus('active') } }).catch(() => { if (current) { setRustMetrics(null); setRustGeometryStatus('fallback') } })
+    return () => { current = false }
+  }, [points, closed])
 
   function snapshot(): GeometrySnapshot {
     return { points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), preset, closed }
@@ -840,6 +851,7 @@ export function OutlineEditor() {
         </aside>
       </div>
       <div className="bf-outline-metrics">
+        <div><Cpu size={20} /><span>Geometry engine</span><strong>{rustGeometryStatus === 'active' ? 'Rust/WASM' : rustGeometryStatus === 'loading' ? 'Loading WASM' : 'TypeScript fallback'}</strong></div>
         <div><Ruler size={20} /><span>Board area</span><strong>{areaText}</strong></div>
         <div><Layers3 size={20} /><span>Outline points</span><strong>{points.length}</strong></div>
         <div><ShieldCheck size={20} /><span>Holes verified</span><strong>{holesInside} / {holes.length}</strong></div>

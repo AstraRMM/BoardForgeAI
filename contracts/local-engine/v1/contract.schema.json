@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://boardforge.local/contracts/local-engine/v1/contract.schema.json",
+  "title": "BoardForge Local Engine v1 envelope fixtures",
+  "type": "object",
+  "required": ["contractVersion", "cases"],
+  "properties": {
+    "contractVersion": { "const": "1.0.0" },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "request", "response"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "request": {
+            "type": "object",
+            "required": ["method", "path"],
+            "properties": {
+              "method": { "enum": ["GET", "POST"] },
+              "path": { "type": "string", "pattern": "^/" },
+              "query": { "type": "object" },
+              "body": { "type": "object" }
+            },
+            "additionalProperties": false
+          },
+          "response": { "$ref": "#/$defs/envelope" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "required": ["ok", "status", "data", "errors", "warnings", "artifactPaths"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "status": { "type": "string", "pattern": "^BOARD_FORGE_" },
+        "data": { "type": "object" },
+        "errors": { "type": "array", "items": { "type": "object", "required": ["message"], "properties": { "message": { "type": "string" } } } },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "artifactPaths": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

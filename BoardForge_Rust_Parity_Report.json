@@ -1,0 +1,67 @@
+{
+  "schema": "boardforge.rust-parity.v1",
+  "generatedAt": "2026-07-14T23:55:56.279Z",
+  "overall": "PARITY",
+  "comparisons": [
+    {
+      "id": "rectangle",
+      "status": "PARITY",
+      "node": {
+        "valid": true,
+        "area": 1200,
+        "perimeter": 140
+      },
+      "rust": {
+        "id": "rectangle",
+        "valid": true,
+        "area": 1200,
+        "perimeter": 140
+      }
+    },
+    {
+      "id": "l-shape",
+      "status": "PARITY",
+      "node": {
+        "valid": true,
+        "area": 900,
+        "perimeter": 140
+      },
+      "rust": {
+        "id": "l-shape",
+        "valid": true,
+        "area": 900,
+        "perimeter": 140
+      }
+    },
+    {
+      "id": "concave-notch",
+      "status": "PARITY",
+      "node": {
+        "valid": true,
+        "area": 1600,
+        "perimeter": 200
+      },
+      "rust": {
+        "id": "concave-notch",
+        "valid": true,
+        "area": 1600,
+        "perimeter": 200
+      }
+    },
+    {
+      "id": "self-intersection",
+      "status": "PARITY",
+      "node": {
+        "valid": false,
+        "area": null,
+        "perimeter": null
+      },
+      "rust": {
+        "id": "self-intersection",
+        "valid": false,
+        "area": null,
+        "perimeter": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "contractVersion": "1.0.0",
+  "cases": [
+    {
+      "id": "health-success",
+      "request": { "method": "GET", "path": "/health" },
+      "response": { "ok": true, "status": "BOARD_FORGE_LOCAL_SERVER_HEALTHY", "data": { "service": "BoardForge Local Engine Service", "rootDir": "<workspace>", "localhostOnly": true }, "errors": [], "warnings": [], "artifactPaths": [] }
+    },
+    {
+      "id": "job-start-success",
+      "request": { "method": "POST", "path": "/jobs/start", "body": { "type": "validate", "projectId": "fixture-project", "projectDir": "<workspace>/fixture-project" } },
+      "response": { "ok": true, "status": "BOARD_FORGE_JOB_STARTED", "data": { "jobId": "<stable-job-id>", "projectId": "fixture-project", "type": "validate", "status": "queued", "progress": 0, "stage": "queued", "logs": [], "artifactPaths": [], "error": null }, "errors": [], "warnings": [], "artifactPaths": [] }
+    },
+    {
+      "id": "unknown-route-error",
+      "request": { "method": "GET", "path": "/not-a-route" },
+      "response": { "ok": false, "status": "BOARD_FORGE_LOCAL_SERVER_ROUTE_NOT_FOUND", "data": {}, "errors": [{ "message": "GET /not-a-route is not implemented by the BoardForge local engine service" }], "warnings": [], "artifactPaths": [] }
+    }
+  ]
+}
