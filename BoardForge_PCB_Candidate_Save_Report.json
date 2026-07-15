@@ -1,0 +1,32 @@
+{
+  "schema": "boardforge.phase2b.m4.report.v1",
+  "generatedAt": "2026-07-15T00:00:00.000Z",
+  "title": "PCB Candidate Save Report",
+  "status": "SEPARATE_PIPELINE_EVIDENCE_REQUIRED",
+  "implemented": [
+    "Routing results use stable IDs suitable for Rust edit transactions.",
+    "Route previews carry layer, width and net metadata required to form candidate transactions."
+  ],
+  "evidence": {
+    "command": "cargo test --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm",
+    "geometryTests": {
+      "passed": 13,
+      "failed": 0,
+      "suiteSeconds": 1.83
+    },
+    "scaleGate": {
+      "primitives": 100000,
+      "maximumSeconds": 10,
+      "result": "PASS"
+    },
+    "clippy": {
+      "command": "cargo clippy --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm -- -D warnings",
+      "result": "PASS"
+    }
+  },
+  "limitations": [
+    "This routing/DRC suite does not write files or mutate source projects.",
+    "Candidate serialization, atomic write, KiCad validation, reload and promotion must be proven by the M4 integration gate.",
+    "Source-file immutability remains mandatory."
+  ]
+}

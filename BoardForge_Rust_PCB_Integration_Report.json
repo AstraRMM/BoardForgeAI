@@ -1,0 +1,34 @@
+{
+  "schema": "boardforge.phase2b.m4.report.v1",
+  "generatedAt": "2026-07-15T00:00:00.000Z",
+  "title": "Rust Integration Report",
+  "status": "PASS_WITH_OPEN_INTEGRATION",
+  "implemented": [
+    "pcb_plan_route",
+    "pcb_validate",
+    "pcb_net_metrics",
+    "pcb_validate_placement",
+    "Schema mismatch rejection at each versioned WASM boundary"
+  ],
+  "evidence": {
+    "command": "cargo test --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm",
+    "geometryTests": {
+      "passed": 13,
+      "failed": 0,
+      "suiteSeconds": 1.83
+    },
+    "scaleGate": {
+      "primitives": 100000,
+      "maximumSeconds": 10,
+      "result": "PASS"
+    },
+    "clippy": {
+      "command": "cargo clippy --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm -- -D warnings",
+      "result": "PASS"
+    }
+  },
+  "limitations": [
+    "Browser fallback behavior must fail closed when WASM is unavailable.",
+    "Generated TypeScript bindings and packaged WASM loading still require browser integration verification."
+  ]
+}

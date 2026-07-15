@@ -1,0 +1,115 @@
+{
+  "schema": "boardforge.m4.pcb-proof/v1",
+  "generatedAt": "2026-07-15T11:54:47.813Z",
+  "proofRoot": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a",
+  "sourcePath": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\original.kicad_pcb",
+  "candidatePath": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb",
+  "sourceHash": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+  "candidateHash": "cf086369c8645fed7d8d7912336897feef70def16f65f6a7be4d512e8c01c188",
+  "sourceUnchanged": true,
+  "transaction": {
+    "version": 1,
+    "expected_source_sha256": "42e81f00e6aa74653cf1fcf189c258d44ebf0c37f92eb70302565bd6d6fe4583",
+    "operations": [
+      {
+        "op": "move_footprint",
+        "uuid": "10000000-0000-4000-8000-000000000010",
+        "x": 34,
+        "y": 32
+      },
+      {
+        "op": "rotate_footprint",
+        "uuid": "10000000-0000-4000-8000-000000000010",
+        "angle": 90
+      },
+      {
+        "op": "add_track",
+        "uuid": "71000000-0000-4000-8000-000000000001",
+        "start": [
+          34,
+          32
+        ],
+        "end": [
+          48,
+          36
+        ],
+        "width": 0.25,
+        "layer": "F.Cu",
+        "net": 1
+      },
+      {
+        "op": "add_via",
+        "uuid": "71000000-0000-4000-8000-000000000002",
+        "at": [
+          48,
+          36
+        ],
+        "size": 0.8,
+        "drill": 0.4,
+        "layers": [
+          "F.Cu",
+          "B.Cu"
+        ],
+        "net": 1
+      }
+    ]
+  },
+  "rustReload": {
+    "passed": true,
+    "unsupported": 0
+  },
+  "validation": {
+    "id": "m4-pcb-proof",
+    "status": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+    "candidateHash": "cf086369c8645fed7d8d7912336897feef70def16f65f6a7be4d512e8c01c188",
+    "rust": {
+      "status": "PASSED",
+      "reparsed": true,
+      "unsupported": 0
+    },
+    "kicad": {
+      "file": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb",
+      "reportFile": "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt",
+      "syntax": [
+        "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt",
+        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb"
+      ],
+      "command": "C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe",
+      "args": [
+        "pcb",
+        "drc",
+        "--exit-code-violations",
+        "--output",
+        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt",
+        "C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\original.kicad_pcb"
+      ],
+      "pid": 8444,
+      "exitCode": 5,
+      "signal": null,
+      "timedOut": false,
+      "spawnError": null,
+      "stdout": "Found 4 violations\r\nFound 1 unconnected items\r\nSaved DRC Report to C:\\Users\\luifi\\AppData\\Local\\Temp\\boardforge-m4-pcb-proof-fMxo3a\\.boardforge\\candidates\\m4-pcb-proof\\kicad-cli-report.txt\r\n",
+      "stderr": "7:54:47 AM: Error: Cannot enumerate files in directory 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\colors' (error 5: Access is denied.)\r\n7:54:47 AM: Error: Cannot enumerate files in directory 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\colors' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\kicad_common.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\kicad.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\fpedit.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\3d_viewer.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\pcbnew.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\cvpcb.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\symbol_editor.json' (error 5: Access is denied.)\r\n07:54:47: Error: can't open file 'C:\\Users\\luifi\\AppData\\Roaming\\kicad\\10.0\\eeschema.json' (error 5: Access is denied.)\r\n",
+      "cleanup": {
+        "attempted": false,
+        "method": null,
+        "status": null,
+        "error": null
+      },
+      "durationMs": 690.787,
+      "status": "VIOLATIONS_FOUND",
+      "available": true,
+      "version": "10.0.3",
+      "explicitBlocker": false,
+      "timeoutMs": 15000
+    },
+    "erc": "ERC_WARNINGS_CLASSIFIED",
+    "promotable": true,
+    "validatedAt": "2026-07-15T11:54:47.761Z"
+  }
+}

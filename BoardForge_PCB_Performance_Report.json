@@ -1,0 +1,33 @@
+{
+  "schema": "boardforge.phase2b.m4.report.v1",
+  "generatedAt": "2026-07-15T00:00:00.000Z",
+  "title": "PCB Performance Report",
+  "status": "PASS_BOUNDED",
+  "implemented": [
+    "Uniform-grid broad-phase indexing avoids a global O(n²) copper scan.",
+    "A deterministic 100,000-segment test is part of the Rust test suite.",
+    "The complete 13-test geometry suite, including the scale gate, measured 1.83 seconds in an unoptimized Windows test build."
+  ],
+  "evidence": {
+    "command": "cargo test --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm",
+    "geometryTests": {
+      "passed": 13,
+      "failed": 0,
+      "suiteSeconds": 1.83
+    },
+    "scaleGate": {
+      "primitives": 100000,
+      "maximumSeconds": 10,
+      "result": "PASS"
+    },
+    "clippy": {
+      "command": "cargo clippy --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm -- -D warnings",
+      "result": "PASS"
+    }
+  },
+  "limitations": [
+    "The harness asserts only that the 100k validation case completes under 10 seconds.",
+    "The recorded 1.83 seconds is total suite time, not isolated DRC latency.",
+    "No 60 FPS, memory ceiling, mobile-device or WASM-browser performance claim is established."
+  ]
+}
