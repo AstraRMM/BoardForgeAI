@@ -11,6 +11,9 @@ export const preferredPartFamilies = Object.freeze({
   CAN_TERM_120R_0603: ['RC0603FR-07120RL'],
   DECOUPLING_100NF_0603: ['CL10B104KB8NNNC'],
   CAN_TVS: ['NUP2105LT1G'],
+  RP2040_MCU: ['SC0914(13)'],
+  QSPI_FLASH: ['W25Q128JVSIQ'],
+  USB_ESD: ['USBLC6-2SC6'],
 })
 
 export function createProductionPartResolver({ providers = [], cache = new Map(), ttlMs = DEFAULT_TTL_MS, retries = 1, minimumLiveProviders = 1, now = () => Date.now() } = {}) {

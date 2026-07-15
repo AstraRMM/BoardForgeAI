@@ -16,6 +16,7 @@ import { createProductionPartResolver, digikeyProductionProvider, mouserProducti
 import { approvedAssetFor } from './components/approved-production-assets.mjs'
 import { loadBoardForgeEnv } from './config/env-loader.mjs'
 import { createMouserProvider } from './sourcing/mouser-provider.mjs'
+import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -58,6 +59,19 @@ export const REAL_BOARD_PROOF_BOARDS = [
       bom('C2','100n','CAN decoupling','APPROVED_MAPPING','CL10B104KB8NNNC'),
       bom('C3','1u','regulator output bypass','APPROVED_MAPPING','CC0603KRX7R7BB105'),
       bom('D1','NUP2105LT1G','CAN surge protection','APPROVED_MAPPING','NUP2105LT1G'),
+    ],
+  },
+  {
+    id: 'rp2040-instrument', name: 'RP2040 USB Bench Instrument', preset: 'mounting-ears', widthMm: 64, heightMm: 40, layers: 4,
+    prompt: 'Make a compact rounded USB-C RP2040 bench instrument with protected USB, QSPI flash, SWD and measurement IO.',
+    intent: ['RP2040 control', 'protected USB device', 'QSPI flash', '3V3 regulator', 'SWD and measurement expansion'],
+    bom: [
+      bom('U1','RP2040','instrument controller','APPROVED_MAPPING','SC0914(13)'), bom('U2','W25Q128JVSIQ','QSPI program flash','APPROVED_MAPPING','W25Q128JVSIQ'),
+      bom('U3','MCP1700T-3302E/TT','3.3V regulator','APPROVED_MAPPING','MCP1700T-3302E/TT'), bom('J1','USB4105-GF-A','USB-C power and data','APPROVED_MAPPING','USB4105-GF-A'),
+      bom('D1','USBLC6-2SC6','USB ESD protection','APPROVED_MAPPING','USBLC6-2SC6'), bom('J2','M20-9990645','SWD and measurement IO','APPROVED_MAPPING','M20-9990645'),
+      bom('R1','5.1k','USB CC1 pull-down','APPROVED_MAPPING','RC0603FR-075K1L'), bom('R2','5.1k','USB CC2 pull-down','APPROVED_MAPPING','RC0603FR-075K1L'),
+      bom('C1','100n','MCU decoupling','APPROVED_MAPPING','CL10B104KB8NNNC'), bom('C2','100n','MCU decoupling','APPROVED_MAPPING','CL10B104KB8NNNC'),
+      bom('C3','100n','flash decoupling','APPROVED_MAPPING','CL10B104KB8NNNC'),
     ],
   },
   {
@@ -409,6 +423,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }
 const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'usb-c-esp32-sensor': usbEsp32CategoryPcbEvidence,
   'stm32-controller': stm32ControllerCategoryPcbEvidence,
+  'rp2040-instrument': rp2040InstrumentCategoryPcbEvidence,
   'can-sensor-node': canSensorNodeCategoryPcbEvidence,
   'poe-ethernet-sensor': poeEthernetSensorCategoryPcbEvidence,
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
@@ -759,6 +774,42 @@ export function usbEsp32CategoryPcbEvidence() {
   return { nets, footprints, segments, vias }
 }
 
+export function rp2040InstrumentCategoryPcbEvidence() {
+  const names=['','GND','VBUS','3V3','USB_DP_CONN','USB_DN_CONN','USB_DP','USB_DN','CC1','CC2','QSPI_CS','QSPI_SD1','QSPI_SD2','QSPI_SD0','QSPI_SCLK','QSPI_SD3','SWDIO','SWCLK','I2C_SCL','I2C_SDA']
+  const nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+  const fp=(ref,value,footprint,x,y,w,h,pads)=>({ref,value,footprint,at:{x,y},body:{w,h},pads})
+  const flashBase=[pad('1',-2,-3,.65,.55,n.QSPI_CS,'QSPI_CS'),pad('2',-2,-2,.65,.55,n.QSPI_SD1,'QSPI_SD1'),pad('3',-2,-1,.65,.55,n.QSPI_SD2,'QSPI_SD2'),pad('4',-2,0,.65,.55,n.GND,'GND'),pad('5',2,0,.65,.55,n.QSPI_SD0,'QSPI_SD0'),pad('6',2,1,.65,.55,n.QSPI_SCLK,'QSPI_SCLK'),pad('7',2,2,.65,.55,n.QSPI_SD3,'QSPI_SD3'),pad('8',2,3,.65,.55,n['3V3'],'3V3')]
+  const flashChoice=chooseFootprintTransform({sourceByNet:{QSPI_CS:{x:35,y:24},QSPI_SD1:{x:35,y:23},QSPI_SD2:{x:35,y:22},QSPI_SD0:{x:35,y:21},QSPI_SCLK:{x:35,y:20},QSPI_SD3:{x:35,y:19}},pads:flashBase.map(p=>({...p,net:p.netName})),positions:[10,14,20,26,30].flatMap(y=>[40,43,46].map(x=>({x,y})))}) .best
+  const flashPads=flashChoice.pads.map(p=>({...p,x:p.x-flashChoice.position.x,y:p.y-flashChoice.position.y}))
+  const flashTarget=Object.fromEntries(flashChoice.pads.map(p=>[p.netName,[p.x,p.y]]))
+  const footprints=[
+    fp('J1','USB4105-GF-A','Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal',8,20,5,12,[pad('A1',2,-5,.7,.7,n.GND,'GND'),pad('B12',2,-4,.7,.7,n.GND,'GND'),pad('A4',2,-3,.7,.7,n.VBUS,'VBUS'),pad('B9',2,-2,.7,.7,n.VBUS,'VBUS'),pad('A5',2,-1,.7,.7,n.CC1,'CC1'),pad('B5',2,0,.7,.7,n.CC2,'CC2'),pad('A6',2,1,.7,.7,n.USB_DP_CONN,'USB_DP_CONN'),pad('B6',2,2,.7,.7,n.USB_DP_CONN,'USB_DP_CONN'),pad('A7',2,3,.7,.7,n.USB_DN_CONN,'USB_DN_CONN'),pad('B7',2,4,.7,.7,n.USB_DN_CONN,'USB_DN_CONN'),pad('S1',2,5,.7,.7,n.GND,'GND')]),
+    fp('D1','USBLC6-2SC6','Package_TO_SOT_SMD:SOT-23-6',17,22,3,5,[pad('1',-2,-2,.7,.6,n.USB_DP_CONN,'USB_DP_CONN'),pad('2',-2,0,.7,.6,n.GND,'GND'),pad('3',-2,2,.7,.6,n.USB_DN_CONN,'USB_DN_CONN'),pad('4',2,2,.7,.6,n.USB_DN,'USB_DN'),pad('5',2,0,.7,.6,n.VBUS,'VBUS'),pad('6',2,-2,.7,.6,n.USB_DP,'USB_DP')]),
+    fp('U1','SC0914','Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm',31,20,7,7,[pad('1',-4,-3,.55,.55,n['3V3'],'3V3'),pad('6',-4,-2,.55,.55,n.I2C_SCL,'I2C_SCL'),pad('7',-4,-1,.55,.55,n.I2C_SDA,'I2C_SDA'),pad('8',-4,0,.55,.55,n['3V3'],'3V3'),pad('24',-4,1,.55,.55,n.SWCLK,'SWCLK'),pad('25',-4,2,.55,.55,n.SWDIO,'SWDIO'),pad('46',-4,3,.55,.55,n.USB_DN,'USB_DN'),pad('47',-4,4,.55,.55,n.USB_DP,'USB_DP'),pad('48',4,-4,.55,.55,n['3V3'],'3V3'),pad('49',4,-3,.55,.55,n['3V3'],'3V3'),pad('50',4,-2,.55,.55,n['3V3'],'3V3'),pad('51',4,-1,.55,.55,n.QSPI_SD3,'QSPI_SD3'),pad('52',4,0,.55,.55,n.QSPI_SCLK,'QSPI_SCLK'),pad('53',4,1,.55,.55,n.QSPI_SD0,'QSPI_SD0'),pad('54',4,2,.55,.55,n.QSPI_SD2,'QSPI_SD2'),pad('55',4,3,.55,.55,n.QSPI_SD1,'QSPI_SD1'),pad('56',4,4,.55,.55,n.QSPI_CS,'QSPI_CS'),pad('57',0,0,2.4,2.4,n.GND,'GND')]),
+    fp('U2','W25Q128JVSIQ','Package_SO:SOIC-8_3.9x4.9mm_P1.27mm',flashChoice.position.x,flashChoice.position.y,flashChoice.rotation%180?7:4,flashChoice.rotation%180?4:7,flashPads),
+    fp('U3','MCP1700T-3302E/TT','Package_TO_SOT_SMD:SOT-23',19,10,3,3,[pad('1',-2,1,.8,.7,n.GND,'GND'),pad('2',2,0,.8,.7,n['3V3'],'3V3'),pad('3',-2,-1,.8,.7,n.VBUS,'VBUS')]),
+    fp('J2','M20-9990645','Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical',56,20,3,14,[pad('1',0,-5,1,1,n.GND,'GND'),pad('2',0,-3,1,1,n['3V3'],'3V3'),pad('3',0,-1,1,1,n.I2C_SCL,'I2C_SCL'),pad('4',0,1,1,1,n.I2C_SDA,'I2C_SDA'),pad('5',0,3,1,1,n.SWCLK,'SWCLK'),pad('6',0,5,1,1,n.SWDIO,'SWDIO')]),
+    passiveFootprint('R1','5.1k',13,19,n.CC1,'CC1',n.GND,'GND'),passiveFootprint('R2','5.1k',13,27,n.CC2,'CC2',n.GND,'GND'),
+    verticalPassive('C1','100n',25,10,n['3V3'],'3V3',n.GND,'GND',1),verticalPassive('C2','100n',31,10,n['3V3'],'3V3',n.GND,'GND',1),verticalPassive('C3','100n',48,30,n['3V3'],'3V3',n.GND,'GND',1),
+  ]
+  const evidence={nets,footprints,segments:[],vias:[]}
+  const ground=[],rail=[]; for(const f of footprints)for(const p of f.pads){const pt=[f.at.x+p.x,f.at.y+p.y];if(p.netNumber===n.GND)ground.push(pt);if(p.netNumber===n['3V3'])rail.push(pt)}
+  addDogboneTree(evidence,ground.filter(([x,y])=>x!==42||y!==20),n.GND,'B.Cu',32); addDogboneTree(evidence,rail,n['3V3'],'In1.Cu',8)
+  evidence.segments.push(segment(42,20,44,20,.3,n.GND),segment(44,20,44,16,.3,n.GND),segment(44,16,44,32,.3,n.GND,'B.Cu'));evidence.vias.push(via(44,16,n.GND))
+  const connect=(a,b,net,layer='F.Cu')=>evidence.segments.push(segment(a[0],a[1],b[0],b[1],.22,net,layer))
+  const connectInner=(a,b,net)=>{connect(a,b,net,'In2.Cu');evidence.vias.push(via(a[0],a[1],net),via(b[0],b[1],net))}
+  connect([10,17],[12,17],n.VBUS);connect([12,17],[12,8],n.VBUS);connect([12,8],[17,8],n.VBUS);connect([17,8],[17,9],n.VBUS);connect([10,18],[11,18],n.VBUS);connect([11,18],[11,17],n.VBUS);connect([11,17],[12,17],n.VBUS)
+  connect([17,9],[23,9],n.VBUS,'In2.Cu');connect([23,9],[23,22],n.VBUS,'In2.Cu');connect([23,22],[19,22],n.VBUS,'In2.Cu');evidence.vias.push(via(17,9,n.VBUS),via(19,22,n.VBUS))
+  connect([10,21],[12,21],n.USB_DP_CONN);connect([12,21],[12,20],n.USB_DP_CONN);connect([12,20],[15,20],n.USB_DP_CONN);connect([10,22],[12,22],n.USB_DP_CONN);connect([12,22],[12,21],n.USB_DP_CONN);connect([10,23],[13,23],n.USB_DN_CONN);connect([13,23],[13,24],n.USB_DN_CONN);connect([13,24],[15,24],n.USB_DN_CONN);connect([10,24],[13,24],n.USB_DN_CONN)
+  connect([19,20],[27,24],n.USB_DP);connectInner([19,24],[27,23],n.USB_DN)
+  connect([10,19],[11.9,19],n.CC1);connectInner([10,20],[11.9,27],n.CC2)
+  const qU=[[35,24,n.QSPI_CS],[35,23,n.QSPI_SD1],[35,22,n.QSPI_SD2],[35,21,n.QSPI_SD0],[35,20,n.QSPI_SCLK],[35,19,n.QSPI_SD3]],qF=['QSPI_CS','QSPI_SD1','QSPI_SD2','QSPI_SD0','QSPI_SCLK','QSPI_SD3'].map(net=>flashTarget[net])
+  qU.forEach((p,i)=>connect(p,qF[i],p[2]))
+  connect([27,18],[30,18],n.I2C_SCL,'In2.Cu');connect([30,18],[30,15],n.I2C_SCL,'In2.Cu');connect([30,15],[53,15],n.I2C_SCL,'In2.Cu');connect([53,15],[53,19],n.I2C_SCL,'In2.Cu');connect([53,19],[56,19],n.I2C_SCL,'In2.Cu');evidence.vias.push(via(27,18,n.I2C_SCL),via(56,19,n.I2C_SCL))
+  connectInner([27,19],[56,21],n.I2C_SDA);connectInner([27,21],[56,23],n.SWCLK);connectInner([27,22],[56,25],n.SWDIO)
+  return evidence
+}
+
 export function stm32ControllerCategoryPcbEvidence() {
   const evidence = canSensorNodeCategoryPcbEvidence()
   evidence.nets.find((item)=>item.number===2).name='5V'
@@ -1073,6 +1124,14 @@ function categorySchematicPinMaps(board) {
       R1: { 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
       D1: approvedAssetFor('NUP2105LT1G').pinMap,
     },
+    'rp2040-instrument': {
+      U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,
+      U3: { 1:'GND', 2:'3V3', 3:'VBUS' }, J1: { A1:'GND', B12:'GND', A4:'VBUS', B9:'VBUS', A5:'CC1', B5:'CC2', A6:'USB_DP_CONN', B6:'USB_DP_CONN', A7:'USB_DN_CONN', B7:'USB_DN_CONN', S1:'GND' },
+      D1: approvedAssetFor('USBLC6-2SC6').pinMap,
+      J2: { 1:'GND', 2:'3V3', 3:'I2C_SCL', 4:'I2C_SDA', 5:'SWCLK', 6:'SWDIO' },
+      R1: { 1:'CC1', 2:'GND' }, R2: { 1:'CC2', 2:'GND' },
+      C1: { 1:'3V3', 2:'GND' }, C2: { 1:'3V3', 2:'GND' }, C3: { 1:'3V3', 2:'GND' },
+    },
     'usb-c-esp32-sensor': {
       U1: { 1: 'GND', 2: '3V3', 3: 'USB_DP', 4: 'USB_DN', 5: 'I2C_SCL', 6: 'I2C_SDA', 7: 'UART_TX', 8: 'UART_RX' },
       J1: { 1: 'GND', 2: 'VUSB', 3: 'USB_DP', 4: 'USB_DN', 5: 'CC1', 6: 'CC2' },
@@ -1247,6 +1306,18 @@ function verticalPassive(ref,value,x,y,net1,name1,net2,name2,spacing=1) {
 function addLayerTree(evidence,points,net,layer,busY) {
   const xs=points.map(([x])=>x)
   for(const [x,y] of points){ evidence.vias.push(via(x,y,net)); evidence.segments.push(segment(x,y,x,busY,0.3,net,layer)) }
+  evidence.segments.push(segment(Math.min(...xs),busY,Math.max(...xs),busY,0.3,net,layer))
+}
+
+// Escape collinear connector/power pads before joining a bounded bus.  Unlike
+// addLayerTree, this never drops a full-height trunk through every pad sharing x.
+function addDogboneTree(evidence,points,net,layer,busY) {
+  const escaped=points.map(([x,y])=>[x,y,x>32?x-3:x+3])
+  for(const [x,y,escapeX] of escaped){
+    evidence.vias.push(via(x,y,net))
+    evidence.segments.push(segment(x,y,escapeX,y,0.3,net,layer),segment(escapeX,y,escapeX,busY,0.3,net,layer))
+  }
+  const xs=escaped.map(([, ,escapeX])=>escapeX)
   evidence.segments.push(segment(Math.min(...xs),busY,Math.max(...xs),busY,0.3,net,layer))
 }
 
