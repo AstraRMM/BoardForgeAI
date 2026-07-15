@@ -407,7 +407,10 @@
         "boardforge:variant-benchmark": "node --test --test-name-pattern \"variant generation\" plugins/boardforge-plugin/tests/*.test.mjs",
         "boardforge:placement-benchmark": "node --test --test-name-pattern \"placement\" plugins/boardforge-plugin/tests/*.test.mjs",
         "boardforge:routing-benchmark": "node --test --test-name-pattern \"routing\" plugins/boardforge-plugin/tests/*.test.mjs",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "boardforge:browser-pcb-editor": "playwright test --config=apps/web/playwright.config.ts apps/web/tests/e2e/boardforge-browser-pcb-editor-m4.spec.ts",
+        "boardforge:pcb-roundtrip": "node scripts/generate-m4-pcb-proof.mjs && node --test plugins/boardforge-plugin/tests/pcb-candidate-pipeline.test.mjs",
+        "boardforge:m4-pcb-reports": "node scripts/generate-m4-pcb-reports.mjs && node --test scripts/m4-pcb-reports.test.mjs"
     },
     "dependencies": {
         "@better-auth/infra": "^0.3.6",
