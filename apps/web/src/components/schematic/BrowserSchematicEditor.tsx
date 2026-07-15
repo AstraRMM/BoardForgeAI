@@ -79,7 +79,8 @@ export function BrowserSchematicEditor() {
     e.stopPropagation();
     setSelected((s) => {
       const n = new Set(e.shiftKey ? s : []);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   };

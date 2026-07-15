@@ -59,9 +59,21 @@ export type CandidateReport = {
   errors: string[];
   report?: Record<string, unknown>;
 };
-function candidateReport(value: any): CandidateReport {
-  if (value?.state) return value as CandidateReport;
-  const status = String(value?.status || value?.validation?.status || "");
+function candidateReport(value: unknown): CandidateReport {
+  const record =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {};
+  if (record.state) return value as CandidateReport;
+  const validation =
+    record.validation && typeof record.validation === "object"
+      ? (record.validation as Record<string, unknown>)
+      : {};
+  const kicad =
+    record.kicad && typeof record.kicad === "object"
+      ? (record.kicad as Record<string, unknown>)
+      : {};
+  const status = String(record.status || validation.status || "");
   const ready = /VALID(?:_WITH_WARNINGS)?$/.test(status);
   const promoted = status.includes("PROMOTED");
   const discarded = status.includes("DISCARDED");
@@ -75,18 +87,18 @@ function candidateReport(value: any): CandidateReport {
           ? "blocked"
           : "validating";
   return {
-    id: value?.id || "unknown",
+    id: String(record.id || "unknown"),
     state,
     progress: ["ready", "blocked", "promoted", "discarded"].includes(state)
       ? 100
       : 60,
     summary: status || "Candidate status recorded",
     warnings:
-      value?.erc === "ERC_WARNINGS_CLASSIFIED"
+      record.erc === "ERC_WARNINGS_CLASSIFIED"
         ? ["KiCad loaded the candidate and reported classified ERC warnings."]
         : [],
-    errors: state === "blocked" ? [value?.kicad?.stderr || status] : [],
-    report: value,
+    errors: state === "blocked" ? [String(kicad.stderr || status)] : [],
+    report: record,
   };
 }
 type Fetcher = typeof fetch;
@@ -250,12 +262,16 @@ export function buildApprovedTransaction(
 export function createSchematicSaveClient(fetcher: Fetcher = fetch) {
   return {
     create: async (transaction: ApprovedSchematicTransaction) => {
-      const written = await request<any>(fetcher, "/kicad/v2/candidate/write", {
-        method: "POST",
-        body: JSON.stringify(transaction),
-      });
+      const written = await request<{ id?: string }>(
+        fetcher,
+        "/kicad/v2/candidate/write",
+        {
+          method: "POST",
+          body: JSON.stringify(transaction),
+        },
+      );
       return candidateReport(
-        await request<any>(fetcher, "/kicad/v2/candidate/validate", {
+        await request<unknown>(fetcher, "/kicad/v2/candidate/validate", {
           method: "POST",
           body: JSON.stringify({
             candidateId: written.id || transaction.candidateId,
@@ -266,28 +282,28 @@ export function createSchematicSaveClient(fetcher: Fetcher = fetch) {
     },
     status: async (id: string) =>
       candidateReport(
-        await request<any>(
+        await request<unknown>(
           fetcher,
           `/kicad/v2/candidate/${encodeURIComponent(id)}/status`,
         ),
       ),
     report: async (id: string) =>
       candidateReport(
-        await request<any>(
+        await request<unknown>(
           fetcher,
           `/kicad/v2/candidate/${encodeURIComponent(id)}/reports`,
         ),
       ),
     promoteLocal: async (id: string) =>
       candidateReport(
-        await request<any>(fetcher, "/kicad/v2/candidate/promote", {
+        await request<unknown>(fetcher, "/kicad/v2/candidate/promote", {
           method: "POST",
           body: JSON.stringify({ candidateId: id, approved: true }),
         }),
       ),
     discard: async (id: string) =>
       candidateReport(
-        await request<any>(fetcher, "/kicad/v2/candidate/discard", {
+        await request<unknown>(fetcher, "/kicad/v2/candidate/discard", {
           method: "POST",
           body: JSON.stringify({ candidateId: id }),
         }),
