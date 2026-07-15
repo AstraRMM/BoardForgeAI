@@ -119,7 +119,7 @@ function mountingHoleFootprint(hole, index) {
   const ref = hole.ref || `H${index + 1}`
   const drill = Number(hole.diameterMm || 2.2)
   const pad = drill + 1.4
-  return `  (footprint "MountingHole:MountingHole_${mm(drill)}mm_M${Math.round(drill)}" (layer "F.Cu")
+  return `  (footprint "MountingHole_${mm(drill)}mm_M${Math.round(drill)}" (layer "F.Cu")
     (uuid "${uuid('hole', index)}")
     (at ${mm(hole.x)} ${mm(hole.y)})
     (descr "BoardForge generated mounting hole")

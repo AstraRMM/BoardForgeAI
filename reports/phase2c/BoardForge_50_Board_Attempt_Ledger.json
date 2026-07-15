@@ -15,7 +15,7 @@
         "schematic": true,
         "pcb": true,
         "erc": false,
-        "drc": false,
+        "drc": true,
         "manufacturing": false,
         "gerbers": false,
         "drill": false,
@@ -29,7 +29,7 @@
       },
       "validation": {
         "ercViolations": 10,
-        "drcViolations": 19
+        "drcViolations": 0
       },
       "sourcing": {
         "digikey": {
@@ -52,7 +52,7 @@
         "unusedAreaRatio": null
       },
       "timings": {
-        "totalMs": 20476,
+        "totalMs": 20596,
         "scope": "engineering_proof_without_live_sourcing_or_manufacturing"
       },
       "engineLearning": {

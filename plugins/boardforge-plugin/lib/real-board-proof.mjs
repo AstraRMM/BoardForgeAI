@@ -844,17 +844,20 @@ function renderCategoryPcbEvidence(evidence) {
 }
 
 function renderProofFootprint(footprint) {
+  // The proof geometry is embedded in the board, so do not claim a missing
+  // external footprint library nickname.
+  const embeddedName = embeddedFootprintName(footprint.footprint)
   const x0 = -footprint.body.w / 2
   const x1 = footprint.body.w / 2
   const y0 = -footprint.body.h / 2
   const y1 = footprint.body.h / 2
   const pads = footprint.pads.map((item) => `    (pad "${escapePcb(item.number)}" smd roundrect (at ${mm(item.x)} ${mm(item.y)} 0) (size ${mm(item.w)} ${mm(item.h)}) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.2) (net ${item.netNumber} "${escapePcb(item.netName)}") (uuid "${stableUuid(`${footprint.ref}-pad-${item.number}`)}"))`).join('\n')
-  return `  (footprint "${escapePcb(footprint.footprint)}" (layer "F.Cu")
+  return `  (footprint "${escapePcb(embeddedName)}" (layer "F.Cu")
     (uuid "${stableUuid(`${footprint.ref}-footprint`)}")
     (at ${mm(footprint.at.x)} ${mm(footprint.at.y)} 0)
-    (property "Reference" "${escapePcb(footprint.ref)}" (at 0 ${mm(y0 - 1.1)} 0) (layer "F.SilkS") (uuid "${stableUuid(`${footprint.ref}-ref`)}") (effects (font (size 0.8 0.8) (thickness 0.12))))
+    (property "Reference" "${escapePcb(footprint.ref)}" (at 0 ${mm(y0 - 1.1)} 0) (layer "F.Fab") (uuid "${stableUuid(`${footprint.ref}-ref`)}") (effects (font (size 0.8 0.8) (thickness 0.12))))
     (property "Value" "${escapePcb(footprint.value)}" (at 0 ${mm(y1 + 1.1)} 0) (layer "F.Fab") hide (uuid "${stableUuid(`${footprint.ref}-value`)}") (effects (font (size 0.7 0.7) (thickness 0.1))))
-    (fp_rect (start ${mm(x0)} ${mm(y0)}) (end ${mm(x1)} ${mm(y1)}) (stroke (width 0.12) (type solid)) (fill none) (layer "F.SilkS") (uuid "${stableUuid(`${footprint.ref}-silk`)}"))
+    (fp_rect (start ${mm(x0)} ${mm(y0)}) (end ${mm(x1)} ${mm(y1)}) (stroke (width 0.12) (type solid)) (fill none) (layer "F.Fab") (uuid "${stableUuid(`${footprint.ref}-silk`)}"))
     (fp_rect (start ${mm(x0 - 0.35)} ${mm(y0 - 0.35)}) (end ${mm(x1 + 0.35)} ${mm(y1 + 0.35)}) (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (uuid "${stableUuid(`${footprint.ref}-courtyard`)}"))
 ${pads}
   )`
@@ -1122,6 +1125,10 @@ async function runOptionalKiCadReports({ projectDir, files, kicad }) {
   if (validation.erc) base.erc = validation.erc
   if (validation.drc) base.drc = validation.drc
   return base
+}
+
+export function embeddedFootprintName(value) {
+  return String(value || '').split(':').at(-1)
 }
 
 export async function runIndependentValidationTasks({ ercTask, drcTask }) {
