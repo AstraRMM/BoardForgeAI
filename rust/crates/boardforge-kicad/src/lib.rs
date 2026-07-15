@@ -1,3 +1,4 @@
+pub mod edit;
 pub mod model;
 pub mod pcb;
 pub mod project;
