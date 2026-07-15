@@ -1,0 +1,8 @@
+{
+  "schema": "boardforge.m3.source-protection.v1",
+  "status": "PASSED_WITH_ALPHA_LIMITATIONS",
+  "sourceMutationAllowed": false,
+  "guards": ["canonical real paths", "sandbox containment", "candidate-only subtree", "protected project aliases", "base SHA-256 before creation", "source hash recheck after creation and before promotion", "explicit local promotion"],
+  "tests": ["plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs", "plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs"],
+  "limitations": ["candidate-service scope only", "promotion targets .boardforge/local rather than source", "not a general filesystem authorization layer"]
+}

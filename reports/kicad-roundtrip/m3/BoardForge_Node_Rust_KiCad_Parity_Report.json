@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-15T00:46:11.561Z",
+  "generatedAt": "2026-07-15T01:38:20.619Z",
   "fixtureCount": 24,
   "rustAvailable": true,
   "kicadAvailable": false,
-  "totalDurationMs": 1013.375,
+  "totalDurationMs": 1300.231,
   "passingNodeReparse": 24,
   "passingRustReparse": 24,
   "passingParity": 24,
@@ -27,7 +27,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 30.363
+      "durationMs": 64.668
     },
     {
       "fixture": "02-project-netclasses",
@@ -47,7 +47,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 46.613
+      "durationMs": 72.141
     },
     {
       "fixture": "03-project-text-variables",
@@ -67,7 +67,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 38.457
+      "durationMs": 242.4
     },
     {
       "fixture": "04-project-unknown-json",
@@ -87,7 +87,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 63.352
+      "durationMs": 26.947
     },
     {
       "fixture": "05-simple-mcu",
@@ -107,7 +107,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 33.259
+      "durationMs": 30.459
     },
     {
       "fixture": "06-usb-c",
@@ -127,7 +127,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 32.867
+      "durationMs": 30.849
     },
     {
       "fixture": "07-can-node",
@@ -147,7 +147,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 30.198
+      "durationMs": 26.685
     },
     {
       "fixture": "08-regulator",
@@ -167,7 +167,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 33.532
+      "durationMs": 28.287
     },
     {
       "fixture": "09-hierarchical-sheet",
@@ -187,7 +187,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 32.089
+      "durationMs": 29.142
     },
     {
       "fixture": "10-global-power",
@@ -207,7 +207,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 26.735
+      "durationMs": 32.818
     },
     {
       "fixture": "11-bus-entry",
@@ -227,7 +227,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 30.801
+      "durationMs": 31.537
     },
     {
       "fixture": "12-no-connect-junction",
@@ -247,7 +247,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 26.225
+      "durationMs": 32.864
     },
     {
       "fixture": "13-unknown-schematic-node",
@@ -267,7 +267,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 30.255
+      "durationMs": 34.777
     },
     {
       "fixture": "14-simple-2layer",
@@ -287,7 +287,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 36.791
+      "durationMs": 235.436
     },
     {
       "fixture": "15-four-layer",
@@ -307,7 +307,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 198.86
+      "durationMs": 49.146
     },
     {
       "fixture": "16-custom-edge-cuts",
@@ -327,7 +327,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 34.755
+      "durationMs": 30.126
     },
     {
       "fixture": "17-arcs-fillets-notches",
@@ -347,7 +347,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 47.992
+      "durationMs": 39.076
     },
     {
       "fixture": "18-zones-keepouts",
@@ -367,7 +367,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 30.758
+      "durationMs": 45.832
     },
     {
       "fixture": "19-3d-models",
@@ -387,7 +387,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 40.637
+      "durationMs": 38.262
     },
     {
       "fixture": "20-dimensions-graphics",
@@ -407,7 +407,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 35.819
+      "durationMs": 35.48
     },
     {
       "fixture": "21-diffpair-netclass",
@@ -427,7 +427,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 29.737
+      "durationMs": 35.756
     },
     {
       "fixture": "22-imported-complex",
@@ -447,7 +447,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 30.99
+      "durationMs": 34.39
     },
     {
       "fixture": "23-unknown-pcb-node",
@@ -467,7 +467,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 34.106
+      "durationMs": 34.408
     },
     {
       "fixture": "24-mixed-generated-imported",
@@ -487,7 +487,7 @@
         "checked": false,
         "status": null
       },
-      "durationMs": 33.375
+      "durationMs": 33.321
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "schema": "boardforge.m3.surface-parity.v1",
+  "status": "PARITY",
+  "surfaces": {
+    "rustTransaction": ["move symbol", "rotate symbol", "edit property", "add/delete wire", "add/move/edit/delete label"],
+    "browserEditor": ["move symbol", "rotate symbol", "edit property", "add/delete wire", "add/move/edit/delete label", "candidate approval"],
+    "localCandidateService": ["write", "validate", "status", "reports", "promote local", "discard"]
+  },
+  "parity": {
+    "sharedTransactionVersion": 1,
+    "browserDirectWrite": false,
+    "fullOperationUxParity": true,
+    "realCliValidCandidatesWithWarnings": 3
+  },
+  "remainingLimitations": ["ERC warnings remain on synthetic proof schematics", "electrical connectivity correctness remains a separate engineering gate"]
+}

@@ -1,0 +1,58 @@
+{
+  "id": "approved_candidate_requires_base_hash_check_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "safe_edit_candidate_pipeline",
+  "problemSignature": {
+    "symptom": "An approved edit can become stale after an external source change."
+  },
+  "rootCause": "An approved edit can become stale after an external source change.",
+  "fixSummary": "Bind candidate creation and promotion to the exact source SHA-256.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "plugins/boardforge-plugin/lib/platform/kicad",
+      "apps/web/src/lib/schematic-editor",
+      "scripts/lib/kicad-cli-validation.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "KiCad transaction, source protection, candidate lifecycle, and timeout cleanup tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Browser or local KiCad edit, candidate, validation, or promotion workflow"
+    ]
+  },
+  "recipe": [
+    "Bind candidate creation and promotion to the exact source SHA-256.",
+    "Record the transaction, diff, hashes, validation, and cleanup evidence.",
+    "Require explicit promotion only after all applicable gates pass."
+  ],
+  "safetyRules": [
+    "Reject missing or mismatched base hashes.",
+    "Preserve frozen v1 local-engine behavior."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe direct or insufficiently validated edit path"
+    },
+    "after": {
+      "status": "guarded M3 candidate workflow"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node --test scripts/kicad-cli-validation.test.mjs",
+      "node --test plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

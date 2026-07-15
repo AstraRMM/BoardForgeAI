@@ -1,0 +1,58 @@
+{
+  "id": "protected_path_enforcement_must_use_canonical_paths_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "safe_edit_candidate_pipeline",
+  "problemSignature": {
+    "symptom": "Lexical path comparison can be bypassed by aliases, links, or case differences."
+  },
+  "rootCause": "Lexical path comparison can be bypassed by aliases, links, or case differences.",
+  "fixSummary": "Resolve canonical paths before containment and protected-root decisions.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "plugins/boardforge-plugin/lib/platform/kicad",
+      "apps/web/src/lib/schematic-editor",
+      "scripts/lib/kicad-cli-validation.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "KiCad transaction, source protection, candidate lifecycle, and timeout cleanup tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Browser or local KiCad edit, candidate, validation, or promotion workflow"
+    ]
+  },
+  "recipe": [
+    "Resolve canonical paths before containment and protected-root decisions.",
+    "Record the transaction, diff, hashes, validation, and cleanup evidence.",
+    "Require explicit promotion only after all applicable gates pass."
+  ],
+  "safetyRules": [
+    "Do not authorize candidates from unnormalized path prefixes.",
+    "Preserve frozen v1 local-engine behavior."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe direct or insufficiently validated edit path"
+    },
+    "after": {
+      "status": "guarded M3 candidate workflow"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node --test scripts/kicad-cli-validation.test.mjs",
+      "node --test plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

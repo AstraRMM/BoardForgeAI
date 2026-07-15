@@ -1,0 +1,60 @@
+{
+  "schema": "boardforge.m3.closure-gate.v1",
+  "generatedAt": "2026-07-15T01:38:20.635Z",
+  "status": "PASSED",
+  "checks": [
+    {
+      "command": "node --test plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs plugins/boardforge-plugin/tests/kicad-save-pipeline-fixtures.test.mjs scripts/kicad-cli-validation.test.mjs scripts/schematic-save-client.test.ts",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "✔ candidate writer is isolated, atomic, reported, promoted locally, and discardable (177.8372ms)\n✔ candidate writer rejects stale hashes without artifacts (10.4816ms)\n✔ v2 routes expose candidate lifecycle (147.1267ms)\n✔ closure-contract aliases write, validate, inspect, promote, and discard (355.3969ms)\n✔ validation persists bounded CLI evidence and blocks timeout promotion (135.462ms)\n✔ eight approved edit fixtures write isolated, reparsable, lossless candidates (1473.1884ms)\n✔ KiCad candidate protection permits only the candidate subtree (14.111ms)\n✔ protected hardware project aliases are refused case-insensitively (0.2744ms)\n✔ validation syntax is explicit for schematic and PCB files (3.5764ms)\n✔ validation failures distinguish rule violations from syntax/load errors (0.6991ms)\n✔ timeout kills the spawned process tree and records cleanup evidence (791.1672ms)\n✔ JSON and Markdown reports retain status, syntax, stdout, and stderr data (12.1034ms)\n✔ approved payload is versioned and forbids direct writes (2.7709ms)\n✔ client uses candidate routes and explicit promotion (33.4144ms)\n✔ offline errors state that no file changed (0.5ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1649.3532\n",
+      "stderr": ""
+    },
+    {
+      "command": "node scripts/run-phase2b-m3-parity.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"reportRoot\": \"C:\\\\Users\\\\luifi\\\\Desktop\\\\BoardForge_Dev\\\\boardforge-ai\\\\reports\\\\kicad-roundtrip\\\\m3\",\n  \"generatedAt\": \"2026-07-15T01:38:20.619Z\",\n  \"fixtureCount\": 24,\n  \"rustAvailable\": true,\n  \"kicadAvailable\": false,\n  \"totalDurationMs\": 1300.231,\n  \"passingNodeReparse\": 24,\n  \"passingRustReparse\": 24,\n  \"passingParity\": 24,\n  \"unsupportedTotal\": 6\n}\n",
+      "stderr": ""
+    }
+  ],
+  "proof": {
+    "root": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M3_Closure_Proof",
+    "passed": true,
+    "projects": [
+      {
+        "name": "01-mcu-reposition-rotate",
+        "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M3_Closure_Proof\\01-mcu-reposition-rotate\\.boardforge\\candidates\\proof-candidate\\original.kicad_sch",
+        "validation": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "kicad": "VIOLATIONS_FOUND",
+        "sourceUnchanged": true
+      },
+      {
+        "name": "02-can-label-wire",
+        "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M3_Closure_Proof\\02-can-label-wire\\.boardforge\\candidates\\proof-candidate\\original.kicad_sch",
+        "validation": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "kicad": "VIOLATIONS_FOUND",
+        "sourceUnchanged": true
+      },
+      {
+        "name": "03-regulator-property-wire",
+        "candidatePath": "C:\\Users\\luifi\\Desktop\\BoardForge_Phase2B_M3_Closure_Proof\\03-regulator-property-wire\\.boardforge\\candidates\\proof-candidate\\original.kicad_sch",
+        "validation": "KICAD_CANDIDATE_VALID_WITH_WARNINGS",
+        "kicad": "VIOLATIONS_FOUND",
+        "sourceUnchanged": true
+      }
+    ],
+    "error": null
+  },
+  "invariants": {
+    "browserUsesRustWriter": true,
+    "sourceUnchanged": true,
+    "protectedPathsBlocked": true,
+    "candidatesReparse": true,
+    "unsupportedPreserved": true,
+    "staleHashBlocked": true,
+    "atomicRollback": true,
+    "timeoutCleanup": true,
+    "falseTimeoutSuccessBlocked": true
+  }
+}

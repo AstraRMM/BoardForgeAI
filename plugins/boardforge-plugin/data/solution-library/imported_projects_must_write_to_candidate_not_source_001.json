@@ -1,0 +1,58 @@
+{
+  "id": "imported_projects_must_write_to_candidate_not_source_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "safe_edit_candidate_pipeline",
+  "problemSignature": {
+    "symptom": "Editing an imported source in place risks irreversible user data loss."
+  },
+  "rootCause": "Editing an imported source in place risks irreversible user data loss.",
+  "fixSummary": "Write imported-project changes only below the isolated candidate subtree.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "plugins/boardforge-plugin/lib/platform/kicad",
+      "apps/web/src/lib/schematic-editor",
+      "scripts/lib/kicad-cli-validation.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "KiCad transaction, source protection, candidate lifecycle, and timeout cleanup tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Browser or local KiCad edit, candidate, validation, or promotion workflow"
+    ]
+  },
+  "recipe": [
+    "Write imported-project changes only below the isolated candidate subtree.",
+    "Record the transaction, diff, hashes, validation, and cleanup evidence.",
+    "Require explicit promotion only after all applicable gates pass."
+  ],
+  "safetyRules": [
+    "Do not overwrite imported source during apply or validation.",
+    "Preserve frozen v1 local-engine behavior."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe direct or insufficiently validated edit path"
+    },
+    "after": {
+      "status": "guarded M3 candidate workflow"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node --test scripts/kicad-cli-validation.test.mjs",
+      "node --test plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

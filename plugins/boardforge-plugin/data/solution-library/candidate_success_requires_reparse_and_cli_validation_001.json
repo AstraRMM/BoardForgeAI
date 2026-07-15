@@ -1,0 +1,58 @@
+{
+  "id": "candidate_success_requires_reparse_and_cli_validation_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "safe_edit_candidate_pipeline",
+  "problemSignature": {
+    "symptom": "AST success alone does not prove a KiCad candidate is usable."
+  },
+  "rootCause": "AST success alone does not prove a KiCad candidate is usable.",
+  "fixSummary": "Require Rust reparse and clean real KiCad CLI validation before success.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "plugins/boardforge-plugin/lib/platform/kicad",
+      "apps/web/src/lib/schematic-editor",
+      "scripts/lib/kicad-cli-validation.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "KiCad transaction, source protection, candidate lifecycle, and timeout cleanup tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Browser or local KiCad edit, candidate, validation, or promotion workflow"
+    ]
+  },
+  "recipe": [
+    "Require Rust reparse and clean real KiCad CLI validation before success.",
+    "Record the transaction, diff, hashes, validation, and cleanup evidence.",
+    "Require explicit promotion only after all applicable gates pass."
+  ],
+  "safetyRules": [
+    "Do not promote violation, load-error, or timeout results as valid.",
+    "Preserve frozen v1 local-engine behavior."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe direct or insufficiently validated edit path"
+    },
+    "after": {
+      "status": "guarded M3 candidate workflow"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node --test scripts/kicad-cli-validation.test.mjs",
+      "node --test plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

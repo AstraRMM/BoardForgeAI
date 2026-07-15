@@ -1,0 +1,58 @@
+{
+  "id": "browser_must_never_write_kicad_files_directly_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "safe_edit_candidate_pipeline",
+  "problemSignature": {
+    "symptom": "A browser direct write could bypass local guards and validation."
+  },
+  "rootCause": "A browser direct write could bypass local guards and validation.",
+  "fixSummary": "Use the paired local candidate service for every KiCad file candidate.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "plugins/boardforge-plugin/lib/platform/kicad",
+      "apps/web/src/lib/schematic-editor",
+      "scripts/lib/kicad-cli-validation.mjs"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "KiCad transaction, source protection, candidate lifecycle, and timeout cleanup tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "Browser or local KiCad edit, candidate, validation, or promotion workflow"
+    ]
+  },
+  "recipe": [
+    "Use the paired local candidate service for every KiCad file candidate.",
+    "Record the transaction, diff, hashes, validation, and cleanup evidence.",
+    "Require explicit promotion only after all applicable gates pass."
+  ],
+  "safetyRules": [
+    "Never grant the browser an in-place source write path.",
+    "Preserve frozen v1 local-engine behavior."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe direct or insufficiently validated edit path"
+    },
+    "after": {
+      "status": "guarded M3 candidate workflow"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node --test scripts/kicad-cli-validation.test.mjs",
+      "node --test plugins/boardforge-plugin/tests/kicad-source-protection.test.mjs plugins/boardforge-plugin/tests/kicad-candidate-transaction.test.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "high"
+}

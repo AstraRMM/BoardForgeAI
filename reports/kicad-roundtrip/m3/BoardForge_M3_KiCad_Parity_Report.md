@@ -7,29 +7,29 @@
 - Node/Rust parity: 24/24
 - Preserved unsupported constructs: 6
 - KiCad CLI available: false
-- Total duration: 1013.375 ms
+- Total duration: 1300.231 ms
 
-- 01-minimal-project: Node=PASS, Rust=PASS, parity=PASS, 30.363 ms
-- 02-project-netclasses: Node=PASS, Rust=PASS, parity=PASS, 46.613 ms
-- 03-project-text-variables: Node=PASS, Rust=PASS, parity=PASS, 38.457 ms
-- 04-project-unknown-json: Node=PASS, Rust=PASS, parity=PASS, 63.352 ms
-- 05-simple-mcu: Node=PASS, Rust=PASS, parity=PASS, 33.259 ms
-- 06-usb-c: Node=PASS, Rust=PASS, parity=PASS, 32.867 ms
-- 07-can-node: Node=PASS, Rust=PASS, parity=PASS, 30.198 ms
-- 08-regulator: Node=PASS, Rust=PASS, parity=PASS, 33.532 ms
-- 09-hierarchical-sheet: Node=PASS, Rust=PASS, parity=PASS, 32.089 ms
-- 10-global-power: Node=PASS, Rust=PASS, parity=PASS, 26.735 ms
-- 11-bus-entry: Node=PASS, Rust=PASS, parity=PASS, 30.801 ms
-- 12-no-connect-junction: Node=PASS, Rust=PASS, parity=PASS, 26.225 ms
-- 13-unknown-schematic-node: Node=PASS, Rust=PASS, parity=PASS, 30.255 ms
-- 14-simple-2layer: Node=PASS, Rust=PASS, parity=PASS, 36.791 ms
-- 15-four-layer: Node=PASS, Rust=PASS, parity=PASS, 198.86 ms
-- 16-custom-edge-cuts: Node=PASS, Rust=PASS, parity=PASS, 34.755 ms
-- 17-arcs-fillets-notches: Node=PASS, Rust=PASS, parity=PASS, 47.992 ms
-- 18-zones-keepouts: Node=PASS, Rust=PASS, parity=PASS, 30.758 ms
-- 19-3d-models: Node=PASS, Rust=PASS, parity=PASS, 40.637 ms
-- 20-dimensions-graphics: Node=PASS, Rust=PASS, parity=PASS, 35.819 ms
-- 21-diffpair-netclass: Node=PASS, Rust=PASS, parity=PASS, 29.737 ms
-- 22-imported-complex: Node=PASS, Rust=PASS, parity=PASS, 30.99 ms
-- 23-unknown-pcb-node: Node=PASS, Rust=PASS, parity=PASS, 34.106 ms
-- 24-mixed-generated-imported: Node=PASS, Rust=PASS, parity=PASS, 33.375 ms
+- 01-minimal-project: Node=PASS, Rust=PASS, parity=PASS, 64.668 ms
+- 02-project-netclasses: Node=PASS, Rust=PASS, parity=PASS, 72.141 ms
+- 03-project-text-variables: Node=PASS, Rust=PASS, parity=PASS, 242.4 ms
+- 04-project-unknown-json: Node=PASS, Rust=PASS, parity=PASS, 26.947 ms
+- 05-simple-mcu: Node=PASS, Rust=PASS, parity=PASS, 30.459 ms
+- 06-usb-c: Node=PASS, Rust=PASS, parity=PASS, 30.849 ms
+- 07-can-node: Node=PASS, Rust=PASS, parity=PASS, 26.685 ms
+- 08-regulator: Node=PASS, Rust=PASS, parity=PASS, 28.287 ms
+- 09-hierarchical-sheet: Node=PASS, Rust=PASS, parity=PASS, 29.142 ms
+- 10-global-power: Node=PASS, Rust=PASS, parity=PASS, 32.818 ms
+- 11-bus-entry: Node=PASS, Rust=PASS, parity=PASS, 31.537 ms
+- 12-no-connect-junction: Node=PASS, Rust=PASS, parity=PASS, 32.864 ms
+- 13-unknown-schematic-node: Node=PASS, Rust=PASS, parity=PASS, 34.777 ms
+- 14-simple-2layer: Node=PASS, Rust=PASS, parity=PASS, 235.436 ms
+- 15-four-layer: Node=PASS, Rust=PASS, parity=PASS, 49.146 ms
+- 16-custom-edge-cuts: Node=PASS, Rust=PASS, parity=PASS, 30.126 ms
+- 17-arcs-fillets-notches: Node=PASS, Rust=PASS, parity=PASS, 39.076 ms
+- 18-zones-keepouts: Node=PASS, Rust=PASS, parity=PASS, 45.832 ms
+- 19-3d-models: Node=PASS, Rust=PASS, parity=PASS, 38.262 ms
+- 20-dimensions-graphics: Node=PASS, Rust=PASS, parity=PASS, 35.48 ms
+- 21-diffpair-netclass: Node=PASS, Rust=PASS, parity=PASS, 35.756 ms
+- 22-imported-complex: Node=PASS, Rust=PASS, parity=PASS, 34.39 ms
+- 23-unknown-pcb-node: Node=PASS, Rust=PASS, parity=PASS, 34.408 ms
+- 24-mixed-generated-imported: Node=PASS, Rust=PASS, parity=PASS, 33.321 ms
