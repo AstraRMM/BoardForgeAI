@@ -231,7 +231,7 @@ function embeddedLibSymbols(symbols = []) {
   return counts.map((count) => embeddedConnectorSymbol(count)).join('\n')
 }
 
-function embeddedConnectorSymbol(count) {
+function embeddedConnectorSymbol(count, { libraryQualified = true } = {}) {
   const pinCount = Math.max(1, Math.min(40, Number(count) || 1))
   const rows = Array.from({ length: pinCount }, (_, index) => round(((pinCount - 1) / 2 - index) * 2.54))
   const top = round(Math.max(...rows) + 2.54)
@@ -243,7 +243,7 @@ function embeddedConnectorSymbol(count) {
     const rotation = onLeft ? 0 : 180
     return `\t\t\t\t(pin passive line (at ${x} ${y} ${rotation}) (length 2.54) (name "P${number}" (effects (font (size 1.0 1.0)))) (number "${number}" (effects (font (size 1.0 1.0)))))`
   }).join('\n')
-  return `\t\t(symbol "BoardForge:BF_CONN_${pinCount}"
+  return `\t\t(symbol "${libraryQualified ? 'BoardForge:' : ''}BF_CONN_${pinCount}"
 \t\t\t(pin_names (offset 1.016))
 \t\t\t(exclude_from_sim no)
 \t\t\t(in_bom yes)
@@ -260,6 +260,15 @@ function embeddedConnectorSymbol(count) {
 ${pins}
 \t\t\t)
 \t\t)`
+}
+
+export function boardforgeReviewSymbolLibrary(symbols = []) {
+  const counts = [...new Set(symbols.map((symbol) => {
+    const match = String(symbol.symbol || '').match(/BoardForge:BF_CONN_(\d+)/)
+    return match ? Number(match[1]) : null
+  }).filter(Boolean))].sort((a, b) => a - b)
+  const definitions = counts.map((count) => embeddedConnectorSymbol(count, { libraryQualified: false }).replace(/^\t\t/gm, '\t')).join('\n')
+  return `(kicad_symbol_lib\n\t(version 20231120)\n\t(generator "BoardForge Plugin CLI")\n${definitions}\n)\n`
 }
 
 function symbolObject(symbol, projectName) {

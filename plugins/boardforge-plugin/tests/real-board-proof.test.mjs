@@ -87,3 +87,25 @@ test('real board proof writes real KiCad category symbol graphs without fake man
     await rm(tempParent, { recursive: true, force: true })
   }
 })
+
+test('pilot report consumes canonical projections and exposes missing exact MPN blockers', async () => {
+  const tempParent = await mkdtemp(path.join(os.tmpdir(), 'BoardForge_Real_Board_Proofs_Canonical_Test_'))
+  try {
+    const summary = await runRealBoardProof({
+      outputRoot: path.join(tempParent, 'proof'), fresh: true, board: 'usb-c-esp32-sensor',
+      canonicalBindingResolver: async ({ row, candidate }) => ({
+        schema: 'boardforge.component-binding.v1', bindingId: 'a'.repeat(64), requirementId: `pilot-${row.ref}`,
+        ref: row.ref, logicalRole: row.role, manufacturerPartNumber: row.mpn, manufacturer: 'verified-test-manufacturer',
+        assets: { symbol: candidate.symbol, footprint: candidate.footprint, model3d: candidate.model3d || null },
+        pinMap: candidate.pinMap, supplierEvidence: { provider: 'digikey', matchType: 'exact', status: 'VERIFIED_IN_STOCK', checkedAt: new Date().toISOString(), live: true },
+      }),
+    })
+    const board = summary.boards[0]
+    const report = JSON.parse(await readFile(path.join(board.outputFolder, 'BoardForge_Schematic_Asset_Binding_Report.json'), 'utf8'))
+    assert.equal(report.components.find((row) => row.ref === 'U1').canonicalBinding.status, 'BOUND')
+    assert.equal(report.components.find((row) => row.ref === 'U1').canonicalBinding.projections.bom.bindingId, 'a'.repeat(64))
+    assert.equal(report.components.find((row) => row.ref === 'U2').canonicalBinding.blocker.code, 'EXACT_MPN_REQUIREMENT_MISSING')
+    assert.equal(report.canonicalBindingStatus, 'CANONICAL_BINDINGS_BLOCKED')
+    assert.ok(report.canonicalBlockers.some((row) => row.stage === 'component_selection'))
+  } finally { await rm(tempParent, { recursive: true, force: true }) }
+})

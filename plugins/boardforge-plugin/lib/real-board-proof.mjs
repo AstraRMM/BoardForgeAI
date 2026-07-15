@@ -6,9 +6,11 @@ import { createHash } from 'node:crypto'
 import { createOutlineSeed, generateOutlineKiCadProject } from './outline/custom-outline-workflow.mjs'
 import { detectKiCadCli, runDrc, runErc } from './kicad-cli.mjs'
 import { scanKiCadProject } from './kicad.mjs'
-import { generateSchematicModel, kicadSchematicFromModel } from './schematic-generator.mjs'
+import { boardforgeReviewSymbolLibrary, generateSchematicModel, kicadSchematicFromModel } from './schematic-generator.mjs'
 import { diagnoseMissingKiCadLibraries } from './kicad-library-resolver.mjs'
 import { buildComponentDatabase } from './component-database.mjs'
+import { createPartLookupService } from './sourcing/part-lookup-service.mjs'
+import { projectCanonicalBinding, resolveCanonicalComponentBinding } from './components/canonical-component-binding.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -26,10 +28,12 @@ export const REAL_BOARD_PROOF_BOARDS = [
     prompt: 'Make a compact USB-C powered ESP32 sensor board with I2C sensor header, UART debug header, boot/reset buttons, 3.3V regulator, mounting holes, and JLCPCB-ready outputs.',
     intent: ['USB-C edge connector', 'ESP32-S3 candidate', '3V3 regulator', 'I2C sensor header', 'UART debug header', 'boot/reset buttons'],
     bom: [
-      bom('U1', 'ESP32-S3-WROOM-1', 'ESP32-S3 module candidate', 'REQUIRES_LIBRARY_BINDING'),
-      bom('J1', 'USB-C receptacle', 'USB service/power connector', 'REQUIRES_FOOTPRINT_SELECTION'),
+      bom('U1', 'ESP32-S3-WROOM-1', 'ESP32-S3 module candidate', 'REQUIRES_LIBRARY_BINDING', 'ESP32-S3-WROOM-1-N8R8'),
+      bom('J1', 'USB-C receptacle', 'USB service/power connector', 'REQUIRES_FOOTPRINT_SELECTION', 'TYPE-C-31-M-12'),
       bom('U2', '3.3V regulator', 'local rail generation', 'REQUIRES_MPN_SELECTION'),
       bom('J2', 'I2C/UART header', 'sensor/debug expansion', 'GENERIC_HEADER_OK'),
+      bom('R1', '5.1k', 'USB-C CC1 sink pull-down', 'GENERIC_0603_OK'),
+      bom('R2', '5.1k', 'USB-C CC2 sink pull-down', 'GENERIC_0603_OK'),
     ],
   },
   {
@@ -164,7 +168,7 @@ export async function runRealBoardProof(options = {}) {
   const lessons = []
 
   for (const board of proofBoards) {
-    const result = await generateBoardProof({ board, outputRoot, kicad })
+    const result = await generateBoardProof({ board, outputRoot, kicad, liveBindings: options.liveBindings === true, canonicalBindingResolver: options.canonicalBindingResolver })
     boards.push(result)
     if (result.lessonsSaved?.length) lessons.push(...result.lessonsSaved)
   }
@@ -201,7 +205,7 @@ function normalizeRequestedBoardIds(value) {
   return ids.length ? new Set(ids) : null
 }
 
-async function generateBoardProof({ board, outputRoot, kicad }) {
+async function generateBoardProof({ board, outputRoot, kicad, liveBindings, canonicalBindingResolver }) {
   const generationStartedAt = Date.now()
   const projectDir = path.join(outputRoot, board.id)
   await mkdir(projectDir, { recursive: true })
@@ -231,7 +235,7 @@ async function generateBoardProof({ board, outputRoot, kicad }) {
   const files = collectKiCadFiles(projectDir)
   const categoryReadiness = await inspectCategoryGenerationReadiness({ projectDir, files, board, categoryPcbEvidence, categorySchematic })
   const validationReports = await runOptionalKiCadReports({ projectDir, files, kicad })
-  const assetBinding = await buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic })
+  const assetBinding = await buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings, canonicalBindingResolver })
   const mechanicalConstraints = buildMechanicalConstraints({ board, seed, outlineResult })
   await writeFile(path.join(projectDir, 'BoardForge_Mechanical_Constraints.json'), JSON.stringify(mechanicalConstraints, null, 2), 'utf8')
   const outlineValidation = buildOutlineValidationReport({ board, outlineResult })
@@ -923,6 +927,7 @@ async function writeCategorySchematic({ board, projectDir }) {
     { nets, emitConnectivityLabels: true },
   )
   await writeFile(schFile, kicadSchematicFromModel({ name: board.name }, model), 'utf8')
+  await writeCategoryReviewLibraries(projectDir, model.symbols)
   await writeFile(path.join(projectDir, 'BoardForge_Category_Schematic_Model.json'), JSON.stringify({
     schema: 'boardforge.category-schematic-model.real-proof.v1',
     status: 'SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED',
@@ -955,7 +960,7 @@ function categorySchematicComponents(board) {
       group: 'CATEGORY_REVIEW_COMPONENT',
       role: row.role,
       symbol: `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
-      footprint: 'BoardForge:REVIEW_REQUIRED_FOOTPRINT_BINDING',
+      footprint: `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
       pinMap,
       assetSource: 'BoardForge category proof template',
       assetConfidence: 'ASSUMED_REVIEW_REQUIRED',
@@ -971,6 +976,8 @@ function categorySchematicPinMaps(board) {
       J1: { 1: 'GND', 2: 'VUSB', 3: 'USB_DP', 4: 'USB_DN', 5: 'CC1', 6: 'CC2' },
       U2: { 1: 'VUSB', 2: 'GND', 3: '3V3' },
       J2: { 1: 'GND', 2: '3V3', 3: 'I2C_SCL', 4: 'I2C_SDA', 5: 'UART_TX', 6: 'UART_RX' },
+      R1: { 1: 'CC1', 2: 'GND' },
+      R2: { 1: 'CC2', 2: 'GND' },
     },
     'can-sensor-node': {
       U1: { 1: 'GND', 2: '3V3', 3: 'CAN_TX', 4: 'CAN_RX', 5: 'I2C_SCL', 6: 'I2C_SDA' },
@@ -1125,6 +1132,21 @@ async function runOptionalKiCadReports({ projectDir, files, kicad }) {
   if (validation.erc) base.erc = validation.erc
   if (validation.drc) base.drc = validation.drc
   return base
+}
+
+async function writeCategoryReviewLibraries(projectDir, symbols) {
+  const counts = [...new Set(symbols.map((symbol) => Number(String(symbol.symbol).match(/BF_CONN_(\d+)/)?.[1])).filter(Boolean))]
+  const footprintDir = path.join(projectDir, 'BoardForge.pretty')
+  await mkdir(footprintDir, { recursive: true })
+  await writeFile(path.join(projectDir, 'BoardForge.kicad_sym'), boardforgeReviewSymbolLibrary(symbols), 'utf8')
+  await writeFile(path.join(projectDir, 'sym-lib-table'), '(sym_lib_table\n  (lib (name "BoardForge")(type "KiCad")(uri "${KIPRJMOD}/BoardForge.kicad_sym")(options "")(descr "BoardForge generated review symbols"))\n)\n', 'utf8')
+  await writeFile(path.join(projectDir, 'fp-lib-table'), '(fp_lib_table\n  (lib (name "BoardForge")(type "KiCad")(uri "${KIPRJMOD}/BoardForge.pretty")(options "")(descr "BoardForge generated review footprints"))\n)\n', 'utf8')
+  for (const count of counts) await writeFile(path.join(footprintDir, `BF_CONN_${count}.kicad_mod`), reviewFootprint(count), 'utf8')
+}
+
+function reviewFootprint(count) {
+  const pads = Array.from({ length: count }, (_, index) => `  (pad "${index + 1}" thru_hole circle (at 0 ${index * 2.54}) (size 1.7 1.7) (drill 1) (layers "*.Cu" "*.Mask"))`).join('\n')
+  return `(footprint "BF_CONN_${count}"\n  (version 20240108)\n  (generator "BoardForge Plugin CLI")\n  (layer "F.Cu")\n  (attr through_hole)\n${pads}\n)\n`
 }
 
 export function embeddedFootprintName(value) {
@@ -1353,7 +1375,7 @@ function buildMakeSourcableReport({ board }) {
   }
 }
 
-async function buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic }) {
+async function buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings = false, canonicalBindingResolver }) {
   if (!board.bom.length) {
     return {
       schema: 'boardforge.schematic-asset-binding.real-proof.v1',
@@ -1384,8 +1406,28 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
     },
   })
   const resolvedCandidates = new Map((componentDatabase.components || []).map((component) => [component.ref, component]))
+  const resolver = canonicalBindingResolver || (liveBindings ? defaultCanonicalBindingResolver : null)
+  const canonicalResults = new Map()
+  for (const row of board.bom) {
+    const candidate = resolvedCandidates.get(row.ref)
+    if (!row.mpn) {
+      canonicalResults.set(row.ref, { status: 'BLOCKED', blocker: { code: 'EXACT_MPN_REQUIREMENT_MISSING', stage: 'component_selection', ref: row.ref, detail: 'The logical requirement does not select an exact manufacturer part number.' } })
+      continue
+    }
+    if (!resolver) {
+      canonicalResults.set(row.ref, { status: 'BLOCKED', blocker: { code: 'LIVE_CANONICAL_BINDING_NOT_REQUESTED', stage: 'live_sourcing', ref: row.ref, mpn: row.mpn, detail: 'Run the pilot with liveBindings enabled to obtain fresh supplier evidence.' } })
+      continue
+    }
+    try {
+      const binding = await resolver({ row, board, candidate })
+      canonicalResults.set(row.ref, { status: 'BOUND', binding, projections: projectCanonicalBinding(binding) })
+    } catch (error) {
+      canonicalResults.set(row.ref, { status: 'BLOCKED', blocker: { code: error.code || 'CANONICAL_BINDING_FAILED', stage: bindingStage(error.code), ref: row.ref, mpn: row.mpn, detail: String(error.code || error.message || error) } })
+    }
+  }
   const components = board.bom.map((row) => {
     const candidate = resolvedCandidates.get(row.ref)
+    const canonical = canonicalResults.get(row.ref)
     return {
     ref: row.ref,
     value: row.value,
@@ -1397,6 +1439,8 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
     pinMap: 'category template net map',
     status: 'REVIEW_REQUIRED',
     reason: 'No selected manufacturer part, verified pin equivalence, or production footprint binding exists yet.',
+    exactMpnRequirement: row.mpn || null,
+    canonicalBinding: canonical,
     catalogCandidate: candidate ? {
       mpn: candidate.mpn || null,
       lcsc: candidate.lcsc || null,
@@ -1418,6 +1462,8 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
     locallyResolved3dModel: components.filter((component) => component.catalogCandidate?.model3d).length,
     pinMapReady: components.filter((component) => component.catalogCandidate?.pinMapBindingStatus === 'binding_ready').length,
     pinMapWarningsOrErrors: components.filter((component) => component.catalogCandidate && component.catalogCandidate.pinMapBindingStatus !== 'binding_ready').length,
+    canonicallyBound: components.filter((component) => component.canonicalBinding?.status === 'BOUND').length,
+    canonicalBlocked: components.filter((component) => component.canonicalBinding?.status === 'BLOCKED').length,
   }
   return {
     schema: 'boardforge.schematic-asset-binding.real-proof.v1',
@@ -1441,7 +1487,26 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
       'Run live sourcing and an assembly package check before manufacturing export.',
     ],
     noFakeClaims: true,
+    canonicalBindingStatus: components.every((component) => component.canonicalBinding?.status === 'BOUND') ? 'CANONICAL_BINDINGS_COMPLETE' : 'CANONICAL_BINDINGS_BLOCKED',
+    canonicalBlockers: components.flatMap((component) => component.canonicalBinding?.blocker ? [component.canonicalBinding.blocker] : []),
   }
+}
+
+async function defaultCanonicalBindingResolver({ row, candidate }) {
+  if (!candidate?.symbol || !candidate?.footprint || !candidate?.pinMap) {
+    const error = new Error('APPROVED_ASSET_METADATA_MISSING'); error.code = 'APPROVED_ASSET_METADATA_MISSING'; throw error
+  }
+  return resolveCanonicalComponentBinding({
+    requirement: { id: `pilot-${row.ref}`, ref: row.ref, logicalRole: row.role, value: row.value, mpn: row.mpn },
+    lookupService: createPartLookupService(),
+    assetResolver: async () => ({ symbol: candidate.symbol, footprint: candidate.footprint, model3d: candidate.model3d, pinMap: candidate.pinMap }),
+  })
+}
+
+function bindingStage(code = '') {
+  if (/MPN|SUPPLIER|LOOKUP|STALE/.test(code)) return 'live_sourcing'
+  if (/ASSET|SYMBOL|FOOTPRINT|PIN_MAP/.test(code)) return 'asset_binding'
+  return 'component_binding'
 }
 
 function categorySchematicNets(board) {
@@ -2066,8 +2131,8 @@ function check(id, pass, evidence) {
   return { id, pass, evidence }
 }
 
-function bom(ref, value, role, verificationStatus) {
-  return { ref, value, role, verificationStatus }
+function bom(ref, value, role, verificationStatus, mpn = null) {
+  return { ref, value, role, verificationStatus, mpn }
 }
 
 function csvCell(value) {

@@ -13,6 +13,8 @@ function parseArgs(argv) {
     } else if (arg === '--board') {
       options.board = argv[index + 1]
       index += 1
+    } else if (arg === '--live-bindings') {
+      options.liveBindings = true
     }
   }
   return options
