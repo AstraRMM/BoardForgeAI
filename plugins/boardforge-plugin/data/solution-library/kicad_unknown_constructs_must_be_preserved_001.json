@@ -1,0 +1,56 @@
+{
+  "id": "kicad_unknown_constructs_must_be_preserved_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "kicad_roundtrip_safety",
+  "problemSignature": {
+    "symptom": "Unknown KiCad constructs were at risk of disappearing during typed parsing."
+  },
+  "rootCause": "Unknown KiCad constructs were at risk of disappearing during typed parsing.",
+  "fixSummary": "Treat the complete raw AST as authoritative and retain unknown JSON properties.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "docs",
+      "contracts/local-engine/v2/kicad-capabilities.json"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "boardforge-kicad focused module and parity tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "KiCad project, schematic, or PCB parse/write workflows"
+    ]
+  },
+  "recipe": [
+    "Treat the complete raw AST as authoritative and retain unknown JSON properties.",
+    "Run structural parity and reparse checks.",
+    "Surface unsupported constructs and exact drift before approval."
+  ],
+  "safetyRules": [
+    "Never silently discard a node that is not represented by a typed view.",
+    "Preserve frozen local-engine v1 response shapes."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe or unproven round-trip behavior"
+    },
+    "after": {
+      "status": "guarded M3 alpha contract"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node scripts/run-phase2b-m3-parity.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

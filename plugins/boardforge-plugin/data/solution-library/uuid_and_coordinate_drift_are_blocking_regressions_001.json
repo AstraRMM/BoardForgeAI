@@ -1,0 +1,56 @@
+{
+  "id": "uuid_and_coordinate_drift_are_blocking_regressions_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "kicad_roundtrip_safety",
+  "problemSignature": {
+    "symptom": "Round trips could appear structurally similar while identity or geometry drifted."
+  },
+  "rootCause": "Round trips could appear structurally similar while identity or geometry drifted.",
+  "fixSummary": "Count UUID and exact coordinate changes as explicit blocking parity signals.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "docs",
+      "contracts/local-engine/v2/kicad-capabilities.json"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "boardforge-kicad focused module and parity tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "KiCad project, schematic, or PCB parse/write workflows"
+    ]
+  },
+  "recipe": [
+    "Count UUID and exact coordinate changes as explicit blocking parity signals.",
+    "Run structural parity and reparse checks.",
+    "Surface unsupported constructs and exact drift before approval."
+  ],
+  "safetyRules": [
+    "Do not serialize exact coordinate atoms through floating-point formatting.",
+    "Preserve frozen local-engine v1 response shapes."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe or unproven round-trip behavior"
+    },
+    "after": {
+      "status": "guarded M3 alpha contract"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node scripts/run-phase2b-m3-parity.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

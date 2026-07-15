@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://boardforge.local/contracts/local-engine/v2/kicad-capabilities.schema.json",
+  "title": "BoardForge additive KiCad capability contract",
+  "type": "object",
+  "required": ["contractVersion", "extends", "compatibility", "capabilities", "writePolicy"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "contractVersion": { "pattern": "^2\\." },
+    "extends": { "const": "../v1/routes.json" },
+    "compatibility": {
+      "type": "object",
+      "required": ["v1EnvelopeUnchanged", "v1RoutesRemoved"],
+      "properties": { "v1EnvelopeUnchanged": { "const": true }, "v1RoutesRemoved": { "type": "array", "maxItems": 0 }, "note": { "type": "string" } },
+      "additionalProperties": false
+    },
+    "capabilities": { "type": "object", "required": ["kicadProject", "kicadSchematic", "kicadPcb", "structuralDiff", "browserWorkspace"], "additionalProperties": { "type": "object" } },
+    "writePolicy": { "type": "object", "required": ["importedProjectDefault", "generatedProjectAllowed", "blockOnUnpreservedLossRisk", "requireExplicitStructuralDiffBeforeSchematicSave"] }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "./kicad-capabilities.schema.json",
+  "contractVersion": "2.0.0-alpha.1",
+  "extends": "../v1/routes.json",
+  "compatibility": {
+    "v1EnvelopeUnchanged": true,
+    "v1RoutesRemoved": [],
+    "note": "This manifest advertises optional capabilities only; it does not change frozen v1 response shapes."
+  },
+  "capabilities": {
+    "kicadProject": { "parse": "typed-partial", "preserveWrite": true, "canonicalWrite": true, "unknownJsonPreserved": true },
+    "kicadSchematic": { "parse": "typed-partial", "preserveWrite": true, "canonicalWrite": true, "unknownSExpressionsPreserved": true },
+    "kicadPcb": { "parse": "typed-partial", "preserveWrite": true, "canonicalWrite": true, "unknownSExpressionsPreserved": true },
+    "structuralDiff": { "available": true, "coordinateDriftCount": true, "uuidDriftCount": true, "semanticClassification": "alpha" },
+    "browserWorkspace": { "pcbEditor": "alpha", "schematicEditor": "architecture-only", "sharedRustWasmModel": "planned" }
+  },
+  "writePolicy": {
+    "importedProjectDefault": "PRESERVE_MODE",
+    "generatedProjectAllowed": "CANONICAL_MODE",
+    "blockOnUnpreservedLossRisk": true,
+    "requireExplicitStructuralDiffBeforeSchematicSave": true
+  }
+}

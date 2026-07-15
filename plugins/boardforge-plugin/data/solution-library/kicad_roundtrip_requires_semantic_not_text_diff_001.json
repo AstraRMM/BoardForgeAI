@@ -1,0 +1,56 @@
+{
+  "id": "kicad_roundtrip_requires_semantic_not_text_diff_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "kicad_roundtrip_safety",
+  "problemSignature": {
+    "symptom": "Whitespace-only normalization looked like a failed KiCad round trip."
+  },
+  "rootCause": "Whitespace-only normalization looked like a failed KiCad round trip.",
+  "fixSummary": "Compare normalized AST/JSON structure and classify formatting separately.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "docs",
+      "contracts/local-engine/v2/kicad-capabilities.json"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "boardforge-kicad focused module and parity tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "KiCad project, schematic, or PCB parse/write workflows"
+    ]
+  },
+  "recipe": [
+    "Compare normalized AST/JSON structure and classify formatting separately.",
+    "Run structural parity and reparse checks.",
+    "Surface unsupported constructs and exact drift before approval."
+  ],
+  "safetyRules": [
+    "Text differences alone must not be called semantic loss.",
+    "Preserve frozen local-engine v1 response shapes."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe or unproven round-trip behavior"
+    },
+    "after": {
+      "status": "guarded M3 alpha contract"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node scripts/run-phase2b-m3-parity.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}

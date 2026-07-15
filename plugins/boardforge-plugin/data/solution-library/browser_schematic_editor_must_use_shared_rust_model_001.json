@@ -1,0 +1,56 @@
+{
+  "id": "browser_schematic_editor_must_use_shared_rust_model_001",
+  "createdAt": "2026-07-14T00:00:00.000Z",
+  "updatedAt": "2026-07-14T00:00:00.000Z",
+  "sourceBoard": "platform",
+  "boardType": "kicad_workspace",
+  "problemType": "kicad_roundtrip_safety",
+  "problemSignature": {
+    "symptom": "A browser-only schematic schema would diverge from local KiCad behavior."
+  },
+  "rootCause": "A browser-only schematic schema would diverge from local KiCad behavior.",
+  "fixSummary": "Use the shared Rust/WASM KiCad model as the browser editing boundary.",
+  "implementation": {
+    "filesChanged": [
+      "rust/crates/boardforge-kicad",
+      "docs",
+      "contracts/local-engine/v2/kicad-capabilities.json"
+    ],
+    "functionsAdded": [],
+    "testsAdded": [
+      "boardforge-kicad focused module and parity tests"
+    ]
+  },
+  "applicability": {
+    "boardTypes": [
+      "all"
+    ],
+    "netRoles": [],
+    "conditions": [
+      "KiCad project, schematic, or PCB parse/write workflows"
+    ]
+  },
+  "recipe": [
+    "Use the shared Rust/WASM KiCad model as the browser editing boundary.",
+    "Run structural parity and reparse checks.",
+    "Surface unsupported constructs and exact drift before approval."
+  ],
+  "safetyRules": [
+    "Do not make a browser projection the durable source of truth.",
+    "Preserve frozen local-engine v1 response shapes."
+  ],
+  "evidence": {
+    "before": {
+      "status": "unsafe or unproven round-trip behavior"
+    },
+    "after": {
+      "status": "guarded M3 alpha contract"
+    },
+    "tests": [
+      "cargo test -p boardforge-kicad",
+      "node scripts/run-phase2b-m3-parity.mjs"
+    ]
+  },
+  "status": "active",
+  "confidence": "medium"
+}
