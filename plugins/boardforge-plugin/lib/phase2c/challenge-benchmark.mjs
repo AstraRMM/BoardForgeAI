@@ -35,7 +35,9 @@ export function evaluateBoardAttempt(attempt) {
   if (!Array.isArray(attempt.engineLearning?.regressions) || !Array.isArray(attempt.engineLearning?.fixes)) failures.push({ category: FAILURE_CATEGORIES.PROOF, code: 'LEARNING_LEDGER_MISSING' })
 
   const generationMs = attempt.timings?.totalMs
+  const fullPipelineMeasured = attempt.timings?.scope === 'full_end_to_end'
   const target90 = !finiteNonNegative(generationMs) ? 'NOT_MEASURED'
+    : !fullPipelineMeasured ? 'NOT_MEASURED_FULL_PIPELINE'
     : attempt.supportedClass !== true ? 'NOT_APPLICABLE_UNSUPPORTED_CLASS'
       : generationMs <= 90_000 ? 'TARGET_MET' : 'TARGET_MISSED'
   return {
@@ -64,7 +66,8 @@ export function summarizeChallenge(attempts, { targetCount = 50 } = {}) {
   const customOutlineRatio = accepted.length ? round(customOutlineCount / accepted.length) : 0
   const failureCategories = {}
   for (const row of evaluations) for (const failure of row.failures) failureCategories[failure.category] = (failureCategories[failure.category] || 0) + 1
-  const supportedMeasured = accepted.filter((row) => row.supportedClass === true && finiteNonNegative(row.timings?.totalMs))
+  const allMeasured = attempts.filter((row) => finiteNonNegative(row.timings?.totalMs))
+  const supportedMeasured = accepted.filter((row) => row.supportedClass === true && row.timings?.scope === 'full_end_to_end' && finiteNonNegative(row.timings?.totalMs))
   const targetMet = supportedMeasured.filter((row) => row.timings.totalMs <= 90_000).length
   const closureFailures = []
   if (accepted.length < targetCount) closureFailures.push(`ACCEPTED_${accepted.length}_OF_${targetCount}`)
@@ -76,6 +79,8 @@ export function summarizeChallenge(attempts, { targetCount = 50 } = {}) {
     rejected: attempts.length - accepted.length, successRate: attempts.length ? round(accepted.length / attempts.length) : 0,
     customOutlineCount, customOutlineRatio, failureCategories,
     timing: {
+      averageMeasuredAttemptMs: average(allMeasured.map((row) => row.timings.totalMs)),
+      partialPipelineMeasured: allMeasured.filter((row) => row.timings?.scope !== 'full_end_to_end').length,
       averageGenerationMs: average(accepted.map((row) => row.timings?.totalMs).filter(finiteNonNegative)),
       supportedMeasured: supportedMeasured.length, targetMet, targetMissed: supportedMeasured.length - targetMet,
       classification: !supportedMeasured.length ? 'NOT_MEASURED' : targetMet === supportedMeasured.length ? 'TARGET_MET_FOR_MEASURED_SUPPORTED_CLASSES' : 'TARGET_MISSED_FOR_SOME_SUPPORTED_CLASSES',
@@ -108,4 +113,3 @@ function gateCategory(gate) {
   if (gate === 'schematic') return FAILURE_CATEGORIES.SCHEMATIC
   return FAILURE_CATEGORIES.REQUIREMENTS
 }
-

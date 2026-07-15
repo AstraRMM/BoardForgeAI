@@ -202,6 +202,7 @@ function normalizeRequestedBoardIds(value) {
 }
 
 async function generateBoardProof({ board, outputRoot, kicad }) {
+  const generationStartedAt = Date.now()
   const projectDir = path.join(outputRoot, board.id)
   await mkdir(projectDir, { recursive: true })
   const seed = createOutlineSeed({
@@ -322,6 +323,7 @@ async function generateBoardProof({ board, outputRoot, kicad }) {
     blockers: blockers.items,
     fixesApplied: ['real_board_proof_harness_created_outline_project_and_truth_gates'],
     lessonsSaved,
+    runtimeMs: Date.now() - generationStartedAt,
   }
 }
 
@@ -1098,11 +1100,8 @@ async function runOptionalKiCadReports({ projectDir, files, kicad }) {
     base.drc.reason = kicad.reason
     return base
   }
-  if (files.sch) {
-    const report = await runErc({ schFile: files.sch, outputFile: path.join(reportDir, 'erc.json'), kicadCliPath: kicad.path })
-    base.erc = summarizeKiCadReport(report)
-  }
-  if (files.pcb) {
+  const ercTask = files.sch ? async () => summarizeKiCadReport(await runErc({ schFile: files.sch, outputFile: path.join(reportDir, 'erc.json'), kicadCliPath: kicad.path })) : null
+  const drcTask = files.pcb ? async () => {
     const outputFile = path.join(reportDir, 'drc.json')
     const initial = await runDrc({ pcbFile: files.pcb, outputFile, kicadCliPath: kicad.path })
     // KiCad may persist zone/board normalization when --save-board is used. If
@@ -1110,16 +1109,24 @@ async function runOptionalKiCadReports({ projectDir, files, kicad }) {
     // mutation so the recorded result always describes the file BoardForge kept.
     if ((initial.issueCounts?.errors || 0) > 0) {
       const persisted = await runDrc({ pcbFile: files.pcb, outputFile, kicadCliPath: kicad.path, saveBoard: false })
-      base.drc = {
+      return {
         ...summarizeKiCadReport(persisted),
         initialErrorsBeforeKiCadSave: initial.issueCounts.errors,
         rerunAfterKiCadSave: true,
       }
     } else {
-      base.drc = summarizeKiCadReport(initial)
+      return summarizeKiCadReport(initial)
     }
-  }
+  } : null
+  const validation = await runIndependentValidationTasks({ ercTask, drcTask })
+  if (validation.erc) base.erc = validation.erc
+  if (validation.drc) base.drc = validation.drc
   return base
+}
+
+export async function runIndependentValidationTasks({ ercTask, drcTask }) {
+  const [erc, drc] = await Promise.all([ercTask?.() ?? null, drcTask?.() ?? null])
+  return { erc, drc }
 }
 
 function summarizeKiCadReport(report) {
@@ -2064,7 +2071,8 @@ function csvCell(value) {
 function assertSafeOutputRoot(outputRoot) {
   const lower = outputRoot.toLowerCase()
   const forbidden = ['\\fn-esc1', '\\esc', '\\fc', 'flight-controller', 'flight_controller', 'fn-fc']
-  if (!lower.includes('boardforge_real_board_proofs')) throw new Error(`Refusing real board proof output outside BoardForge_Real_Board_Proofs: ${outputRoot}`)
+  const syntheticRoots = ['boardforge_real_board_proofs', 'boardforge_50_board_challenge']
+  if (!syntheticRoots.some((name) => lower.includes(name))) throw new Error(`Refusing real board proof output outside an approved BoardForge synthetic proof root: ${outputRoot}`)
   for (const item of forbidden) {
     if (lower.includes(item)) throw new Error(`Refusing protected output root: ${outputRoot}`)
   }

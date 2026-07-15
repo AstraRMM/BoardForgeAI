@@ -27,6 +27,8 @@ This report counts only attempts with every required engineering, manufacturing,
 - Success rate: ${(r.successRate*100).toFixed(1)}%
 - Purposeful custom outlines: ${r.customOutlineCount}/${r.accepted} (${(r.customOutlineRatio*100).toFixed(1)}%)
 - Average generation time: ${r.timing.averageGenerationMs ?? 'NOT_MEASURED'} ms
+- Average measured attempt time (including partial pipelines): ${r.timing.averageMeasuredAttemptMs ?? 'NOT_MEASURED'} ms
+- Partial-pipeline timings excluded from 90-second claim: ${r.timing.partialPipelineMeasured}
 - 90-second target: **${r.timing.classification}**
 - Average board area: ${r.metrics.averageBoardAreaMm2 ?? 'NOT_MEASURED'} mm²
 - Average component density: ${r.metrics.averageComponentDensityPer1000Mm2 ?? 'NOT_MEASURED'} components/1000 mm²

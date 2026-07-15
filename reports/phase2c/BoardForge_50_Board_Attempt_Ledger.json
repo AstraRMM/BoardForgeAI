@@ -1,0 +1,86 @@
+{
+  "schema": "boardforge.phase2c.attempt-ledger.v1",
+  "attempts": [
+    {
+      "id": "001_ESP32_SENSOR_HUB",
+      "designFingerprint": "51dc37e4969858654696b05373a08290998097408138e52a59f8389a65adc789",
+      "supportedClass": true,
+      "outline": {
+        "custom": true,
+        "purposeful": true
+      },
+      "gates": {
+        "requirements": true,
+        "architecture": true,
+        "schematic": true,
+        "pcb": true,
+        "erc": false,
+        "drc": false,
+        "manufacturing": false,
+        "gerbers": false,
+        "drill": false,
+        "bom": true,
+        "cpl": false,
+        "manufacturingZip": false,
+        "rustReparse": false,
+        "kicadValidation": true,
+        "sourceUnchanged": false,
+        "proof": true
+      },
+      "validation": {
+        "ercViolations": 10,
+        "drcViolations": 19
+      },
+      "sourcing": {
+        "digikey": {
+          "live": false,
+          "fakeStock": false
+        },
+        "mouser": {
+          "live": false,
+          "fakeStock": false
+        }
+      },
+      "metrics": {
+        "boardAreaMm2": 2088,
+        "componentAreaMm2": null,
+        "componentCount": 4,
+        "routedLengthMm": null
+      },
+      "compactness": {
+        "reviewed": false,
+        "unusedAreaRatio": null
+      },
+      "timings": {
+        "totalMs": 20476,
+        "scope": "engineering_proof_without_live_sourcing_or_manufacturing"
+      },
+      "engineLearning": {
+        "fixes": [
+          "parallel_erc_drc_validation"
+        ],
+        "regressions": [
+          "phase2c-parallel-validation"
+        ]
+      },
+      "evidence": {
+        "outputFolder": "C:\\Users\\luifi\\Downloads\\BoardForge_50_Board_Challenge\\usb-c-esp32-sensor",
+        "finalStatus": "PASS_ENGINEERING_REVIEW_REQUIRED",
+        "blockers": [
+          {
+            "category": "sourcing",
+            "code": "BOM_NOT_LIVE_VERIFIED",
+            "reason": "Candidate BOM rows are not live-stock verified.",
+            "recommendedFix": "Run Make Sourcable with configured supplier credentials."
+          },
+          {
+            "category": "asset_binding",
+            "code": "UNVERIFIED_SYMBOL_FOOTPRINT_PINMAP_BINDINGS",
+            "reason": "The proof uses embedded review symbols and proof PCB geometry, not selected manufacturer symbol/footprint/pin-map bindings.",
+            "recommendedFix": "Select parts, resolve approved local libraries, verify pin-to-pad equivalence, then rerun ERC/DRC and package validation."
+          }
+        ]
+      }
+    }
+  ]
+}
