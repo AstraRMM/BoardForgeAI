@@ -5,8 +5,8 @@ export function evaluateChallengePreflight({ manifest, digikey, mouser, kicad, r
   const checks = [
     check('CHALLENGE_MANIFEST', manifestResult.ok, manifestResult.errors.join('; ') || `${manifest.boards.length} unique specifications`),
     check('OUTPUT_ROOT', Boolean(outputRoot), outputRoot || 'missing'),
-    check('DIGIKEY_LIVE_AUTH', digikey?.configured === true && digikey?.authenticated === true, digikey?.authenticated ? 'authenticated' : 'live OAuth authentication unavailable'),
-    check('MOUSER_LIVE_API', mouser?.configured === true && mouser?.liveReachable === true, mouser?.liveReachable ? 'live API reachable' : 'live Search API unavailable'),
+    check('DIGIKEY_LIVE_AUTH', providerReady(digikey, 'digikey'), providerDetail(digikey, 'live OAuth/request evidence unavailable')),
+    check('MOUSER_LIVE_API', providerReady(mouser, 'mouser'), providerDetail(mouser, 'live Search API request evidence unavailable')),
     check('KICAD_CLI', kicad?.available === true, kicad?.version || 'unavailable'),
     check('RUST_ENGINE', rust?.available === true, rust?.version || 'unavailable'),
   ]
@@ -15,3 +15,16 @@ export function evaluateChallengePreflight({ manifest, digikey, mouser, kicad, r
 }
 
 function check(id, passed, detail) { return { id, passed:Boolean(passed), detail } }
+
+function providerReady(value, provider) {
+  if (value?.provider === provider && typeof value?.ready === 'boolean') return value.ready
+  return provider === 'digikey'
+    ? value?.configured === true && value?.authenticated === true
+    : value?.configured === true && value?.liveReachable === true
+}
+function providerDetail(value, fallback) {
+  if (value?.status) return value.status
+  if (value?.authenticated) return 'authenticated'
+  if (value?.liveReachable) return 'live API reachable'
+  return fallback
+}

@@ -5,7 +5,7 @@ import { DigiKeyError } from './digikey-errors.mjs'
 export function createDigiKeyApiClient({ env = loadBoardForgeEnv().env, fetchImpl = globalThis.fetch, authClient, baseUrl = 'https://api.digikey.com' } = {}) {
   return {
     async request(pathname, { method = 'GET', body, timeoutMs = 15000 } = {}) {
-      const token = authClient?.getCachedToken?.()
+      const token = authClient?.getValidAccessToken ? await authClient.getValidAccessToken() : authClient?.getCachedToken?.()
       if (!env.DIGIKEY_CLIENT_ID || !env.DIGIKEY_CLIENT_SECRET) throw new DigiKeyError('DigiKey credentials are not configured.', { status: 'DIGIKEY_NOT_CONFIGURED' })
       if (!token?.accessToken) throw new DigiKeyError('DigiKey OAuth token is not available. Complete local authorization before live lookup.', { status: 'DIGIKEY_AUTH_REQUIRED' })
       const controller = new AbortController()

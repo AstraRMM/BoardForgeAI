@@ -419,7 +419,8 @@
         "boardforge:phase2c-challenge-contract": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-contract.test.mjs",
         "boardforge:phase2c-benchmark": "node scripts/run-phase2c-challenge-benchmark.mjs",
         "test:phase2c-benchmark": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-benchmark.test.mjs scripts/phase2c-challenge-report.test.mjs",
-        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs",
+        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-provider-runtime-preflight.test.mjs",
+        "boardforge:phase2c-provider-preflight": "node scripts/run-phase2c-autonomous-challenge.mjs --preflight-only",
         "boardforge:phase2c-autonomous-challenge": "node scripts/run-phase2c-autonomous-challenge.mjs",
         "boardforge:phase2c-record-attempt": "node scripts/record-phase2c-real-board-attempt.mjs"
     },

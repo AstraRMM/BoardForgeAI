@@ -1,4 +1,5 @@
 import { createUnavailableProvider, detectProviderCredentials, normalizePartVerification, providerReportMarkdown, SOURCING_STATUSES } from './part-source-provider.mjs'
+import { randomUUID } from 'node:crypto'
 
 const MOUSER_SEARCH_ENDPOINT = 'https://api.mouser.com/api/v1/search/partnumber'
 
@@ -78,6 +79,9 @@ export function createMouserProvider({ env = process.env, fetchImpl = globalThis
           liveApiEvidence: true,
           searchedPartNumber: query,
           totalResults: result.totalResults,
+          requestId: result.requestId,
+          queriedAt: result.queriedAt,
+          httpStatus: result.httpStatus,
         })
       } catch (error) {
         return normalizePartVerification(part, {
@@ -104,6 +108,8 @@ export async function searchMouserPartNumber({ apiKey, partNumber, fetchImpl = g
   if (typeof fetchImpl !== 'function') throw new Error('Fetch implementation is unavailable.')
 
   const controller = new AbortController()
+  const requestId = randomUUID()
+  const queriedAt = new Date().toISOString()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetchImpl(`${MOUSER_SEARCH_ENDPOINT}?apiKey=${encodeURIComponent(apiKey)}`, {
@@ -130,7 +136,7 @@ export async function searchMouserPartNumber({ apiKey, partNumber, fetchImpl = g
       error.payload = payload
       throw error
     }
-    return normalizeMouserSearchResponse(payload)
+    return { ...normalizeMouserSearchResponse(payload), requestId, queriedAt, httpStatus: response.status }
   } finally {
     clearTimeout(timer)
   }
@@ -214,6 +220,9 @@ export function normalizeMouserResult(part = {}, result = {}) {
       datasheetUrl: result.DataSheetUrl || null,
       searchedPartNumber: result.searchedPartNumber || null,
       totalResults: result.totalResults ?? null,
+      requestId: result.requestId || null,
+      queriedAt: result.queriedAt || null,
+      httpStatus: result.httpStatus ?? null,
     },
   })
 }
