@@ -423,7 +423,7 @@
         "test:rp2040-instrument-template": "node --test plugins/boardforge-plugin/tests/rp2040-instrument-template.test.mjs",
         "boardforge:phase2c-benchmark": "node scripts/run-phase2c-challenge-benchmark.mjs",
         "test:phase2c-benchmark": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-benchmark.test.mjs scripts/phase2c-challenge-report.test.mjs",
-        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-provider-runtime-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-manufacturing-pipeline.test.mjs plugins/boardforge-plugin/tests/phase2c-autonomous-runner.test.mjs plugins/boardforge-plugin/tests/phase2c-stm32-driver.test.mjs plugins/boardforge-plugin/tests/rp2040-collision-router-integration.test.mjs",
+        "test:phase2c-preflight": "node --test plugins/boardforge-plugin/tests/phase2c-challenge-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-provider-runtime-preflight.test.mjs plugins/boardforge-plugin/tests/phase2c-manufacturing-pipeline.test.mjs plugins/boardforge-plugin/tests/phase2c-autonomous-runner.test.mjs plugins/boardforge-plugin/tests/phase2c-stm32-driver.test.mjs plugins/boardforge-plugin/tests/rp2040-collision-router-integration.test.mjs plugins/boardforge-plugin/tests/usb-c-pd-sink-template.test.mjs",
         "boardforge:phase2c-provider-preflight": "node scripts/run-phase2c-autonomous-challenge.mjs --preflight-only",
         "boardforge:phase2c-pilot": "node scripts/run-phase2c-pilot.mjs",
         "boardforge:phase2c-autonomous-challenge": "node scripts/run-phase2c-autonomous-challenge.mjs",

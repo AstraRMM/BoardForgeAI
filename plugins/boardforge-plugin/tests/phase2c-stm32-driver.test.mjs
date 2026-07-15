@@ -4,13 +4,15 @@ import { createHash } from 'node:crypto'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createPhase2cChallengeDriver, verifyRp2040ProductionContract, verifyStm32ProductionContract } from '../../../scripts/phase2c-challenge-driver.mjs'
+import { createPhase2cChallengeDriver, verifyRp2040ProductionContract, verifyStm32ProductionContract, verifyUsbCPdSinkProductionContract } from '../../../scripts/phase2c-challenge-driver.mjs'
 import { stm32ControllerTemplate } from '../lib/phase2c/templates/stm32-controller.mjs'
 import { rp2040InstrumentTemplate } from '../lib/phase2c/templates/rp2040-instrument.mjs'
+import { usbCPdSinkTemplate } from '../lib/phase2c/templates/usb-c-pd-sink.mjs'
 import { runAutonomousChallenge } from '../lib/phase2c/autonomous-challenge-runner.mjs'
 
 const stm32={id:'STM32_CONTROLLER',slug:'stm32-controller',architectureClass:'real-time-mcu'}
 const rp2040={id:'RP2040_INSTRUMENT',slug:'rp2040-instrument',architectureClass:'usb-mcu'}
+const pdSink={id:'USB_C_PD_SINK',slug:'usb-c-pd-sink',architectureClass:'usb-c-power'}
 const accepted={acceptance:{status:'BOARD_ACCEPTED',accepted:true,evidenceDigest:'a'.repeat(64)},manufacturingEvidence:{status:'MANUFACTURING_ACCEPTED',sourceProtection:{unchanged:true},artifacts:[]}}
 test('board002 invokes STM32 production generator with validated contract and exact index',async()=>{
   let invocation
@@ -70,6 +72,41 @@ test('authentic board003 advances checkpoint without replacing accepted indices 
   const result=await runAutonomousChallenge({manifest:{boards:[{id:'ESP32_SENSOR_HUB',slug:'esp32-sensor-hub'},stm32,rp2040]},checkpointPath:path.join(root,'checkpoint.json'),executePilot:driver.executePilot,executeBoard:driver.executeBoard,batchSize:2})
   assert.equal(result.status,'CHALLENGE_COMPLETE');assert.equal(result.state.nextBoardIndex,3)
   assert.deepEqual(result.state.accepted.map(row=>row.index),[0,1,2]);assert.equal(result.state.accepted[0].pilot,true)
+})
+test('board004 invokes only the injected PD sink generator at manifest index3',async()=>{
+  let invocation;const driver=createPhase2cChallengeDriver({generateUsbCPdSink:async input=>{invocation=input;return accepted}})
+  const result=await driver.executeBoard(pdSink,{index:3})
+  assert.equal(result.acceptance.accepted,true);assert.equal(invocation.template.id,'004_USB_C_PD_SINK');assert.equal(invocation.context.index,3)
+})
+test('PD sink output contract requires exact full MPN set and template layer count',()=>{
+  const rows=usbCPdSinkTemplate.requirements.map(row=>({mpn:row.mpn}))
+  assert.equal(verifyUsbCPdSinkProductionContract({template:usbCPdSinkTemplate,actualLayers:usbCPdSinkTemplate.electrical.layers,sourcing:{rows}}).ok,true)
+  const removed=usbCPdSinkTemplate.requirements[0].mpn
+  const failed=verifyUsbCPdSinkProductionContract({template:usbCPdSinkTemplate,actualLayers:2,sourcing:{rows:rows.slice(1)}})
+  assert.ok(failed.errors.some(x=>x.startsWith('layer-count:')));assert.ok(failed.errors.includes(`missing-exact-mpn:${removed}`))
+})
+test('PD sink contract requires the complete current twelve-reference stock-safe power stage',()=>{
+  const exact={Q1:'SI7465DP-T1-GE3',U2:'TPS54202DDCR',F1:'3413.0218.22',C1:'UWT1H100MCL1GB',C2:'UWT1E220MCL1GB',R_FB_TOP:'RC0603FR-0773K2L',R_FB_BOTTOM:'RC0603FR-0710KL'}
+  assert.equal(usbCPdSinkTemplate.requirements.length,12)
+  for(const [ref,mpn] of Object.entries(exact)) assert.equal(usbCPdSinkTemplate.requirements.find(row=>row.ref===ref).mpn,mpn)
+  const stale=new Set([exact.Q1,exact.U2,exact.C1,exact.C2])
+  const rows=usbCPdSinkTemplate.requirements.map(row=>({mpn:row.mpn})).filter(row=>!stale.has(row.mpn)).concat({mpn:'AO3401A'},{mpn:'OLD-U2'},{mpn:'OLD-C1'},{mpn:'OLD-C2'})
+  const result=verifyUsbCPdSinkProductionContract({template:usbCPdSinkTemplate,actualLayers:usbCPdSinkTemplate.electrical.layers,sourcing:{rows}})
+  assert.equal(result.ok,false)
+  for(const mpn of stale) assert.ok(result.errors.includes(`missing-exact-mpn:${mpn}`))
+})
+test('board004 cannot advance checkpoint without authentic manufacturing hashes',async()=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'bf-pd-sink-driver-')),pilot=await authenticResult(root,'pilot'),stm=await authenticResult(root,'stm'),rp=await authenticResult(root,'rp')
+  const counterfeit={acceptance:{status:'BOARD_ACCEPTED',accepted:true,evidenceDigest:'a'.repeat(64)},manufacturingEvidence:{status:'MANUFACTURING_ACCEPTED',sourceProtection:{unchanged:true},artifacts:[{path:'missing',bytes:99,sha256:'b'.repeat(64)}]}}
+  const driver=createPhase2cChallengeDriver({root,generateStm32:async()=>stm,generateRp2040:async()=>rp,generateUsbCPdSink:async()=>counterfeit});driver.executePilot=async()=>pilot
+  const result=await runAutonomousChallenge({manifest:{boards:[{id:'ESP32_SENSOR_HUB',slug:'esp32-sensor-hub'},stm32,rp2040,pdSink]},checkpointPath:path.join(root,'checkpoint.json'),executePilot:driver.executePilot,executeBoard:driver.executeBoard,batchSize:3})
+  assert.equal(result.status,'BOARD_REJECTED_ENGINE_IMPROVEMENT_REQUIRED');assert.equal(result.state.nextBoardIndex,3);assert.deepEqual(result.state.accepted.map(row=>row.index),[0,1,2])
+})
+test('authentic board004 preserves accepted indices zero through two and advances to four',async()=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'bf-pd-sink-accepted-')),pilot=await authenticResult(root,'pilot'),stm=await authenticResult(root,'stm'),rp=await authenticResult(root,'rp'),pd=await authenticResult(root,'pd')
+  const driver=createPhase2cChallengeDriver({root,generateStm32:async()=>stm,generateRp2040:async()=>rp,generateUsbCPdSink:async()=>pd});driver.executePilot=async()=>pilot
+  const result=await runAutonomousChallenge({manifest:{boards:[{id:'ESP32_SENSOR_HUB',slug:'esp32-sensor-hub'},stm32,rp2040,pdSink]},checkpointPath:path.join(root,'checkpoint.json'),executePilot:driver.executePilot,executeBoard:driver.executeBoard,batchSize:3})
+  assert.equal(result.status,'CHALLENGE_COMPLETE');assert.equal(result.state.nextBoardIndex,4);assert.deepEqual(result.state.accepted.map(row=>row.index),[0,1,2,3])
 })
 
 async function authenticResult(root,name){const artifacts=[];for(let i=0;i<5;i++){const data=Buffer.from(`${name}-artifact-${i}`),file=path.join(root,`${name}-${i}.dat`);await writeFile(file,data);artifacts.push({path:file,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')})}return {acceptance:{status:'BOARD_ACCEPTED',accepted:true,evidenceDigest:createHash('sha256').update(name).digest('hex')},manufacturingEvidence:{status:'MANUFACTURING_ACCEPTED',sourceProtection:{unchanged:true},artifacts}}}

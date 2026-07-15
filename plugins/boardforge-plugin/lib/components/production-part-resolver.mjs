@@ -14,9 +14,17 @@ export const preferredPartFamilies = Object.freeze({
   RP2040_MCU: ['SC0914(13)'],
   QSPI_FLASH: ['W25Q128JVSIQ'],
   USB_ESD: ['USBLC6-2SC6'],
+  USB_PD_SINK_CONTROLLER: ['STUSB4500QTR'],
+  USB_PD_POWER_SWITCH: ['SI7465DP-T1-GE3'],
+  USB_PD_5V_BUCK: ['TPS54202DDCR'],
+  USB_PD_TVS: ['SMAJ24A'],
+  USB_PD_INPUT_FUSE: ['3413.0218.22'],
+  USB_PD_BUCK_INDUCTOR: ['SRN6045TA-4R7M'],
+  USB_PD_FB_TOP: ['RC0603FR-0773K2L'],
+  USB_PD_FB_BOTTOM: ['RC0603FR-0710KL'],
 })
 
-export function createProductionPartResolver({ providers = [], cache = new Map(), ttlMs = DEFAULT_TTL_MS, retries = 1, minimumLiveProviders = 1, now = () => Date.now() } = {}) {
+export function createProductionPartResolver({ providers = [], cache = new Map(), ttlMs = DEFAULT_TTL_MS, retries = 2, retryDelayMs = 50, sleep = delay, minimumLiveProviders = 1, now = () => Date.now() } = {}) {
   return async function resolve({ requirement, family }) {
     const candidates = [...new Set([requirement?.mpn, ...(preferredPartFamilies[family] || [])].filter(Boolean))]
     if (!candidates.length) return blocked('NO_APPROVED_CANDIDATE_FAMILY', family)
@@ -25,9 +33,12 @@ export function createProductionPartResolver({ providers = [], cache = new Map()
       for (const provider of providers) {
         const key = `${provider.id}:${mpn}`.toLowerCase()
         let result = cache.get(key)
-        if (!result || now() - result.cachedAt > ttlMs) {
-          result = await boundedLookup(provider, mpn, retries)
-          cache.set(key, { ...result, cachedAt: now() })
+        if (!result || result.live !== true || result.exact !== true || now() - result.cachedAt > ttlMs) {
+          result = await boundedLookup(provider, mpn, { retries, retryDelayMs, sleep })
+          // Never retain unavailable/partial evidence as a cache hit. A later
+          // resolution must perform a fresh bounded live lookup.
+          if (result.live === true && result.exact === true) cache.set(key, { ...result, cachedAt: now() })
+          else cache.delete(key)
         }
         observations.push({ mpn, provider: provider.id, ...result })
       }
@@ -63,7 +74,8 @@ export function mouserProductionProvider(provider) {
   }}
 }
 
-async function boundedLookup(provider,mpn,retries){let last;for(let attempt=0;attempt<=retries;attempt+=1){try{return await provider.lookupExact(mpn)}catch(error){last=error}}return {live:false,exact:false,errorCode:last?.code||'PROVIDER_LOOKUP_FAILED'}}
+async function boundedLookup(provider,mpn,{retries,retryDelayMs,sleep}){let last;for(let attempt=0;attempt<=retries;attempt+=1){try{const result=await provider.lookupExact(mpn);last=result;if(result?.live===true&&result?.exact===true)return result}catch(error){last={live:false,exact:false,errorCode:error?.code||'PROVIDER_LOOKUP_FAILED'}}if(attempt<retries)await sleep(retryDelayMs*Math.pow(2,attempt))}return {...(last&&typeof last==='object'?last:{}),live:false,exact:false,errorCode:last?.errorCode||(last?.live!==true?'PROVIDER_NON_LIVE_AFTER_RETRIES':'PROVIDER_NON_EXACT_AFTER_RETRIES')}}
+function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 function score(row,candidates){return (row.quantityAvailable>0?100:0)+(row.stockStatus==='IN_STOCK'?50:0)+(row.lifecycle==='Active'?20:0)-candidates.indexOf(row.mpn)}
 function redactObservations(rows){return rows.map(({mpn,provider,live,exact,stockStatus,quantityAvailable,lifecycle,checkedAt,requestId,errorCode})=>({mpn,provider,live,exact,stockStatus,quantityAvailable,lifecycle,checkedAt,requestId,errorCode}))}
 function blocked(code,family){return {status:'BLOCKED',blocker:{code,family}}}

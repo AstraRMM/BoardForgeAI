@@ -75,6 +75,19 @@ export const REAL_BOARD_PROOF_BOARDS = [
     ],
   },
   {
+    id:'usb-c-pd-sink',name:'USB-C PD Sink',preset:'notched',widthMm:58,heightMm:38,layers:4,
+    prompt:'Make a compact protected USB-C PD sink requesting at most 9V/2A and producing a regulated 5V/2A output.',
+    intent:['USB-C recessed input','STUSB4500 PD negotiation','normally-off protected VBUS switch','fused and TVS-protected input','5V/2A buck output'],
+    bom:[
+      bom('J1','USB4105-GF-A','USB-C PD input','APPROVED_MAPPING','USB4105-GF-A'),bom('U1','STUSB4500QTR','PD sink controller','APPROVED_MAPPING','STUSB4500QTR'),
+      bom('Q1','SI7465DP-T1-GE3','protected VBUS switch','APPROVED_MAPPING','SI7465DP-T1-GE3'),bom('U2','TPS54202DDCR','5V buck regulator','APPROVED_MAPPING','TPS54202DDCR'),
+      bom('D1','SMAJ24A','VBUS TVS','APPROVED_MAPPING','SMAJ24A'),bom('F1','3413.0218.22','input fuse','APPROVED_MAPPING','3413.0218.22'),
+      bom('L1','SRN6045TA-4R7M','buck inductor','APPROVED_MAPPING','SRN6045TA-4R7M'),bom('C1','UWT1H100MCL1GB','HV input bulk','APPROVED_MAPPING','UWT1H100MCL1GB'),
+      bom('C2','UWT1E220MCL1GB','5V output bulk','APPROVED_MAPPING','UWT1E220MCL1GB'),bom('R_FB_TOP','73.2k','buck feedback top','APPROVED_MAPPING','RC0603FR-0773K2L'),
+      bom('R_FB_BOTTOM','10k','buck feedback bottom','APPROVED_MAPPING','RC0603FR-0710KL'),bom('J2','M20-9990245','5V output','APPROVED_MAPPING','M20-9990245'),
+    ],
+  },
+  {
     id: 'can-sensor-node',
     name: 'CAN Sensor Node',
     preset: 'notched',
@@ -424,6 +437,7 @@ const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'usb-c-esp32-sensor': usbEsp32CategoryPcbEvidence,
   'stm32-controller': stm32ControllerCategoryPcbEvidence,
   'rp2040-instrument': rp2040InstrumentCategoryPcbEvidence,
+  'usb-c-pd-sink': usbCPdSinkCategoryPcbEvidence,
   'can-sensor-node': canSensorNodeCategoryPcbEvidence,
   'poe-ethernet-sensor': poeEthernetSensorCategoryPcbEvidence,
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
@@ -772,6 +786,42 @@ export function usbEsp32CategoryPcbEvidence() {
   ]
   const vias = [via(10.4, 15, net.GND), via(20, 19, net.GND)]
   return { nets, footprints, segments, vias }
+}
+
+export function usbCPdSinkCategoryPcbEvidence(){
+  const names=['','GND','VBUS_RAW','VBUS_PROTECTED','VBUS_SWITCHED','5V','CC1','CC2','VBUS_EN_SNK','SW','FB']
+  const nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+  const fp=(ref,value,footprint,x,y,w,h,pads)=>({ref,value,footprint,at:{x,y},body:{w,h},pads})
+  const footprints=[
+    fp('J1','USB4105-GF-A','Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal',8,20,5,12,[pad('A1',2,-5,.7,.7,n.GND,'GND'),pad('B12',2,-4,.7,.7,n.GND,'GND'),pad('A4',2,-3,.8,.8,n.VBUS_RAW,'VBUS_RAW'),pad('B9',2,-2,.8,.8,n.VBUS_RAW,'VBUS_RAW'),pad('A5',2,-1,.7,.7,n.CC1,'CC1'),pad('B5',2,0,.7,.7,n.CC2,'CC2'),pad('S1',2,5,.8,.8,n.GND,'GND')]),
+    fp('F1','3413.0218.22','Resistor_SMD:R_2512_6332Metric',16,14,6.3,3.2,[pad('1',-3.5,0,1.5,1.5,n.VBUS_RAW,'VBUS_RAW'),pad('2',3.5,0,1.5,1.5,n.VBUS_PROTECTED,'VBUS_PROTECTED')]),
+    fp('D1','SMAJ24A','Diode_SMD:D_SMA',23,9,2.5,4.5,[pad('1',0,-2.8,1.5,1.5,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('2',0,2.8,1.5,1.5,n.GND,'GND')]),
+    fp('Q1','SI7465DP-T1-GE3','Package_SO:PowerPAK_SO-8_Single',25,15,5,6,[pad('1',-2.5,-1.5,.9,.8,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('2',-2.5,-.5,.9,.8,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('3',-2.5,.5,.9,.8,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('4',-2.5,1.5,.9,.8,n.VBUS_EN_SNK,'VBUS_EN_SNK'),pad('5',2.5,1.5,.9,.8,n.VBUS_SWITCHED,'VBUS_SWITCHED'),pad('6',2.5,.5,.9,.8,n.VBUS_SWITCHED,'VBUS_SWITCHED'),pad('7',2.5,-.5,.9,.8,n.VBUS_SWITCHED,'VBUS_SWITCHED'),pad('8',2.5,-1.5,.9,.8,n.VBUS_SWITCHED,'VBUS_SWITCHED')]),
+    fp('U1','STUSB4500QTR','Package_DFN_QFN:QFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.7mm',21,25,5,5,[pad('1',-3,-2,.55,.55,n.CC1,'CC1'),pad('2',-3,-1,.55,.55,n.CC2,'CC2'),pad('3',-3,0,.55,.55,n.VBUS_EN_SNK,'VBUS_EN_SNK'),pad('4',-3,1,.55,.55,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('17',3,-1,.55,.55,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('18',3,0,.55,.55,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('19',3,1,.55,.55,n.GND,'GND'),pad('25',0,0,2.2,2.2,n.GND,'GND')]),
+    fp('U2','TPS54202DDCR','Package_TO_SOT_SMD:SOT-23-6',35,18,4,5,[pad('1',-2,-2,.7,.6,n.SW,'SW'),pad('2',-2,0,.7,.6,n.GND,'GND'),pad('3',-2,2,.7,.6,n.FB,'FB'),pad('4',2,2,.7,.6,n.VBUS_SWITCHED,'VBUS_SWITCHED'),pad('5',2,0,.7,.6,n.VBUS_SWITCHED,'VBUS_SWITCHED'),pad('6',2,-2,.7,.6,n.SW,'SW')]),
+    fp('L1','SRN6045TA-4R7M','Inductor_SMD:L_Bourns_SRN6045',43,16,6,6,[pad('1',-3.5,0,1.5,1.5,n.SW,'SW'),pad('2',3.5,0,1.5,1.5,n['5V'],'5V')]),
+    fp('C1','UWT1H100MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',30,28,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
+    fp('C2','UWT1E220MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',46,25,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n['5V'],'5V'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
+    passiveFootprint('R_FB_TOP','73.2k',39,23,n['5V'],'5V',n.FB,'FB'),passiveFootprint('R_FB_BOTTOM','10k',39,27,n.FB,'FB',n.GND,'GND'),
+    fp('J2','M20-9990245','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',53,20,3,6,[pad('1',0,-1.3,1,1,n['5V'],'5V'),pad('2',0,1.3,1,1,n.GND,'GND')]),
+  ]
+  const evidence={nets,footprints,segments:[],vias:[]},byNet=new Map(names.filter(Boolean).map(name=>[name,[]]))
+  for(const f of footprints)for(const p of f.pads)if(p.netNumber)byNet.get(p.netName).push([f.at.x+p.x,f.at.y+p.y])
+  addDogboneTree(evidence,byNet.get('GND'),n.GND,'B.Cu',35,5);addDogboneTree(evidence,byNet.get('5V'),n['5V'],'In1.Cu',32,5)
+  const connect=(a,b,net,layer='F.Cu',width=.3)=>evidence.segments.push(segment(a[0],a[1],b[0],b[1],width,net,layer))
+  const chain=(points,net,layer='F.Cu',width=.3)=>points.slice(1).forEach((p,i)=>connect(points[i],p,net,layer,width))
+  chain([[10,17],[12,17],[12,14],[12.5,14]],n.VBUS_RAW);chain([[10,18],[11,18],[11,17],[10,17]],n.VBUS_RAW)
+  chain([[24,24],[24,25]],n.VBUS_PROTECTED)
+  chain([[22.5,13.5],[22.5,14.5],[22.5,15.5]],n.VBUS_PROTECTED)
+  addDogboneTree(evidence,[[19.5,14],[23,6.2],[22.5,14.5],[24,24],[30,24.5]],n.VBUS_PROTECTED,'In2.Cu',8,6)
+  evidence.vias.push(via(18,26,n.VBUS_PROTECTED));evidence.segments.push(segment(18,26,12,26,.3,n.VBUS_PROTECTED,'In2.Cu'),segment(12,26,12,8,.3,n.VBUS_PROTECTED,'In2.Cu'),segment(12,8,25.5,8,.3,n.VBUS_PROTECTED,'In2.Cu'))
+  chain([[27.5,13.5],[27.5,14.5],[27.5,15.5],[27.5,16.5]],n.VBUS_SWITCHED)
+  chain([[27.5,15.5],[30,11],[41,11],[41,19],[37,19],[37,18],[37,20]],n.VBUS_SWITCHED)
+  chain([[33,16],[39.5,16]],n.SW);chain([[37,16],[39.5,16]],n.SW)
+  chain([[10,19],[18,23]],n.CC1);chain([[10,20],[18,24]],n.CC2)
+  chain([[33,20],[33,22],[34,24],[40.1,24],[40.1,23],[42,24],[42,29],[36,29],[36,27],[37.9,27]],n.FB,'F.Cu',.22)
+  chain([[18,25],[20,18]],n.VBUS_EN_SNK,'In1.Cu',.22);chain([[20,18],[21,17],[22.5,16.5]],n.VBUS_EN_SNK,'F.Cu',.22);evidence.vias.push(via(18,25,n.VBUS_EN_SNK),via(20,18,n.VBUS_EN_SNK))
+  return evidence
 }
 
 export function rp2040InstrumentCategoryPcbEvidence() {
@@ -1132,6 +1182,13 @@ function categorySchematicPinMaps(board) {
       R1: { 1:'CC1', 2:'GND' }, R2: { 1:'CC2', 2:'GND' },
       C1: { 1:'3V3', 2:'GND' }, C2: { 1:'3V3', 2:'GND' }, C3: { 1:'3V3', 2:'GND' },
     },
+    'usb-c-pd-sink': {
+      J1:{A1:'GND',B12:'GND',A4:'VBUS_RAW',B9:'VBUS_RAW',A5:'CC1',B5:'CC2',S1:'GND'},
+      U1:{1:'CC1',2:'CC2',3:'VBUS_EN_SNK',4:'VBUS_PROTECTED',17:'VBUS_PROTECTED',18:'VBUS_PROTECTED',19:'GND',25:'GND'},
+      Q1:{1:'VBUS_PROTECTED',2:'VBUS_PROTECTED',3:'VBUS_PROTECTED',4:'VBUS_EN_SNK',5:'VBUS_SWITCHED',6:'VBUS_SWITCHED',7:'VBUS_SWITCHED',8:'VBUS_SWITCHED'},
+      U2:{1:'SW',2:'GND',3:'FB',4:'VBUS_SWITCHED',5:'VBUS_SWITCHED',6:'SW'},
+      D1:{1:'VBUS_PROTECTED',2:'GND'},F1:{1:'VBUS_RAW',2:'VBUS_PROTECTED'},L1:{1:'SW',2:'5V'},C1:{1:'VBUS_PROTECTED',2:'GND'},C2:{1:'5V',2:'GND'},R_FB_TOP:{1:'5V',2:'FB'},R_FB_BOTTOM:{1:'FB',2:'GND'},J2:{1:'5V',2:'GND'},
+    },
     'usb-c-esp32-sensor': {
       U1: { 1: 'GND', 2: '3V3', 3: 'USB_DP', 4: 'USB_DN', 5: 'I2C_SCL', 6: 'I2C_SDA', 7: 'UART_TX', 8: 'UART_RX' },
       J1: { 1: 'GND', 2: 'VUSB', 3: 'USB_DP', 4: 'USB_DN', 5: 'CC1', 6: 'CC2' },
@@ -1311,8 +1368,8 @@ function addLayerTree(evidence,points,net,layer,busY) {
 
 // Escape collinear connector/power pads before joining a bounded bus.  Unlike
 // addLayerTree, this never drops a full-height trunk through every pad sharing x.
-function addDogboneTree(evidence,points,net,layer,busY) {
-  const escaped=points.map(([x,y])=>[x,y,x>32?x-3:x+3])
+function addDogboneTree(evidence,points,net,layer,busY,offset=3) {
+  const escaped=points.map(([x,y])=>[x,y,x>32?x-offset:x+offset])
   for(const [x,y,escapeX] of escaped){
     evidence.vias.push(via(x,y,net))
     evidence.segments.push(segment(x,y,escapeX,y,0.3,net,layer),segment(escapeX,y,escapeX,busY,0.3,net,layer))
