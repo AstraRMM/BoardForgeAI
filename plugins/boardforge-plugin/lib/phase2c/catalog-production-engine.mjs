@@ -274,6 +274,18 @@ export function validateCatalogSemanticTopology(definition={}){
     ['camera-trigger-default-inactive-missing',/(camera|trigger).*(default.*inactive|failsafe|reset.*safe)/],
   ])
   if(/isolated synchronized triggering/.test(semanticText)&&topology==='stm32-controller')errors.push('camera-trigger-category-mapped-to-can-controller')
+  if(/high-current matrix control/.test(semanticText))requireCapabilities([
+    ['led-matrix-panel-interface-missing',/(led|matrix|hub75).*(panel.*connector|output.*connector|interface)/],
+    ['led-matrix-row-column-drive-missing',/(row|column|matrix).*(driver|buffer|level.*translator)|constant.current.*led/],
+    ['led-matrix-timing-controller-missing',/(led|matrix).*(timing|pwm|refresh|dma).*controller|display.*engine/],
+    ['led-matrix-power-input-protection-missing',/(led|panel).*(fuse|efuse|reverse|tvs|inrush)|power.*entry.*protection/],
+    ['led-matrix-bulk-decoupling-missing',/(led|panel).*(bulk|low.esr|power.*injection)/],
+    ['led-matrix-current-capacity-evidence-missing',/(led|panel).*(current|ampacity|power.*budget).*evidence/],
+    ['led-matrix-safe-blanking-missing',/(led|matrix).*(blank|output.*enable|default.off|failsafe)/],
+    ['led-matrix-thermal-monitoring-missing',/(led|panel).*(temperature|thermal.*monitor|overtemperature)/],
+    ['led-matrix-signal-integrity-evidence-missing',/(clock|latch|data).*(termination|signal.*integrity|timing.*budget)/],
+  ])
+  if(/high-current matrix control/.test(semanticText)&&topology==='stm32-controller')errors.push('led-matrix-category-mapped-to-can-controller')
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/]])
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])
   if(/high-speed fpga expansion/.test(semanticText))requireCapabilities([['fpga-device-missing',/fpga/],['fpga-configuration-memory-missing',/configuration.*flash|fpga.*flash/],['fpga-high-speed-connector-missing',/high.speed.*connector|mezzanine/],['fpga-bank-decoupling-missing',/fpga.*decoupling|bank.*decoupling/],['fpga-clock-missing',/fpga.*clock|oscillator/]])
