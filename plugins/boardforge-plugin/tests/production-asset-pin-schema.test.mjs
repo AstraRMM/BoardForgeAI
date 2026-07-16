@@ -58,3 +58,9 @@ test('PowerPAK PMOS keeps three-pin symbol identity separate from eight physical
   assert.deepEqual(asset.pinAliases,{1:'4',2:'1',3:'5'})
   assert.deepEqual(Object.keys(asset.footprintPadMap),['1','2','3','4','5','6','7','8'])
 })
+
+test('STM32G0B1 dual-FDCAN asset binds two independent controller channels',()=>{
+  const asset=approvedAssetFor('STM32G0B1CBT6')
+  assert.equal(asset.pinSchema.valid,true,asset.pinSchema.errors.join('\n'))
+  assert.deepEqual(Object.fromEntries(['19','20','47','48'].map(pin=>[pin,asset.symbolPinMap[pin]])),{'19':'CAN2_RX','20':'CAN2_TX','47':'CAN1_RX','48':'CAN1_TX'})
+})

@@ -6,7 +6,7 @@ import path from 'node:path'
 import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
 import { catalogDefinition, validateCatalogSemanticTopology, verifyCatalogAuthoritativePcbSelection } from '../lib/phase2c/catalog-production-engine.mjs'
 import {stm32ControllerTemplate} from '../lib/phase2c/templates/stm32-controller.mjs'
-import {categorySchematicPinMaps,stm32ControllerCategoryPcbEvidence} from '../lib/real-board-proof.mjs'
+import {categoryPowerFlags,categorySchematicPinMaps,stm32ControllerCategoryPcbEvidence} from '../lib/real-board-proof.mjs'
 import { validateChallengeManifest } from '../lib/challenge/phase2c-challenge.mjs'
 
 test('all 50 campaign specifications retain unique custom outline intent',()=>{const result=validateChallengeManifest(manifest);assert.equal(result.ok,true,result.errors.join('; '));assert.equal(result.customOutlineCount,50);assert.equal(new Set(manifest.boards.map(b=>b.outline.family)).size,50)})
@@ -23,6 +23,8 @@ test('Board007 catalog, schematic maps, and PCB writer retain every hardened CAN
   const d=catalogDefinition(manifest.boards[6],6),expected=stm32ControllerTemplate.requirements.map(row=>row.ref).sort()
   assert.deepEqual(d.bom.map(row=>row.ref).sort(),expected)
   assert.deepEqual(Object.keys(categorySchematicPinMaps(d)).sort(),expected)
+  assert.deepEqual(categorySchematicPinMaps(d).Q1,{1:'GND',2:'5V_RAW',3:'5V'})
+  assert.deepEqual(categoryPowerFlags(d).map(row=>[row.ref,row.rail,row.source.ref]),[['#FLG01','5V_RAW','J2'],['#FLG02','GND','J2'],['#FLG03','5V','Q1']])
   assert.deepEqual(stm32ControllerCategoryPcbEvidence(d).footprints.map(row=>row.ref).sort(),expected)
   assert.equal(validateCatalogSemanticTopology(d).ok,true,validateCatalogSemanticTopology(d).errors.join('; '))
 })
@@ -34,22 +36,29 @@ test('catalog definition rejects missing board input with an actionable contract
 test('dual-bus CAN gateway has two independently named CAN physical channels',()=>{
   const d=catalogDefinition(manifest.boards[7],7)
   assert.equal(d.topologyId,'can-gateway')
+  assert.equal(d.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CBT6')
   assert.equal(d.bom.filter(row=>row.mpn==='SN65HVD230DR').length,2)
   assert.ok(d.bom.some(row=>row.ref==='J3'))
   assert.ok(d.bom.some(row=>row.ref==='R2'))
+  assert.ok(d.bom.some(row=>row.ref==='JP2'))
+  assert.ok(d.bom.some(row=>row.ref==='C7'))
+  assert.deepEqual(Object.fromEntries(['19','20','47','48'].map(pin=>[pin,categorySchematicPinMaps(d).U1[pin]])),{'19':'CAN2_RX','20':'CAN2_TX','47':'CAN1_RX','48':'CAN1_TX'})
+  assert.deepEqual(validateCatalogSemanticTopology(d).errors,[])
 })
 
-test('Board008 clone-based dual CAN shell fails closed before placement or routing',()=>{
+test('Board008 no longer reuses the invalid one-CAN MCU/two-PHY shell',()=>{
   const definition=catalogDefinition(manifest.boards[7],7),gate=validateCatalogSemanticTopology(definition)
-  assert.equal(gate.ok,false)
-  for(const code of['dual-can-controller-capability-missing','mcu-boot-bias-network-missing','mcu-reset-network-missing','mcu-debug-connector-missing','power-entry-protection-missing','dual-can-termination-not-selectable','dual-can-phy-mode-bias-missing','gateway-per-rail-decoupling-insufficient','power-entry-surge-suppression-missing','power-entry-bulk-decoupling-missing'])assert.ok(gate.errors.includes(code),code)
-  assert.equal(definition.bom.find(row=>row.ref==='U1').mpn,'STM32F103C8T6')
+  assert.equal(gate.ok,true,gate.errors.join('; '))
+  assert.equal(definition.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CBT6')
+  assert.equal(definition.bom.filter(row=>/selectable termination/.test(row.role)).length,2)
 })
 
 test('dual CAN semantic gate requires explicit controller capability and support circuits',()=>{
   const definition=catalogDefinition(manifest.boards[7],7)
   definition.bom=definition.bom.map(row=>row.ref==='U1'?{...row,mpn:'DUAL_CAN_MCU',role:'dual CAN controller'}:row.ref==='U4'?{...row,role:'second CAN physical layer'}:row)
   definition.bom.push({ref:'R_BOOT',role:'BOOT0 bias strap'},{ref:'R_RESET',role:'reset bias RC'},{ref:'J_SWD',role:'SWD debug header'},{ref:'F_PWR',role:'input fuse protection'},{ref:'JP_TERM',role:'selectable termination jumper'},{ref:'R_MODE1',role:'CAN transceiver mode bias'},{ref:'R_MODE2',role:'CAN transceiver mode bias'},{ref:'D_PWR',role:'input surge suppression'},{ref:'C_BULK',role:'power input bulk decoupling'},{ref:'C4',role:'MCU decoupling'},{ref:'C5',role:'MCU decoupling'},{ref:'C6',role:'CAN decoupling'})
+  assert.ok(validateCatalogSemanticTopology(definition).errors.includes('dual-can-controller-capability-missing'))
+  definition.bom.push({ref:'U_CAN_EXT',role:'external CAN controller'})
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
@@ -74,8 +83,8 @@ test('remaining catalog clones cannot pass without their advertised architecture
   for(const [index,code]of expected){const definition=catalogDefinition(manifest.boards[index],index),gate=validateCatalogSemanticTopology(definition);assert.equal(gate.ok,false,manifest.boards[index].id);assert.ok(gate.errors.includes(code),`${manifest.boards[index].id}: ${code}`)}
 })
 
-test('all unsupported catalog clones 008-050 fail semantic validation before generation',()=>{
-  const passing=[];for(let index=7;index<manifest.boards.length;index++){const definition=catalogDefinition(manifest.boards[index],index);if(validateCatalogSemanticTopology(definition).ok)passing.push(manifest.boards[index].id)}
+test('all unsupported catalog clones 009-050 fail semantic validation before generation',()=>{
+  const passing=[];for(let index=8;index<manifest.boards.length;index++){const definition=catalogDefinition(manifest.boards[index],index);if(validateCatalogSemanticTopology(definition).ok)passing.push(manifest.boards[index].id)}
   assert.deepEqual(passing,[])
 })
 

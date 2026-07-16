@@ -1402,7 +1402,7 @@ export function categorySchematicPinMaps(board) {
       Q1:{1:'GND',2:'5V_RAW',3:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
     },
     'can-gateway': {
-      U1: approvedAssetFor('STM32F103C8T6').pinMap,
+      U1: approvedAssetFor('STM32G0B1CBT6').pinMap,
       U2:{1:'CAN1_TX',2:'GND',3:'3V3',4:'CAN1_RX',6:'CAN1L',7:'CAN1H',8:'GND'},U4:{1:'CAN2_TX',2:'GND',3:'3V3',4:'CAN2_RX',6:'CAN2L',7:'CAN2H',8:'GND'},
       U3:{1:'GND',2:'3V3',3:'5V'},J1:approvedAssetFor('M20-9990245').pinMap,
       J2:{1:'CAN1H',2:'CAN1L',3:'GND',4:'3V3',5:'I2C_SCL',6:'I2C_SDA'},J3:{1:'CAN2H',2:'CAN2L',3:'GND',4:'3V3',5:'3V3',6:'GND'},
