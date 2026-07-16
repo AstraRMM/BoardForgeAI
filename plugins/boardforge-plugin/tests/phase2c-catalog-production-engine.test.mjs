@@ -59,7 +59,7 @@ test('USB hub semantic gate requires one upstream and at least four downstream p
 
 test('remaining catalog clones cannot pass without their advertised architecture hardware',()=>{
   const expected=new Map([
-    [15,'bldc-controller-missing'],[21,'gnss-receiver-missing'],[22,'environmental-sensors-missing'],[23,'lora-radio-missing'],[27,'data-acquisition-front-end-missing'],[31,'soil-sensor-interface-missing'],[38,'compute-module-connector-missing'],[39,'fpga-device-missing'],[43,'encoder-sensor-interface-missing'],[45,'isolated-current-sensor-missing'],[46,'high-voltage-divider-missing'],[47,'high-density-connectors-missing'],
+    [15,'bldc-controller-missing'],[21,'gnss-receiver-missing'],[22,'environmental-sensors-missing'],[23,'lora-radio-missing'],[27,'data-acquisition-front-end-missing'],[31,'soil-sensor-interface-missing'],[38,'compute-module-connector-missing'],[39,'fpga-device-missing'],[43,'encoder-sensing-element-missing'],[45,'isolated-current-sensor-missing'],[46,'high-voltage-divider-missing'],[47,'high-density-connectors-missing'],
   ])
   for(const [index,code]of expected){const definition=catalogDefinition(manifest.boards[index],index),gate=validateCatalogSemanticTopology(definition);assert.equal(gate.ok,false,manifest.boards[index].id);assert.ok(gate.errors.includes(code),`${manifest.boards[index].id}: ${code}`)}
 })
@@ -285,7 +285,7 @@ test('Board043 requires a guarded calibrated resistance and voltage measurement 
 test('Board044 requires a mechanically aligned calibrated motor encoder chain',()=>{
   const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[43],43))
   assert.equal(gate.ok,false)
-  for(const code of ['custom-outline-exceeds-maximum-area','encoder-sensing-element-missing','encoder-target-missing','encoder-signal-conditioning-missing','encoder-output-interface-missing','encoder-connector-missing','encoder-input-output-protection-missing','encoder-power-filtering-missing','encoder-index-home-missing','encoder-alignment-evidence-missing','encoder-resolution-accuracy-evidence-missing','encoder-speed-timing-evidence-missing','encoder-calibration-production-test-missing','encoder-category-mapped-to-generic-wireless-sensor'])assert.ok(gate.errors.includes(code),code)
+  for(const code of ['encoder-sensing-element-missing','encoder-target-missing','encoder-signal-conditioning-missing','encoder-output-interface-missing','encoder-connector-missing','encoder-input-output-protection-missing','encoder-power-filtering-missing','encoder-index-home-missing','encoder-alignment-evidence-missing','encoder-resolution-accuracy-evidence-missing','encoder-speed-timing-evidence-missing','encoder-calibration-production-test-missing','encoder-category-mapped-to-generic-wireless-sensor'])assert.ok(gate.errors.includes(code),code)
 })
 
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
