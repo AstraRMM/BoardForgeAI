@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { authoritativePadRoutingInput,compactEsp32FixedCorridors,stm32AuthoritativeFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
+import { authoritativePadRoutingInput,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 const scan={boardSize:{bounds:{minX:0,minY:0,maxX:50,maxY:30}},layers:[{name:'F.Cu',type:'signal'},{name:'In1.Cu',type:'signal'},{name:'In2.Cu',type:'signal'},{name:'B.Cu',type:'signal'}],nets:[{name:'USB_D+',number:1},{name:'USB_D-',number:2},{name:'I2C_SCL',number:3},{name:'I2C_SDA',number:4},{name:'BLOCKER',number:5}],tracks:[],vias:[],pads:[
@@ -61,4 +61,31 @@ test('STM32 authoritative corridor proof activates only for its exact endpoint t
   assert.ok(routed.vias.every(v=>v.diameter===.5&&v.drill===.3))
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CANH').endpoints[0].pad='99'
   assert.deepEqual(stm32AuthoritativeFixedCorridors(changed,{}).completedNets,[])
+})
+
+test('RP2040 frozen topology includes the cumulatively proven SCLK perimeter corridor',()=>{
+  const p=(ref,pad,x,y)=>({ref,pad,x,y}),nets=[
+    {net:'USB_DP',endpoints:[p('D1','6',18.418,21.05),p('U1','47',33,16.563)]},{net:'USB_DN',endpoints:[p('D1','4',18.418,22.95),p('U1','46',33.4,16.563)]},
+    {net:'VBUS',endpoints:[p('J1','A4',5.92,16.32),p('J1','A9',10.72,16.32),p('D1','5',18.418,22),p('U3','3',25.258,10)]},
+    {net:'GND',endpoints:[p('J1','A1',5.12,16.32),p('J1','A12',11.52,16.32),p('J1','SH',4,16.895),p('J1','SH',4,21.075),p('J1','SH',12.64,16.895),p('J1','SH',12.64,21.075),p('U3','1',23.383,9.05),p('C1','2',28.905,9.95),p('C2','2',32.775,11.2),p('C3','2',37.895,11.2),p('U1','57',32,20),p('U2','4',42.325,21.905),p('R1','2',14.905,30),p('R2','2',18.745,30),p('D1','2',16.143,22),p('J2','1',51.2,20)]},
+    {net:'QSPI_SCLK',endpoints:[p('U1','52',31,16.563),p('U2','6',47.275,20.635)]},{net:'QSPI_CS',endpoints:[p('U1','56',29.4,16.563),p('U2','1',42.325,18.095)]},{net:'QSPI_SD3',endpoints:[p('U1','51',31.4,16.563),p('U2','7',47.275,19.365)]},{net:'QSPI_SD2',endpoints:[p('U1','54',30.2,16.563),p('U2','3',42.325,20.635)]},{net:'QSPI_SD1',endpoints:[p('U1','55',29.8,16.563),p('U2','2',42.325,19.365)]},{net:'QSPI_SD0',endpoints:[p('U1','53',30.6,16.563),p('U2','5',47.275,21.905)]},
+  ]
+  const result=rp2040InstrumentFixedCorridors({bounds:{maxX:63,maxY:39},nets},{trackWidth:.2,viaDiameter:.5})
+  assert.ok(result.completedNets.includes('QSPI_SCLK'))
+  assert.ok(result.vias.some(v=>v.net==='QSPI_SCLK'&&v.x===32&&v.y===12))
+  assert.ok(result.completedNets.includes('QSPI_CS'))
+  assert.ok(result.vias.some(v=>v.net==='QSPI_CS'&&v.x===28.8&&v.y===15.1))
+  assert.ok(result.completedNets.includes('QSPI_SD3'))
+  assert.ok(result.vias.some(v=>v.net==='QSPI_SD3'&&v.x===31.8&&v.y===15))
+  assert.ok(result.completedNets.includes('QSPI_SD2'))
+  assert.ok(result.tracks.some(t=>t.net==='QSPI_SD2'&&t.layer==='In1.Cu'&&t.start.y===22.8&&t.end.y===22.8))
+  assert.ok(result.completedNets.includes('QSPI_SD1'))
+  assert.ok(result.vias.some(v=>v.net==='QSPI_SD1'&&v.x===29.6&&v.y===19.2))
+  assert.ok(result.completedNets.includes('QSPI_SD0'))
+  assert.ok(result.vias.some(v=>v.net==='QSPI_SD0'&&v.x===29.8&&v.y===12))
+  assert.deepEqual(result.partialNets,[])
+  assert.equal(result.completedNets.includes('GND'),true)
+  assert.equal(result.tracks.filter(t=>t.net==='GND').length,31)
+  assert.equal(result.vias.filter(v=>v.net==='GND').length,9)
+  assert.ok(result.tracks.some(t=>t.net==='GND'&&t.layer==='B.Cu'&&t.start.y===23&&t.end.y===23))
 })

@@ -31,22 +31,48 @@ export function authoritativePadRoutingInput(scan,{clearance=.2,edgeInset=1}={})
   return {schema:'boardforge.authoritative-pad-routing-input.v1',nets,occupancy,bounds,layers:layers.length?layers:['F.Cu','B.Cu'],clearance,padCount:pads.length,netNumbers}
 }
 
+/** Count the minimum physical connections represented by a copperless board.
+ * For an N-terminal net, a connected tree requires exactly N-1 independent
+ * joins. This is intentionally derived from transformed authoritative pads,
+ * not from legacy tracks or a schematic-side estimate. */
+export function authoritativeConnectionInventory(input){
+  if(!Array.isArray(input?.nets))throw new TypeError('Authoritative pad routing input is required')
+  const nets=input.nets.map(tree=>({net:tree.net,endpointCount:tree.endpoints.length,requiredConnections:Math.max(0,tree.endpoints.length-1),endpoints:tree.endpoints.map(endpoint=>`${endpoint.ref}:${endpoint.pad}`)}))
+  return{schema:'boardforge.authoritative-connection-inventory.v1',nets,totalEndpoints:nets.reduce((sum,row)=>sum+row.endpointCount,0),requiredConnections:nets.reduce((sum,row)=>sum+row.requiredConnections,0)}
+}
+
+/** Fail-closed topology contract for the 4-layer RP2040 instrument. The
+ * power topology is fixed before signal routing: B.Cu GND plane/tree, In1.Cu
+ * regulated 3V3 tree rooted at U3.2, and a short VBUS source tree from J1. */
+export function rp2040InstrumentPowerTopologyGate(input){
+  const inventory=authoritativeConnectionInventory(input),byNet=new Map(inventory.nets.map(row=>[row.net,row]))
+  const expected={GND:16,VBUS:4,'3V3':10},errors=[]
+  for(const [net,count] of Object.entries(expected))if(byNet.get(net)?.endpointCount!==count)errors.push(`${net}: expected ${count} authoritative endpoints, got ${byNet.get(net)?.endpointCount??0}`)
+  if(inventory.requiredConnections!==45)errors.push(`expected 45 required physical connections, got ${inventory.requiredConnections}`)
+  const sourceChecks=[['VBUS','J1:A4'],['VBUS','J1:A9'],['3V3','U3:2'],['GND','U3:1']]
+  for(const [net,endpoint] of sourceChecks)if(!byNet.get(net)?.endpoints.includes(endpoint))errors.push(`${net}: missing topology anchor ${endpoint}`)
+  const powerConnections=['GND','VBUS','3V3'].reduce((sum,net)=>sum+(byNet.get(net)?.requiredConnections||0),0)
+  return{schema:'boardforge.rp2040-instrument-power-topology-gate.v1',valid:errors.length===0,errors,inventory,powerConnections,signalConnections:inventory.requiredConnections-powerConnections,plan:{GND:{layer:'B.Cu',strategy:'filled-plane-with-local-dogbones',root:'J1:SH',requiredConnections:15},VBUS:{layer:'In2.Cu',strategy:'short-source-tree',roots:['J1:A4','J1:A9'],loads:['D1:5','U3:3'],requiredConnections:3},'3V3':{layer:'In1.Cu',strategy:'regulated-star-tree',root:'U3:2',requiredConnections:9}}}
+}
+
 /** Regenerate copper into a candidate file. The source PCB is never modified. */
-export async function regenerateAuthoritativePadRoutesCandidate({pcbFile,candidateFile,clearance=.2,trackWidth=.2,viaDiameter=.6,removeLegacyCopper=true}={}){
+export async function regenerateAuthoritativePadRoutesCandidate({pcbFile,candidateFile,clearance=.2,trackWidth=.2,viaDiameter=.6,removeLegacyCopper=true,includeNets=null,includeGroundPlanes=true}={}){
   if(!pcbFile||!candidateFile)throw new TypeError('pcbFile and candidateFile are required')
   if(path.resolve(pcbFile)===path.resolve(candidateFile))throw new Error('Candidate routing must not overwrite the source PCB')
   const scan=await scanKiCadProject(pcbFile)
   const input=authoritativePadRoutingInput(scan,{clearance})
   // Legacy/proof copper is intentionally excluded during full regeneration.
   const baseOccupancy=removeLegacyCopper?{...input.occupancy,tracks:input.occupancy.tracks.filter(t=>t.kind==='projected-pad-obstacle'),vias:input.occupancy.vias.filter(v=>v.kind==='projected-pad-obstacle')}:input.occupancy
-  const fixed=authoritativeFixedCorridors(input,{trackWidth,viaDiameter})
+  const selected=includeNets==null?null:new Set(includeNets.map(String))
+  const fixed0=authoritativeFixedCorridors(input,{trackWidth,viaDiameter})
+  const fixed=selected?{tracks:fixed0.tracks.filter(row=>selected.has(row.net)),vias:fixed0.vias.filter(row=>selected.has(row.net)),completedNets:fixed0.completedNets.filter(net=>selected.has(net)),partialNets:(fixed0.partialNets||[]).filter(net=>selected.has(net))}:fixed0
   // Topology-fixed corridors occupy distinct assigned layers and are appended
   // candidate-only after generic channel search; KiCad DRC remains the final
   // collision authority before any promotion.
   const occupancy=baseOccupancy
-  const routeNets=input.nets.filter(tree=>!fixed.completedNets.includes(tree.net)&&!/^GND$/i.test(tree.net))
+  const routeNets=input.nets.filter(tree=>!fixed.completedNets.includes(tree.net)&&!(fixed.partialNets||[]).includes(tree.net)&&!/^GND$/i.test(tree.net)&&(!selected||selected.has(tree.net)))
   const spanY=input.bounds.maxY-input.bounds.minY
-  const groundPlanes=input.nets.some(tree=>/^GND$/i.test(tree.net))&&!fixed.completedNets.some(net=>/^GND$/i.test(net))
+  const groundPlanes=includeGroundPlanes&&(!selected||selected.has('GND'))&&input.nets.some(tree=>/^GND$/i.test(tree.net))&&!fixed.completedNets.some(net=>/^GND$/i.test(net))
   // Keep GND in deterministic ordering because its reserved endpoints steer
   // signal choices. If only GND exhausts the channel router, retain the proven
   // non-GND partial result and complete GND with filled planes below.
@@ -59,12 +85,12 @@ export async function regenerateAuthoritativePadRoutesCandidate({pcbFile,candida
   }
   const source=await readFile(pcbFile,'utf8'),withoutCopper0=removeLegacyCopper?removeTopLevelCopper(source):source
   const withoutCopper=canonicalizeNamedNets(withoutCopper0,input.netNumbers)
-  routed={...routed,tracks:[...fixed.tracks,...routed.tracks],vias:[...fixed.vias,...routed.vias],diagnostics:{...routed.diagnostics,fixedCorridorNets:fixed.completedNets}}
+  routed={...routed,tracks:[...fixed.tracks,...routed.tracks],vias:[...fixed.vias,...routed.vias],diagnostics:{...routed.diagnostics,fixedCorridorNets:fixed.completedNets,fixedPartialNets:fixed.partialNets||[]}}
   const generated=[...routed.tracks.map(t=>segmentText(t,input.netNumbers)),...routed.vias.map(v=>viaText(v,input.netNumbers)),...(groundPlanes?groundZoneTexts(input.bounds,input.netNumbers.GND,clearance):[])].join('\n')
   await copyFile(pcbFile,candidateFile)
   await writeFile(candidateFile,`${withoutCopper.trimEnd().slice(0,-1)}\n${generated}\n)\n`)
   await copyDesignRules(pcbFile,candidateFile)
-  return {schema:'boardforge.authoritative-pad-route-candidate.v1',sourcePcb:pcbFile,candidatePcb:candidateFile,input:{netCount:input.nets.length,padCount:input.padCount,layers:input.layers},generated:{tracks:routed.tracks.length,vias:routed.vias.length,groundPlanes:groundPlanes?2:0},diagnostics:routed.diagnostics,sourceUnchanged:true}
+  return {schema:'boardforge.authoritative-pad-route-candidate.v1',sourcePcb:pcbFile,candidatePcb:candidateFile,input:{netCount:input.nets.length,selectedNets:selected?[...selected]:null,padCount:input.padCount,layers:input.layers},generated:{tracks:routed.tracks.length,vias:routed.vias.length,groundPlanes:groundPlanes?2:0},diagnostics:routed.diagnostics,sourceUnchanged:true}
 }
 
 /** Produce the immutable transaction baseline: canonical nets, zero tracks,
@@ -153,8 +179,53 @@ export function compactEsp32FixedCorridors(input,{trackWidth,viaDiameter}){
  * exact authoritative board it was validated against. Coordinates are part of
  * the proof: a placement change deliberately falls back to the generic router. */
 export function authoritativeFixedCorridors(input,options){
+  const rp2040=rp2040InstrumentFixedCorridors(input,options)
+  if(rp2040.completedNets.length)return rp2040
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/** RP2040 corridors are admitted one net-group at a time after isolated KiCad
+ * proof. USB_DP is the first perimeter escape to pass with DRC zero. */
+export function rp2040InstrumentFixedCorridors(input,{trackWidth=.2,viaDiameter=.5}={}){
+  const byNet=new Map(input.nets.map(row=>[row.net,row.endpoints])),at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const signature=[['USB_DP','D1','6',18.418,21.05],['USB_DP','U1','47',33,16.563],['USB_DN','D1','4',18.418,22.95],['USB_DN','U1','46',33.4,16.563],['VBUS','J1','A4',5.92,16.32],['VBUS','J1','A9',10.72,16.32],['VBUS','D1','5',18.418,22],['VBUS','U3','3',25.258,10]]
+  if(input.bounds?.maxX!==63||input.bounds?.maxY!==39||!signature.every(([net,ref,pad,x,y])=>{const p=at(net,ref,pad);return p&&near(p.x,x)&&near(p.y,y)}))return{tracks:[],vias:[],completedNets:[]}
+  const tracks=[],vias=[],completedNets=[],add=(net,points,layers)=>points.slice(1).forEach((p,i)=>tracks.push({net,layer:layers[i],start:{x:points[i][0],y:points[i][1]},end:{x:p[0],y:p[1]},width:trackWidth})),via=(net,points)=>points.forEach(([x,y])=>vias.push({net,x,y,diameter:viaDiameter,drill:.3}))
+  add('USB_DP',[[18.418,21.05],[19.5,20],[27,13.2],[31.8,13.2],[31.8,14],[32.2,14],[33,14],[33,16.563]],['F.Cu','In1.Cu','In1.Cu','In1.Cu','In1.Cu','F.Cu','F.Cu']);via('USB_DP',[[19.5,20],[32.2,14]]);completedNets.push('USB_DP')
+  add('USB_DN',[[18.418,22.95],[19.5,23.8],[28,24.8],[35.5,24.8],[35.5,14],[34.5,14],[33.4,14],[33.4,16.563]],['F.Cu','In2.Cu','In2.Cu','In2.Cu','In2.Cu','F.Cu','F.Cu']);via('USB_DN',[[19.5,23.8],[34.5,14]]);completedNets.push('USB_DN')
+  const dpc=[at('USB_DP_CONN','J1','A6'),at('USB_DP_CONN','J1','B6'),at('USB_DP_CONN','D1','1')];if(dpc.every(Boolean)){const a={x:8.07,y:14.8},b={x:9.07,y:13.2},o={x:15,y:19.8};add('USB_DP_CONN',[[dpc[0].x,dpc[0].y],[a.x,a.y],[7,14.8],[7,12.5],[15,12.5],[o.x,o.y],[dpc[2].x,dpc[2].y]],['F.Cu','In1.Cu','In1.Cu','In1.Cu','In1.Cu','F.Cu']);add('USB_DP_CONN',[[dpc[1].x,dpc[1].y],[b.x,b.y],[7,13.2]],['F.Cu','In1.Cu']);via('USB_DP_CONN',[[a.x,a.y],[b.x,b.y],[o.x,o.y]]);completedNets.push('USB_DP_CONN')}
+  const dnc=[at('USB_DN_CONN','J1','A7'),at('USB_DN_CONN','J1','B7'),at('USB_DN_CONN','D1','3')];if(dnc.every(Boolean)){const a={x:8.57,y:18.7},b={x:7.57,y:19.5},o={x:15,y:24.3};add('USB_DN_CONN',[[dnc[0].x,dnc[0].y],[a.x,a.y],[6.5,18.7],[6.5,25],[15,25],[o.x,o.y],[dnc[2].x,dnc[2].y]],['F.Cu','In2.Cu','In2.Cu','In2.Cu','In2.Cu','F.Cu']);add('USB_DN_CONN',[[dnc[1].x,dnc[1].y],[b.x,b.y],[6.5,19.5]],['F.Cu','In2.Cu']);via('USB_DN_CONN',[[a.x,a.y],[b.x,b.y],[o.x,o.y]]);completedNets.push('USB_DN_CONN')}
+  const dogs=[[[5.92,16.32],[5.92,15.62]],[[10.72,16.32],[10.72,15.62]],[[18.418,22],[20.5,22]],[[25.258,10],[24.558,10]]];for(const [p,d]of dogs){add('VBUS',[p,d,[d[0],11.8]],['F.Cu','In2.Cu']);via('VBUS',[d])}add('VBUS',[[5.92,11.8],[24.558,11.8]],['In2.Cu']);completedNets.push('VBUS')
+  const cc1=[at('CC1','J1','A5'),at('CC1','R1','1')];if(cc1.every(Boolean)&&near(cc1[0].x,7.07)&&near(cc1[1].x,13.255)){add('CC1',[[7.07,16.32],[7.07,17.5],[5.5,20.5],[5.5,28],[10,28],[13.255,30]],['F.Cu','F.Cu','F.Cu','F.Cu','F.Cu']);completedNets.push('CC1')}
+  const cc2=[at('CC2','J1','B5'),at('CC2','R2','1')];if(cc2.every(Boolean)&&near(cc2[0].x,10.07)&&near(cc2[1].x,17.095)){add('CC2',[[10.07,16.32],[10.07,22.5],[16.5,22.5],[16.5,28.8],[17.095,28.8],[17.095,30]],['F.Cu','In2.Cu','In2.Cu','In2.Cu','F.Cu']);via('CC2',[[10.07,22.5],[17.095,28.8]]);completedNets.push('CC2')}
+  const scl=[at('I2C_SCL','U1','6'),at('I2C_SCL','J2','3')];if(scl.every(Boolean)&&near(scl[0].x,28.563)&&near(scl[0].y,19.4)&&near(scl[1].x,51.2)&&near(scl[1].y,25.08)){add('I2C_SCL',[[28.563,19.4],[26,19.4],[24.5,18.5],[24.5,26.2],[49,26.2],[51.2,25.08]],['F.Cu','F.Cu','In1.Cu','In1.Cu','In1.Cu']);via('I2C_SCL',[[24.5,18.5]]);completedNets.push('I2C_SCL')}
+  const sda=[at('I2C_SDA','U1','7'),at('I2C_SDA','J2','4')];if(sda.every(Boolean)&&near(sda[0].x,28.563)&&near(sda[0].y,19.8)&&near(sda[1].x,51.2)&&near(sda[1].y,27.62)){add('I2C_SDA',[[28.563,19.8],[23.5,19.8],[23.5,23],[18,23],[18,28.8],[49,28.8],[51.2,27.62]],['F.Cu','In2.Cu','In2.Cu','In2.Cu','In2.Cu','In2.Cu']);via('I2C_SDA',[[23.5,19.8]]);completedNets.push('I2C_SDA')}
+  const swclk=[at('SWCLK','U1','24'),at('SWCLK','J2','5')];if(swclk.every(Boolean)&&near(swclk[0].x,33)&&near(swclk[0].y,23.438)&&near(swclk[1].x,51.2)&&near(swclk[1].y,30.16)){add('SWCLK',[[33,23.438],[33,25.2],[31.5,27.2],[31.5,30.2],[49,30.2],[51.2,30.16]],['F.Cu','F.Cu','In1.Cu','In1.Cu','In1.Cu']);via('SWCLK',[[31.5,27.2]]);completedNets.push('SWCLK')}
+  const swdio=[at('SWDIO','U1','25'),at('SWDIO','J2','6')];if(swdio.every(Boolean)&&near(swdio[0].x,33.4)&&near(swdio[0].y,23.438)&&near(swdio[1].x,51.2)&&near(swdio[1].y,32.7)){add('SWDIO',[[33.4,23.438],[33.4,25.2],[34.5,31.2],[34.5,32.7],[51.2,32.7]],['F.Cu','F.Cu','In2.Cu','In2.Cu']);via('SWDIO',[[34.5,31.2]]);completedNets.push('SWDIO')}
+  const clock=[at('QSPI_SCLK','U1','52'),at('QSPI_SCLK','U2','6')];if(clock.every(Boolean)&&near(clock[0].x,31)&&near(clock[1].x,47.275)){add('QSPI_SCLK',[[31,16.563],[31,12.3],[32,12],[50,12],[50,20.635],[48.5,20.635],[47.275,20.635]],['F.Cu','F.Cu','B.Cu','B.Cu','B.Cu','F.Cu']);via('QSPI_SCLK',[[32,12],[48.5,20.635]]);completedNets.push('QSPI_SCLK')}
+  const cs=[at('QSPI_CS','U1','56'),at('QSPI_CS','U2','1')];if(cs.every(Boolean)&&near(cs[0].x,29.4)&&near(cs[1].x,42.325)){add('QSPI_CS',[[29.4,16.563],[29.4,15.4],[28.8,15.1],[28.8,10.5],[40.8,10.5],[40.8,18.095],[41.3,18.095],[42.325,18.095]],['F.Cu','F.Cu','In2.Cu','In2.Cu','In2.Cu','In2.Cu','F.Cu']);via('QSPI_CS',[[28.8,15.1],[41.3,18.095]]);completedNets.push('QSPI_CS')}
+  const sd3=[at('QSPI_SD3','U1','51'),at('QSPI_SD3','U2','7')];if(sd3.every(Boolean)&&near(sd3[0].x,31.4)&&near(sd3[1].x,47.275)){add('QSPI_SD3',[[31.4,16.563],[31.4,15.8],[31.8,15],[33,15.2],[48.5,15.2],[48.5,19.365],[47.275,19.365]],['F.Cu','F.Cu','B.Cu','B.Cu','B.Cu','F.Cu']);via('QSPI_SD3',[[31.8,15],[48.5,19.365]]);completedNets.push('QSPI_SD3')}
+  const sd2=[at('QSPI_SD2','U1','54'),at('QSPI_SD2','U2','3')];if(sd2.every(Boolean)&&near(sd2[0].x,30.2)&&near(sd2[1].x,42.325)){add('QSPI_SD2',[[30.2,16.563],[30.2,14.8],[27.5,14],[27.5,22.8],[43.5,22.8],[43.5,20.635],[42.325,20.635]],['F.Cu','F.Cu','In1.Cu','In1.Cu','In1.Cu','F.Cu']);via('QSPI_SD2',[[27.5,14],[43.5,20.635]]);completedNets.push('QSPI_SD2')}
+  const sd1=[at('QSPI_SD1','U1','55'),at('QSPI_SD1','U2','2')];if(sd1.every(Boolean)&&near(sd1[0].x,29.8)&&near(sd1[1].x,42.325)){add('QSPI_SD1',[[29.8,16.563],[29.8,18.5],[29.6,19.2],[39.5,19.2],[39.5,19.365],[41.3,19.365],[42.325,19.365]],['F.Cu','F.Cu','B.Cu','B.Cu','B.Cu','F.Cu']);via('QSPI_SD1',[[29.6,19.2],[41.3,19.365]]);completedNets.push('QSPI_SD1')}
+  const sd0=[at('QSPI_SD0','U1','53'),at('QSPI_SD0','U2','5')];if(sd0.every(Boolean)&&near(sd0[0].x,30.6)&&near(sd0[1].x,47.275)){add('QSPI_SD0',[[30.6,16.563],[30.6,12],[29.8,12],[29.8,11],[45.5,11],[45.5,21.905],[48.5,21.905],[47.275,21.905]],['F.Cu','F.Cu','In1.Cu','In1.Cu','In1.Cu','In1.Cu','F.Cu']);via('QSPI_SD0',[[29.8,12],[48.5,21.905]]);completedNets.push('QSPI_SD0')}
+  const railLocal=[at('3V3','U3','2'),at('3V3','C1','1'),at('3V3','C2','1'),at('3V3','C3','1')],railPartial=[]
+  if(railLocal.every(Boolean)){const dogs=[[22,10.95],[27.355,6.5],[31.225,6.5],[36.345,6.5]];railLocal.forEach((p,i)=>{tracks.push({net:'3V3',layer:'F.Cu',start:p,end:{x:dogs[i][0],y:dogs[i][1]},width:trackWidth});via('3V3',[dogs[i]])});add('3V3',[dogs[0],[22,6.5],dogs[1],dogs[2],dogs[3]],['In2.Cu','In2.Cu','In2.Cu','In2.Cu']);
+    const remote=[at('3V3','U2','8'),at('3V3','J2','2')],u1Rail=[at('3V3','U1','1'),at('3V3','U1','48'),at('3V3','U1','49'),at('3V3','U1','50')]
+    if(remote.every(Boolean)){const u={x:49.3,y:18.095},j={x:52.5,y:22.54};tracks.push({net:'3V3',layer:'F.Cu',start:remote[0],end:u,width:trackWidth},{net:'3V3',layer:'In2.Cu',start:{x:dogs[3][0],y:dogs[3][1]},end:{x:52.5,y:6.5},width:trackWidth},{net:'3V3',layer:'In2.Cu',start:u,end:{x:u.x,y:6.5},width:trackWidth},{net:'3V3',layer:'In2.Cu',start:remote[1],end:j,width:trackWidth},{net:'3V3',layer:'In2.Cu',start:j,end:{x:j.x,y:6.5},width:trackWidth});via('3V3',[[u.x,u.y]])
+      if(u1Rail.every(Boolean)){const left={x:26.7,y:17.4},top={x:32.6,y:17.5};add('3V3',[[31.8,16.563],[32.2,16.563],[32.6,16.563],[top.x,top.y]],['F.Cu','F.Cu','F.Cu']);add('3V3',[[28.563,17.4],[left.x,left.y]],['F.Cu']);add('3V3',[[left.x,left.y],[26.7,12.8],[49.3,12.8],[u.x,u.y]],['B.Cu','B.Cu','B.Cu']);add('3V3',[[top.x,top.y],[30.8,17.5],[30.8,12.8]],['B.Cu','B.Cu']);via('3V3',[[left.x,left.y],[top.x,top.y]]);completedNets.push('3V3')}
+    }
+    if(!completedNets.includes('3V3'))railPartial.push('3V3')}
+  const jg=[at('GND','J1','A1'),at('GND','J1','A12')],sh=(byNet.get('GND')||[]).filter(p=>p.ref==='J1'&&p.pad==='SH').sort((a,b)=>a.x-b.x||a.y-b.y)
+  const partialNets=[...railPartial];if(jg.every(Boolean)&&sh.length===4){const [lt,lb,rt,rb]=sh;tracks.push({net:'GND',layer:'F.Cu',start:jg[0],end:lt,width:trackWidth},{net:'GND',layer:'F.Cu',start:jg[1],end:rt,width:trackWidth},{net:'GND',layer:'B.Cu',start:lt,end:lb,width:trackWidth},{net:'GND',layer:'B.Cu',start:rt,end:rb,width:trackWidth},{net:'GND',layer:'B.Cu',start:lb,end:rb,width:trackWidth});
+    const local=[at('GND','U3','1'),at('GND','C1','2'),at('GND','C2','2'),at('GND','C3','2')]
+    const localExpected=[[23.383,9.05],[28.905,9.95],[32.775,11.2],[37.895,11.2]],localExact=local.every((p,i)=>p&&near(p.x,localExpected[i][0])&&near(p.y,localExpected[i][1]))
+    if(localExact){const dogs=local.map(p=>({x:p.x,y:8}));local.forEach((p,i)=>{tracks.push({net:'GND',layer:'F.Cu',start:p,end:dogs[i],width:trackWidth});via('GND',[[dogs[i].x,dogs[i].y]])});tracks.push({net:'GND',layer:'B.Cu',start:rb,end:{x:rb.x,y:8},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:rb.x,y:8},end:dogs[0],width:trackWidth});for(let i=1;i<dogs.length;i++)tracks.push({net:'GND',layer:'B.Cu',start:dogs[i-1],end:dogs[i],width:trackWidth})}
+    const logic=[at('GND','U1','57'),at('GND','U2','4')],logicExact=localExact&&logic[0]&&logic[1]&&near(logic[0].x,32)&&near(logic[0].y,20)&&near(logic[1].x,42.325)&&near(logic[1].y,21.905);if(logicExact){const a={x:30.8,y:20},b={x:41.2,y:21.905},laneY=23;tracks.push({net:'GND',layer:'F.Cu',start:logic[0],end:a,width:trackWidth},{net:'GND',layer:'F.Cu',start:logic[1],end:b,width:trackWidth},{net:'GND',layer:'B.Cu',start:rb,end:{x:rb.x,y:laneY},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:rb.x,y:laneY},end:{x:a.x,y:laneY},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:a.x,y:laneY},end:a,width:trackWidth},{net:'GND',layer:'B.Cu',start:a,end:b,width:trackWidth});via('GND',[[a.x,a.y],[b.x,b.y]])}
+    const remaining=[at('GND','R1','2'),at('GND','R2','2'),at('GND','D1','2'),at('GND','J2','1')]
+    const remainingExpected=[[14.905,30],[18.745,30],[16.143,22],[51.2,20]],remainingExact=logicExact&&remaining.every((p,i)=>p&&near(p.x,remainingExpected[i][0])&&near(p.y,remainingExpected[i][1]));if(remainingExact){const r1={x:14.905,y:31.5},r2={x:18.745,y:31.5},d={x:17.2,y:22},b={x:41.2,y:21.905};tracks.push({net:'GND',layer:'F.Cu',start:remaining[0],end:r1,width:trackWidth},{net:'GND',layer:'B.Cu',start:r1,end:{x:12.64,y:31.5},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:12.64,y:31.5},end:rb,width:trackWidth},{net:'GND',layer:'F.Cu',start:remaining[1],end:r2,width:trackWidth},{net:'GND',layer:'B.Cu',start:r2,end:r1,width:trackWidth},{net:'GND',layer:'F.Cu',start:remaining[2],end:d,width:trackWidth},{net:'GND',layer:'B.Cu',start:d,end:{x:d.x,y:23},width:trackWidth},{net:'GND',layer:'B.Cu',start:remaining[3],end:{x:54,y:20},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:54,y:20},end:{x:54,y:35},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:54,y:35},end:{x:b.x,y:35},width:trackWidth},{net:'GND',layer:'B.Cu',start:{x:b.x,y:35},end:b,width:trackWidth});via('GND',[[r1.x,r1.y],[r2.x,r2.y],[d.x,d.y]]);completedNets.push('GND')}
+    if(!completedNets.includes('GND'))partialNets.push('GND')}
+  return{tracks,vias,completedNets,partialNets}
 }
 
 export function stm32AuthoritativeFixedCorridors(input,{trackWidth=.2,viaDiameter=.5}={}){
@@ -176,6 +247,7 @@ export function stm32AuthoritativeFixedCorridors(input,{trackWidth=.2,viaDiamete
   }
   return{tracks,vias,completedNets:[...new Set(stm32FixedRouteTuples.map(row=>row[1]))]}
 }
+
 function compactEsp32AuthoritativeFanout(input,{trackWidth,viaDiameter}){
   const tracks=[],vias=[],completedNets=[]
   const add=(net,layer,points)=>{for(let i=1;i<points.length;i++)tracks.push({net,layer,start:points[i-1],end:points[i],width:trackWidth})}

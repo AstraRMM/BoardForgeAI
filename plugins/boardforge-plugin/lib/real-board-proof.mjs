@@ -21,7 +21,7 @@ import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
 import { COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY, placeAuthoritativeProductionFootprints } from './placement/authoritative-production-placement.mjs'
 import { generateTps25750GlobalHandoff, generateTps25750LocalBreakoutV4 } from './routing/dense-qfn-power-breakout-planner.mjs'
-import { createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
+import { authoritativeFixedCorridors, authoritativePadRoutingInput, createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -70,6 +70,7 @@ export const REAL_BOARD_PROOF_BOARDS = [
   },
   {
     id: 'rp2040-instrument', name: 'RP2040 USB Bench Instrument', preset: 'mounting-ears', widthMm: 64, heightMm: 40, layers: 4,
+    holes: [{x:7,y:7,diameterMm:2.4},{x:57,y:7,diameterMm:2.4},{x:57,y:33,diameterMm:2.4},{x:7,y:33,diameterMm:2.4}],
     prompt: 'Make a compact rounded USB-C RP2040 bench instrument with protected USB, QSPI flash, SWD and measurement IO.',
     intent: ['RP2040 control', 'protected USB device', 'QSPI flash', '3V3 regulator', 'SWD and measurement expansion'],
     bom: [
@@ -453,6 +454,10 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
   await writeFile(files.pcb, next, 'utf8')
   if(placement)await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge authoritative package micro drill" (constraint hole_size (min 0.2mm)))\n','utf8')
   const authoritativeRouting=placement?await routeAuthoritativeCandidate({pcbFile:files.pcb,projectDir,kicad}):null
+  if(authoritativeRouting?.routingDeferred){
+    const error=new Error(`Authoritative routing deferred: ${authoritativeRouting.reason}. Stale final-PCB validation is forbidden; validate ${authoritativeRouting.candidatePcb} only.`)
+    error.code='AUTHORITATIVE_ROUTING_DEFERRED';error.routing=authoritativeRouting;throw error
+  }
   if(board.id==='usb-c-pd-source') await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge TPS25750 fine pitch clearance" (constraint clearance (min 0.09mm)))\n(rule "BoardForge TPS25750 fine pitch track" (constraint track_width (min 0.1mm)))\n(rule "BoardForge TPS25750 micro drill" (constraint hole_size (min 0.2mm)))\n(rule "BoardForge TPS25750 micro via" (constraint via_diameter (min 0.4mm)))\n','utf8')
   const report = {
     schema: 'boardforge.category-pcb-evidence.real-proof.v1',
@@ -844,10 +849,13 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
   try{
     const copperless=await createCopperlessAuthoritativeCandidate({pcbFile,candidateFile:copperlessFile})
     const copperlessScan=await scanKiCadProject(copperlessFile)
+    const routingInput=authoritativePadRoutingInput(copperlessScan)
+    const fixed=authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
+    const fixedComplete=routingInput.nets.every(({net})=>fixed.completedNets.includes(net))
     // The generic channel search is combinatorial on dense MCU fanout. Preserve
     // a deterministic zero-copper transaction baseline instead of consuming
     // the campaign watchdog or falling back to stale proof-coordinate copper.
-    if((copperlessScan.pads?.length||0)>80)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
+    if((copperlessScan.pads?.length||0)>80&&!fixedComplete)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
     const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile})
     if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
     const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
@@ -867,7 +875,7 @@ function authoritativeProductionPlacement(board,projected){
     if(!asset||!component)throw new Error(`Approved authoritative placement asset is missing for ${row.ref}`)
     return {ref:row.ref,value:row.value,mpn:row.mpn,footprint:asset.footprint.libId,pinMap:topologyPinMaps[row.ref]||asset.footprintPadMap}
   })
-  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:board.topologyId||'generic'})
+  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:board.topologyId||board.id||'generic'})
 }
 
 function footprintPadToSymbolPin(board,ref,pad){

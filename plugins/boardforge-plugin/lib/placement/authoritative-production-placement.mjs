@@ -12,7 +12,7 @@ const ESP32_TOPOLOGY = {
 const RP2040_TOPOLOGY = {
   J1:{nx:.13,ny:.50,rotations:[0,180]},D1:{nx:.27,ny:.55,rotations:[0,180]},
   U1:{nx:.50,ny:.50,rotations:[0,90,270,180]},U2:{nx:.70,ny:.50,rotations:[0,180,90,270]},
-  U3:{nx:.38,ny:.25,rotations:[0,180,90,270]},J2:{nx:.88,ny:.50,rotations:[0,180]},
+  U3:{nx:.38,ny:.25,rotations:[0,180,90,270]},J2:{nx:.80,ny:.50,rotations:[0,180]},
   R1:{nx:.22,ny:.75,rotations:[0,90,180,270]},R2:{nx:.28,ny:.75,rotations:[0,90,180,270]},
   C1:{nx:.42,ny:.28,rotations:[0,90,180,270]},C2:{nx:.50,ny:.28,rotations:[0,90,180,270]},C3:{nx:.58,ny:.28,rotations:[0,90,180,270]},
 }
