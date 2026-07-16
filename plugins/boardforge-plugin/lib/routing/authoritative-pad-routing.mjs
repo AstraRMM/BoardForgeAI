@@ -179,12 +179,28 @@ export function compactEsp32FixedCorridors(input,{trackWidth,viaDiameter}){
  * exact authoritative board it was validated against. Coordinates are part of
  * the proof: a placement change deliberately falls back to the generic router. */
 export function authoritativeFixedCorridors(input,options){
+  const pdSource=tps25750SourceFixedCorridors(input,options)
+  if(pdSource.completedNets.length)return pdSource
   const pdSink=usbCPdSinkFixedCorridors(input,options)
   if(pdSink.completedNets.length)return pdSink
   const rp2040=rp2040InstrumentFixedCorridors(input,options)
   if(rp2040.completedNets.length)return rp2040
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/** Topology-gated first corridor for the six-layer TPS25750 source proof.
+ * The input fuse is physically reversed relative to the source connector, so
+ * its raw rail must pass beneath F1 pad 2 rather than shorting across it. */
+export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6}={}){
+  const byNet=new Map(input.nets.map(row=>[row.net,row.endpoints])),at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const j=at('5V_RAW','J1','1'),f=at('5V_RAW','F1','1'),signature=[j,f,at('PP5V','F1','2'),at('CC1','U2','28'),at('CC1','J2','A5'),at('CC2','U2','29'),at('CC2','J2','B5')]
+  if(input.bounds?.maxX!==61||input.bounds?.maxY!==31||!signature.every(Boolean)||!near(j.x,38.5)||!near(j.y,28.5)||!near(f.x,29.288)||!near(f.y,28.5))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const dog={x:27.5,y:28.5},tracks=[
+    {net:'5V_RAW',layer:'F.Cu',start:{x:f.x,y:f.y},end:dog,width:trackWidth},
+    {net:'5V_RAW',layer:'In4.Cu',start:dog,end:{x:j.x,y:j.y},width:trackWidth},
+  ],vias=[{net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3}]
+  return{tracks,vias,completedNets:['5V_RAW'],partialNets:[]}
 }
 
 /** Fixed, topology-gated corridors for the isolated USB-C PD sink proof. */

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { authoritativePadRoutingInput,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
+import { authoritativePadRoutingInput,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 const scan={boardSize:{bounds:{minX:0,minY:0,maxX:50,maxY:30}},layers:[{name:'F.Cu',type:'signal'},{name:'In1.Cu',type:'signal'},{name:'In2.Cu',type:'signal'},{name:'B.Cu',type:'signal'}],nets:[{name:'USB_D+',number:1},{name:'USB_D-',number:2},{name:'I2C_SCL',number:3},{name:'I2C_SDA',number:4},{name:'BLOCKER',number:5}],tracks:[],vias:[],pads:[
@@ -61,6 +61,21 @@ test('STM32 authoritative corridor proof activates only for its exact endpoint t
   assert.ok(routed.vias.every(v=>v.diameter===.5&&v.drill===.3))
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CANH').endpoints[0].pad='99'
   assert.deepEqual(stm32AuthoritativeFixedCorridors(changed,{}).completedNets,[])
+})
+
+test('TPS25750 source raw input corridor activates only for exact transformed topology',()=>{
+  const p=(ref,pad,x,y)=>({ref,pad,x,y}),input={bounds:{maxX:61,maxY:31},nets:[
+    {net:'5V_RAW',endpoints:[p('J1','1',38.5,28.5),p('F1','1',29.288,28.5)]},
+    {net:'PP5V',endpoints:[p('F1','2',35.212,28.5)]},
+    {net:'CC1',endpoints:[p('U2','28',40.1,21.575),p('J2','A5',19.75,2.32)]},
+    {net:'CC2',endpoints:[p('U2','29',39.7,21.575),p('J2','B5',22.75,2.32)]},
+  ]}
+  const result=tps25750SourceFixedCorridors(input,{trackWidth:.2,viaDiameter:.6})
+  assert.deepEqual(result.completedNets,['5V_RAW'])
+  assert.equal(result.tracks[1].layer,'In4.Cu')
+  assert.deepEqual([result.vias[0].x,result.vias[0].y],[27.5,28.5])
+  const changed=structuredClone(input);changed.nets.find(n=>n.net==='CC1').endpoints[0].pad='99'
+  assert.deepEqual(tps25750SourceFixedCorridors(changed,{}).completedNets,[])
 })
 
 test('RP2040 frozen topology includes the cumulatively proven SCLK perimeter corridor',()=>{
