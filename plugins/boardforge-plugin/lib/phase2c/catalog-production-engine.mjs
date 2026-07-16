@@ -505,6 +505,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['breakout-continuity-production-test-missing',/(breakout|connector).*(continuity|hipot|loopback|production.*test)/],
   ])
   if(/high-density connector adaptation/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('breakout-category-mapped-to-wireless-sensor')
+  if(/isolated serial gateway/.test(semanticText))requireCapabilities([
+    ['rs485-gateway-host-controller-missing',/(rs.?485|serial).*(gateway.*controller|host.*controller|protocol.*controller)/],
+    ['rs485-gateway-isolated-transceiver-missing',/(rs.?485|serial).*(isolated.*transceiver|transceiver.*isolation)/],
+    ['rs485-gateway-isolated-power-missing',/(rs.?485|fieldbus).*(isolated.*power|isolation.*converter)/],
+    ['rs485-gateway-barrier-evidence-missing',/(rs.?485|fieldbus).*(creepage|clearance|isolation.*barrier).*evidence/],
+    ['rs485-gateway-field-connector-missing',/(rs.?485|fieldbus).*(terminal|connector|port)/],
+    ['rs485-gateway-termination-bias-missing',/(rs.?485).*(termination|failsafe.*bias|bias.*network)/],
+    ['rs485-gateway-surge-esd-missing',/(rs.?485|fieldbus).*(surge|eft|esd|tvs|protection)/],
+    ['rs485-gateway-shield-grounding-missing',/(rs.?485|fieldbus).*(shield|chassis|grounding)/],
+    ['rs485-gateway-host-interface-missing',/(gateway|controller).*(ethernet|usb|wifi|host.*interface)/],
+    ['rs485-gateway-direction-timing-missing',/(rs.?485|serial).*(direction.*control|turnaround|driver.*enable.*timing)/],
+    ['rs485-gateway-baud-loading-evidence-missing',/(baud|data.*rate|cable.*length|unit.*load).*(verified|budget|evidence)/],
+    ['rs485-gateway-production-loopback-missing',/(rs.?485|gateway).*(loopback|bus.*fixture|production.*test)/],
+  ])
+  if(/isolated serial gateway/.test(semanticText)&&topology==='stm32-controller')errors.push('rs485-gateway-category-mapped-to-can-controller')
   return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}
 }
 
