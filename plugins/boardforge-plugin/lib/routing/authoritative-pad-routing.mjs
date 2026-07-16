@@ -211,6 +211,20 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     tracks.push({net:'CAN_RX',layer:'F.Cu',start:{x:rx.x,y:rx.y},end:{x:35.95,y:18.25},width:trackWidth},{net:'CAN_RX',layer:'F.Cu',start:{x:35.95,y:18.25},end:c,width:trackWidth},{net:'CAN_RX',layer:'B.Cu',start:c,end:{x:37,y:13},width:trackWidth},{net:'CAN_RX',layer:'B.Cu',start:{x:37,y:13},end:{x:39.2,y:13},width:trackWidth},{net:'CAN_RX',layer:'B.Cu',start:{x:39.2,y:13},end:d,width:trackWidth},{net:'CAN_RX',layer:'F.Cu',start:d,end:{x:r.x,y:r.y},width:trackWidth})
     vias.push({net:'CAN_RX',x:c.x,y:c.y,diameter:viaDiameter,drill:.3},{net:'CAN_RX',x:d.x,y:d.y,diameter:viaDiameter,drill:.3});completedNets.push('CAN_RX')
   }
+  const canh=[at('CANH','U2','7'),at('CANH','J2','3'),at('CANH','R1','1'),at('CANH','D1','1')]
+  if(canh.every(Boolean)&&[[45.875,18.365],[54.24,22.83],[49.6,10.325],[47.422,26.41]].every(([x,y],i)=>near(canh[i].x,x)&&near(canh[i].y,y))){
+    const uDog={x:47,y:18.365},rDog={x:49.6,y:11.5},dDog={x:47.422,y:26.41}
+    tracks.push({net:'CANH',layer:'F.Cu',start:{x:canh[0].x,y:canh[0].y},end:uDog,width:trackWidth},{net:'CANH',layer:'F.Cu',start:{x:canh[2].x,y:canh[2].y},end:rDog,width:trackWidth})
+    for(const dog of[uDog,rDog,dDog])vias.push({net:'CANH',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3})
+    tracks.push({net:'CANH',layer:'B.Cu',start:uDog,end:{x:47,y:27},width:trackWidth},{net:'CANH',layer:'B.Cu',start:rDog,end:{x:49.6,y:27},width:trackWidth},{net:'CANH',layer:'B.Cu',start:dDog,end:{x:47.422,y:27},width:trackWidth},{net:'CANH',layer:'B.Cu',start:{x:47,y:27},end:{x:52.5,y:27},width:trackWidth},{net:'CANH',layer:'B.Cu',start:{x:52.5,y:27},end:{x:52.5,y:canh[1].y},width:trackWidth},{net:'CANH',layer:'B.Cu',start:{x:52.5,y:canh[1].y},end:{x:canh[1].x,y:canh[1].y},width:trackWidth});completedNets.push('CANH')
+  }
+  const canl=[at('CANL','U2','6'),at('CANL','J2','4'),at('CANL','D1','2'),at('CANL','JP1','2')]
+  if(canl.every(Boolean)&&[[45.875,19.635],[54.24,25.37],[47.422,28.31],[28.52,29.14]].every(([x,y],i)=>near(canl[i].x,x)&&near(canl[i].y,y))){
+    const uDog={x:48,y:19.635},uLane={x:46,y:29},jLane={x:51.5,y:29},dDog={x:47.422,y:29.2}
+    tracks.push({net:'CANL',layer:'F.Cu',start:{x:canl[0].x,y:canl[0].y},end:uDog,width:trackWidth},{net:'CANL',layer:'In2.Cu',start:uDog,end:{x:46,y:19.635},width:trackWidth},{net:'CANL',layer:'In2.Cu',start:{x:46,y:19.635},end:uLane,width:trackWidth},{net:'CANL',layer:'In2.Cu',start:{x:canl[1].x,y:canl[1].y},end:{x:51.5,y:canl[1].y},width:trackWidth},{net:'CANL',layer:'In2.Cu',start:{x:51.5,y:canl[1].y},end:jLane,width:trackWidth},{net:'CANL',layer:'F.Cu',start:{x:canl[2].x,y:canl[2].y},end:dDog,width:trackWidth})
+    for(const dog of[uDog,uLane,jLane,dDog])vias.push({net:'CANL',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3})
+    tracks.push({net:'CANL',layer:'B.Cu',start:{x:canl[3].x,y:canl[3].y},end:{x:28.52,y:29},width:trackWidth},{net:'CANL',layer:'B.Cu',start:{x:28.52,y:29},end:jLane,width:trackWidth},{net:'CANL',layer:'B.Cu',start:dDog,end:{x:47.422,y:29},width:trackWidth});completedNets.push('CANL')
+  }
   return{tracks,vias,completedNets,partialNets:[]}
 }
 
