@@ -7,6 +7,10 @@ const fileCache=new Map()
 export function resolveAuthoritativeKiCadSymbol(libId,{roots=DEFAULT_ROOTS}={}){
   const [library,...parts]=String(libId||'').split(':'),name=parts.join(':')
   if(!library||!name)throw new TypeError(`KiCad symbol libId must be Library:Name; got ${libId||'empty'}`)
+  if(libId==='BoardForge:TPS25750D'){
+    const definition=bundledTps25750dDefinition(),pins=extractPinCoordinates(definition)
+    return{schema:'boardforge.authoritative-kicad-symbol.v1',libId,library,name,sourceFile:'bundled:ti-tps25750-slvsfr7a-table-6-1',dependencyOrder:[libId],definitions:[definition],pins,pinMap:Object.fromEntries(pins.map(pin=>[pin.number,pin.name]))}
+  }
   const source=loadLibrary(library,roots)
   if(!source)throw new Error(`KiCad symbol library is not installed: ${library}`)
   const symbols=indexTopLevelSymbols(source.text),root=symbols.get(name)
@@ -39,9 +43,18 @@ export function extractPinCoordinates(definition){
     const at=block.match(/\(at\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)/),number=block.match(/\(number\s+"([^"]+)"/),name=block.match(/\(name\s+"([^"]*)"/),length=block.match(/\(length\s+(-?[\d.]+)/)
     if(!at||!number)continue
     const rotation=Number(at[3]),lengthMm=Number(length?.[1]||0),r=rotation*Math.PI/180,x=Number(at[1]),y=Number(at[2])
-    pins.push({number:number[1],name:name?.[1]||'',x,y,rotation,lengthMm,bodyX:x+Math.cos(r)*lengthMm,bodyY:y-Math.sin(r)*lengthMm})
+    const electricalType=block.match(/^\(pin\s+([^\s()]+)/)?.[1]||'passive'
+    pins.push({number:number[1],name:name?.[1]||'',electricalType,x,y,rotation,lengthMm,bodyX:x+Math.cos(r)*lengthMm,bodyY:y-Math.sin(r)*lengthMm})
   }
   return pins
+}
+
+export function bundledTps25750dDefinition({qualifiedName='BoardForge:TPS25750D'}={}){
+  const names=['LDO_3V3','ADCIN1','ADCIN2','LDO_1V5','GPIO0','GPIO1','GPIO2','I2Cs_SDA','I2Cs_SCL','I2Cs_IRQ','GND','GND','GPIO11','GND','DRAIN','I2Cm_SDA','I2Cm_SCL','I2Cm_IRQ','GPIO3','PPHV','PPHV','PPHV','VBUS_IN','VBUS_IN','VBUS_IN','GPIO4_USB_P','GPIO5_USB_N','CC1','CC2','DRAIN','GND','VBUS','VBUS','PP5V','PP5V','GPIO7','GPIO6','VIN_3V3','GND','DRAIN']
+  const outputs=new Set([1,4,7,10,13,17,19,36,37]),inputs=new Set([2,3,9,18,38]),bidirectional=new Set([5,6,8,16,20,21,22,26,27,28,29]),powerIn=new Set([11,12,14,31,34,35,38,39]),powerOut=new Set([1,4])
+  const type=n=>powerOut.has(n)?'power_out':powerIn.has(n)?'power_in':bidirectional.has(n)?'bidirectional':outputs.has(n)?'open_collector':inputs.has(n)?'input':'passive'
+  const pins=names.map((name,index)=>{const n=index+1,left=n<=20,y=24.13-(left?n-1:n-21)*2.54,x=left?-12.7:12.7,rotation=left?0:180;return `\t\t\t(pin ${type(n)} line (at ${x} ${y} ${rotation}) (length 2.54) (name "${name}" (effects (font (size 1 1)))) (number "${n}" (effects (font (size 1 1)))))`}).join('\n')
+  return `(symbol "${qualifiedName}"\n\t(pin_names (offset 1.016))\n\t(exclude_from_sim no)\n\t(in_bom yes)\n\t(on_board yes)\n\t(property "Reference" "U" (at 0 27.94 0) (effects (font (size 1.27 1.27))))\n\t(property "Value" "TPS25750D" (at 0 -27.94 0) (effects (font (size 1.27 1.27))))\n\t(symbol "TPS25750D_0_1"\n\t\t(rectangle (start -10.16 26.67) (end 10.16 -26.67) (stroke (width .254) (type default)) (fill (type background)))\n${pins}\n\t)\n)`
 }
 
 export function flattenForSchematicCache(resolved,{qualifiedName=resolved?.libId}={}){

@@ -1,11 +1,215 @@
-export const USB_C_PD_SOURCE_TEMPLATE_SCHEMA='boardforge.phase2c.production-template.usb-c-pd-source.v1'
-const part=(ref,role,mpn,pkg,pinCount,rating)=>({ref,role,mpn,package:pkg,pinCount,rating,selectionPolicy:'dual-provider-live-exact-stocked-approved-asset-only'})
-export const usbCPdSourceTemplate=Object.freeze({schema:USB_C_PD_SOURCE_TEMPLATE_SCHEMA,id:'005_USB_C_PD_SOURCE',class:'usb-c-power',
- electrical:{input:{type:'external-regulated-SELV-only',voltageV:[4.9,5.25],continuousCurrentA:2},sourcePdos:[{voltageV:5,currentA:1.5,powerW:7.5}],maximumAdvertisedPowerW:7.5,integratedCurrentLimitSetting:1,integratedCurrentClampRangeA:[1.61,1.9],layers:6,noBoost:true,noMains:true},
- stackup:{copperLayers:6,layerOrder:['F.Cu','In1.Cu','In2.Cu','In3.Cu','In4.Cu','B.Cu'],railMergeLayers:{GND:'In1.Cu',DRAIN:'In2.Cu',VBUS:'In3.Cu',PP5V:'In4.Cu','3V3':'B.Cu'},requiresBlindVias:false,manufacturing:{standardMultilayer:true,blindViaCapabilityRequired:false},justification:'The dense TPS25750 protected-source controller requires independently verified rail-merge planes after F.Cu courtyard escape. Six layers isolate GND, DRAIN, VBUS, PP5V and 3V3 merges and are the only stack proven by the KiCad-in-loop breakout fixture. Four-layer parity is not claimed.'},
- mechanical:{maximumAreaMm2:1050,outline:'thermal-tab',purpose:'A recessed USB-C edge, widened controller thermal tab with stitched copper, rounded input shoulder, and two mounting ears keep the 5V source compact while preserving connector and cooling access.'},
- requirements:[part('J1','SELV_5V_INPUT','M20-9990245','1x2-2.54-vertical',2,{voltageV:5,currentA:2}),part('F1','INPUT_FUSE','3413.0218.22','2410',2,{ratedA:2,ratedVdc:63}),part('D1','INPUT_TVS','SMAJ5.0A','SMA',2,{standoffV:5,pulsePowerW:400}),part('U1','LOGIC_REGULATOR','MCP1700T-3302E/TT','SOT-23-3',3,{outputV:3.3,inputMaximumV:6}),part('U2','PD_SOURCE_CONTROLLER','TPS25750DRJKR','WQFN-38-2EP',40,{pp5vRangeV:[4.9,5.5],sourcePathA:3,configuredSourceA:1.5}),part('U3','CONFIG_EEPROM','M24C64-WMN6TP','SOIC-8',8,{configuration:'TI Application Customization Tool signed/hash-locked 5V-source-only image'}),part('J2','USB_C_SOURCE','USB4105-GF-A','USB-C-16P',16,{vbusV:5,currentA:1.5}),part('D2','VBUS_TVS','SMAJ5.0A','SMA',2,{standoffV:5,pulsePowerW:400}),part('C_PP5V','PP5V_BULK','UWT1A151MCL1GS','8x10mm',2,{capacitanceUf:150,voltageV:10,minimumDatasheetUf:120}),part('C_VBUS','VBUS_BULK','UWT1E4R7MCL1GB','4x5.4mm',2,{capacitanceUf:4.7,voltageV:25}),part('C_3V3','LDO_3V3_BULK','UWT1E220MCL1GB','6.3x5.4mm',2,{capacitanceUf:22,voltageV:25,minimumDatasheetUf:5}),part('C_1V5','LDO_1V5_BULK','UWT1E220MCL1GB','6.3x5.4mm',2,{capacitanceUf:22,voltageV:25,minimumDatasheetUf:4.5})],
- mandatoryCircuits:['single 5V/1.5A source PDO only','TPS25750 integrated back-to-back 5V source switch with current clamp, OVP, UVLO, reverse-current and thermal protection','active VBUS discharge','CC1/CC2 attach and PD communication','external EEPROM configuration image with immutable hash','2A input fuse and TVS on both protected rails','minimum 120uF effective PP5V bulk and 4.7uF VBUS bulk','thermal-pad copper and via array'],
- configurationGate:{status:'REQUIRED_BEFORE_MANUFACTURING',requiredEvidence:['configuration binary','SHA-256 digest','parsed single source-only 5V/1.5A PDO','current-limit setting 1','programmed EEPROM readback digest'],failClosed:true},
- sourcing:{requiredProviders:['digikey','mouser'],runtimeStatus:'LIVE_VERIFIED',exactDualProviderCoverage:'12/12',positiveStockPolicy:'at-least-one-provider-per-unique-mpn',liveClaim:true},acceptance:{ercViolations:0,drcViolations:0,pdoImageVerified:true,noUnadvertisedPdo:true,inputSelvOnly:true,thermalReview:true,dualProviderLiveExact:true,sourceUnchanged:true}})
-export function validateUsbCPdSourceTemplate(t=usbCPdSourceTemplate){const e=[];if(t.schema!==USB_C_PD_SOURCE_TEMPLATE_SCHEMA)e.push('schema');if(!t.electrical.noMains)e.push('mains-input-forbidden');if(!t.electrical.noBoost)e.push('boost-profile-forbidden');if(t.electrical.layers!==6||t.stackup?.copperLayers!==6)e.push('unproven-pd-source-stackup');if(JSON.stringify(t.stackup?.layerOrder)!==JSON.stringify(['F.Cu','In1.Cu','In2.Cu','In3.Cu','In4.Cu','B.Cu']))e.push('invalid-six-layer-order');if(t.electrical.sourcePdos.some(x=>x.voltageV!==5||x.currentA>1.5))e.push('unsupported-source-pdo');if(t.electrical.maximumAdvertisedPowerW>7.5)e.push('unsafe-power');const roles=['SELV_5V_INPUT','INPUT_FUSE','PD_SOURCE_CONTROLLER','CONFIG_EEPROM','USB_C_SOURCE','VBUS_TVS','PP5V_BULK','VBUS_BULK'];for(const role of roles)if(!t.requirements.some(x=>x.role===role))e.push(`missing-role:${role}`);if(t.requirements.find(x=>x.role==='PP5V_BULK')?.rating.capacitanceUf<120)e.push('pp5v-bulk-too-small');if(t.sourcing.liveClaim&&t.sourcing.runtimeStatus!=='LIVE_VERIFIED')e.push('false-live-claim');return{ok:!e.length,errors:e}}
+export const USB_C_PD_SOURCE_TEMPLATE_SCHEMA =
+  "boardforge.phase2c.production-template.usb-c-pd-source.v1";
+const part = (ref, role, mpn, pkg, pinCount, rating) => ({
+  ref,
+  role,
+  mpn,
+  package: pkg,
+  pinCount,
+  rating,
+  selectionPolicy: "dual-provider-live-exact-stocked-approved-asset-only",
+});
+export const usbCPdSourceTemplate = Object.freeze({
+  schema: USB_C_PD_SOURCE_TEMPLATE_SCHEMA,
+  id: "005_USB_C_PD_SOURCE",
+  class: "usb-c-power",
+  electrical: {
+    input: {
+      type: "external-regulated-SELV-only",
+      voltageV: [4.9, 5.25],
+      continuousCurrentA: 2,
+    },
+    sourcePdos: [{ voltageV: 5, currentA: 1.5, powerW: 7.5 }],
+    maximumAdvertisedPowerW: 7.5,
+    integratedCurrentLimitSetting: 1,
+    integratedCurrentClampRangeA: [1.61, 1.9],
+    layers: 6,
+    noBoost: true,
+    noMains: true,
+  },
+  stackup: {
+    copperLayers: 6,
+    layerOrder: ["F.Cu", "In1.Cu", "In2.Cu", "In3.Cu", "In4.Cu", "B.Cu"],
+    railMergeLayers: {
+      GND: "In1.Cu",
+      DRAIN: "In2.Cu",
+      VBUS: "In3.Cu",
+      PP5V: "In4.Cu",
+      "3V3": "B.Cu",
+    },
+    requiresBlindVias: false,
+    manufacturing: {
+      standardMultilayer: true,
+      blindViaCapabilityRequired: false,
+    },
+    justification:
+      "The dense TPS25750 protected-source controller requires independently verified rail-merge planes after F.Cu courtyard escape. Six layers isolate GND, DRAIN, VBUS, PP5V and 3V3 merges and are the only stack proven by the KiCad-in-loop breakout fixture. Four-layer parity is not claimed.",
+  },
+  mechanical: {
+    maximumAreaMm2: 1050,
+    outline: "thermal-tab",
+    purpose:
+      "A recessed USB-C edge, widened controller thermal tab with stitched copper, rounded input shoulder, and two mounting ears keep the 5V source compact while preserving connector and cooling access.",
+  },
+  requirements: [
+    part("J1", "SELV_5V_INPUT", "M20-9990245", "1x2-2.54-vertical", 2, {
+      voltageV: 5,
+      currentA: 2,
+    }),
+    part("F1", "INPUT_FUSE", "3413.0218.22", "2410", 2, {
+      ratedA: 2,
+      ratedVdc: 63,
+    }),
+    part("D1", "INPUT_TVS", "SMAJ5.0A", "SMA", 2, {
+      standoffV: 5,
+      pulsePowerW: 400,
+    }),
+    part("U1", "LOGIC_REGULATOR", "MCP1700T-3302E/TT", "SOT-23-3", 3, {
+      outputV: 3.3,
+      inputMaximumV: 6,
+    }),
+    part("U2", "PD_SOURCE_CONTROLLER", "TPS25750DRJKR", "WQFN-38-2EP", 40, {
+      pp5vRangeV: [4.9, 5.5],
+      sourcePathA: 3,
+      configuredSourceA: 1.5,
+    }),
+    part("U3", "CONFIG_EEPROM", "M24C64-WMN6TP", "SOIC-8", 8, {
+      configuration:
+        "TI Application Customization Tool signed/hash-locked 5V-source-only image",
+    }),
+    part("J2", "USB_C_SOURCE", "USB4105-GF-A", "USB-C-16P", 16, {
+      vbusV: 5,
+      currentA: 1.5,
+    }),
+    part("D2", "VBUS_TVS", "SMAJ5.0A", "SMA", 2, {
+      standoffV: 5,
+      pulsePowerW: 400,
+    }),
+    part("C_PP5V", "PP5V_BULK", "UWT1A151MCL1GS", "8x10mm", 2, {
+      capacitanceUf: 150,
+      voltageV: 10,
+      minimumDatasheetUf: 120,
+    }),
+    part("C_VBUS", "VBUS_BULK", "UWT1E4R7MCL1GB", "4x5.4mm", 2, {
+      capacitanceUf: 4.7,
+      voltageV: 25,
+    }),
+    part("C_3V3", "LDO_3V3_BULK", "UWT1E220MCL1GB", "6.3x5.4mm", 2, {
+      capacitanceUf: 22,
+      voltageV: 25,
+      minimumDatasheetUf: 5,
+    }),
+    part("C_1V5", "LDO_1V5_BULK", "UWT1E220MCL1GB", "6.3x5.4mm", 2, {
+      capacitanceUf: 22,
+      voltageV: 25,
+      minimumDatasheetUf: 4.5,
+    }),
+    part("R_EEPROM_SDA", "EEPROM_SDA_PULLUP", "RC0603FR-075K1L", "0603", 2, {
+      resistanceOhm: 5100, tolerancePercent: 1, pullupRail: "LDO_3V3",
+    }),
+    part("R_EEPROM_SCL", "EEPROM_SCL_PULLUP", "RC0603FR-075K1L", "0603", 2, {
+      resistanceOhm: 5100, tolerancePercent: 1, pullupRail: "LDO_3V3",
+    }),
+  ],
+  mandatoryCircuits: [
+    "single 5V/1.5A source PDO only",
+    "TPS25750 integrated back-to-back 5V source switch with current clamp, OVP, UVLO, reverse-current and thermal protection",
+    "active VBUS discharge",
+    "CC1/CC2 attach and PD communication",
+    "external EEPROM configuration image with immutable hash",
+    "5.1k SDA and SCL pull-ups to LDO_3V3 adjacent to the configuration EEPROM",
+    "2A input fuse and TVS on both protected rails",
+    "minimum 120uF effective PP5V bulk and 4.7uF VBUS bulk",
+    "thermal-pad copper and via array",
+  ],
+  configurationGate: {
+    status: "REQUIRED_BEFORE_MANUFACTURING",
+    requiredEvidence: [
+      "configuration binary",
+      "SHA-256 digest",
+      "parsed single source-only 5V/1.5A PDO",
+      "current-limit setting 1",
+      "programmed EEPROM readback digest",
+    ],
+    failClosed: true,
+  },
+  sourcing: {
+    requiredProviders: ["digikey", "mouser"],
+    runtimeStatus: "LIVE_VERIFIED",
+    exactDualProviderCoverage: "14/14",
+    positiveStockPolicy: "at-least-one-provider-per-unique-mpn",
+    liveClaim: true,
+  },
+  acceptance: {
+    ercViolations: 0,
+    drcViolations: 0,
+    pdoImageVerified: false,
+    noUnadvertisedPdo: false,
+    inputSelvOnly: true,
+    thermalReview: true,
+    dualProviderLiveExact: true,
+    sourceUnchanged: true,
+  },
+});
+export function validateUsbCPdSourceConfigurationEvidence(evidence = {}) {
+  const errors = [];
+  if (!evidence.binaryPath) errors.push("configuration-binary-missing");
+  if (!evidence.readbackPath) errors.push("programmed-readback-binary-missing");
+  if (!/^[a-f0-9]{64}$/i.test(evidence.sha256 || ""))
+    errors.push("configuration-sha256-missing-or-invalid");
+  if (
+    evidence.parsedPdos?.length !== 1 ||
+    evidence.parsedPdos?.[0]?.voltageV !== 5 ||
+    evidence.parsedPdos?.[0]?.currentA !== 1.5
+  )
+    errors.push("single-5v-1.5a-source-pdo-not-proven");
+  if (evidence.currentLimitSetting !== 1)
+    errors.push("current-limit-setting-1-not-proven");
+  if (
+    !/^[a-f0-9]{64}$/i.test(evidence.readbackSha256 || "") ||
+    evidence.readbackSha256 !== evidence.sha256
+  )
+    errors.push("programmed-readback-digest-not-proven");
+  return {
+    schema: "boardforge.usb-c-pd-source-configuration-evidence.v1",
+    valid: errors.length === 0,
+    errors,
+  };
+}
+export function validateUsbCPdSourceTemplate(t = usbCPdSourceTemplate) {
+  const e = [];
+  if (t.schema !== USB_C_PD_SOURCE_TEMPLATE_SCHEMA) e.push("schema");
+  if (!t.electrical.noMains) e.push("mains-input-forbidden");
+  if (!t.electrical.noBoost) e.push("boost-profile-forbidden");
+  if (t.electrical.layers !== 6 || t.stackup?.copperLayers !== 6)
+    e.push("unproven-pd-source-stackup");
+  if (
+    JSON.stringify(t.stackup?.layerOrder) !==
+    JSON.stringify(["F.Cu", "In1.Cu", "In2.Cu", "In3.Cu", "In4.Cu", "B.Cu"])
+  )
+    e.push("invalid-six-layer-order");
+  if (t.electrical.sourcePdos.some((x) => x.voltageV !== 5 || x.currentA > 1.5))
+    e.push("unsupported-source-pdo");
+  if (t.electrical.maximumAdvertisedPowerW > 7.5) e.push("unsafe-power");
+  const roles = [
+    "SELV_5V_INPUT",
+    "INPUT_FUSE",
+    "PD_SOURCE_CONTROLLER",
+    "CONFIG_EEPROM",
+    "USB_C_SOURCE",
+    "VBUS_TVS",
+    "PP5V_BULK",
+    "VBUS_BULK",
+  ];
+  for (const role of roles)
+    if (!t.requirements.some((x) => x.role === role))
+      e.push(`missing-role:${role}`);
+  if (
+    t.requirements.find((x) => x.role === "PP5V_BULK")?.rating.capacitanceUf <
+    120
+  )
+    e.push("pp5v-bulk-too-small");
+  if (t.sourcing.liveClaim && t.sourcing.runtimeStatus !== "LIVE_VERIFIED")
+    e.push("false-live-claim");
+  return { ok: !e.length, errors: e };
+}

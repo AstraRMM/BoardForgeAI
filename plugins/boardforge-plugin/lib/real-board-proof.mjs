@@ -107,6 +107,7 @@ export const REAL_BOARD_PROOF_BOARDS = [
       bom('J2','USB4105-GF-A','USB-C source output','APPROVED_MAPPING','USB4105-GF-A'),bom('D2','SMAJ5.0A','VBUS TVS','APPROVED_MAPPING','SMAJ5.0A'),
       bom('C_PP5V','UWT1A151MCL1GS','PP5V bulk','APPROVED_MAPPING','UWT1A151MCL1GS'),bom('C_VBUS','UWT1E4R7MCL1GB','VBUS bulk','APPROVED_MAPPING','UWT1E4R7MCL1GB'),
       bom('C_3V3','UWT1E220MCL1GB','3V3 bulk','APPROVED_MAPPING','UWT1E220MCL1GB'),bom('C_1V5','UWT1E220MCL1GB','1V5 bulk','APPROVED_MAPPING','UWT1E220MCL1GB'),
+      bom('R_EEPROM_SDA','5.1k','EEPROM SDA pull-up','APPROVED_MAPPING','RC0603FR-075K1L'),bom('R_EEPROM_SCL','5.1k','EEPROM SCL pull-up','APPROVED_MAPPING','RC0603FR-075K1L'),
     ],
   },
   {
@@ -453,12 +454,16 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
   if(placement)next=next.replace('(allow_soldermask_bridges_in_footprints no)','(allow_soldermask_bridges_in_footprints yes)')
   await writeFile(files.pcb, next, 'utf8')
   if(placement)await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge authoritative package micro drill" (constraint hole_size (min 0.2mm)))\n','utf8')
+  // Board005's authoritative WQFN footprint is intentionally proven against
+  // a 0.09 mm package rule. Install that rule before creating the immutable
+  // copperless candidate so its copied companion .kicad_dru is the rule set
+  // KiCad actually validates, rather than the generic 0.20 mm default.
+  if(board.id==='usb-c-pd-source') await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge TPS25750 fine pitch clearance" (constraint clearance (min 0.09mm)))\n(rule "BoardForge TPS25750 fine pitch track" (constraint track_width (min 0.1mm)))\n(rule "BoardForge TPS25750 micro drill" (constraint hole_size (min 0.2mm)))\n(rule "BoardForge TPS25750 micro via" (constraint via_diameter (min 0.4mm)))\n','utf8')
   const authoritativeRouting=placement?await routeAuthoritativeCandidate({pcbFile:files.pcb,projectDir,kicad}):null
   if(authoritativeRouting?.routingDeferred){
     const error=new Error(`Authoritative routing deferred: ${authoritativeRouting.reason}. Stale final-PCB validation is forbidden; validate ${authoritativeRouting.candidatePcb} only.`)
     error.code='AUTHORITATIVE_ROUTING_DEFERRED';error.routing=authoritativeRouting;throw error
   }
-  if(board.id==='usb-c-pd-source') await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge TPS25750 fine pitch clearance" (constraint clearance (min 0.09mm)))\n(rule "BoardForge TPS25750 fine pitch track" (constraint track_width (min 0.1mm)))\n(rule "BoardForge TPS25750 micro drill" (constraint hole_size (min 0.2mm)))\n(rule "BoardForge TPS25750 micro via" (constraint via_diameter (min 0.4mm)))\n','utf8')
   const report = {
     schema: 'boardforge.category-pcb-evidence.real-proof.v1',
     boardId: board.id,
@@ -926,6 +931,7 @@ export function usbCPdSourceCategoryPcbEvidence(){
     fp('C_VBUS','UWT1E4R7MCL1GB','Capacitor_SMD:CP_Elec_4x5.4',36.5,6,4,5.4,[pad('1',0,-3,1.2,1.2,n.VBUS,'VBUS'),pad('2',0,3,1.2,1.2,n.GND,'GND')]),
     fp('C_3V3','UWT1E220MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',18,17,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n['3V3'],'3V3'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
     fp('C_1V5','UWT1E220MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',33,17,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n['1V5'],'1V5'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
+    passiveFootprint('R_EEPROM_SDA','5.1k',24,23,n['3V3'],'3V3',n.EEPROM_SDA,'EEPROM_SDA'),passiveFootprint('R_EEPROM_SCL','5.1k',28,23,n['3V3'],'3V3',n.EEPROM_SCL,'EEPROM_SCL'),
   ]
   // Placement optimizer baseline: keep dense peripherals outside each other's
   // canonical courtyards before any routing occupancy is generated.
@@ -1401,9 +1407,10 @@ function categorySchematicPinMaps(board) {
     },
     'usb-c-pd-source': {
       J1:{1:'5V_RAW',2:'GND'},F1:{1:'5V_RAW',2:'PP5V'},D1:{1:'PP5V',2:'GND'},U1:{1:'GND',2:'3V3',3:'PP5V'},
-      U2:{1:'3V3',4:'1V5',11:'GND',12:'GND',14:'GND',15:'DRAIN',16:'EEPROM_SDA',17:'EEPROM_SCL',20:'PPHV_UNUSED',21:'PPHV_UNUSED',22:'PPHV_UNUSED',23:'VBUS',24:'VBUS',25:'VBUS',28:'CC1',29:'CC2',30:'DRAIN',31:'GND',32:'VBUS',33:'VBUS',34:'PP5V',35:'PP5V',38:'3V3',39:'GND',40:'DRAIN'},
-      U3:{1:'GND',2:'GND',3:'GND',4:'GND',5:'EEPROM_SDA',6:'EEPROM_SCL',7:'GND',8:'3V3'},
-      J2:{A1:'GND',B12:'GND',A4:'VBUS',B9:'VBUS',A5:'CC1',B5:'CC2',S1:'GND'},D2:{1:'VBUS',2:'GND'},C_PP5V:{1:'PP5V',2:'GND'},C_VBUS:{1:'VBUS',2:'GND'},C_3V3:{1:'3V3',2:'GND'},C_1V5:{1:'1V5',2:'GND'},
+      U2:{1:'LDO_3V3',4:'1V5',11:'GND',12:'GND',14:'GND',15:'DRAIN',16:'EEPROM_SDA',17:'EEPROM_SCL',23:'VBUS',24:'VBUS',25:'VBUS',28:'CC1',29:'CC2',30:'DRAIN',31:'GND',32:'VBUS',33:'VBUS',34:'PP5V',35:'PP5V',38:'3V3',39:'GND',40:'DRAIN'},
+      U3:{1:'GND',2:'GND',3:'GND',4:'GND',5:'EEPROM_SDA',6:'EEPROM_SCL',7:'GND',8:'LDO_3V3'},
+      J2:{A1:'GND',A12:'GND',B1:'GND',B12:'GND',A4:'VBUS',A9:'VBUS',B4:'VBUS',B9:'VBUS',A5:'CC1',B5:'CC2',SH:'GND'},D2:{1:'VBUS',2:'GND'},C_PP5V:{1:'PP5V',2:'GND'},C_VBUS:{1:'VBUS',2:'GND'},C_3V3:{1:'LDO_3V3',2:'GND'},C_1V5:{1:'1V5',2:'GND'},
+      R_EEPROM_SDA:{1:'LDO_3V3',2:'EEPROM_SDA'},R_EEPROM_SCL:{1:'LDO_3V3',2:'EEPROM_SCL'},
     },
     'usb-c-esp32-sensor': {
       U1: approvedAssetFor(COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.mpn).pinMap,
@@ -1460,6 +1467,7 @@ function categoryPowerFlags(board){
   if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
   if(topology==='rp2040-instrument')return planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
   if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',source:{ref:'F1',kind:'fused-external-power'},reason:'The input fuse is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'The protected MOSFET output is the physical source for the downstream buck VIN rail.'}]
+  if(topology==='usb-c-pd-source')return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceKind:'selv-input-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'PP5V',source:{ref:'F1',kind:'fused-selv-power'},reason:'The input fuse is the physical source path for the protected PP5V rail.'}]
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }

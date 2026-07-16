@@ -1,14 +1,14 @@
 import { execFile as execFileCallback } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { promisify } from 'node:util'
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { REAL_BOARD_PROOF_BOARDS, runRealBoardProof } from '../plugins/boardforge-plugin/lib/real-board-proof.mjs'
 import { productionAssetBindings, runPhase2cManufacturingPipeline } from '../plugins/boardforge-plugin/lib/phase2c/manufacturing-pipeline.mjs'
 import { stm32ControllerTemplate, validateStm32ControllerTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/stm32-controller.mjs'
 import { rp2040InstrumentTemplate, validateRp2040InstrumentTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/rp2040-instrument.mjs'
 import { usbCPdSinkTemplate, validateUsbCPdSinkTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/usb-c-pd-sink.mjs'
-import { usbCPdSourceTemplate, validateUsbCPdSourceTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/usb-c-pd-source.mjs'
+import { usbCPdSourceTemplate, validateUsbCPdSourceConfigurationEvidence, validateUsbCPdSourceTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/usb-c-pd-source.mjs'
 import { industrialIoTemplate, validateIndustrialIoTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/industrial-io.mjs'
 import { generateIndustrialIoProductionBoard } from '../plugins/boardforge-plugin/lib/phase2c/industrial-io-production-engine.mjs'
 import { generateCatalogProductionBoard } from '../plugins/boardforge-plugin/lib/phase2c/catalog-production-engine.mjs'
@@ -72,17 +72,17 @@ export async function generateUsbCPdSourceProductionBoard({root,template}) {
   const contract=verifyUsbCPdSourceProductionContract({template,actualLayers:definition?.layers,sourcing})
   if(!contract.ok) return rejected('USB_C_PD_SOURCE_GENERATED_OUTPUT_CONTRACT_MISMATCH',{id:template.id},{errors:contract.errors,projectDir})
 
-  const configurationDir=path.join(projectDir,'Configuration')
-  await mkdir(configurationDir,{recursive:true})
-  const configuration={schema:'boardforge.phase2c.tps25750-source-configuration.v1',controller:'TPS25750DRJKR',mode:'source-only',sourcePdos:[{voltageMv:5000,currentMa:1500}],currentLimitSetting:1,inputProfile:'regulated-SELV-5V-only',unadvertisedPdos:[],templateId:template.id}
-  const image=Buffer.from(`${JSON.stringify(configuration)}\n`,'utf8')
-  const imageFile=path.join(configurationDir,'TPS25750_5V_1A5_Source_Configuration.bin')
-  const readbackFile=path.join(configurationDir,'TPS25750_5V_1A5_Source_EEPROM_Readback.bin')
-  await writeFile(imageFile,image);await writeFile(readbackFile,image)
-  const immutableSha256=createHash('sha256').update(image).digest('hex')
-  const readbackSha256=createHash('sha256').update(await readFile(readbackFile)).digest('hex')
-  const productionConfig={eepromImageVerified:true,readbackVerified:readbackSha256===immutableSha256,noUnadvertisedPdo:configuration.unadvertisedPdos.length===0&&configuration.sourcePdos.length===1,immutableSha256,readbackSha256,imageFile,readbackFile,configuration}
-  await writeFile(path.join(configurationDir,'BoardForge_PD_Source_Configuration_Evidence.json'),JSON.stringify(productionConfig,null,2)+'\n','utf8')
+  const configurationDir=path.join(projectDir,'Configuration'),evidenceFile=path.join(configurationDir,'BoardForge_PD_Source_Configuration_Evidence.json')
+  let configurationEvidence
+  try{configurationEvidence=JSON.parse(await readFile(evidenceFile,'utf8'))}catch(error){return rejected('PD_SOURCE_EXTERNAL_CONFIGURATION_EVIDENCE_MISSING',{id:template.id},{projectDir,evidenceFile,detail:String(error.message||error)})}
+  const evidenceValidation=validateUsbCPdSourceConfigurationEvidence(configurationEvidence)
+  if(!evidenceValidation.valid)return rejected('PD_SOURCE_EXTERNAL_CONFIGURATION_EVIDENCE_INVALID',{id:template.id},{projectDir,evidenceFile,errors:evidenceValidation.errors})
+  const contained=file=>{const resolved=path.resolve(file),root=path.resolve(projectDir)+path.sep;if(!resolved.startsWith(root))throw new Error(`Configuration artifact escapes project root: ${resolved}`);return resolved}
+  let imageFile,readbackFile,image,readback
+  try{imageFile=contained(configurationEvidence.binaryPath);readbackFile=contained(configurationEvidence.readbackPath);[image,readback]=await Promise.all([readFile(imageFile),readFile(readbackFile)])}catch(error){return rejected('PD_SOURCE_CONFIGURATION_ARTIFACT_UNREADABLE',{id:template.id},{projectDir,evidenceFile,detail:String(error.message||error)})}
+  const immutableSha256=createHash('sha256').update(image).digest('hex'),readbackSha256=createHash('sha256').update(readback).digest('hex')
+  if(immutableSha256!==configurationEvidence.sha256||readbackSha256!==configurationEvidence.readbackSha256)return rejected('PD_SOURCE_CONFIGURATION_ARTIFACT_DIGEST_MISMATCH',{id:template.id},{projectDir,evidenceFile})
+  const productionConfig={eepromImageVerified:true,readbackVerified:true,noUnadvertisedPdo:true,immutableSha256,readbackSha256,imageFile,readbackFile,configuration:configurationEvidence}
 
   const sourceBytes=(await readFile(pcbFile)).length,rustCli=path.join(repo,'rust','target','debug','boardforge-kicad.exe')
   const normalized=await execFile(rustCli,['normalize',pcbFile],{maxBuffer:50*1024*1024})

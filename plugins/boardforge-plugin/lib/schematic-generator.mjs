@@ -338,7 +338,9 @@ export function boardforgeReviewSymbolLibrary(symbols = []) {
     const match = String(symbol.symbol || '').match(/BoardForge:BF_CONN_(\d+)/)
     return match ? Number(match[1]) : null
   }).filter(Boolean))].sort((a, b) => a - b)
-  const definitions = counts.map((count) => embeddedConnectorSymbol(count, { libraryQualified: false }).replace(/^\t\t/gm, '\t')).join('\n')
+  const connectorDefinitions = counts.map((count) => embeddedConnectorSymbol(count, { libraryQualified: false }).replace(/^\t\t/gm, '\t'))
+  const customDefinitions=[...new Set(symbols.map(symbol=>symbol.symbol).filter(libId=>String(libId).startsWith('BoardForge:')&&!/BoardForge:BF_CONN_/.test(libId)))].map(libId=>flattenForSchematicCache(resolveAuthoritativeKiCadSymbol(libId),{qualifiedName:libId.split(':').at(-1)}).replace(/^/gm,'\t'))
+  const definitions = [...connectorDefinitions,...customDefinitions].join('\n')
   return `(kicad_symbol_lib\n\t(version 20231120)\n\t(generator "BoardForge Plugin CLI")\n${definitions}\n)\n`
 }
 
@@ -678,7 +680,7 @@ function inferGroup(component) {
 }
 
 function isPowerNet(name) {
-  return /^(GND|3V3|5V|VIN|VBAT|VBUS(?:_(?:RAW|PROTECTED|SWITCHED))?|VUSB|VCC|VDD|VDDA|CHASSIS)$/i.test(name || '')
+  return /^(GND|3V3|5V(?:_RAW)?|PP5V|VIN|VBAT|VBUS(?:_(?:RAW|PROTECTED|SWITCHED))?|VUSB|VCC|VDD|VDDA|CHASSIS)$/i.test(name || '')
 }
 
 function safe(value) {
