@@ -225,7 +225,15 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     for(const dog of[uDog,uLane,jLane,dDog])vias.push({net:'CANL',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3})
     tracks.push({net:'CANL',layer:'B.Cu',start:{x:canl[3].x,y:canl[3].y},end:{x:28.52,y:29},width:trackWidth},{net:'CANL',layer:'B.Cu',start:{x:28.52,y:29},end:jLane,width:trackWidth},{net:'CANL',layer:'B.Cu',start:dDog,end:{x:47.422,y:29},width:trackWidth});completedNets.push('CANL')
   }
-  return{tracks,vias,completedNets,partialNets:[]}
+  const rail=byNet.get('3V3')||[],railAnchors=[at('3V3','J1','1'),at('3V3','U3','2'),at('3V3','C3','1')]
+  const partialNets=[]
+  if(rail.length===15&&railAnchors.every(Boolean)&&[[6.51,19],[10.193,16.2],[15.47,16.025]].every(([x,y],i)=>near(railAnchors[i].x,x)&&near(railAnchors[i].y,y))){
+    const uDog={x:10.3,y:16.2},cDog={x:15.47,y:17}
+    tracks.push({net:'3V3',layer:'F.Cu',start:{x:railAnchors[1].x,y:railAnchors[1].y},end:uDog,width:trackWidth},{net:'3V3',layer:'F.Cu',start:{x:railAnchors[2].x,y:railAnchors[2].y},end:cDog,width:trackWidth})
+    vias.push({net:'3V3',x:uDog.x,y:uDog.y,diameter:viaDiameter,drill:.3},{net:'3V3',x:cDog.x,y:cDog.y,diameter:viaDiameter,drill:.3})
+    tracks.push({net:'3V3',layer:'In1.Cu',start:{x:railAnchors[0].x,y:railAnchors[0].y},end:{x:6.51,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:6.51,y:34},end:{x:15.47,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:uDog,end:{x:10.3,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:cDog,end:{x:15.47,y:34},width:trackWidth});partialNets.push('3V3')
+  }
+  return{tracks,vias,completedNets,partialNets}
 }
 
 /** Topology-gated first corridor for the six-layer TPS25750 source proof.
