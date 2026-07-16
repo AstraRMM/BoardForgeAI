@@ -69,11 +69,17 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
     {net:'PP5V',endpoints:[p('F1','2',35.212,28.5)]},
     {net:'CC1',endpoints:[p('U2','28',40.1,21.575),p('J2','A5',19.75,2.32)]},
     {net:'CC2',endpoints:[p('U2','29',39.7,21.575),p('J2','B5',22.75,2.32)]},
+    {net:'3V3',endpoints:[p('U1','2',19.45,14.438),p('U2','1',35.575,22.5),p('U2','38',36.1,21.575),p('U3','8',33.575,21.595),p('C_3V3','1',29.45,7.25)]},
+    {net:'1V5',endpoints:[p('U2','4',35.575,23.7),p('C_1V5','1',19.45,24.75)]},
   ]}
   const result=tps25750SourceFixedCorridors(input,{trackWidth:.2,viaDiameter:.6})
-  assert.deepEqual(result.completedNets,['5V_RAW'])
+  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5'])
   assert.equal(result.tracks[1].layer,'In4.Cu')
   assert.deepEqual([result.vias[0].x,result.vias[0].y],[27.5,28.5])
+  assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='F.Cu').length,5)
+  assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='In3.Cu').length,6)
+  assert.equal(result.vias.filter(x=>x.net==='3V3').length,5)
+  assert.equal(result.tracks.filter(x=>x.net==='1V5').length,3)
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CC1').endpoints[0].pad='99'
   assert.deepEqual(tps25750SourceFixedCorridors(changed,{}).completedNets,[])
 })

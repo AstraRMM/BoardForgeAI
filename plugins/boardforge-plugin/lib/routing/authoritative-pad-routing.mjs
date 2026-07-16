@@ -199,8 +199,23 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
   const dog={x:27.5,y:28.5},tracks=[
     {net:'5V_RAW',layer:'F.Cu',start:{x:f.x,y:f.y},end:dog,width:trackWidth},
     {net:'5V_RAW',layer:'In4.Cu',start:dog,end:{x:j.x,y:j.y},width:trackWidth},
-  ],vias=[{net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3}]
-  return{tracks,vias,completedNets:['5V_RAW'],partialNets:[]}
+  ],vias=[{net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3}],completedNets=['5V_RAW']
+  const rail=[at('3V3','U1','2'),at('3V3','U2','1'),at('3V3','U2','38'),at('3V3','U3','8'),at('3V3','C_3V3','1')]
+  if(rail.every(Boolean)){
+    const dogs=[{x:18.3,y:14.438},{x:35,y:22.5},{x:36.1,y:20.8},{x:32.3,y:21.595},{x:29.45,y:9}]
+    for(let i=0;i<rail.length;i++){tracks.push({net:'3V3',layer:'F.Cu',start:{x:rail[i].x,y:rail[i].y},end:dogs[i],width:trackWidth});vias.push({net:'3V3',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})}
+    const laneY=10
+    for(const p of dogs)tracks.push({net:'3V3',layer:'In3.Cu',start:p,end:{x:p.x,y:laneY},width:trackWidth})
+    tracks.push({net:'3V3',layer:'In3.Cu',start:{x:dogs[0].x,y:laneY},end:{x:dogs[2].x,y:laneY},width:trackWidth})
+    completedNets.push('3V3')
+  }
+  const rail1v5=[at('1V5','U2','4'),at('1V5','C_1V5','1')]
+  if(rail1v5.every(Boolean)){
+    const dogs=[{x:35,y:23.7},{x:22,y:24.75}]
+    for(let i=0;i<rail1v5.length;i++){tracks.push({net:'1V5',layer:'F.Cu',start:{x:rail1v5[i].x,y:rail1v5[i].y},end:dogs[i],width:trackWidth});vias.push({net:'1V5',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})}
+    tracks.push({net:'1V5',layer:'In2.Cu',start:dogs[0],end:dogs[1],width:trackWidth});completedNets.push('1V5')
+  }
+  return{tracks,vias,completedNets,partialNets:[]}
 }
 
 /** Fixed, topology-gated corridors for the isolated USB-C PD sink proof. */
