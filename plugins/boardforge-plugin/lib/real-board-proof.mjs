@@ -1101,7 +1101,11 @@ export function canGatewayCategoryPcbEvidence(board={}){
   const rename=new Map([[4,'CAN1H'],[5,'CAN1L'],[9,'CAN1_TX'],[10,'CAN1_RX']])
   for(const net of evidence.nets)if(rename.has(net.number))net.name=rename.get(net.number)
   for(const footprint of evidence.footprints)for(const p of footprint.pads)if(rename.has(p.netNumber))p.netName=rename.get(p.netNumber)
-  evidence.nets.push({number:11,name:'CAN2H'},{number:12,name:'CAN2L'},{number:13,name:'CAN2_TX'},{number:14,name:'CAN2_RX'})
+  // Allocate after the inherited topology. Reusing 11-14 silently aliases CAN2
+  // onto 5V_RAW/NRST/SWDIO on the real KiCad PCB.
+  const nextNet=Math.max(...evidence.nets.map(row=>row.number))+1
+  const can2H=nextNet,can2L=nextNet+1,can2Tx=nextNet+2,can2Rx=nextNet+3
+  evidence.nets.push({number:can2H,name:'CAN2H'},{number:can2L,name:'CAN2L'},{number:can2Tx,name:'CAN2_TX'},{number:can2Rx,name:'CAN2_RX'})
   const byName=Object.fromEntries(evidence.nets.map(row=>[row.name,row.number])),bootNet=byName.SWCLK
   for(const footprint of evidence.footprints)for(const p of footprint.pads)if(p.netNumber===byName.BOOT0){p.netNumber=bootNet;p.netName='SWCLK_BOOT0'}else if(p.netNumber===bootNet)p.netName='SWCLK_BOOT0'
   evidence.nets=evidence.nets.filter(row=>row.number!==byName.BOOT0).map(row=>row.number===bootNet?{...row,name:'SWCLK_BOOT0'}:row)
@@ -1109,24 +1113,24 @@ export function canGatewayCategoryPcbEvidence(board={}){
   const term2=Math.max(...evidence.nets.map(row=>row.number))+1;evidence.nets.push({number:term2,name:'CAN2_TERM_LINK'})
   const u1=evidence.footprints.find(row=>row.ref==='U1')
   u1.value='STM32G0B1CBT6';u1.footprint='Package_QFP:LQFP-48_7x7mm_P0.5mm'
-  u1.pads=[pad('4',-4,-3,.55,.55,3,'3V3'),pad('5',-4,-2,.55,.55,3,'3V3'),pad('6',-4,-1,.55,.55,3,'3V3'),pad('7',-4,0,.55,.55,1,'GND'),pad('10',-4,1,.55,.55,byName.NRST,'NRST'),pad('19',-4,2,.55,.55,14,'CAN2_RX'),pad('20',-4,3,.55,.55,13,'CAN2_TX'),pad('35',4,-2,.55,.55,byName.SWDIO,'SWDIO'),pad('36',4,-1,.55,.55,bootNet,'SWCLK_BOOT0'),pad('47',4,1,.55,.55,10,'CAN1_RX'),pad('48',4,2,.55,.55,9,'CAN1_TX')]
+  u1.pads=[pad('4',-4,-3,.55,.55,3,'3V3'),pad('5',-4,-2,.55,.55,3,'3V3'),pad('6',-4,-1,.55,.55,3,'3V3'),pad('7',-4,0,.55,.55,1,'GND'),pad('10',-4,1,.55,.55,byName.NRST,'NRST'),pad('19',-4,2,.55,.55,can2Rx,'CAN2_RX'),pad('20',-4,3,.55,.55,can2Tx,'CAN2_TX'),pad('42',4,-4,.55,.55,byName.I2C_SCL,'I2C_SCL'),pad('43',4,-3,.55,.55,byName.I2C_SDA,'I2C_SDA'),pad('35',4,-2,.55,.55,byName.SWDIO,'SWDIO'),pad('36',4,-1,.55,.55,bootNet,'SWCLK_BOOT0'),pad('47',4,1,.55,.55,10,'CAN1_RX'),pad('48',4,2,.55,.55,9,'CAN1_TX')]
   evidence.footprints.push(
-    {ref:'U4',value:'SN65HVD230DR',footprint:'Package_SO:SOIC-8_3.9x4.9mm_P1.27mm',at:{x:42,y:32},body:{w:6,h:8},pads:[pad('1',-2.9,-2,.7,.55,13,'CAN2_TX'),pad('4',-2.9,2,.7,.55,14,'CAN2_RX'),pad('3',2.9,-2,.7,.55,3,'+3V3'),pad('2',2.9,2,.7,.55,1,'GND'),pad('7',0,-3.6,.7,.55,11,'CAN2H'),pad('6',0,3.6,.7,.55,12,'CAN2L')]},
-    {ref:'J3',value:'M20-9990645',footprint:'Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical',at:{x:63,y:32},body:{w:3,h:12},pads:[pad('1',-2,-3,1,1,11,'CAN2H'),pad('2',-1,0,1,1,12,'CAN2L'),pad('3',0,3,1,1,1,'GND'),pad('4',1,5,1,1,3,'+3V3'),pad('5',1,7,1,1,3,'+3V3'),pad('6',0,9,1,1,1,'GND')]},
-    passiveFootprint('R2','120R',52,39,11,'CAN2H',12,'CAN2L'),
-    passiveFootprint('JP2','TERM SELECT',58,39,term2,'CAN2_TERM_LINK',12,'CAN2L'),
+    {ref:'U4',value:'SN65HVD230DR',footprint:'Package_SO:SOIC-8_3.9x4.9mm_P1.27mm',at:{x:42,y:32},body:{w:6,h:8},pads:[pad('1',-2.9,-2,.7,.55,can2Tx,'CAN2_TX'),pad('4',-2.9,2,.7,.55,can2Rx,'CAN2_RX'),pad('3',2.9,-2,.7,.55,3,'+3V3'),pad('2',2.9,2,.7,.55,1,'GND'),pad('7',0,-3.6,.7,.55,can2H,'CAN2H'),pad('6',0,3.6,.7,.55,can2L,'CAN2L')]},
+    {ref:'J3',value:'M20-9990645',footprint:'Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical',at:{x:63,y:32},body:{w:3,h:12},pads:[pad('1',-2,-3,1,1,can2H,'CAN2H'),pad('2',-1,0,1,1,can2L,'CAN2L'),pad('3',0,3,1,1,1,'GND'),pad('4',1,5,1,1,3,'+3V3'),pad('5',1,7,1,1,3,'+3V3'),pad('6',0,9,1,1,1,'GND')]},
+    passiveFootprint('R2','120R',52,39,can2H,'CAN2H',can2L,'CAN2L'),
+    passiveFootprint('JP2','TERM SELECT',58,39,term2,'CAN2_TERM_LINK',can2L,'CAN2L'),
     verticalPassive('C7','100n',46,38,3,'3V3',1,'GND',1),
-    {ref:'D2',value:'NUP2105LT1G',footprint:'Package_TO_SOT_SMD:SOT-23',at:{x:52,y:31},body:{w:3,h:3},pads:[pad('1',-1.8,-1,.8,.7,11,'CAN2H'),pad('2',-1.8,1,.8,.7,1,'GND'),pad('3',1.8,0,.8,.7,12,'CAN2L')]},
+    {ref:'D2',value:'NUP2105LT1G',footprint:'Package_TO_SOT_SMD:SOT-23',at:{x:52,y:31},body:{w:3,h:3},pads:[pad('1',-1.8,-1,.8,.7,can2H,'CAN2H'),pad('2',-1.8,1,.8,.7,can2L,'CAN2L'),pad('3',1.8,0,.8,.7,1,'GND')]},
   )
   const r2=evidence.footprints.find(row=>row.ref==='R2');r2.pads[1]={...r2.pads[1],netNumber:term2,netName:'CAN2_TERM_LINK'}
   const s=(x1,y1,x2,y2,net,layer='F.Cu')=>evidence.segments.push(segment(x1,y1,x2,y2,.22,net,layer))
   // Keep both MCU-side channels on the front copper perimeter, away from the
   // inherited controller routes. The extra 6 mm gateway envelope exists for this lane.
-  s(27,25,36,29,13,'In3.Cu');s(36,29,39.1,29,13,'In3.Cu');s(39.1,29,39.1,30,13);evidence.vias.push(via(27,25,13),via(39.1,29,13))
-  s(31,25,36,34,14,'In4.Cu');s(36,34,39.1,34,14,'In4.Cu');evidence.vias.push(via(31,25,14),via(39.1,34,14))
+  s(27,25,36,29,can2Tx,'In3.Cu');s(36,29,39.1,29,can2Tx,'In3.Cu');s(39.1,29,39.1,30,can2Tx);evidence.vias.push(via(27,25,can2Tx),via(39.1,29,can2Tx))
+  s(31,25,36,34,can2Rx,'In4.Cu');s(36,34,39.1,34,can2Rx,'In4.Cu');evidence.vias.push(via(31,25,can2Rx),via(39.1,34,can2Rx))
   // CAN2 field pair is confined to the lower-right gateway bay.
-  s(42,28.4,47,28.4,11,'In3.Cu');s(47,28.4,50.2,30,11,'In3.Cu');s(50.2,30,61,29,11,'In3.Cu');s(47,28.4,47,39,11,'In3.Cu');s(47,39,50.9,39,11,'In3.Cu');for(const [x,y] of [[42,28.4],[50.2,30],[61,29],[50.9,39]])evidence.vias.push(via(x,y,11))
-  s(42,35.6,46,35.6,12,'In4.Cu');s(46,35.6,53.8,31,12,'In4.Cu');s(53.8,31,62,32,12,'In4.Cu');s(46,35.6,46,40,12,'In4.Cu');s(46,40,53.1,40,12,'In4.Cu');s(53.1,40,53.1,39,12,'In4.Cu');for(const [x,y] of [[42,35.6],[53.8,31],[62,32],[53.1,39]])evidence.vias.push(via(x,y,12))
+  s(42,28.4,47,28.4,can2H,'In3.Cu');s(47,28.4,50.2,30,can2H,'In3.Cu');s(50.2,30,61,29,can2H,'In3.Cu');s(47,28.4,47,39,can2H,'In3.Cu');s(47,39,50.9,39,can2H,'In3.Cu');for(const [x,y] of [[42,28.4],[50.2,30],[61,29],[50.9,39]])evidence.vias.push(via(x,y,can2H))
+  s(42,35.6,46,35.6,can2L,'In4.Cu');s(46,35.6,53.8,31,can2L,'In4.Cu');s(53.8,31,62,32,can2L,'In4.Cu');s(46,35.6,46,40,can2L,'In4.Cu');s(46,40,53.1,40,can2L,'In4.Cu');s(53.1,40,53.1,39,can2L,'In4.Cu');for(const [x,y] of [[42,35.6],[53.8,31],[62,32],[53.1,39]])evidence.vias.push(via(x,y,can2L))
   // Local rail/return branches tie the second channel into the proven board rails.
   s(44.9,30,44,31,3);s(44,31,48,29,3,'In1.Cu');s(48,29,48,43,3,'In1.Cu');s(48,43,66,43,3,'In1.Cu');s(66,43,63.5,36.5,3,'In1.Cu');s(63.5,36.5,64,37,3);s(66,43,66,24,3,'In1.Cu');s(66,24,57,24,3,'In1.Cu');for(const [x,y] of [[44,31],[63.5,36.5]])evidence.vias.push(via(x,y,3))
   s(44.9,34,50.2,32,1,'B.Cu');s(50.2,32,62.5,34.5,1,'B.Cu');s(62.5,34.5,63,35,1);s(62.5,34.5,67,35,1,'B.Cu');s(67,35,67,22,1,'B.Cu');s(67,22,56,22,1,'B.Cu');for(const [x,y] of [[44.9,34],[50.2,32],[62.5,34.5],[56,22]])evidence.vias.push(via(x,y,1))
@@ -1411,7 +1415,7 @@ export function categorySchematicPinMaps(board) {
       Q1:{1:'GND',2:'5V_RAW',3:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
     },
     'can-gateway': {
-      U1: approvedAssetFor('STM32G0B1CBT6').pinMap,
+      U1: {...approvedAssetFor('STM32G0B1CBT6').pinMap,42:'I2C_SCL',43:'I2C_SDA'},
       U2:{1:'CAN1_TX',2:'GND',3:'3V3',4:'CAN1_RX',6:'CAN1L',7:'CAN1H',8:'GND'},U4:{1:'CAN2_TX',2:'GND',3:'3V3',4:'CAN2_RX',6:'CAN2L',7:'CAN2H',8:'GND'},
       U3:{1:'GND',2:'3V3',3:'5V'},J1:{1:'3V3',2:'SWDIO',3:'SWCLK_BOOT0',4:'NRST',5:'GND'},
       J2:{1:'5V_RAW',2:'GND',3:'CAN1H',4:'CAN1L',5:'I2C_SCL',6:'I2C_SDA'},J3:{1:'CAN2H',2:'CAN2L',3:'GND',4:'3V3',5:'3V3',6:'GND'},

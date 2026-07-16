@@ -62,6 +62,11 @@ test('Board008 authoritative writer inputs cover the exact 26-ref dual-FDCAN arc
   const u1=pcb.footprints.find(row=>row.ref==='U1'),pads=Object.fromEntries(u1.pads.map(row=>[row.number,row.netName]))
   assert.deepEqual(Object.fromEntries(['19','20','47','48'].map(pin=>[pin,pads[pin]])),{'19':'CAN2_RX','20':'CAN2_TX','47':'CAN1_RX','48':'CAN1_TX'})
   assert.equal(pads['36'],'SWCLK_BOOT0')
+  assert.equal(pads['42'],'I2C_SCL')
+  assert.equal(pads['43'],'I2C_SDA')
+  assert.equal(new Set(pcb.nets.map(row=>row.number)).size,pcb.nets.length,'every logical net needs a unique KiCad net number')
+  assert.deepEqual(Object.fromEntries(pcb.nets.filter(row=>/^CAN2/.test(row.name)).map(row=>[row.name,row.number])),{CAN2H:17,CAN2L:18,CAN2_TX:19,CAN2_RX:20,CAN2_TERM_LINK:21})
+  assert.deepEqual(Object.fromEntries(pcb.footprints.find(row=>row.ref==='D2').pads.map(row=>[row.number,row.netName])),{'1':'CAN2H','2':'CAN2L','3':'GND'})
   assert.deepEqual(categoryPowerFlags(d).map(row=>[row.rail,row.source.ref]),[['5V_RAW','J2'],['GND','J2'],['5V','Q1']])
 })
 
