@@ -179,10 +179,25 @@ export function compactEsp32FixedCorridors(input,{trackWidth,viaDiameter}){
  * exact authoritative board it was validated against. Coordinates are part of
  * the proof: a placement change deliberately falls back to the generic router. */
 export function authoritativeFixedCorridors(input,options){
+  const pdSink=usbCPdSinkFixedCorridors(input,options)
+  if(pdSink.completedNets.length)return pdSink
   const rp2040=rp2040InstrumentFixedCorridors(input,options)
   if(rp2040.completedNets.length)return rp2040
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/** Fixed, topology-gated corridors for the isolated USB-C PD sink proof. */
+export function usbCPdSinkFixedCorridors(input,{trackWidth=.2,viaDiameter=.6}={}){
+  const byNet=new Map(input.nets.map(row=>[row.net,row.endpoints])),at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const signature=[['VBUS_RAW','J1','A4',9.66,21.4],['VBUS_RAW','J1','A9',9.66,16.6],['VBUS_RAW','F1','1',29.788,12.75],['CC1','J1','A5',9.66,20.25],['CC1','U1','2',34.538,25.75],['CC2','J1','B5',9.66,17.25],['CC2','U1','4',34.538,26.75]]
+  if(input.bounds?.maxX!==57||input.bounds?.maxY!==37||!signature.every(([net,ref,pad,x,y])=>{const p=at(net,ref,pad);return p&&near(p.x,x)&&near(p.y,y)}))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const tracks=[],vias=[],completedNets=[],partialNets=[],add=(net,points,layers)=>points.slice(1).forEach((p,i)=>tracks.push({net,layer:layers[i],start:{x:points[i][0],y:points[i][1]},end:{x:p[0],y:p[1]},width:trackWidth})),via=(net,points)=>points.forEach(([x,y])=>vias.push({net,x,y,diameter:viaDiameter,drill:.3}))
+  const v=[at('VBUS_RAW','J1','A4'),at('VBUS_RAW','J1','A9'),at('VBUS_RAW','F1','1')]
+  if(v.every(Boolean)){const a=[v[0].x,v[0].y],b=[v[1].x,v[1].y],f=[31.5,12.75];add('VBUS_RAW',[a,[9.66,19],[31.5,19],f,[v[2].x,v[2].y]],['In2.Cu','In2.Cu','In2.Cu','F.Cu']);add('VBUS_RAW',[b,[9.66,19]],['In2.Cu']);via('VBUS_RAW',[a,b,f]);completedNets.push('VBUS_RAW')}
+  const cc1=[at('CC1','J1','A5'),at('CC1','U1','2')]
+  if(cc1.every(Boolean)){const a=[12,20.25],u=[33,25.75];add('CC1',[[cc1[0].x,cc1[0].y],a,[32,20.25],[32,25.75],u,[cc1[1].x,cc1[1].y]],['F.Cu','In1.Cu','In1.Cu','In1.Cu','F.Cu']);via('CC1',[a,u]);completedNets.push('CC1')}
+  return{tracks,vias,completedNets,partialNets}
 }
 
 /** RP2040 corridors are admitted one net-group at a time after isolated KiCad
