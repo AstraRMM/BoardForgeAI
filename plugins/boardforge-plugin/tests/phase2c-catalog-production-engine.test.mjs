@@ -258,6 +258,12 @@ test('Board039 requires an exact compute-module carrier and high-speed proof',()
   for(const code of ['compute-module-connector-missing','carrier-power-tree-missing','carrier-storage-interface-missing','carrier-high-speed-io-missing','carrier-module-pin-map-evidence-missing','carrier-reset-power-good-missing','carrier-boot-recovery-missing','carrier-high-speed-protection-missing','carrier-signal-integrity-evidence-missing','carrier-backpower-evidence-missing','carrier-thermal-solution-missing','carrier-manufacturing-bringup-missing','linux-carrier-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board040 requires a bank-planned sequenced high-speed FPGA platform',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[39],39))
+  assert.equal(gate.ok,false)
+  for(const code of ['fpga-device-missing','fpga-configuration-memory-missing','fpga-high-speed-connector-missing','fpga-bank-decoupling-missing','fpga-clock-missing','fpga-bank-voltage-plan-missing','fpga-power-sequencing-missing','fpga-jtag-reset-missing','fpga-mezzanine-pin-map-missing','fpga-high-speed-channel-evidence-missing','fpga-pdn-evidence-missing','fpga-timing-analysis-missing','fpga-thermal-solution-missing','fpga-category-mapped-to-usb-instrument'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
