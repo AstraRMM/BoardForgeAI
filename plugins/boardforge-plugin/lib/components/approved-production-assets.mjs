@@ -42,7 +42,9 @@ export const approvedProductionAssets=Object.freeze({
   '0451002.MRL':entry('0451002.MRL','Device:Fuse','Fuse:Fuse_1206_3216Metric',{1:'FIELD_24V_RAW',2:'FIELD_24V_FUSED'},'1206-2'),
   'SMBJ33A':entry('SMBJ33A','Device:D_TVS','Diode_SMD:D_SMB',{1:'FIELD_24V_FUSED',2:'FIELD_GND'},'SMB-2'),
   'ISO1212DBQR':entry('ISO1212DBQR','Isolator:ISO1212','Package_SO:SSOP-16_3.9x4.9mm_P0.635mm',{1:'SENSE1',2:'FGND1',3:'SUB1',4:'IN1',5:'SENSE2',6:'FGND2',7:'SUB2',8:'IN2',9:'GND',10:'OUT2',11:'NC',12:'EN',13:'VCC',14:'OUT1',15:'NC',16:'GND'},'SSOP-16'),
-  'RFM-0505S':entry('RFM-0505S','Connector_Generic:Conn_01x04','Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical',{1:'5V',2:'GND',3:'FIELD_GND',4:'NC'},'DCDC-4'),
+  // SIP-4 pinout: +Vin, -Vin, -Vout, +Vout.  Pin 4 must not be
+  // represented as NC: it is the isolated field-side supply output.
+  'RFM-0505S':entry('RFM-0505S','Connector_Generic:Conn_01x04','Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical',{1:'5V',2:'GND',3:'FIELD_GND',4:'FIELD_5V'},'DCDC-4'),
   'UWT1A151MCL1GS':entry('UWT1A151MCL1GS','Device:C_Polarized','Capacitor_SMD:CP_Elec_8x10.5',{1:'PP5V',2:'GND'},'8x10mm-2'),
   'UWT1E4R7MCL1GB':entry('UWT1E4R7MCL1GB','Device:C_Polarized','Capacitor_SMD:CP_Elec_4x5.4',{1:'VBUS',2:'GND'},'4x5.4mm-2'),
 })

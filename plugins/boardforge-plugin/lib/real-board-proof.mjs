@@ -1451,7 +1451,13 @@ function categorySchematicPinMaps(board) {
       U2: { 1: 'LOGIC_GND', 2: '3V3', 3: 'GPIO_IN', 4: 'GPIO_OUT' },
     },
     'industrial-io-production': {
-      J1:{1:'FIELD_24V_RAW',2:'FIELD_GND',3:'FIELD_IN1',4:'FIELD_IN2'},F1:{1:'FIELD_24V_RAW',2:'FIELD_24V_FUSED'},D1:{1:'FIELD_24V_FUSED',2:'FIELD_GND'},U1:{1:'FIELD_IN1',4:'FIELD_24V_FUSED',5:'FIELD_IN2',8:'FIELD_GND',9:'GND',10:'LOGIC_IN2',13:'3V3',14:'LOGIC_IN1'},U2:{23:'GND',24:'3V3',32:'LOGIC_IN1',33:'LOGIC_IN2'},U3:{1:'5V',2:'GND',3:'FIELD_GND'},J2:{1:'GND',2:'3V3',3:'LOGIC_IN1',4:'LOGIC_IN2',5:'5V',6:'GND'},
+      J1:{1:'FIELD_24V_RAW',2:'FIELD_GND',3:'FIELD_IN1',4:'FIELD_IN2'},
+      F1:{1:'FIELD_24V_RAW',2:'FIELD_24V_FUSED'},
+      D1:{1:'FIELD_24V_FUSED',2:'FIELD_GND'},
+      U1:{1:'FIELD_IN1',2:'FIELD_GND',3:'FIELD_GND',4:'FIELD_IN1',5:'FIELD_IN2',6:'FIELD_GND',7:'FIELD_GND',8:'FIELD_IN2',9:'GND',10:'LOGIC_IN2',12:'3V3',13:'3V3',14:'LOGIC_IN1',16:'GND'},
+      U2:{8:'GND',9:'3V3',23:'GND',24:'3V3',32:'LOGIC_IN1',33:'LOGIC_IN2',35:'GND',36:'3V3',47:'GND',48:'3V3'},
+      U3:{1:'5V',2:'GND',3:'FIELD_GND',4:'FIELD_5V'},
+      J2:{1:'GND',2:'3V3',3:'LOGIC_IN1',4:'LOGIC_IN2',5:'5V',6:'GND'},
     },
     'drone-stack-board': {
       J1: { 1: 'GND', 2: '5V', 3: 'USB_DP', 4: 'USB_DN' },
@@ -1468,6 +1474,13 @@ function categoryPowerFlags(board){
   if(topology==='rp2040-instrument')return planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
   if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',source:{ref:'F1',kind:'fused-external-power'},reason:'The input fuse is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'The protected MOSFET output is the physical source for the downstream buck VIN rail.'}]
   if(topology==='usb-c-pd-source')return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceKind:'selv-input-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'PP5V',source:{ref:'F1',kind:'fused-selv-power'},reason:'The input fuse is the physical source path for the protected PP5V rail.'}]
+  if(topology==='industrial-io-production')return [
+    {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'3V3',source:{ref:'J2',kind:'external-logic-supply'},reason:'The service header is the explicit 3.3 V logic-domain supply input.'},
+    {ref:'#FLG02',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'J2',kind:'external-isolated-converter-input'},reason:'The service header is the explicit 5 V input to the isolated converter.'},
+    {ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'GND',source:{ref:'J2',kind:'external-logic-return'},reason:'The service header is the explicit logic-domain supply return.'},
+    {ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'FIELD_24V_RAW',source:{ref:'J1',kind:'external-field-supply'},reason:'The field terminal is the explicit 24 V field input.'},
+    {ref:'#FLG05',symbolLibId:'power:PWR_FLAG',rail:'FIELD_GND',source:{ref:'J1',kind:'external-field-return'},reason:'The field terminal is the explicit isolated field return.'},
+  ]
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }

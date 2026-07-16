@@ -23,6 +23,14 @@ test('ESP32 approved asset includes exposed-pad 41 in both authoritative domains
   assert.equal(asset.pinSchema.valid,true)
 })
 
+test('industrial isolated converter exposes both sides of the real SIP-4 pinout',()=>{
+  const asset=approvedAssetFor('RFM-0505S')
+  assert.deepEqual(asset.symbolPinMap,{1:'5V',2:'GND',3:'FIELD_GND',4:'FIELD_5V'})
+  assert.deepEqual(asset.footprintPadMap,asset.symbolPinMap)
+  assert.equal(asset.physicalPinCount,4)
+  assert.equal(asset.pinSchema.valid,true)
+})
+
 test('ESP32 topology power plan asserts only passive external supply and return rails',()=>{
   const flags=planEsp32TopologyPowerFlags()
   assert.deepEqual(flags.map(row=>[row.ref,row.symbolLibId,row.rail,row.source.ref]),[['#FLG01','power:PWR_FLAG','VUSB','J1'],['#FLG02','power:PWR_FLAG','GND','J1']])
