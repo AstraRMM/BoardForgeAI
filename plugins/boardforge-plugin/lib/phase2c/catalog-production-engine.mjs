@@ -69,8 +69,10 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
 }
 
 export function validateCatalogSemanticTopology(definition={}){
-  const errors=[],bom=Array.isArray(definition.bom)?definition.bom:[],topology=definition.topologyId||definition.id,roles=bom.map(row=>String(row.role||'').toLowerCase())
+  const errors=[],bom=Array.isArray(definition.bom)?definition.bom:[],topology=definition.topologyId||definition.id,roles=bom.map(row=>String(row.role||'').toLowerCase()),semanticText=`${definition.name||''} ${definition.prompt||''} ${(definition.intent||[]).join(' ')}`.toLowerCase()
   const hasRole=pattern=>roles.some(role=>pattern.test(role))
+  const outlineArea=Array.isArray(definition.outlinePoints)&&definition.outlinePoints.length>=3?polygonArea(definition.outlinePoints):null,maximumAreaMm2=definition.catalog?.maximumAreaMm2
+  if(Number.isFinite(maximumAreaMm2)&&(!Number.isFinite(outlineArea)||outlineArea>maximumAreaMm2))errors.push('custom-outline-exceeds-maximum-area')
   if(topology==='stm32-controller'||topology==='can-gateway'){
     if(!hasRole(/boot.*(bias|strap)|(?:bias|strap).*boot/))errors.push('mcu-boot-bias-network-missing')
     if(!hasRole(/reset.*(bias|rc)|(?:bias|rc).*reset/))errors.push('mcu-reset-network-missing')
@@ -93,7 +95,32 @@ export function validateCatalogSemanticTopology(definition={}){
     if(!hasRole(/bulk.*(input|power|decoupl)/))errors.push('power-entry-bulk-decoupling-missing')
     if(bom.some(row=>row.mpn==='SN65HVD230DR'&&/isolated/i.test(String(row.role||''))))errors.push('non-isolated-transceiver-labeled-isolated')
   }
-  return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref)}
+  if(/ethernet|wired embedded control|wired protocol gateway/.test(semanticText)){
+    if(!hasRole(/ethernet.*(mac|controller)|(?:mac|controller).*ethernet/))errors.push('ethernet-mac-controller-missing')
+    if(!hasRole(/ethernet.*phy|phy.*ethernet/))errors.push('ethernet-phy-missing')
+    if(!hasRole(/rj45|ethernet.*connector/))errors.push('ethernet-rj45-connector-missing')
+    if(!hasRole(/magnetics|transformer/))errors.push('ethernet-magnetics-missing')
+    if(!hasRole(/phy.*clock|ethernet.*clock|crystal.*phy/))errors.push('ethernet-reference-clock-missing')
+    if(!hasRole(/phy.*reset|ethernet.*reset/))errors.push('ethernet-phy-reset-network-missing')
+    if(!hasRole(/phy.*strap|ethernet.*strap/))errors.push('ethernet-phy-strap-network-missing')
+    if(!hasRole(/ethernet.*(tvs|esd)|(?:tvs|esd).*ethernet/))errors.push('ethernet-line-protection-missing')
+    if(!hasRole(/ethernet.*termination|phy.*termination/))errors.push('ethernet-line-termination-missing')
+    if(!hasRole(/phy.*decoupling|ethernet.*decoupling/))errors.push('ethernet-phy-decoupling-missing')
+    if(!hasRole(/phy.*(regulator|supply)|ethernet.*power/))errors.push('ethernet-phy-power-missing')
+  }
+  if(definition.id==='usb-hub'||/four-port usb expansion/i.test(String(definition.prompt||''))){
+    const hubControllers=bom.filter(row=>/usb.*hub.*controller|hub.*controller/.test(String(row.role||'').toLowerCase()))
+    const upstream=bom.filter(row=>/upstream.*usb|usb.*upstream/.test(String(row.role||'').toLowerCase()))
+    const downstream=bom.filter(row=>/downstream.*usb|usb.*downstream/.test(String(row.role||'').toLowerCase()))
+    if(hubControllers.length!==1)errors.push('usb-hub-controller-missing')
+    if(upstream.length!==1)errors.push('usb-hub-upstream-port-missing')
+    if(downstream.length<4)errors.push('usb-hub-four-downstream-ports-missing')
+    if(!hasRole(/port.*power.*(switch|limit)|power.*switch.*port/))errors.push('usb-hub-port-power-control-missing')
+    if(!hasRole(/overcurrent|over-current/))errors.push('usb-hub-overcurrent-evidence-missing')
+    if(!hasRole(/hub.*clock|crystal.*hub|hub.*crystal/))errors.push('usb-hub-clock-evidence-missing')
+    if(topology==='rp2040-instrument')errors.push('usb-hub-category-mapped-to-mcu-instrument')
+  }
+  return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}
 }
 
 export async function verifyCatalogAuthoritativePcbSelection({pcbFile,routing}={}){

@@ -43,6 +43,33 @@ test('dual CAN semantic gate requires explicit controller capability and support
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
+test('Board011 USB hub cannot masquerade as an RP2040 instrument with decorative port scallops',()=>{
+  const definition=catalogDefinition(manifest.boards[10],10),gate=validateCatalogSemanticTopology(definition)
+  assert.equal(definition.topologyId,'rp2040-instrument');assert.equal(gate.ok,false)
+  for(const code of['custom-outline-exceeds-maximum-area','usb-hub-controller-missing','usb-hub-upstream-port-missing','usb-hub-four-downstream-ports-missing','usb-hub-port-power-control-missing','usb-hub-overcurrent-evidence-missing','usb-hub-clock-evidence-missing','usb-hub-category-mapped-to-mcu-instrument'])assert.ok(gate.errors.includes(code),code)
+  assert.ok(gate.outlineAreaMm2>gate.maximumAreaMm2)
+  assert.equal(definition.bom.filter(row=>/usb4105/i.test(row.mpn)).length,1)
+})
+
+test('USB hub semantic gate requires one upstream and at least four downstream ports',()=>{
+  const definition=catalogDefinition(manifest.boards[10],10);definition.topologyId='usb-hub-controller';definition.catalog.maximumAreaMm2=3000
+  definition.bom=[{ref:'U1',role:'USB hub controller'},{ref:'J_UP',role:'upstream USB connector'},...[1,2,3,4].map(index=>({ref:`J_D${index}`,role:'downstream USB connector'})),{ref:'U_PWR',role:'per-port power switch and current limit'},{ref:'U_OC',role:'per-port overcurrent monitor'},{ref:'Y1',role:'hub crystal clock'}]
+  assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
+})
+
+test('Board010 USB bench topology cannot masquerade as an Ethernet controller',()=>{
+  const definition=catalogDefinition(manifest.boards[9],9),gate=validateCatalogSemanticTopology(definition)
+  assert.equal(gate.ok,false)
+  assert.equal(definition.topologyId,'rp2040-instrument')
+  for(const code of['ethernet-mac-controller-missing','ethernet-phy-missing','ethernet-rj45-connector-missing','ethernet-magnetics-missing','ethernet-reference-clock-missing','ethernet-phy-reset-network-missing','ethernet-phy-strap-network-missing','ethernet-line-protection-missing','ethernet-line-termination-missing','ethernet-phy-decoupling-missing','ethernet-phy-power-missing'])assert.ok(gate.errors.includes(code),code)
+})
+
+test('Ethernet category gate accepts an explicitly complete controller path',()=>{
+  const roles=['Ethernet MAC controller','Ethernet PHY','RJ45 Ethernet connector','Ethernet magnetics transformer','PHY reference clock','PHY reset network','PHY strap network','Ethernet ESD protection','Ethernet line termination','PHY decoupling','PHY supply regulator']
+  const definition={id:'ethernet-controller',topologyId:'ethernet-controller',name:'Ethernet controller',bom:roles.map((role,index)=>({ref:`X${index}`,role}))}
+  assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
+})
+
 test('catalog mechanics preserve clearance around every topology placement envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
 
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
