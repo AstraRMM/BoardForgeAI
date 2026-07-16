@@ -286,6 +286,19 @@ export function validateCatalogSemanticTopology(definition={}){
     ['led-matrix-signal-integrity-evidence-missing',/(clock|latch|data).*(termination|signal.*integrity|timing.*budget)/],
   ])
   if(/high-current matrix control/.test(semanticText)&&topology==='stm32-controller')errors.push('led-matrix-category-mapped-to-can-controller')
+  if(/rugged analog field sensing/.test(semanticText))requireCapabilities([
+    ['industrial-sensor-probe-interface-missing',/(probe|sensor).*(connector|terminal|interface)/],
+    ['industrial-sensor-input-protection-missing',/(probe|analog|sensor).*(surge|esd|tvs|overvoltage|protection)/],
+    ['industrial-sensor-excitation-missing',/(sensor|bridge|probe).*(excitation|bias|constant.*current)/],
+    ['industrial-sensor-analog-front-end-missing',/(instrumentation.*amplifier|analog.*front.end|sensor.*amplifier)/],
+    ['industrial-sensor-filter-missing',/(sensor|analog).*(low.pass|emc.*filter|antialias)/],
+    ['industrial-sensor-adc-reference-missing',/(adc|converter).*(precision.*reference|voltage.*reference)/],
+    ['industrial-sensor-field-power-protection-missing',/(field|industrial).*(reverse|surge|tvs|fuse).*power|power.*entry.*protection/],
+    ['industrial-sensor-calibration-evidence-missing',/(sensor|channel).*(calibration|accuracy|error.*budget).*evidence/],
+    ['industrial-sensor-emc-evidence-missing',/(industrial|sensor).*(emc|eft|esd|surge).*evidence/],
+    ['industrial-sensor-temperature-evidence-missing',/(sensor|analog).*(temperature.*range|drift|thermal.*error).*evidence/],
+  ])
+  if(/rugged analog field sensing/.test(semanticText)&&topology==='stm32-controller')errors.push('industrial-sensor-category-mapped-to-can-controller')
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/]])
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])
   if(/high-speed fpga expansion/.test(semanticText))requireCapabilities([['fpga-device-missing',/fpga/],['fpga-configuration-memory-missing',/configuration.*flash|fpga.*flash/],['fpga-high-speed-connector-missing',/high.speed.*connector|mezzanine/],['fpga-bank-decoupling-missing',/fpga.*decoupling|bank.*decoupling/],['fpga-clock-missing',/fpga.*clock|oscillator/]])

@@ -204,6 +204,12 @@ test('Board030 requires a protected high-current LED matrix timing and power pat
   for(const code of ['custom-outline-exceeds-maximum-area','led-matrix-panel-interface-missing','led-matrix-row-column-drive-missing','led-matrix-timing-controller-missing','led-matrix-power-input-protection-missing','led-matrix-bulk-decoupling-missing','led-matrix-current-capacity-evidence-missing','led-matrix-safe-blanking-missing','led-matrix-thermal-monitoring-missing','led-matrix-signal-integrity-evidence-missing','led-matrix-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board031 requires a protected calibrated rugged analog sensing chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[30],30))
+  assert.equal(gate.ok,false)
+  for(const code of ['industrial-sensor-probe-interface-missing','industrial-sensor-input-protection-missing','industrial-sensor-excitation-missing','industrial-sensor-analog-front-end-missing','industrial-sensor-filter-missing','industrial-sensor-adc-reference-missing','industrial-sensor-field-power-protection-missing','industrial-sensor-calibration-evidence-missing','industrial-sensor-emc-evidence-missing','industrial-sensor-temperature-evidence-missing','industrial-sensor-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
