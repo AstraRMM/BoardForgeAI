@@ -156,6 +156,16 @@ export function validateCatalogSemanticTopology(definition={}){
     ['brushed-motor-gate-control-missing',/gate.*driver|motor.*control.*input|pwm.*direction/],
     ['brushed-motor-bulk-decoupling-missing',/motor.*bulk|dc.link.*decoupling/],
   ])
+  if(/multi-channel servo control/.test(semanticText))requireCapabilities([
+    ['servo-channel-connectors-missing',/servo.*(channel|connector)|(?:channel|connector).*servo/,4],
+    ['servo-pwm-controller-missing',/servo.*(pwm|timer|controller)|(?:pwm|timer).*servo/],
+    ['servo-power-entry-protection-missing',/servo.*(fuse|reverse|surge|tvs)|power.*entry.*protection/],
+    ['servo-rail-bulk-decoupling-missing',/servo.*(bulk|rail.*decoupling)|bulk.*servo/],
+    ['servo-rail-current-capability-missing',/servo.*(current|power.*distribution)|high.current.*servo/],
+    ['servo-signal-protection-missing',/servo.*(series|esd|signal.*protection)/],
+    ['servo-failsafe-output-state-missing',/servo.*(failsafe|default.off|output.*disable)/],
+    ['servo-supply-monitoring-missing',/servo.*(voltage|current).*monitor|rail.*telemetry/],
+  ])
   if(/three-phase motor control/.test(semanticText))requireCapabilities([['bldc-controller-missing',/bldc|motor.*controller|commutation.*controller/],['bldc-three-phase-gate-drive-missing',/three.phase.*gate|gate.*driver/],['bldc-power-switches-missing',/phase.*mosfet|power.*mosfet|half.bridge/,3],['bldc-current-sense-missing',/phase.*current.*sense|current.*shunt/],['bldc-motor-connector-missing',/motor.*connector|phase.*connector/],['bldc-dc-link-decoupling-missing',/dc.link|bulk.*motor/]])
   if(/navigation and inertial sensing/.test(semanticText))requireCapabilities([['gnss-receiver-missing',/gnss|gps.*receiver/],['imu-sensor-missing',/imu|inertial.*sensor/],['gnss-antenna-path-missing',/gnss.*antenna|gps.*antenna/]])
   if(/long-duration environmental logging/.test(semanticText))requireCapabilities([['environmental-sensors-missing',/environmental.*sensor|temperature.*humidity|pressure.*sensor/],['logger-storage-missing',/storage|sd.*card|flash.*log/],['logger-rtc-missing',/rtc|real.time.clock/],['logger-backup-power-missing',/backup.*battery|battery.*backup/]])
