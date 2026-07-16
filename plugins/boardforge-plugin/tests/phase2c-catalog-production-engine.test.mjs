@@ -240,6 +240,12 @@ test('Board036 requires a protected thermally proven low-distortion power amplif
   for(const code of ['custom-outline-exceeds-maximum-area','audio-amplifier-power-stage-missing','audio-amplifier-input-stage-missing','audio-amplifier-speaker-connector-missing','audio-amplifier-supply-connector-missing','audio-amplifier-output-filter-missing','audio-amplifier-speaker-protection-missing','audio-amplifier-mute-sequencing-missing','audio-amplifier-bulk-decoupling-missing','audio-amplifier-thermal-protection-missing','audio-amplifier-load-stability-evidence-missing','audio-amplifier-performance-evidence-missing','audio-amplifier-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board037 requires a fascia-qualified capacitive electrode system',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[36],36))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','touch-controller-missing','touch-electrodes-missing','touch-sense-conditioning-missing','touch-host-interface-missing','touch-esd-protection-missing','touch-overlay-evidence-missing','touch-shield-ground-strategy-missing','touch-water-glove-evidence-missing','touch-baseline-recovery-missing','touch-production-raw-count-test-missing','touch-interface-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
