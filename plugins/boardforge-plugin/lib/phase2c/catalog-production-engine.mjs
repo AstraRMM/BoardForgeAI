@@ -445,6 +445,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['encoder-calibration-production-test-missing',/(encoder|position).*(calibration|production.*test|end.of.line.*test)/],
   ])
   if(/position feedback sensing/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('encoder-category-mapped-to-generic-wireless-sensor')
+  if(/multi-rail power telemetry/.test(semanticText))requireCapabilities([
+    ['power-monitor-rail-connectors-missing',/(power|rail).*(input.*connector|busbar|terminal)/,2],
+    ['power-monitor-current-sense-elements-missing',/(rail|current).*(shunt|current.*sense.*element)/,2],
+    ['power-monitor-kelvin-sense-missing',/(shunt|current).*(kelvin|four.wire.*sense)/],
+    ['power-monitor-multichannel-converter-missing',/(power|rail).*(multichannel.*monitor|current.*sense.*amplifier|measurement.*adc)/],
+    ['power-monitor-voltage-divider-protection-missing',/(rail|voltage).*(divider|input.*protection|clamp)/],
+    ['power-monitor-common-mode-evidence-missing',/(rail|monitor).*(common.mode|bus.*voltage.*range).*(verified|evidence|budget)/],
+    ['power-monitor-isolation-grounding-missing',/(power|monitor).*(isolation|ground.*domain|isolated.*data)/],
+    ['power-monitor-telemetry-interface-missing',/(power|telemetry).*(host.*interface|can|rs.?485|ethernet|usb)/],
+    ['power-monitor-rail-protection-missing',/(rail|busbar).*(fuse|surge|reverse|esd|protection)/],
+    ['power-monitor-calibration-storage-missing',/(power|current|voltage).*(calibration|coefficient.*storage|traceability)/],
+    ['power-monitor-accuracy-thermal-evidence-missing',/(power|current|voltage).*(accuracy|error.*budget|temperature.*rise|thermal.*drift).*evidence/],
+    ['power-monitor-production-test-missing',/(power|rail).*(known.*load|calibration.*fixture|production.*test)/],
+  ])
+  if(/multi-rail power telemetry/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('power-monitor-category-mapped-to-pd-sink')
   if(/isolated current measurement/.test(semanticText))requireCapabilities([['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation/],['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],['current-measurement-output-missing',/measurement.*output|isolated.*adc/]])
   if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
   if(/high-density connector adaptation/.test(semanticText))requireCapabilities([['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],['breakout-protection-missing',/connector.*esd|signal.*protection/]])
