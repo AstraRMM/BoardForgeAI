@@ -209,6 +209,17 @@ export function validateCatalogSemanticTopology(definition={}){
     ['battery-charger-safety-timer-missing',/charge.*safety.*timer|watchdog.*charger/],
   ])
   if(/safe rechargeable pack charging/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('battery-charger-category-mapped-to-pd-sink')
+  if(/flight-stack peripheral aggregation/.test(semanticText))requireCapabilities([
+    ['drone-stack-connectors-missing',/(flight|drone).*stack.*connector|stack.*mezzanine/,2],
+    ['drone-peripheral-ports-missing',/(uart|i2c|can|gps|telemetry).*(port|connector)|peripheral.*connector/,3],
+    ['drone-port-protection-missing',/(peripheral|port).*(esd|tvs|protection)|connector.*protection/],
+    ['drone-power-rail-distribution-missing',/(flight|peripheral).*(power.*rail|regulated.*supply)|power.*distribution.*port/],
+    ['drone-power-monitoring-missing',/(voltage|current).*monitor.*(flight|rail|peripheral)|power.*telemetry/],
+    ['drone-level-translation-missing',/(level.*translator|level.*shift).*(port|peripheral)|mixed.voltage.*interface/],
+    ['drone-port-ground-return-evidence-missing',/(port|peripheral).*(ground.*return|ground.*pin)|connector.*ground.*mapping/],
+    ['drone-stack-pin-map-evidence-missing',/(flight|drone).*stack.*pin.*map|mezzanine.*mapping/],
+  ])
+  if(/flight-stack peripheral aggregation/.test(semanticText)&&topology==='stm32-controller')errors.push('drone-peripheral-category-mapped-to-can-controller')
   if(/three-phase motor control/.test(semanticText))requireCapabilities([['bldc-controller-missing',/bldc|motor.*controller|commutation.*controller/],['bldc-three-phase-gate-drive-missing',/three.phase.*gate|gate.*driver/],['bldc-power-switches-missing',/phase.*mosfet|power.*mosfet|half.bridge/,3],['bldc-current-sense-missing',/phase.*current.*sense|current.*shunt/],['bldc-motor-connector-missing',/motor.*connector|phase.*connector/],['bldc-dc-link-decoupling-missing',/dc.link|bulk.*motor/],['bldc-power-entry-protection-missing',/motor.*(fuse|reverse|surge|tvs)|power.*entry.*protection/],['bldc-rotor-position-interface-missing',/hall.*sensor|encoder.*motor|sensorless.*bemf|back.emf/],['bldc-safe-gate-disable-missing',/gate.*(disable|shutdown)|motor.*failsafe|default.off/],['bldc-regeneration-handling-missing',/regen|regenerat.*(clamp|brak|handling)|brake.*resistor/]])
   if(/navigation and inertial sensing/.test(semanticText))requireCapabilities([['gnss-receiver-missing',/gnss|gps.*receiver/],['imu-sensor-missing',/imu|inertial.*sensor/],['gnss-antenna-path-missing',/gnss.*antenna|gps.*antenna/]])
   if(/long-duration environmental logging/.test(semanticText))requireCapabilities([['environmental-sensors-missing',/environmental.*sensor|temperature.*humidity|pressure.*sensor/],['logger-storage-missing',/storage|sd.*card|flash.*log/],['logger-rtc-missing',/rtc|real.time.clock/],['logger-backup-power-missing',/backup.*battery|battery.*backup/]])

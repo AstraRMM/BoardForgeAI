@@ -144,6 +144,12 @@ test('Board020 requires a chemistry-qualified rechargeable pack charger',()=>{
   for(const code of ['custom-outline-exceeds-maximum-area','battery-charger-controller-missing','battery-charger-pack-connector-missing','battery-charger-current-programming-missing','battery-charger-voltage-chemistry-evidence-missing','battery-charger-temperature-qualification-missing','battery-charger-termination-status-missing','battery-charger-reverse-or-power-path-missing','battery-charger-safety-timer-missing','battery-charger-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board021 requires a mapped and protected flight-stack peripheral fabric',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[20],20))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','drone-stack-connectors-missing','drone-peripheral-ports-missing','drone-port-protection-missing','drone-power-rail-distribution-missing','drone-power-monitoring-missing','drone-level-translation-missing','drone-port-ground-return-evidence-missing','drone-stack-pin-map-evidence-missing','drone-peripheral-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
