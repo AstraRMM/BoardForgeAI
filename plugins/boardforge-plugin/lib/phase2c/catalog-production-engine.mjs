@@ -238,6 +238,18 @@ export function validateCatalogSemanticTopology(definition={}){
     ['ble-beacon-rf-compliance-missing',/(ble|2\.4.*ghz).*(regulatory|compliance|certification)/],
   ])
   if(/compact proximity beacon/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('ble-beacon-category-mapped-to-usb-sensor-shell')
+  if(/wifi protocol gateway/.test(semanticText))requireCapabilities([
+    ['wifi-gateway-radio-missing',/wifi.*(radio|module|soc)|802\.11.*(radio|module)/],
+    ['wifi-gateway-antenna-network-missing',/wifi.*antenna|2\.4.*ghz.*(antenna|matching)/],
+    ['wifi-gateway-secondary-protocol-missing',/(ethernet|can|rs.?485|ble|sub.?ghz).*(controller|transceiver|interface)|protocol.*bridge.*interface/],
+    ['wifi-gateway-field-connector-missing',/(ethernet|can|rs.?485|field).*(connector|port)|gateway.*wired.*connector/],
+    ['wifi-gateway-interface-protection-missing',/(field|ethernet|can|rs.?485).*(esd|tvs|protection|isolation)/],
+    ['wifi-gateway-security-storage-missing',/(secure.*element|credential.*storage|hardware.*key)|gateway.*secure.*storage/],
+    ['wifi-gateway-provisioning-recovery-missing',/(wifi|gateway).*(provision|recovery|factory.*reset)/],
+    ['wifi-gateway-throughput-evidence-missing',/(throughput|latency|packet.*rate).*(verified|budget|evidence)/],
+    ['wifi-gateway-burst-power-evidence-missing',/(wifi|radio).*(burst.*current|power.*transient|bulk.*decoupling)/],
+  ])
+  if(/wifi protocol gateway/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('wifi-gateway-category-mapped-to-sensor-shell')
   if(/multi-channel removable logging/.test(semanticText))requireCapabilities([['data-acquisition-front-end-missing',/adc|data.*acquisition|analog.*front.end/],['multi-channel-input-missing',/multi.channel.*input|channel.*connector/],['removable-storage-missing',/sd.*card|removable.*storage/],['logger-storage-protection-missing',/storage.*esd|card.*esd/]])
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/]])
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])

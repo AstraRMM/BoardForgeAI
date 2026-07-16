@@ -174,6 +174,12 @@ test('Board025 requires a compact provisioned low-power BLE beacon',()=>{
   for(const code of ['custom-outline-exceeds-maximum-area','ble-beacon-radio-missing','ble-beacon-antenna-missing','ble-beacon-battery-source-missing','ble-beacon-low-iq-power-missing','ble-beacon-programming-interface-missing','ble-beacon-identity-provisioning-missing','ble-beacon-energy-budget-missing','ble-beacon-rf-compliance-missing','ble-beacon-category-mapped-to-usb-sensor-shell'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board026 requires a protected two-sided WiFi protocol gateway',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[25],25))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','wifi-gateway-radio-missing','wifi-gateway-antenna-network-missing','wifi-gateway-secondary-protocol-missing','wifi-gateway-field-connector-missing','wifi-gateway-interface-protection-missing','wifi-gateway-security-storage-missing','wifi-gateway-provisioning-recovery-missing','wifi-gateway-throughput-evidence-missing','wifi-gateway-burst-power-evidence-missing','wifi-gateway-category-mapped-to-sensor-shell'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
