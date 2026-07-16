@@ -168,6 +168,12 @@ test('Board024 requires a region-qualified low-power LoRa RF chain',()=>{
   for(const code of ['lora-radio-missing','lora-antenna-network-missing','low-power-supply-control-missing','lora-region-frequency-evidence-missing','lora-rf-filter-match-missing','lora-rf-esd-missing','lora-reference-clock-missing','lora-host-control-interface-missing','lora-tx-current-decoupling-missing','lora-link-budget-evidence-missing','lora-category-mapped-to-esp32-shell'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board025 requires a compact provisioned low-power BLE beacon',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[24],24))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','ble-beacon-radio-missing','ble-beacon-antenna-missing','ble-beacon-battery-source-missing','ble-beacon-low-iq-power-missing','ble-beacon-programming-interface-missing','ble-beacon-identity-provisioning-missing','ble-beacon-energy-budget-missing','ble-beacon-rf-compliance-missing','ble-beacon-category-mapped-to-usb-sensor-shell'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

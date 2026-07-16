@@ -227,6 +227,17 @@ export function validateCatalogSemanticTopology(definition={}){
   if(/long-duration environmental logging/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('environmental-logger-category-mapped-to-pd-sink')
   if(/long-range low-power telemetry/.test(semanticText))requireCapabilities([['lora-radio-missing',/lora|sub.?ghz.*radio/],['lora-antenna-network-missing',/lora.*antenna|sub.?ghz.*antenna|antenna.*match/],['low-power-supply-control-missing',/low.power.*(regulator|load.switch)|sleep.*power/],['lora-region-frequency-evidence-missing',/(region|frequency|band).*(lora|sub.?ghz).*(verified|selected|compliance)/],['lora-rf-filter-match-missing',/(lora|sub.?ghz).*(matching|filter|balun)|rf.*match.*radio/],['lora-rf-esd-missing',/(antenna|rf).*(esd|protection).*lora|lora.*antenna.*protection/],['lora-reference-clock-missing',/(lora|radio).*(tcxo|crystal|reference.*clock)|tcxo.*sub.?ghz/],['lora-host-control-interface-missing',/(lora|radio).*(spi|dio|reset|busy).*interface|host.*radio.*control/],['lora-tx-current-decoupling-missing',/(lora|radio).*(tx.*current|bulk.*decoupling)|transmit.*supply.*decoupling/],['lora-link-budget-evidence-missing',/(link.*budget|eirp|antenna.*gain).*(verified|calculated|evidence)/]])
   if(/long-range low-power telemetry/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('lora-category-mapped-to-esp32-shell')
+  if(/compact proximity beacon/.test(semanticText))requireCapabilities([
+    ['ble-beacon-radio-missing',/(ble|bluetooth.*low.*energy).*(radio|soc|module)|beacon.*radio/],
+    ['ble-beacon-antenna-missing',/(ble|2\.4.*ghz).*(antenna|matching)|antenna.*beacon/],
+    ['ble-beacon-battery-source-missing',/(coin.*cell|battery).*(holder|source|connector)|wearable.*battery/],
+    ['ble-beacon-low-iq-power-missing',/(ble|beacon).*(low.*iq|sleep.*power|power.*management)|nanoamp.*regulator/],
+    ['ble-beacon-programming-interface-missing',/(swd|programming|debug).*(beacon|ble)|ble.*test.*pads/],
+    ['ble-beacon-identity-provisioning-missing',/(beacon|ble).*(identity|key|address|provision)/],
+    ['ble-beacon-energy-budget-missing',/(advertising.*interval|battery.*life|energy.*budget).*(verified|calculated|evidence)/],
+    ['ble-beacon-rf-compliance-missing',/(ble|2\.4.*ghz).*(regulatory|compliance|certification)/],
+  ])
+  if(/compact proximity beacon/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('ble-beacon-category-mapped-to-usb-sensor-shell')
   if(/multi-channel removable logging/.test(semanticText))requireCapabilities([['data-acquisition-front-end-missing',/adc|data.*acquisition|analog.*front.end/],['multi-channel-input-missing',/multi.channel.*input|channel.*connector/],['removable-storage-missing',/sd.*card|removable.*storage/],['logger-storage-protection-missing',/storage.*esd|card.*esd/]])
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/]])
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])
