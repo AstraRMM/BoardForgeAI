@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {approvedAssetFor} from '../lib/components/approved-production-assets.mjs'
-import {planEsp32TopologyPowerFlags,planExternalConnectorPowerFlags,productionAssetPinSchema} from '../lib/components/production-asset-pin-schema.mjs'
+import {planEsp32TopologyPowerFlags,planExternalConnectorPowerFlags,productionAssetPinSchema,productionPhysicalNetEquivalent,TPS25750_SOURCE_VBUS_EQUIVALENCE} from '../lib/components/production-asset-pin-schema.mjs'
 
 test('schema supports distinct symbol pin and footprint pad aliases without conflating identities',()=>{
   const result=productionAssetPinSchema({symbolPinMap:{SHIELD:'GND',VBUS:'5V'},footprintPadMap:{S1:'GND',A4:'5V'},pinAliases:{SHIELD:'S1',VBUS:'A4'}})
@@ -13,6 +13,12 @@ test('schema rejects alias mappings whose logical nets disagree',()=>{
   const result=productionAssetPinSchema({symbolPinMap:{1:'3V3'},footprintPadMap:{A:'GND'},pinAliases:{1:'A'}})
   assert.equal(result.valid,false)
   assert.match(result.errors[0],/logical-net-mismatch/)
+})
+
+test('TPS25750 source policy permits only the TI-mandated VBUS_IN-to-VBUS physical short',()=>{
+  const valid={policy:TPS25750_SOURCE_VBUS_EQUIVALENCE,mpn:'TPS25750DRJKR',pad:'23',canonicalNet:'VBUS_IN',physicalNet:'VBUS'}
+  assert.equal(productionPhysicalNetEquivalent(valid),true)
+  for(const mutation of [{mpn:'TPS25750DRJKR-X'},{pad:'32'},{canonicalNet:'PPHV'},{physicalNet:'PP5V'},{policy:'generic'}])assert.equal(productionPhysicalNetEquivalent({...valid,...mutation}),false)
 })
 
 test('ESP32 approved asset includes exposed-pad 41 in both authoritative domains',()=>{

@@ -1,4 +1,12 @@
 export const PRODUCTION_ASSET_PIN_SCHEMA='boardforge.production-asset-pin-schema.v2'
+export const TPS25750_SOURCE_VBUS_EQUIVALENCE='boardforge.tps25750-source-vbus-short.v1'
+
+// TI SLVSFR7A section 7.3.1 note (2) requires every VBUS and VBUS_IN pin
+// to be shorted. Keep their canonical functions distinct while permitting
+// that one mandated physical node only under this exact policy.
+export function productionPhysicalNetEquivalent({policy,mpn,pad,canonicalNet,physicalNet}={}){
+  return policy===TPS25750_SOURCE_VBUS_EQUIVALENCE && mpn==='TPS25750DRJKR' && pad==='23' && canonicalNet==='VBUS_IN' && physicalNet==='VBUS'
+}
 
 export function productionAssetPinSchema({symbolPinMap,footprintPadMap,pinAliases={}}={}){
   if(!symbolPinMap||!footprintPadMap)throw new TypeError('symbolPinMap and footprintPadMap are required')
