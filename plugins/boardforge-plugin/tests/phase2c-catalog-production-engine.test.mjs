@@ -6,7 +6,7 @@ import path from 'node:path'
 import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
 import { catalogDefinition, validateCatalogSemanticTopology, verifyCatalogAuthoritativePcbSelection } from '../lib/phase2c/catalog-production-engine.mjs'
 import {stm32ControllerTemplate} from '../lib/phase2c/templates/stm32-controller.mjs'
-import {categoryPowerFlags,categorySchematicPinMaps,stm32ControllerCategoryPcbEvidence} from '../lib/real-board-proof.mjs'
+import {canGatewayCategoryPcbEvidence,categoryPowerFlags,categorySchematicPinMaps,stm32ControllerCategoryPcbEvidence} from '../lib/real-board-proof.mjs'
 import { validateChallengeManifest } from '../lib/challenge/phase2c-challenge.mjs'
 
 test('all 50 campaign specifications retain unique custom outline intent',()=>{const result=validateChallengeManifest(manifest);assert.equal(result.ok,true,result.errors.join('; '));assert.equal(result.customOutlineCount,50);assert.equal(new Set(manifest.boards.map(b=>b.outline.family)).size,50)})
@@ -51,6 +51,18 @@ test('Board008 no longer reuses the invalid one-CAN MCU/two-PHY shell',()=>{
   assert.equal(gate.ok,true,gate.errors.join('; '))
   assert.equal(definition.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CBT6')
   assert.equal(definition.bom.filter(row=>/selectable termination/.test(row.role)).length,2)
+})
+
+test('Board008 authoritative writer inputs cover the exact 26-ref dual-FDCAN architecture',()=>{
+  const d=catalogDefinition(manifest.boards[7],7),expected=d.bom.map(row=>row.ref).sort(),maps=categorySchematicPinMaps(d),pcb=canGatewayCategoryPcbEvidence(d)
+  assert.equal(expected.length,26)
+  assert.deepEqual(Object.keys(maps).sort(),expected)
+  assert.deepEqual(pcb.footprints.map(row=>row.ref).sort(),expected)
+  assert.deepEqual(Object.fromEntries(['19','20','47','48'].map(pin=>[pin,maps.U1[pin]])),{'19':'CAN2_RX','20':'CAN2_TX','47':'CAN1_RX','48':'CAN1_TX'})
+  const u1=pcb.footprints.find(row=>row.ref==='U1'),pads=Object.fromEntries(u1.pads.map(row=>[row.number,row.netName]))
+  assert.deepEqual(Object.fromEntries(['19','20','47','48'].map(pin=>[pin,pads[pin]])),{'19':'CAN2_RX','20':'CAN2_TX','47':'CAN1_RX','48':'CAN1_TX'})
+  assert.equal(pads['36'],'SWCLK_BOOT0')
+  assert.deepEqual(categoryPowerFlags(d).map(row=>[row.rail,row.source.ref]),[['5V_RAW','J2'],['GND','J2'],['5V','Q1']])
 })
 
 test('dual CAN semantic gate requires explicit controller capability and support circuits',()=>{
