@@ -17,6 +17,6 @@ test('Board005 production generator itself passes the engineering gate', async (
   assert.equal(board.drc.errors,0);assert.equal(board.drc.warnings,0)
   assert.equal((drc.violations??[]).length,0);assert.equal((drc.unconnected_items??[]).length,0)
   assert.equal((erc.violations??[]).length,0)
-  assert.equal(parity.passed,true);assert.equal(parity.referenceCount,12)
+  assert.equal(parity.passed,true);assert.equal(parity.referenceCount,14)
   assert.ok(review)
 })
