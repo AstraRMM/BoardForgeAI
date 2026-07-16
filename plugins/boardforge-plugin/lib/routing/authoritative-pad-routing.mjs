@@ -227,11 +227,14 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
   }
   const rail=byNet.get('3V3')||[],railAnchors=[at('3V3','J1','1'),at('3V3','U3','2'),at('3V3','C3','1')]
   const partialNets=[]
-  if(rail.length===15&&railAnchors.every(Boolean)&&[[6.51,19],[10.193,16.2],[15.47,16.025]].every(([x,y],i)=>near(railAnchors[i].x,x)&&near(railAnchors[i].y,y))){
+  if(rail.length===15&&railAnchors.every(Boolean)&&[[6.51,19],[10.193,16.2],[15.47,16.025]].every(([x,y],i)=>near(railAnchors[i].x,x)&&near(railAnchors[i].y,y))&&[['C1',27.27,8.535],['C2',43.4,11.035],['C4',34.71,12.445],['C6',38.44,12.175]].every(([ref,x,y])=>{const p=at('3V3',ref,'1');return p&&near(p.x,x)&&near(p.y,y)})){
     const uDog={x:10.3,y:16.2},cDog={x:15.47,y:17}
     tracks.push({net:'3V3',layer:'F.Cu',start:{x:railAnchors[1].x,y:railAnchors[1].y},end:uDog,width:trackWidth},{net:'3V3',layer:'F.Cu',start:{x:railAnchors[2].x,y:railAnchors[2].y},end:cDog,width:trackWidth})
     vias.push({net:'3V3',x:uDog.x,y:uDog.y,diameter:viaDiameter,drill:.3},{net:'3V3',x:cDog.x,y:cDog.y,diameter:viaDiameter,drill:.3})
-    tracks.push({net:'3V3',layer:'In1.Cu',start:{x:railAnchors[0].x,y:railAnchors[0].y},end:{x:6.51,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:6.51,y:34},end:{x:15.47,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:uDog,end:{x:10.3,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:cDog,end:{x:15.47,y:34},width:trackWidth});partialNets.push('3V3')
+    tracks.push({net:'3V3',layer:'In1.Cu',start:{x:railAnchors[0].x,y:railAnchors[0].y},end:{x:6.51,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:6.51,y:34},end:{x:43.4,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:uDog,end:{x:10.3,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:cDog,end:{x:15.47,y:34},width:trackWidth})
+    const caps=[[at('3V3','C1','1'),{x:27.27,y:9.3}],[at('3V3','C2','1'),{x:43.4,y:11.8}],[at('3V3','C4','1'),{x:34.71,y:13.2}],[at('3V3','C6','1'),{x:41,y:12.175}]]
+    if(caps.every(([p])=>p)){for(const[p,d]of caps){tracks.push({net:'3V3',layer:'F.Cu',start:{x:p.x,y:p.y},end:d,width:trackWidth},{net:'3V3',layer:'In1.Cu',start:d,end:{x:d.x,y:34},width:trackWidth});vias.push({net:'3V3',x:d.x,y:d.y,diameter:viaDiameter,drill:.3})}}
+    partialNets.push('3V3')
   }
   return{tracks,vias,completedNets,partialNets}
 }
