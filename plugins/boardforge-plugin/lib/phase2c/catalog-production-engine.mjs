@@ -339,6 +339,20 @@ export function validateCatalogSemanticTopology(definition={}){
     ['audio-grounding-layout-evidence-missing',/(audio|mixed.signal).*(grounding|return.*path|layout).*evidence/],
   ])
   if(/digital audio processing/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('audio-dsp-category-mapped-to-pd-sink')
+  if(/low-distortion power amplification/.test(semanticText))requireCapabilities([
+    ['audio-amplifier-power-stage-missing',/(audio|speaker).*(power.*amplifier|output.*stage|class.[abd])/],
+    ['audio-amplifier-input-stage-missing',/(audio|line).*(input.*buffer|receiver|preamplifier|gain.*stage)/],
+    ['audio-amplifier-speaker-connector-missing',/(speaker|audio.*output).*(connector|terminal)/],
+    ['audio-amplifier-supply-connector-missing',/(amplifier|power).*(supply.*connector|power.*terminal)/],
+    ['audio-amplifier-output-filter-missing',/(speaker|class.d|audio.*output).*(lc.*filter|output.*filter|zobel)/],
+    ['audio-amplifier-speaker-protection-missing',/(speaker|audio.*output).*(dc.*protection|relay|disconnect|short.*circuit)/],
+    ['audio-amplifier-mute-sequencing-missing',/(amplifier|audio).*(mute|pop|click|startup.*sequence)/],
+    ['audio-amplifier-bulk-decoupling-missing',/(amplifier|power.*stage).*(bulk|dc.link|local.*decoupling)/],
+    ['audio-amplifier-thermal-protection-missing',/(amplifier|power.*stage).*(thermal.*monitor|overtemperature|heatsink)/],
+    ['audio-amplifier-load-stability-evidence-missing',/(load.*stability|reactive.*load|phase.*margin).*(verified|evidence|test)/],
+    ['audio-amplifier-performance-evidence-missing',/(thd\+?n|snr|output.*power|bandwidth).*(verified|budget|evidence)/],
+  ])
+  if(/low-distortion power amplification/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('audio-amplifier-category-mapped-to-pd-sink')
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/],['agriculture-probe-excitation-missing',/(soil|probe).*(excitation|bias|polarity.*reversal|power.*switch)/],['agriculture-cable-surge-path-missing',/(probe|field.*cable).*(surge|eft|common.mode|chassis.*discharge)/],['agriculture-antenna-network-missing',/(agriculture|radio).*(antenna|matching)|antenna.*field.*node/],['agriculture-energy-source-missing',/(solar|battery).*(charger|energy.*storage|source)|field.*energy.*source/],['agriculture-energy-budget-missing',/(mission.*life|energy.*budget|solar.*balance).*(verified|calculated|evidence)/],['agriculture-local-storage-timebase-missing',/(rtc|timebase|local.*storage|data.*buffer).*(agriculture|field|logger)/],['agriculture-ingress-condensation-missing',/(ingress|ip\d\d|condensation|membrane.*vent).*(verified|protection|evidence)/],['agriculture-corrosion-uv-evidence-missing',/(corrosion|uv|chemical.*exposure).*(verified|protection|evidence)/]])
   if(/remote soil and climate monitoring/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('agriculture-category-mapped-to-indoor-sensor-shell')
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])
