@@ -258,6 +258,24 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     const transition={x:30,y:11};vias.push({net:'VBUS',x:transition.x,y:transition.y,diameter:.5,drill:.3})
     tracks.push({net:'VBUS',layer:'In2.Cu',start:dogs[1],end:{x:20.5,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:2.32},end:{x:20.5,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:dogs[2],end:{x:21.8,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:21.8,y:2.32},end:{x:21.8,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:11},end:transition,width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:transition,end:{x:47,y:11},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:{x:47,y:9.05},end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[0],end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[3],end:{x:47,y:16.75},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[4],end:{x:47,y:9.05},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[5],end:{x:47,y:20.8},width:trackWidth});completedNets.push('VBUS')
   }
+  const ground=byNet.get('GND')||[],g=(ref,pad)=>at('GND',ref,pad),g39=ground.filter(p=>p.ref==='U2'&&String(p.pad)==='39'),sh=ground.filter(p=>p.ref==='J2'&&String(p.pad)==='SH')
+  if(ground.length===28&&g39.length===5&&sh.length===4&&g('J1','2')&&g('J2','A1')&&g('J2','A12')){
+    const add=(layer,points)=>points.slice(1).forEach((p,i)=>tracks.push({net:'GND',layer,start:{x:points[i].x,y:points[i].y},end:{x:p.x,y:p.y},width:trackWidth})),gv=p=>vias.push({net:'GND',x:p.x,y:p.y,diameter:.5,drill:.3}),leftX=10,rightX=55,bottomY=29
+    add('In3.Cu',[{x:leftX,y:2.895},{x:leftX,y:bottomY},{x:37.2,y:bottomY},{x:37.2,y:27.2},{x:39.8,y:27.2},{x:39.8,y:bottomY},{x:rightX,y:bottomY},{x:rightX,y:5.45}])
+    add('In3.Cu',[{x:g('J1','2').x,y:g('J1','2').y},{x:g('J1','2').x,y:bottomY}])
+    const frontDogs=[[g('U1','1'),{x:16.3,y:14.438},leftX],[g('C_PP5V','2'),{x:37,y:16},rightX],[g('C_VBUS','2'),{x:42.2,y:5.45},rightX],[g('C_3V3','2'),{x:37,y:7.25},rightX],[g('C_1V5','2'),{x:25.05,y:27},leftX]]
+    for(const [p,d,trunk] of frontDogs){add('F.Cu',[{x:p.x,y:p.y},d]);gv(d);add('In3.Cu',[d,{x:trunk,y:d.y}])}
+    const d1=g('D1','2'),d1d={x:20.5,y:14};add('F.Cu',[{x:d1.x,y:d1.y},d1d]);gv(d1d);add('In3.Cu',[d1d,{x:20.5,y:16},{x:leftX,y:16}])
+    const d2=g('D2','2'),d2d={x:42.2,y:14};add('F.Cu',[{x:d2.x,y:d2.y},{x:42.2,y:12.75},d2d]);gv(d2d);add('In3.Cu',[d2d,{x:rightX,y:14}])
+    const u3Dogs=[[g('U3','1'),{x:27.5,y:21.595}],[g('U3','2'),{x:27.5,y:22.865}],[g('U3','3'),{x:27.2,y:23.5}],[g('U3','4'),{x:27.5,y:25.405}]]
+    for(const [p,d] of u3Dogs){add('F.Cu',[{x:p.x,y:p.y},d]);gv(d);add('In3.Cu',[d,{x:leftX,y:d.y}])}
+    const u37=g('U3','7'),u37d={x:33.8,y:22.865};add('F.Cu',[{x:u37.x,y:u37.y},u37d]);gv(u37d);add('In3.Cu',[u37d,{x:33.8,y:24},{x:leftX,y:24}])
+    add('F.Cu',[[g('U2','11').x,g('U2','11').y],[37.535,24.575]].map(([x,y])=>({x,y})));add('F.Cu',[[g('U2','12').x,g('U2','12').y],[37.535,24.575]].map(([x,y])=>({x,y})));add('F.Cu',[[g('U2','14').x,g('U2','14').y],[38.9,24.8],[38.645,23.5]].map(([x,y])=>({x,y})));add('F.Cu',[[g('U2','31').x,g('U2','31').y],[38.9,22.2],[38.645,23.5]].map(([x,y])=>({x,y})))
+    add('In3.Cu',[{x:36.425,y:23.5},{x:38.645,y:23.5}]);add('In3.Cu',[{x:37.535,y:22.425},{x:37.535,y:27.2}])
+    const a1=g('J2','A1'),a12=g('J2','A12'),a1d={x:15,y:2.32},a12d={x:27,y:2.32};gv({x:a1.x,y:a1.y});gv({x:a12.x,y:a12.y});add('In3.Cu',[{x:a1.x,y:a1.y},a1d,{x:15,y:7.8},{x:leftX,y:7.8}]);add('In3.Cu',[{x:a12.x,y:a12.y},a12d,{x:27,y:7.8},{x:leftX,y:7.8}])
+    for(const p of sh){const side=p.x<21?leftX:27;add('In3.Cu',[{x:p.x,y:p.y},{x:side,y:p.y}]);if(side===27)add('In3.Cu',[{x:27,y:p.y},{x:27,y:7.8}])}
+    completedNets.push('GND')
+  }
   return{tracks,vias,completedNets,partialNets}
 }
 

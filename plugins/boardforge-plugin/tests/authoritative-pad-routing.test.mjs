@@ -71,9 +71,10 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
     {net:'EEPROM_SCL',endpoints:[p('U2','17',40.1,25.425),p('U3','6',33.575,24.135)]},
     {net:'DRAIN',endpoints:[p('U2','15',39.3,25.425),p('U2','30',39.3,21.575),p('U2','40',40.06,22.425),p('U2','40',40.06,23.5),p('U2','40',40.06,24.575)]},
     {net:'VBUS',endpoints:[p('U2','23',41.425,22.837),p('U2','32',38.3,21.575),p('J2','A4',18.6,2.32),p('J2','A9',23.4,2.32),p('D2','1',39.75,16.75),p('C_VBUS','1',39.75,9.05)]},
+    {net:'GND',endpoints:[p('J1','2',41.04,28.5),p('D1','2',22.25,12.75),p('U1','1',17.55,14.438),p('U2','11',37.7,25.425),p('U2','12',38.1,25.425),p('U2','14',38.9,25.425),p('U2','31',38.9,21.575),p('U2','39',36.425,23.5),p('U2','39',37.535,22.425),p('U2','39',37.535,23.5),p('U2','39',37.535,24.575),p('U2','39',38.645,23.5),p('U3','1',28.425,21.595),p('U3','2',28.425,22.865),p('U3','3',28.425,24.135),p('U3','4',28.425,25.405),p('U3','7',33.575,22.865),p('J2','A1',17.8,2.32),p('J2','A12',24.2,2.32),p('J2','SH',16.68,2.895),p('J2','SH',16.68,7.075),p('J2','SH',25.32,2.895),p('J2','SH',25.32,7.075),p('D2','2',39.75,12.75),p('C_PP5V','2',34.7,16),p('C_VBUS','2',39.75,5.45),p('C_3V3','2',35.05,7.25),p('C_1V5','2',25.05,24.75)]},
   ]}
   const result=tps25750SourceFixedCorridors(input,{trackWidth:.2,viaDiameter:.6})
-  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V','VBUS'])
+  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V','VBUS','GND'])
   assert.equal(result.tracks[1].layer,'In4.Cu')
   assert.deepEqual([result.vias[0].x,result.vias[0].y],[27.5,28.5])
   assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='F.Cu').length,5)
@@ -90,6 +91,8 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
   assert.deepEqual(result.partialNets,[])
   assert.equal(result.vias.filter(x=>x.net==='VBUS').length,7)
   assert.ok(result.tracks.some(x=>x.net==='VBUS'&&x.start.x===38.3&&x.start.y===21.575))
+  assert.ok(result.tracks.some(x=>x.net==='GND'&&x.layer==='In3.Cu'&&x.start.y===29))
+  assert.ok(result.tracks.some(x=>x.net==='GND'&&x.layer==='F.Cu'&&x.start.x===38.9&&x.start.y===21.575))
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CC1').endpoints[0].pad='99'
   assert.deepEqual(tps25750SourceFixedCorridors(changed,{}).completedNets,[])
 })
