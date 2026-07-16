@@ -215,13 +215,17 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     for(let i=0;i<rail1v5.length;i++){tracks.push({net:'1V5',layer:'F.Cu',start:{x:rail1v5[i].x,y:rail1v5[i].y},end:dogs[i],width:trackWidth});vias.push({net:'1V5',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})}
     tracks.push({net:'1V5',layer:'In2.Cu',start:dogs[0],end:dogs[1],width:trackWidth});completedNets.push('1V5')
   }
-  for(const [net,uPad,ePad,layer,uDog,eDog] of [
-    ['EEPROM_SDA','16','5','In1.Cu',{x:39.7,y:26.2},{x:35,y:25.405}],
-  ]){
-    const endpoints=[at(net,'U2',uPad),at(net,'U3',ePad)]
-    if(!endpoints.every(Boolean))continue
-    tracks.push({net,layer:'F.Cu',start:{x:endpoints[0].x,y:endpoints[0].y},end:uDog,width:trackWidth},{net,layer:'F.Cu',start:{x:endpoints[1].x,y:endpoints[1].y},end:eDog,width:trackWidth},{net,layer,start:uDog,end:eDog,width:trackWidth})
-    vias.push({net,x:uDog.x,y:uDog.y,diameter:viaDiameter,drill:.3},{net,x:eDog.x,y:eDog.y,diameter:viaDiameter,drill:.3});completedNets.push(net)
+  const sda=[at('EEPROM_SDA','U2','16'),at('EEPROM_SDA','U3','5')]
+  if(sda.every(Boolean)){
+    const a={x:39,y:26.5},b={x:35,y:25.405}
+    tracks.push({net:'EEPROM_SDA',layer:'F.Cu',start:{x:sda[0].x,y:sda[0].y},end:{x:39.7,y:26},width:trackWidth},{net:'EEPROM_SDA',layer:'F.Cu',start:{x:39.7,y:26},end:a,width:trackWidth},{net:'EEPROM_SDA',layer:'F.Cu',start:{x:sda[1].x,y:sda[1].y},end:b,width:trackWidth},{net:'EEPROM_SDA',layer:'In1.Cu',start:a,end:b,width:trackWidth})
+    vias.push({net:'EEPROM_SDA',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SDA',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('EEPROM_SDA')
+  }
+  const scl=[at('EEPROM_SCL','U2','17'),at('EEPROM_SCL','U3','6')]
+  if(scl.every(Boolean)){
+    const a={x:40.8,y:26.8},b={x:31.5,y:23}
+    tracks.push({net:'EEPROM_SCL',layer:'F.Cu',start:{x:scl[0].x,y:scl[0].y},end:{x:40.1,y:26.2},width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:40.1,y:26.2},end:a,width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:scl[1].x,y:scl[1].y},end:{x:32,y:24.135},width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:32,y:24.135},end:b,width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:a,end:{x:43,y:26.8},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:43,y:26.8},end:{x:43,y:20},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:43,y:20},end:{x:31.5,y:20},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:31.5,y:20},end:b,width:trackWidth})
+    vias.push({net:'EEPROM_SCL',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SCL',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('EEPROM_SCL')
   }
   return{tracks,vias,completedNets,partialNets:[]}
 }
