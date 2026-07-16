@@ -138,6 +138,14 @@ export function validateCatalogSemanticTopology(definition={}){
     if(topology==='usb-c-esp32-sensor')errors.push('usb-isolator-category-mapped-to-esp32-sensor')
   }
   const requireCapabilities=requirements=>{for(const [code,pattern,minimum=1]of requirements)if(roles.filter(role=>pattern.test(role)).length<minimum)errors.push(code)}
+  if(/protected relay actuation/.test(semanticText))requireCapabilities([
+    ['relay-output-devices-missing',/\brelay\b.*(output|device|coil)|(?:output|device|coil).*\brelay\b/],
+    ['relay-coil-drivers-missing',/relay.*(driver|transistor|mosfet)|(?:driver|transistor|mosfet).*relay/],
+    ['relay-flyback-protection-missing',/flyback|freewheel|coil.*clamp/],
+    ['relay-contact-connectors-missing',/relay.*(contact|terminal)|(?:contact|terminal).*relay/],
+    ['relay-output-protection-missing',/contact.*(snubber|tvs|protection)|relay.*output.*protection/],
+    ['relay-input-isolation-or-protection-missing',/input.*(isolation|opto|protection)|isolated.*control/],
+  ])
   if(/three-phase motor control/.test(semanticText))requireCapabilities([['bldc-controller-missing',/bldc|motor.*controller|commutation.*controller/],['bldc-three-phase-gate-drive-missing',/three.phase.*gate|gate.*driver/],['bldc-power-switches-missing',/phase.*mosfet|power.*mosfet|half.bridge/,3],['bldc-current-sense-missing',/phase.*current.*sense|current.*shunt/],['bldc-motor-connector-missing',/motor.*connector|phase.*connector/],['bldc-dc-link-decoupling-missing',/dc.link|bulk.*motor/]])
   if(/navigation and inertial sensing/.test(semanticText))requireCapabilities([['gnss-receiver-missing',/gnss|gps.*receiver/],['imu-sensor-missing',/imu|inertial.*sensor/],['gnss-antenna-path-missing',/gnss.*antenna|gps.*antenna/]])
   if(/long-duration environmental logging/.test(semanticText))requireCapabilities([['environmental-sensors-missing',/environmental.*sensor|temperature.*humidity|pressure.*sensor/],['logger-storage-missing',/storage|sd.*card|flash.*log/],['logger-rtc-missing',/rtc|real.time.clock/],['logger-backup-power-missing',/backup.*battery|battery.*backup/]])

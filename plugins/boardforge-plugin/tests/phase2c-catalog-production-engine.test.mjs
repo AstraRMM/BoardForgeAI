@@ -96,6 +96,12 @@ test('Ethernet category gate accepts an explicitly complete controller path',()=
 
 test('catalog mechanics preserve clearance around every topology placement envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
 
+test('Board013 relay controller cannot masquerade as the generic CAN controller',()=>{
+  const definition=catalogDefinition(manifest.boards[12],12),gate=validateCatalogSemanticTopology(definition)
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','relay-output-devices-missing','relay-coil-drivers-missing','relay-flyback-protection-missing','relay-contact-connectors-missing','relay-output-protection-missing','relay-input-isolation-or-protection-missing'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
