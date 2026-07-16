@@ -192,6 +192,12 @@ test('Board028 requires calibrated acquisition and power-fail-safe removable log
   for(const code of ['data-acquisition-front-end-missing','multi-channel-input-missing','removable-storage-missing','logger-storage-protection-missing','data-logger-input-protection-missing','data-logger-antialias-filter-missing','data-logger-voltage-reference-missing','data-logger-controller-buffering-missing','data-logger-timebase-missing','data-logger-card-power-control-missing','data-logger-power-fail-integrity-missing','data-logger-calibration-evidence-missing','data-logger-category-mapped-to-sensor-shell'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board029 requires isolated deterministic multi-camera triggering',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[28],28))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','camera-trigger-timing-source-missing','camera-trigger-isolation-missing','camera-trigger-output-drivers-missing','camera-trigger-output-connectors-missing','camera-trigger-output-protection-missing','camera-trigger-sync-input-missing','camera-trigger-jitter-skew-evidence-missing','camera-trigger-voltage-interface-evidence-missing','camera-trigger-default-inactive-missing','camera-trigger-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
