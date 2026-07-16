@@ -44,6 +44,30 @@ Generic DIP-16 footprints are not acceptable substitutes: they contain sixteen p
 
 Other installed Traco footprints target different converter families and package drawings. They cannot be reused merely because they share a manufacturer or nominal DIP/SIP description.
 
+## Installed-family alternative audit
+
+The installed KiCad 10 converter library was also searched for an alternative that could satisfy the Board006 electrical requirement without creating a new footprint. The acceptance threshold used for this audit is 5 V nominal input, 5 V output, at least 400 mA output, and a manufacturer rating of at least 2500 VACrms. A VDC hipot number was not converted to, or treated as, a VACrms working/test rating.
+
+| Candidate | Installed exact symbol/footprint | Manufacturer electrical evidence | Result |
+|---|---|---|---|
+| Traco `THB10-1211` | Yes: `THB10-1211` / `Converter_DCDC_TRACO_THB10-xxxx_Single_THT` | 9-18 V input, 5.1 V / 1600 mA output, reinforced 4.2 kVAC isolation | Rejected: cannot operate from the required 5 V input |
+| Traco `TEA1-0505HI` | Yes: `TEA1-0505HI` / `Converter_DCDC_TRACO_TEA1-xxxxHI_THT` | 4.5-5.5 V input, 5 V / 200 mA output, 4000 VDC isolation | Rejected: only half the 400 mA baseline and the isolation rating is VDC, not VACrms |
+| XP Power `IH0505SH` | Yes: `IH0505SH` / `Converter_DCDC_XP_POWER-IHxxxxSH_THT` | 5 V input, dual +/-5 V / +/-200 mA output; installed primary-source link identifies 3000-6000 VDC isolation | Rejected: wrong dual-output topology, insufficient per-output current, and VDC rather than VACrms |
+| Murata `MEJ1S0505SC` | Installed exact footprint; matching family symbol data is present in the converter library | 5 V input, 5 V / 200 mA output, 5.2 kVDC isolation | Rejected: only half the 400 mA baseline and VDC rather than VACrms |
+| Traco `THI 3-0511` | No exact installed THI symbol/footprint | 4.5-5.5 V input, 5 V / 600 mA output, 4000 VACrms isolation | Rejected: electrical fit, but no exact installed production asset |
+| Traco `THM 10-0511` | No exact installed THM symbol/footprint | 4.5-9 V input, 5 V / 2000 mA output, 5000 VAC isolation | Rejected: electrical fit, but no exact installed production asset |
+
+Primary manufacturer sources used for the alternative audit:
+
+- Traco TEA 1HI: <https://www.tracopower.com/tea1hi-datasheet>
+- Traco THB 10: <https://www.tracopower.com/products/thb10.pdf>
+- Traco THI 3: <https://www.tracopower.com/thi3-datasheet>
+- Traco THM 10: <https://www.tracopower.com/thm10-datasheet>
+- XP Power IH: <https://www.xppower.com/pdfs/SF_IH.pdf>
+- Murata MEJ1: <https://www.murata.com/-/media/webrenewal/products/power/datasheet/kdc_mej1.ashx>
+
+The full installed-symbol description sweep found no 5 V-input / 5 V-output converter with an explicit kVAC rating. Installed converter families that do carry explicit 3.0, 4.2, or 5.0 kVAC descriptions begin at 9 V input or substantially higher input ranges. Therefore no installed alternative clears all three evidence gates: electrical suitability, VACrms isolation, and exact package/pin-map availability.
+
 ## Required unblock work
 
 An exact local asset must be created and independently checked against the manufacturer drawing before registry approval:
