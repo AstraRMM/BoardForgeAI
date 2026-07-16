@@ -71,6 +71,7 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
 export function validateCatalogSemanticTopology(definition={}){
   const errors=[],bom=Array.isArray(definition.bom)?definition.bom:[],topology=definition.topologyId||definition.id,roles=bom.map(row=>String(row.role||'').toLowerCase()),semanticText=`${definition.name||''} ${definition.prompt||''} ${(definition.intent||[]).join(' ')}`.toLowerCase()
   const hasRole=pattern=>roles.some(role=>pattern.test(role))
+  const requireCapabilities=requirements=>{for(const [code,pattern,minimum=1]of requirements)if(roles.filter(role=>pattern.test(role)).length<minimum)errors.push(code)}
   const outlineArea=Array.isArray(definition.outlinePoints)&&definition.outlinePoints.length>=3?polygonArea(definition.outlinePoints):null,maximumAreaMm2=definition.catalog?.maximumAreaMm2
   if(Number.isFinite(maximumAreaMm2)&&(!Number.isFinite(outlineArea)||outlineArea>maximumAreaMm2))errors.push('custom-outline-exceeds-maximum-area')
   if(topology==='stm32-controller'||topology==='can-gateway'){
@@ -147,7 +148,6 @@ export function validateCatalogSemanticTopology(definition={}){
     if(!isolation.keepoutVerified||!(isolation.creepageMm>0)||!(isolation.clearanceMm>0))errors.push('usb-isolator-creepage-clearance-unverified')
     if(topology==='usb-c-esp32-sensor')errors.push('usb-isolator-category-mapped-to-esp32-sensor')
   }
-  const requireCapabilities=requirements=>{for(const [code,pattern,minimum=1]of requirements)if(roles.filter(role=>pattern.test(role)).length<minimum)errors.push(code)}
   if(/protected relay actuation/.test(semanticText))requireCapabilities([
     ['relay-output-devices-missing',/\brelay\b.*(output|device|coil)|(?:output|device|coil).*\brelay\b/],
     ['relay-coil-drivers-missing',/relay.*(driver|transistor|mosfet)|(?:driver|transistor|mosfet).*relay/],
