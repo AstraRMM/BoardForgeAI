@@ -5,6 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import JSZip from 'jszip'
 import { evaluateBoardAcceptance } from '../lib/challenge/board-acceptance-gate.mjs'
+import {TPS25750_SOURCE_VBUS_EQUIVALENCE} from '../lib/components/production-asset-pin-schema.mjs'
 
 async function fixture() {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'bf-acceptance-'))
@@ -88,6 +89,24 @@ test('projection gate does not borrow a later pad net for an unnetted required p
       (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu"))
       (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu") (net "GND")))
   )`)
+  const result=await evaluateBoardAcceptance(evidence)
+  assert.ok(result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
+})
+
+test('projection gate accepts the exact TPS25750 source VBUS_IN physical-short policy',async()=>{
+  const evidence=await fixture()
+  await writeFile(evidence.project.schematic,`(kicad_sch (symbol (lib_id "BoardForge:TPS25750D") (property "Reference" "U2") (pin "23" (uuid 00000000-0000-0000-0000-000000000023))))`)
+  await writeFile(evidence.project.pcb,`(kicad_pcb (footprint "Package_DFN_QFN:Texas_REF0038A_WQFN-38-2EP_6x4mm_P0.4" (property "Reference" "U2") (pad "23" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net "VBUS"))))`)
+  evidence.assetBindings.components=[{ref:'U2',mpn:'TPS25750DRJKR',exactMpnVerified:true,symbol:'BoardForge:TPS25750D',footprint:'Package_DFN_QFN:Texas_REF0038A_WQFN-38-2EP_6x4mm_P0.4',pinMapVerified:true,symbolPinMap:{23:'VBUS'},footprintPadMap:{23:'VBUS_IN'},physicalNetEquivalencePolicy:TPS25750_SOURCE_VBUS_EQUIVALENCE}]
+  const result=await evaluateBoardAcceptance(evidence)
+  assert.ok(!result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
+})
+
+test('projection gate rejects the same net mismatch without the exact TPS25750 policy',async()=>{
+  const evidence=await fixture()
+  await writeFile(evidence.project.schematic,`(kicad_sch (symbol (lib_id "BoardForge:TPS25750D") (property "Reference" "U2") (pin "23" (uuid 00000000-0000-0000-0000-000000000023))))`)
+  await writeFile(evidence.project.pcb,`(kicad_pcb (footprint "Package_DFN_QFN:Texas_REF0038A_WQFN-38-2EP_6x4mm_P0.4" (property "Reference" "U2") (pad "23" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net "VBUS"))))`)
+  evidence.assetBindings.components=[{ref:'U2',mpn:'TPS25750DRJKR',exactMpnVerified:true,symbol:'BoardForge:TPS25750D',footprint:'Package_DFN_QFN:Texas_REF0038A_WQFN-38-2EP_6x4mm_P0.4',pinMapVerified:true,symbolPinMap:{23:'VBUS'},footprintPadMap:{23:'VBUS_IN'}}]
   const result=await evaluateBoardAcceptance(evidence)
   assert.ok(result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
 })

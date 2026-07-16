@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import JSZip from 'jszip'
+import {productionPhysicalNetEquivalent} from '../components/production-asset-pin-schema.mjs'
 
 const PLACEHOLDER = /placeholder|dummy|fake stock|example only|not for fabrication|todo/i
 const LIVE_STATUSES = new Set(['IN_STOCK', 'LIMITED_STOCK', 'OUT_OF_STOCK'])
@@ -75,7 +76,8 @@ async function validateProductionAssets(evidence, add) {
         // KiCad 10 saved boards use `(net "NAME")`; generated sources may
         // still use `(net CODE "NAME")`. Accept both canonical encodings.
         const match = padBlock.match(/\(net\s+(?:\d+\s+)?"([^"]+)"\)/)
-        return match?.[1] === expected
+        const physicalNet=match?.[1]
+        return physicalNet === expected || productionPhysicalNetEquivalent({policy:row.physicalNetEquivalencePolicy,mpn:row.mpn,pad:String(pad),canonicalNet:expected,physicalNet})
       })
     })
   } catch {}
