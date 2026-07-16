@@ -318,6 +318,12 @@ test('Board049 requires a protected isolated and timing-proven RS485 gateway',()
   for(const code of ['custom-outline-exceeds-maximum-area','rs485-gateway-host-controller-missing','rs485-gateway-isolated-transceiver-missing','rs485-gateway-isolated-power-missing','rs485-gateway-barrier-evidence-missing','rs485-gateway-field-connector-missing','rs485-gateway-termination-bias-missing','rs485-gateway-surge-esd-missing','rs485-gateway-shield-grounding-missing','rs485-gateway-host-interface-missing','rs485-gateway-direction-timing-missing','rs485-gateway-baud-loading-evidence-missing','rs485-gateway-production-loopback-missing','rs485-gateway-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board050 requires a chemistry-qualified protected and thermally proven solar MPPT charger',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[49],49))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','solar-panel-input-missing','solar-input-protection-missing','solar-mppt-converter-missing','solar-inductor-power-stage-missing','solar-battery-connector-protection-missing','solar-charge-current-voltage-sense-missing','solar-battery-temperature-missing','solar-chemistry-profile-evidence-missing','solar-panel-operating-envelope-missing','solar-mppt-efficiency-thermal-evidence-missing','solar-charge-safety-state-missing','solar-production-load-test-missing','solar-mppt-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

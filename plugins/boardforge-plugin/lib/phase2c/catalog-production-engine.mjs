@@ -520,6 +520,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['rs485-gateway-production-loopback-missing',/(rs.?485|gateway).*(loopback|bus.*fixture|production.*test)/],
   ])
   if(/isolated serial gateway/.test(semanticText)&&topology==='stm32-controller')errors.push('rs485-gateway-category-mapped-to-can-controller')
+  if(/solar energy harvesting and charging/.test(semanticText))requireCapabilities([
+    ['solar-panel-input-missing',/(solar|panel).*(input.*connector|terminal)/],
+    ['solar-input-protection-missing',/(solar|panel).*(fuse|reverse|surge|tvs|protection)/],
+    ['solar-mppt-converter-missing',/(solar|harvest).*(mppt|power.point.*tracking|buck.*boost.*charger)/],
+    ['solar-inductor-power-stage-missing',/(mppt|solar|charger).*(inductor|switching.*power.*stage|mosfet)/],
+    ['solar-battery-connector-protection-missing',/(battery|pack).*(connector|fuse|reverse|protection)/],
+    ['solar-charge-current-voltage-sense-missing',/(solar|battery|charger).*(current.*sense|voltage.*sense|shunt)/],
+    ['solar-battery-temperature-missing',/(battery|charger).*(ntc|temperature.*sense|thermal.*monitor)/],
+    ['solar-chemistry-profile-evidence-missing',/(battery|charger).*(chemistry|cell.*count|charge.*profile).*(verified|declared|evidence)/],
+    ['solar-panel-operating-envelope-missing',/(panel|solar).*(voc|vmp|isc|imp|operating.*envelope).*(verified|declared|evidence)/],
+    ['solar-mppt-efficiency-thermal-evidence-missing',/(mppt|solar|charger).*(efficiency|loss.*budget|thermal.*analysis).*evidence/],
+    ['solar-charge-safety-state-missing',/(charger|battery).*(watchdog|fault.*state|charge.*inhibit|failsafe)/],
+    ['solar-production-load-test-missing',/(solar|mppt|charger).*(panel.*simulator|battery.*simulator|production.*test|sweep.*test)/],
+  ])
+  if(/solar energy harvesting and charging/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('solar-mppt-category-mapped-to-pd-sink')
   return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}
 }
 
