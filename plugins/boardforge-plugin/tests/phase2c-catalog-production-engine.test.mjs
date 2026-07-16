@@ -126,6 +126,12 @@ test('Board017 requires four independently protected switching channels',()=>{
   for(const code of ['custom-outline-exceeds-maximum-area','quad-switch-power-devices-missing','quad-switch-gate-networks-missing','quad-switch-output-terminals-missing','quad-switch-inductive-clamps-missing','quad-switch-current-rating-evidence-missing','quad-switch-default-off-evidence-missing','quad-switch-thermal-path-evidence-missing','quad-switch-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board018 requires independently fused and rated distribution branches',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[17],17))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','power-distribution-branch-fuses-missing','power-distribution-output-terminals-missing','power-distribution-bus-capacity-evidence-missing','power-distribution-branch-rating-evidence-missing','power-distribution-test-or-indication-missing','power-distribution-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
