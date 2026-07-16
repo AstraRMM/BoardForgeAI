@@ -282,6 +282,12 @@ test('Board043 requires a guarded calibrated resistance and voltage measurement 
   for(const code of ['custom-outline-exceeds-maximum-area','measurement-kelvin-input-missing','measurement-protected-voltage-input-missing','measurement-current-source-missing','measurement-input-multiplexer-missing','measurement-low-bias-amplifier-missing','measurement-precision-adc-missing','measurement-reference-missing','measurement-guarding-missing','measurement-isolated-power-data-missing','measurement-calibration-storage-missing','measurement-uncertainty-evidence-missing','measurement-leakage-noise-evidence-missing','measurement-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board044 requires a mechanically aligned calibrated motor encoder chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[43],43))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','encoder-sensing-element-missing','encoder-target-missing','encoder-signal-conditioning-missing','encoder-output-interface-missing','encoder-connector-missing','encoder-input-output-protection-missing','encoder-power-filtering-missing','encoder-index-home-missing','encoder-alignment-evidence-missing','encoder-resolution-accuracy-evidence-missing','encoder-speed-timing-evidence-missing','encoder-calibration-production-test-missing','encoder-category-mapped-to-generic-wireless-sensor'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

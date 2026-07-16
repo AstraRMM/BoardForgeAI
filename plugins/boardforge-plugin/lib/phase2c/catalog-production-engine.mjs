@@ -430,7 +430,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['measurement-leakage-noise-evidence-missing',/(leakage|noise|thermal.*emf|burden.*voltage).*(verified|measured|budget|evidence)/],
   ])
   if(/precision resistance and voltage measurement/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('measurement-category-mapped-to-pd-sink')
-  if(/position feedback sensing/.test(semanticText))requireCapabilities([['encoder-sensor-interface-missing',/encoder|quadrature|position.*sensor/],['encoder-connector-missing',/encoder.*connector|sensor.*connector/],['encoder-input-protection-missing',/encoder.*(esd|protection)|input.*protection/]])
+  if(/position feedback sensing/.test(semanticText))requireCapabilities([
+    ['encoder-sensing-element-missing',/(encoder|position).*(magnetic.*sensor|optical.*sensor|resolver|sensing.*element)/],
+    ['encoder-target-missing',/(encoder|position).*(magnet|code.*wheel|target|scale)/],
+    ['encoder-signal-conditioning-missing',/(encoder|position).*(signal.*conditioning|comparator|interpolator|receiver)/],
+    ['encoder-output-interface-missing',/(encoder|position).*(quadrature|abi|ssi|biss|spi|sin.*cos).*interface/],
+    ['encoder-connector-missing',/(encoder|motor).*(connector|cable.*interface)/],
+    ['encoder-input-output-protection-missing',/(encoder|motor.*cable).*(esd|surge|reverse|protection)/],
+    ['encoder-power-filtering-missing',/(encoder|position).*(filtered.*supply|low.noise.*regulator|decoupling)/],
+    ['encoder-index-home-missing',/(encoder|position).*(index|home|zero.*reference)/],
+    ['encoder-alignment-evidence-missing',/(shaft|magnet|code.*wheel|sensor).*(alignment|runout|air.*gap|concentricity).*evidence/],
+    ['encoder-resolution-accuracy-evidence-missing',/(resolution|angular.*accuracy|linearity).*(verified|measured|budget|evidence)/],
+    ['encoder-speed-timing-evidence-missing',/(maximum.*speed|rpm|edge.*rate|latency|jitter).*(verified|measured|budget|evidence)/],
+    ['encoder-calibration-production-test-missing',/(encoder|position).*(calibration|production.*test|end.of.line.*test)/],
+  ])
+  if(/position feedback sensing/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('encoder-category-mapped-to-generic-wireless-sensor')
   if(/isolated current measurement/.test(semanticText))requireCapabilities([['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation/],['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],['current-measurement-output-missing',/measurement.*output|isolated.*adc/]])
   if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
   if(/high-density connector adaptation/.test(semanticText))requireCapabilities([['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],['breakout-protection-missing',/connector.*esd|signal.*protection/]])
