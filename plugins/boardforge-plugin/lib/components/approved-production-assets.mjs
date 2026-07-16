@@ -30,7 +30,12 @@ export const approvedProductionAssets=Object.freeze({
   'UWT1E220MCL1GB':entry('UWT1E220MCL1GB','Device:C_Polarized','Capacitor_SMD:CP_Elec_6.3x5.4',{1:'5V',2:'GND'},'6.3x5.4mm-2'),
   'RC0603FR-0773K2L':entry('RC0603FR-0773K2L','Device:R','Resistor_SMD:R_0603_1608Metric',{1:'5V_SENSE',2:'FB'},'0603-2'),
   'RC0603FR-0710KL':entry('RC0603FR-0710KL','Device:R','Resistor_SMD:R_0603_1608Metric',{1:'FB',2:'GND'},'0603-2'),
+  'TPS25750DRJKR':entry('TPS25750DRJKR','BoardForge:TPS25750D','Package_DFN_QFN:Texas_REF0038A_WQFN-38-2EP_6x4mm_P0.4',{1:'LDO_3V3',2:'ADCIN1',3:'ADCIN2',4:'LDO_1V5',5:'GPIO0',6:'GPIO1',7:'GPIO2',8:'I2Cs_SDA',9:'I2Cs_SCL',10:'I2Cs_IRQ',11:'GND',12:'GND',13:'GPIO11',14:'GND',15:'DRAIN',16:'I2Cm_SDA',17:'I2Cm_SCL',18:'I2Cm_IRQ',19:'GPIO3',20:'PPHV',21:'PPHV',22:'PPHV',23:'VBUS_IN',24:'VBUS_IN',25:'VBUS_IN',26:'GPIO4_USB_P',27:'GPIO5_USB_N',28:'CC1',29:'CC2',30:'DRAIN',31:'GND',32:'VBUS',33:'VBUS',34:'PP5V',35:'PP5V',36:'GPIO7',37:'GPIO6',38:'VIN_3V3',39:'GND',40:'DRAIN'},'WQFN-38-2EP'),
+  'M24C64-WMN6TP':entry('M24C64-WMN6TP','Memory_EEPROM:24LC64','Package_SO:SO-8_3.9x4.9mm_P1.27mm',{1:'E0',2:'E1',3:'E2',4:'GND',5:'SDA',6:'SCL',7:'WC',8:'3V3'},'SOIC-8'),
+  'SMAJ5.0A':entry('SMAJ5.0A','Device:D_TVS','Diode_SMD:D_SMA',{1:'PROTECTED_5V',2:'GND'},'SMA-2'),
+  'UWT1A151MCL1GS':entry('UWT1A151MCL1GS','Device:C_Polarized','Capacitor_SMD:CP_Elec_8x10.5',{1:'PP5V',2:'GND'},'8x10mm-2'),
+  'UWT1E4R7MCL1GB':entry('UWT1E4R7MCL1GB','Device:C_Polarized','Capacitor_SMD:CP_Elec_4x5.4',{1:'VBUS',2:'GND'},'4x5.4mm-2'),
 })
 
 export function approvedAssetFor(mpn,{requiredPinCount}={}){const asset=approvedProductionAssets[mpn]||null;if(!asset)return null;if(requiredPinCount&&asset.physicalPinCount!==requiredPinCount)return null;return structuredClone(asset)}
-function physicalCount(packageName,pinMap){const text=String(packageName),match=text.match(/(?:LQFP|SOIC|QFN)[-_]?(\d+)|SOT-23-(\d+)|1x(\d+)|(\d+)P/i);if(!match)return Object.keys(pinMap).length;const count=Number(match.slice(1).find(Boolean));return /QFN/i.test(text)&&/EP/i.test(text)?count+1:count}
+function physicalCount(packageName,pinMap){const text=String(packageName),match=text.match(/(?:LQFP|SOIC|QFN|WQFN)[-_]?(\d+)|SOT-23-(\d+)|1x(\d+)|(\d+)P/i);if(!match)return Object.keys(pinMap).length;const count=Number(match.slice(1).find(Boolean));if(/2EP/i.test(text))return count+2;return /QFN/i.test(text)&&/EP/i.test(text)?count+1:count}

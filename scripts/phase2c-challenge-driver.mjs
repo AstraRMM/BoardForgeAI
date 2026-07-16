@@ -7,12 +7,13 @@ import { runPhase2cManufacturingPipeline } from '../plugins/boardforge-plugin/li
 import { stm32ControllerTemplate, validateStm32ControllerTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/stm32-controller.mjs'
 import { rp2040InstrumentTemplate, validateRp2040InstrumentTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/rp2040-instrument.mjs'
 import { usbCPdSinkTemplate, validateUsbCPdSinkTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/usb-c-pd-sink.mjs'
+import { usbCPdSourceTemplate, validateUsbCPdSourceTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/usb-c-pd-source.mjs'
 
 const execFile=promisify(execFileCallback)
 const defaultRoot=process.env.BOARDFORGE_50_BOARD_ROOT||String.raw`C:\Users\luifi\Downloads\BoardForge_50_Board_Challenge`
 const repo=path.resolve(import.meta.dirname,'..')
 
-export function createPhase2cChallengeDriver({root=defaultRoot,generateStm32=generateStm32ProductionBoard,generateRp2040=generateRp2040ProductionBoard,generateUsbCPdSink=generateUsbCPdSinkProductionBoard}={}) {
+export function createPhase2cChallengeDriver({root=defaultRoot,generateStm32=generateStm32ProductionBoard,generateRp2040=generateRp2040ProductionBoard,generateUsbCPdSink=generateUsbCPdSinkProductionBoard,generateUsbCPdSource=generateUsbCPdSourceProductionBoard}={}) {
   const loadPilot=()=>loadAcceptedEvidence(path.join(root,'001_ESP32_SENSOR_HUB','usb-c-esp32-sensor'))
   return {
     executePilot:loadPilot,
@@ -37,10 +38,17 @@ export function createPhase2cChallengeDriver({root=defaultRoot,generateStm32=gen
         const result=await generateUsbCPdSink({root,board,template:usbCPdSinkTemplate,context})
         return strictResult(result,board)
       }
+      if(context.index===4 && board?.slug==='usb-c-pd-source') {
+        const contract=validateUsbCPdSourceTemplate(usbCPdSourceTemplate)
+        if(!contract.ok) return rejected('USB_C_PD_SOURCE_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
+        return strictPdSourceResult(await generateUsbCPdSource({root,board,template:usbCPdSourceTemplate,context}),board)
+      }
       return rejected('BOARD_CLASS_ENGINE_NOT_IMPLEMENTED',board,{architectureClass:board?.architectureClass})
     },
   }
 }
+
+export async function generateUsbCPdSourceProductionBoard({board}) { return rejected('USB_C_PD_SOURCE_PRODUCTION_GENERATOR_NOT_IMPLEMENTED',board) }
 
 export async function generateUsbCPdSinkProductionBoard({root,template}) {
   const outputRoot=path.join(root,template.id)
@@ -105,6 +113,7 @@ export function verifyRp2040ProductionContract({template,actualLayers,sourcing})
 }
 
 export function verifyUsbCPdSinkProductionContract({template,actualLayers,sourcing}) { return verifyProductionContract({template,actualLayers,sourcing}) }
+export function verifyUsbCPdSourceProductionContract({template,actualLayers,sourcing}) { return verifyProductionContract({template,actualLayers,sourcing}) }
 
 function verifyProductionContract({template,actualLayers,sourcing}) {
   const errors=[]
@@ -117,6 +126,7 @@ function verifyProductionContract({template,actualLayers,sourcing}) {
 
 async function loadAcceptedEvidence(projectDir){const evidence=JSON.parse(await readFile(path.join(projectDir,'Evidence','BoardForge_Manufacturing_Evidence.json'),'utf8'));return strictResult({acceptance:evidence.acceptance,manufacturingEvidence:evidence},{id:'ESP32_SENSOR_HUB',slug:'esp32-sensor-hub'})}
 function strictResult(result,board){if(result?.acceptance?.accepted===true&&result?.manufacturingEvidence?.status==='MANUFACTURING_ACCEPTED')return result;return {...result,acceptance:result?.acceptance||{status:'BOARD_REJECTED',accepted:false,blockers:[{code:'STRICT_MANUFACTURING_ACCEPTANCE_MISSING'}]},failure:{code:result?.failure?.code||'STRICT_MANUFACTURING_ACCEPTANCE_FAILED',boardId:board?.id}}}
+function strictPdSourceResult(result,board){const config=result?.productionConfig,configValid=config?.eepromImageVerified===true&&config?.readbackVerified===true&&config?.noUnadvertisedPdo===true&&/^[a-f0-9]{64}$/i.test(config?.immutableSha256||'');if(!configValid)return rejected('PD_SOURCE_EEPROM_CONFIGURATION_PROOF_MISSING',board);return strictResult(result,board)}
 function rejected(code,board,extra={}){return {acceptance:{status:'BOARD_REJECTED',accepted:false,blockers:[{code,message:`${code}: ${board?.id||board?.slug||'unknown board'}`}]},failure:{code,boardId:board?.id,...extra}}}
 
 const driver=createPhase2cChallengeDriver()

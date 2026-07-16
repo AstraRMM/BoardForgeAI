@@ -22,6 +22,10 @@ export const preferredPartFamilies = Object.freeze({
   USB_PD_BUCK_INDUCTOR: ['SRN6045TA-4R7M'],
   USB_PD_FB_TOP: ['RC0603FR-0773K2L'],
   USB_PD_FB_BOTTOM: ['RC0603FR-0710KL'],
+  USB_PD_SOURCE_CONTROLLER: ['TPS25750DRJKR'],
+  USB_PD_CONFIG_EEPROM: ['M24C64-WMN6TP'],
+  USB_PD_5V_TVS: ['SMAJ5.0A'],
+  USB_PD_PP5V_BULK: ['UWT1A151MCL1GS'],
 })
 
 export function createProductionPartResolver({ providers = [], cache = new Map(), ttlMs = DEFAULT_TTL_MS, retries = 2, retryDelayMs = 50, sleep = delay, minimumLiveProviders = 1, now = () => Date.now() } = {}) {
