@@ -50,3 +50,11 @@ test('external connector topology power plan asserts source-backed 5V and return
     ['#FLG02','GND','J1','external-connector-power-return'],
   ])
 })
+
+test('PowerPAK PMOS keeps three-pin symbol identity separate from eight physical lands',()=>{
+  const asset=approvedAssetFor('SI7465DP-T1-GE3')
+  assert.equal(asset.pinSchema.valid,true,asset.pinSchema.errors.join('\n'))
+  assert.deepEqual(asset.symbolPinMap,{1:'G',2:'S',3:'D'})
+  assert.deepEqual(asset.pinAliases,{1:'4',2:'1',3:'5'})
+  assert.deepEqual(Object.keys(asset.footprintPadMap),['1','2','3','4','5','6','7','8'])
+})

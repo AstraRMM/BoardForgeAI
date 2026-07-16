@@ -1399,7 +1399,7 @@ export function categorySchematicPinMaps(board) {
       J2: (board.bom||[]).some(row=>row.ref==='R_BOOT')?{1:'5V_RAW',2:'GND',3:'CANH',4:'CANL',5:'I2C_SCL',6:'I2C_SDA'}:{ 1: 'GND', 2: '3V3', 3: 'CANH', 4: 'CANL', 5: 'I2C_SCL', 6: 'I2C_SDA' },
       R1: (board.bom||[]).some(row=>row.ref==='R_BOOT')?{1:'CANH',2:'TERM_LINK'}:{ 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
       D1: approvedAssetFor('NUP2105LT1G').pinMap,
-      Q1:{1:'5V_RAW',2:'5V_RAW',3:'5V_RAW',4:'GND',5:'5V',6:'5V',7:'5V',8:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
+      Q1:{1:'GND',2:'5V_RAW',3:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
     },
     'can-gateway': {
       U1: approvedAssetFor('STM32F103C8T6').pinMap,
@@ -1487,7 +1487,7 @@ export function categorySchematicPinMaps(board) {
   return maps[board.topologyId || board.id] || {}
 }
 
-function categoryPowerFlags(board){
+export function categoryPowerFlags(board){
   const topology=board.topologyId||board.id
   if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
   if(topology==='rp2040-instrument')return planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
@@ -1500,7 +1500,7 @@ function categoryPowerFlags(board){
     {ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'FIELD_24V_RAW',source:{ref:'J1',kind:'external-field-supply'},reason:'The field terminal is the explicit 24 V field input.'},
     {ref:'#FLG05',symbolLibId:'power:PWR_FLAG',rail:'FIELD_GND',source:{ref:'J1',kind:'external-field-return'},reason:'The field terminal is the explicit isolated field return.'},
   ]
-  if(topology==='stm32-controller'&&(board.bom||[]).some(row=>row.ref==='R_BOOT'))return planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceRef:'J2'})
+  if(topology==='stm32-controller'&&(board.bom||[]).some(row=>row.ref==='R_BOOT'))return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceRef:'J2'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'Q1',kind:'reverse-polarity-protected-output'},reason:'The reviewed reverse-polarity PMOS output is the physical source for the protected 5 V regulator rail.'}]
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }
