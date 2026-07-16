@@ -228,6 +228,12 @@ test('Board034 requires a verified parent-matched robot mezzanine contract',()=>
   for(const code of ['custom-outline-exceeds-maximum-area','robotics-expansion-mezzanine-connectors-missing','robotics-expansion-pin-map-evidence-missing','robotics-expansion-rail-ownership-missing','robotics-expansion-io-connectors-missing','robotics-expansion-io-protection-missing','robotics-expansion-level-translation-missing','robotics-expansion-default-state-missing','robotics-expansion-identification-missing','robotics-expansion-hotplug-evidence-missing','robotics-expansion-current-capacity-missing','robotics-expansion-category-mapped-to-usb-instrument'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board035 requires a complete low-noise digital audio signal chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[34],34))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','audio-dsp-processor-missing','audio-codec-converter-missing','audio-input-connector-missing','audio-output-connector-missing','audio-input-conditioning-missing','audio-output-conditioning-missing','audio-master-clock-missing','audio-low-noise-power-missing','audio-pop-mute-protection-missing','audio-performance-evidence-missing','audio-grounding-layout-evidence-missing','audio-dsp-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
