@@ -102,6 +102,12 @@ test('Board013 relay controller cannot masquerade as the generic CAN controller'
   for(const code of ['custom-outline-exceeds-maximum-area','relay-output-devices-missing','relay-coil-drivers-missing','relay-flyback-protection-missing','relay-contact-connectors-missing','relay-output-protection-missing','relay-input-isolation-or-protection-missing'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board014 motor driver cannot masquerade as a USB-C PD sink',()=>{
+  const definition=catalogDefinition(manifest.boards[13],13),gate=validateCatalogSemanticTopology(definition)
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','brushed-motor-h-bridge-missing','brushed-motor-power-switches-missing','brushed-motor-connector-missing','brushed-motor-current-sense-missing','brushed-motor-power-entry-protection-missing','brushed-motor-transient-clamp-missing','brushed-motor-gate-control-missing','brushed-motor-bulk-decoupling-missing'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
