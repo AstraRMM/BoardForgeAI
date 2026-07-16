@@ -166,6 +166,17 @@ export function validateCatalogSemanticTopology(definition={}){
     ['servo-failsafe-output-state-missing',/servo.*(failsafe|default.off|output.*disable)/],
     ['servo-supply-monitoring-missing',/servo.*(voltage|current).*monitor|rail.*telemetry/],
   ])
+  if(/four protected switching channels/.test(semanticText))requireCapabilities([
+    ['quad-switch-power-devices-missing',/(mosfet|smart.*switch).*(channel|output)|(?:channel|output).*(mosfet|smart.*switch)/,4],
+    ['quad-switch-gate-networks-missing',/(gate|input).*(resistor|pull|bias).*(channel|switch)|(?:channel|switch).*(gate|input).*(resistor|pull|bias)/,4],
+    ['quad-switch-output-terminals-missing',/(output|load).*(terminal|connector).*(channel|switch)|(?:channel|switch).*(output|load).*(terminal|connector)/,4],
+    ['quad-switch-inductive-clamps-missing',/(flyback|freewheel|clamp|tvs).*(channel|output)|(?:channel|output).*(flyback|freewheel|clamp|tvs)/,4],
+    ['quad-switch-power-entry-protection-missing',/(input|power).*(fuse|reverse|surge|tvs)|power.*entry.*protection/],
+    ['quad-switch-current-rating-evidence-missing',/(channel|switch).*(current|soa).*rating|current.*rating.*channel/],
+    ['quad-switch-default-off-evidence-missing',/(channel|gate).*(default.off|failsafe|pulldown)|reset.*safe.*switch/],
+    ['quad-switch-thermal-path-evidence-missing',/(mosfet|switch).*(thermal|copper|via)|thermal.*channel/],
+  ])
+  if(/four protected switching channels/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('quad-switch-category-mapped-to-pd-sink')
   if(/three-phase motor control/.test(semanticText))requireCapabilities([['bldc-controller-missing',/bldc|motor.*controller|commutation.*controller/],['bldc-three-phase-gate-drive-missing',/three.phase.*gate|gate.*driver/],['bldc-power-switches-missing',/phase.*mosfet|power.*mosfet|half.bridge/,3],['bldc-current-sense-missing',/phase.*current.*sense|current.*shunt/],['bldc-motor-connector-missing',/motor.*connector|phase.*connector/],['bldc-dc-link-decoupling-missing',/dc.link|bulk.*motor/],['bldc-power-entry-protection-missing',/motor.*(fuse|reverse|surge|tvs)|power.*entry.*protection/],['bldc-rotor-position-interface-missing',/hall.*sensor|encoder.*motor|sensorless.*bemf|back.emf/],['bldc-safe-gate-disable-missing',/gate.*(disable|shutdown)|motor.*failsafe|default.off/],['bldc-regeneration-handling-missing',/regen|regenerat.*(clamp|brak|handling)|brake.*resistor/]])
   if(/navigation and inertial sensing/.test(semanticText))requireCapabilities([['gnss-receiver-missing',/gnss|gps.*receiver/],['imu-sensor-missing',/imu|inertial.*sensor/],['gnss-antenna-path-missing',/gnss.*antenna|gps.*antenna/]])
   if(/long-duration environmental logging/.test(semanticText))requireCapabilities([['environmental-sensors-missing',/environmental.*sensor|temperature.*humidity|pressure.*sensor/],['logger-storage-missing',/storage|sd.*card|flash.*log/],['logger-rtc-missing',/rtc|real.time.clock/],['logger-backup-power-missing',/backup.*battery|battery.*backup/]])
