@@ -268,6 +268,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     tracks.push({net:'SWCLK',layer:'F.Cu',start:{x:swclk[1].x,y:swclk[1].y},end:dog,width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:dog,end:{x:33.75,y:8},width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:{x:swclk[0].x,y:8},end:{x:33.75,y:8},width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:{x:swclk[0].x,y:8},end:{x:swclk[0].x,y:swclk[0].y},width:trackWidth})
     vias.push({net:'SWCLK',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('SWCLK')
   }
+  const boot=[at('BOOT0','U1','44'),at('BOOT0','R_BOOT','1')]
+  if(boot.every(Boolean)&&near(boot[0].x,30.25)&&near(boot[0].y,14.838)&&near(boot[1].x,38.44)&&near(boot[1].y,27.425)){
+    const a={x:30.25,y:13.5},b={x:42,y:27.425},laneY=10
+    tracks.push({net:'BOOT0',layer:'F.Cu',start:boot[0],end:a,width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:a,end:{x:a.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:a.x,y:laneY},end:{x:b.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:b.x,y:laneY},end:b,width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:b,end:boot[1],width:trackWidth})
+    vias.push({net:'BOOT0',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'BOOT0',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('BOOT0')
+  }
   return{tracks,vias,completedNets,partialNets}
 }
 
