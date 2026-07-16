@@ -306,6 +306,12 @@ test('Board047 requires a rated protected isolated high-voltage telemetry chain'
   for(const code of ['high-voltage-input-terminal-missing','high-voltage-divider-missing','high-voltage-input-protection-missing','high-voltage-discharge-path-missing','voltage-measurement-adc-missing','voltage-measurement-reference-missing','high-voltage-isolation-data-missing','high-voltage-isolated-power-missing','high-voltage-spacing-evidence-missing','high-voltage-rating-evidence-missing','high-voltage-telemetry-interface-missing','high-voltage-calibration-safety-test-missing','voltage-monitor-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board048 requires an exact connector-matched mapped and signal-integrity-proven breakout',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[47],47))
+  assert.equal(gate.ok,false)
+  for(const code of ['high-density-connectors-missing','breakout-pin-map-evidence-missing','breakout-power-ground-map-missing','breakout-differential-pair-map-missing','breakout-protection-missing','breakout-power-protection-missing','breakout-impedance-stackup-evidence-missing','breakout-length-skew-evidence-missing','breakout-connector-rating-evidence-missing','breakout-keying-orientation-missing','breakout-identification-missing','breakout-continuity-production-test-missing','breakout-category-mapped-to-wireless-sensor'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

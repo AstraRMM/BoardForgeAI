@@ -490,7 +490,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['high-voltage-calibration-safety-test-missing',/(high.voltage|voltage.*monitor).*(calibration|hipot|dielectric|production.*test)/],
   ])
   if(/protected high-voltage telemetry/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('voltage-monitor-category-mapped-to-pd-sink')
-  if(/high-density connector adaptation/.test(semanticText))requireCapabilities([['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],['breakout-protection-missing',/connector.*esd|signal.*protection/]])
+  if(/high-density connector adaptation/.test(semanticText))requireCapabilities([
+    ['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],
+    ['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],
+    ['breakout-power-ground-map-missing',/(connector|breakout).*(power.*pin|ground.*pin|return.*path).*map/],
+    ['breakout-differential-pair-map-missing',/(connector|breakout).*(differential.*pair|lane.*map|pair.*polarity)/],
+    ['breakout-protection-missing',/connector.*esd|signal.*protection/],
+    ['breakout-power-protection-missing',/(connector|breakout).*(fuse|current.*limit|reverse|backpower).*power/],
+    ['breakout-impedance-stackup-evidence-missing',/(breakout|connector).*(impedance|stackup|insertion.*loss).*evidence/],
+    ['breakout-length-skew-evidence-missing',/(pair|lane|breakout).*(length|skew|timing).*evidence/],
+    ['breakout-connector-rating-evidence-missing',/(connector|contact).*(current.*rating|voltage.*rating|mating.*cycle).*evidence/],
+    ['breakout-keying-orientation-missing',/(connector|breakout).*(keying|orientation|pin.one|polarity)/],
+    ['breakout-identification-missing',/(breakout|adapter).*(board.*id|eeprom|revision.*id)/],
+    ['breakout-continuity-production-test-missing',/(breakout|connector).*(continuity|hipot|loopback|production.*test)/],
+  ])
+  if(/high-density connector adaptation/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('breakout-category-mapped-to-wireless-sensor')
   return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}
 }
 
