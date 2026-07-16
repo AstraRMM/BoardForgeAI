@@ -6,6 +6,7 @@ import path from 'node:path'
 import { REAL_BOARD_PROOF_BOARDS, runRealBoardProof } from '../real-board-proof.mjs'
 import { productionAssetBindings, runPhase2cManufacturingPipeline } from './manufacturing-pipeline.mjs'
 import {createConnectorEarMechanicalFixture,validateConnectorEarMechanicalFixture} from './connector-ear-mechanical-contract.mjs'
+import {createBoard008MechanicalPlacementFixture,validateBoard008MechanicalPlacementFixture} from './board008-mechanical-placement-contract.mjs'
 import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
 
 const execFile=promisify(execFileCallback)
@@ -24,13 +25,16 @@ export function catalogDefinition(board,index=0) {
   const width=productionBase.widthMm,height=productionBase.heightMm,family=board.outline?.family||'asymmetric-instrument'
   const connectorEarFixture=/connector ears-can-controller/i.test(family)?createConnectorEarMechanicalFixture():null
   if(connectorEarFixture){const mechanical=validateConnectorEarMechanicalFixture(connectorEarFixture);if(!mechanical.ok)throw new Error(`Connector-ear mechanical fixture is invalid: ${mechanical.errors.join('; ')}`)}
+  const gatewayFixture=/asymmetric ports-can-gateway/i.test(family)?createBoard008MechanicalPlacementFixture():null
+  if(gatewayFixture){const mechanical=validateBoard008MechanicalPlacementFixture(gatewayFixture);if(!mechanical.ok)throw new Error(`CAN-gateway mechanical fixture is invalid: ${mechanical.errors.join('; ')}`)}
   return {
     ...structuredClone(productionBase), id:board.slug, topologyId:gateway?'can-gateway':topologyId,
     name:`${board.id} ${title(board.slug)}`,
     prompt:`Build ${board.purpose}. Architecture: ${board.architectureClass}. Required distinguishing behavior: ${(board.distinguishingFeatures||[]).join('; ')}. Preserve the ${family} mechanical intent.`,
     intent:[board.purpose,board.architectureClass,...(board.distinguishingFeatures||[]),`${family} custom mechanical envelope`],
-    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||outlineFor(family,width,height,index), holes:connectorEarFixture?.holes||[],
+    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||gatewayFixture?.outline||outlineFor(family,width,height,index), holes:connectorEarFixture?.holes||gatewayFixture?.holes||[],
     ...(connectorEarFixture?{placementTopologyId:'can-controller-connector-ears'}:{}),
+    ...(gatewayFixture?{placementTopologyId:'can-gateway-asymmetric-dual-port',mechanicalPlacementContract:gatewayFixture}:{}),
     catalog:{boardId:board.id,minimumFunctionalBlocks:board.minimumFunctionalBlocks,maximumAreaMm2:board.maximumAreaMm2,outlineFamily:family},
   }
 }
