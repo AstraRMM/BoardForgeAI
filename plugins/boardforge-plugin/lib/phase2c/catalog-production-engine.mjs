@@ -5,6 +5,8 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { REAL_BOARD_PROOF_BOARDS, runRealBoardProof } from '../real-board-proof.mjs'
 import { productionAssetBindings, runPhase2cManufacturingPipeline } from './manufacturing-pipeline.mjs'
+import {createConnectorEarMechanicalFixture,validateConnectorEarMechanicalFixture} from './connector-ear-mechanical-contract.mjs'
+import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
 
 const execFile=promisify(execFileCallback)
 const repo=path.resolve(import.meta.dirname,'../../../..')
@@ -18,16 +20,24 @@ export function catalogDefinition(board,index=0) {
   if(!Array.isArray(base.bom) || base.bom.length===0) throw new Error(`Catalog topology has no production BOM: ${topologyId}`)
   if(!base.bom.every(row=>row && typeof row==='object' && typeof row.ref==='string')) throw new Error(`Catalog topology has an invalid production BOM: ${topologyId}`)
   const gateway=/dual-bus CAN/i.test(`${board.purpose||''} ${(board.distinguishingFeatures||[]).join(' ')}`)
-  const productionBase=gateway?dualCanGatewayBase(base):base
+  const productionBase=gateway?dualCanGatewayBase(base):board.id==='007_CAN_CONTROLLER'?singleCanControllerBase(base):base
   const width=productionBase.widthMm,height=productionBase.heightMm,family=board.outline?.family||'asymmetric-instrument'
+  const connectorEarFixture=/connector ears-can-controller/i.test(family)?createConnectorEarMechanicalFixture():null
+  if(connectorEarFixture){const mechanical=validateConnectorEarMechanicalFixture(connectorEarFixture);if(!mechanical.ok)throw new Error(`Connector-ear mechanical fixture is invalid: ${mechanical.errors.join('; ')}`)}
   return {
     ...structuredClone(productionBase), id:board.slug, topologyId:gateway?'can-gateway':topologyId,
     name:`${board.id} ${title(board.slug)}`,
     prompt:`Build ${board.purpose}. Architecture: ${board.architectureClass}. Required distinguishing behavior: ${(board.distinguishingFeatures||[]).join('; ')}. Preserve the ${family} mechanical intent.`,
     intent:[board.purpose,board.architectureClass,...(board.distinguishingFeatures||[]),`${family} custom mechanical envelope`],
-    preset:'blank-custom', outlinePoints:outlineFor(family,width,height,index), holes:[],
+    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||outlineFor(family,width,height,index), holes:connectorEarFixture?.holes||[],
     catalog:{boardId:board.id,minimumFunctionalBlocks:board.minimumFunctionalBlocks,maximumAreaMm2:board.maximumAreaMm2,outlineFamily:family},
   }
+}
+
+function singleCanControllerBase(base){
+  const copy=structuredClone(base)
+  copy.bom=stm32ControllerTemplate.requirements.map(row=>({ref:row.ref,value:row.mpn,role:row.role.replaceAll('_',' ').toLowerCase(),verificationStatus:'APPROVED_MAPPING',mpn:row.mpn}))
+  return copy
 }
 
 function dualCanGatewayBase(base){

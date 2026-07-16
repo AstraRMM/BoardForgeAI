@@ -428,7 +428,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
   if (current.includes('(property "BoardForgeCategoryEvidence"')) {
     return { status: 'ALREADY_PRESENT', pcbFile: files.pcb }
   }
-  const evidence = evidenceFactory()
+  const evidence = evidenceFactory(board)
   const projected = new Map(categorySchematicComponents(board).map(row => [row.ref, row]))
   evidence.footprints = evidence.footprints.map((footprint) => {
     const component=projected.get(footprint.ref)
@@ -1040,7 +1040,7 @@ export function rp2040InstrumentCategoryPcbEvidence() {
   return evidence
 }
 
-export function stm32ControllerCategoryPcbEvidence() {
+export function stm32ControllerCategoryPcbEvidence(board={}) {
   const evidence = canSensorNodeCategoryPcbEvidence()
   evidence.nets.find((item)=>item.number===2).name='5V'
   evidence.nets.find((item)=>item.number===3).name='3V3'
@@ -1075,7 +1075,25 @@ export function stm32ControllerCategoryPcbEvidence() {
   for(const [points,net,layer,bus] of [[gnd,1,'B.Cu',30],[rail,3,'In1.Cu',5],[canh,4,'In2.Cu',14],[canl,5,'In1.Cu',25]]) addLayerTree(evidence,points,net,layer,bus)
   evidence.segments.push(segment(11.4,17,15.2,13,0.4,2),segment(33.4,19,40.1,17,0.22,9),segment(33.4,21,40.1,21,0.22,10),segment(45.9,21,56,22,0.3,1),segment(45.9,17,57,17,0.3,3,'In2.Cu'),segment(57,17,57,24,0.3,3,'In2.Cu'),segment(24.6,21,24.6,27,0.22,6),segment(24.6,27,58,27,0.22,6),segment(58,27,58,26,0.22,6),segment(33.4,17,33.4,11,0.22,7,'In2.Cu'),segment(33.4,11,45,11,0.22,7,'In2.Cu'),segment(45,11,45,4,0.22,7,'In2.Cu'),segment(45,4,50,4,0.22,7,'In2.Cu'),segment(50,4,50,11,0.22,7,'In2.Cu'),segment(50,11,53,11,0.22,7,'In2.Cu'),segment(53,11,53,28,0.22,7,'B.Cu'),segment(53,28,59,28,0.22,7))
   evidence.vias.push(via(57,24,3),via(33.4,17,7),via(53,11,7),via(53,28,7))
+  if((board.bom||[]).some(row=>row.ref==='R_BOOT'))addStm32MandatorySupportEvidence(evidence)
   return evidence
+}
+
+function addStm32MandatorySupportEvidence(evidence){
+  const addNet=name=>{let row=evidence.nets.find(net=>net.name===name);if(!row){row={number:Math.max(...evidence.nets.map(net=>net.number))+1,name};evidence.nets.push(row)}return row.number}
+  const net=Object.fromEntries(['5V_RAW','NRST','BOOT0','SWDIO','SWCLK','TERM_LINK'].map(name=>[name,addNet(name)])),n=Object.fromEntries(evidence.nets.map(row=>[row.name,row.number]))
+  const u1=evidence.footprints.find(row=>row.ref==='U1');u1.pads.push(pad('7',-4,-1,.55,.55,net.NRST,'NRST'),pad('34',4,1,.55,.55,net.SWDIO,'SWDIO'),pad('37',4,2,.55,.55,net.SWCLK,'SWCLK'),pad('44',4,3,.55,.55,net.BOOT0,'BOOT0'))
+  const u2=evidence.footprints.find(row=>row.ref==='U2');u2.pads.push(pad('8',2.9,0,.7,.55,n.GND,'GND'))
+  const j1=evidence.footprints.find(row=>row.ref==='J1');j1.value='SWD header';j1.footprint='Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical';j1.at={x:8,y:19};j1.body={w:3,h:14};j1.pads=[pad('1',0,-5,1,1,n['3V3'],'3V3'),pad('2',0,-3,1,1,net.SWDIO,'SWDIO'),pad('3',0,-1,1,1,net.SWCLK,'SWCLK'),pad('4',0,1,1,1,net.NRST,'NRST'),pad('5',0,3,1,1,n.GND,'GND'),pad('6',0,5,1,1,0,'')]
+  const j2=evidence.footprints.find(row=>row.ref==='J2');j2.pads=[pad('1',-2,-3,1,1,n['5V'],'5V'),pad('2',-1,0,1,1,n.GND,'GND'),pad('3',0,3,1,1,n.CANH,'CANH'),pad('4',1,5,1,1,n.CANL,'CANL'),pad('5',2,7,1,1,n.I2C_SCL,'I2C_SCL'),pad('6',3,9,1,1,n.I2C_SDA,'I2C_SDA')]
+  const r1=evidence.footprints.find(row=>row.ref==='R1');r1.pads[1]={...r1.pads[1],netNumber:net.TERM_LINK,netName:'TERM_LINK'}
+  evidence.footprints.push(
+    {ref:'Q1',value:'SI7465DP-T1-GE3',footprint:'Package_SO:PowerPAK_SO-8_Single',at:{x:14,y:5},body:{w:6,h:6},pads:[pad('1',-2,-2,.8,.8,net['5V_RAW'],'5V_RAW'),pad('2',-2,0,.8,.8,net['5V_RAW'],'5V_RAW'),pad('3',-2,2,.8,.8,net['5V_RAW'],'5V_RAW'),pad('4',0,3,.8,.8,n.GND,'GND'),pad('5',2,2,.8,.8,n['5V'],'5V'),pad('6',2,0,.8,.8,n['5V'],'5V'),pad('7',2,-1,.8,.8,n['5V'],'5V'),pad('8',2,-2,.8,.8,n['5V'],'5V')]},
+    {ref:'D_PWR',value:'SMAJ5.0A',footprint:'Diode_SMD:D_SMA',at:{x:22,y:5},body:{w:5,h:3},pads:[pad('1',-3,0,1.5,1.5,n['5V'],'5V'),pad('2',3,0,1.5,1.5,n.GND,'GND')]},
+    verticalPassive('C_BULK','22u',28,5,n['5V'],'5V',n.GND,'GND',1),passiveFootprint('JP1','TERM SELECT',53,7,net.TERM_LINK,'TERM_LINK',n.CANL,'CANL'),
+    passiveFootprint('R_BOOT','10k',28,28,net.BOOT0,'BOOT0',n.GND,'GND'),passiveFootprint('R_RESET','10k',18,28,n['3V3'],'3V3',net.NRST,'NRST'),verticalPassive('C_RESET','100n',22,28,net.NRST,'NRST',n.GND,'GND',1),
+    verticalPassive('C4','100n',27,12,n['3V3'],'3V3',n.GND,'GND',1),verticalPassive('C5','100n',30,12,n['3V3'],'3V3',n.GND,'GND',1),verticalPassive('C6','100n',33,12,n['3V3'],'3V3',n.GND,'GND',1),
+  )
 }
 
 export function canGatewayCategoryPcbEvidence(){
@@ -1371,7 +1389,7 @@ function categorySchematicComponents(board) {
   })
 }
 
-function categorySchematicPinMaps(board) {
+export function categorySchematicPinMaps(board) {
   const maps = {
     'stm32-controller': {
       U1: approvedAssetFor('STM32F103C8T6').pinMap,
@@ -1381,6 +1399,7 @@ function categorySchematicPinMaps(board) {
       J2: { 1: 'GND', 2: '3V3', 3: 'CANH', 4: 'CANL', 5: 'I2C_SCL', 6: 'I2C_SDA' },
       R1: { 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
       D1: approvedAssetFor('NUP2105LT1G').pinMap,
+      Q1:{1:'5V_RAW',2:'5V_RAW',3:'5V_RAW',4:'GND',5:'5V',6:'5V',7:'5V',8:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
     },
     'can-gateway': {
       U1: approvedAssetFor('STM32F103C8T6').pinMap,
