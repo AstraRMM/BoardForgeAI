@@ -1,3 +1,6 @@
+import {createHash} from 'node:crypto'
+import {readFile} from 'node:fs/promises'
+
 export const USB_C_PD_SOURCE_TEMPLATE_SCHEMA =
   "boardforge.phase2c.production-template.usb-c-pd-source.v1";
 const part = (ref, role, mpn, pkg, pinCount, rating) => ({
@@ -153,6 +156,8 @@ export const usbCPdSourceTemplate = Object.freeze({
 });
 export function validateUsbCPdSourceConfigurationEvidence(evidence = {}) {
   const errors = [];
+  if (evidence.ingestionVerified !== true || evidence.ingestionSchema !== 'boardforge.tps25750-full-flash-ingestion.v1')
+    errors.push("configuration-files-not-independently-ingested");
   if (!evidence.binaryPath) errors.push("configuration-binary-missing");
   if (!evidence.readbackPath) errors.push("programmed-readback-binary-missing");
   if (!/^[a-f0-9]{64}$/i.test(evidence.sha256 || ""))
@@ -175,6 +180,24 @@ export function validateUsbCPdSourceConfigurationEvidence(evidence = {}) {
     valid: errors.length === 0,
     errors,
   };
+}
+
+export async function ingestUsbCPdSourceConfigurationEvidence({binaryPath,readbackPath,tool,parsedPdos,currentLimitSetting}={}) {
+  const errors=[]
+  if(tool?.id!=='USBCPD-APPLICATION-CUSTOMIZATION-TOOL')errors.push('official-ti-configuration-tool-not-proven')
+  if(!tool?.version)errors.push('official-ti-configuration-tool-version-missing')
+  if(tool?.outputKind!=='FULL_FLASH_BINARY')errors.push('tps25750-eeprom-full-flash-binary-required')
+  let binary=null,readback=null
+  try{binary=await readFile(binaryPath)}catch{errors.push('configuration-binary-unreadable')}
+  try{readback=await readFile(readbackPath)}catch{errors.push('programmed-readback-binary-unreadable')}
+  if(binary&&!binary.length)errors.push('configuration-binary-empty')
+  if(readback&&!readback.length)errors.push('programmed-readback-binary-empty')
+  const sha256=data=>createHash('sha256').update(data).digest('hex')
+  const binarySha256=binary?.length?sha256(binary):null,readbackSha256=readback?.length?sha256(readback):null
+  if(binary&&readback&&(binary.length!==readback.length||!binary.equals(readback)))errors.push('programmed-eeprom-readback-does-not-match-full-flash-binary')
+  const evidence={ingestionSchema:'boardforge.tps25750-full-flash-ingestion.v1',ingestionVerified:errors.length===0,binaryPath,readbackPath,sha256:binarySha256,readbackSha256,byteLength:binary?.length||0,tool:{id:tool?.id||null,version:tool?.version||null,outputKind:tool?.outputKind||null},parsedPdos,currentLimitSetting,errors}
+  const policy=validateUsbCPdSourceConfigurationEvidence(evidence)
+  return {...evidence,valid:errors.length===0&&policy.valid,errors:[...errors,...policy.errors]}
 }
 export function validateUsbCPdSourceTemplate(t = usbCPdSourceTemplate) {
   const e = [];
