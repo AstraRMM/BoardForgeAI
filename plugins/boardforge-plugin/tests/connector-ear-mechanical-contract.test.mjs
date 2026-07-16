@@ -26,4 +26,5 @@ test('Board007 catalog definition uses the authoritative connector-ear fixture',
   assert.deepEqual(definition.holes,fixture.holes)
   assert.equal(definition.widthMm,fixture.widthMm)
   assert.equal(definition.heightMm,fixture.heightMm)
+  assert.equal(definition.placementTopologyId,'can-controller-connector-ears')
 })

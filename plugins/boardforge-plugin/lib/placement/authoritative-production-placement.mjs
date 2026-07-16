@@ -1,5 +1,6 @@
 import { resolveAuthoritativeKiCadFootprint, transformAuthoritativePads } from '../components/authoritative-kicad-footprint-resolver.mjs'
 import { pointInPolygon } from '../geometry.mjs'
+import {board007PlacementPreferences} from '../phase2c/board007-placement-route-contract.mjs'
 
 const ESP32_TOPOLOGY = {
   U1: { nx: .50, ny: .37, rotations: [0, 90, 270, 180] },
@@ -22,6 +23,7 @@ const USB_PD_SINK_TOPOLOGY = {
   // nx=.21 makes the contact copper tangent to the notch clearance envelope.
   J1:{nx:.23,ny:.50,rotations:[90]},
 }
+const BOARD007_CAN_TOPOLOGY=board007PlacementPreferences()
 
 export const COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY = Object.freeze({
   mpn: 'ESP32-S3-WROOM-1U-N8R8',
@@ -50,7 +52,7 @@ export function placeAuthoritativeProductionFootprints({
   resolved.sort((a, b) => area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
   const placed = []
   for (const component of resolved) {
-    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : null
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : null
     const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
     const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : candidateTransforms(preference, bounds)
     let winner = null

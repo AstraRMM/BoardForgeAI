@@ -30,6 +30,7 @@ export function catalogDefinition(board,index=0) {
     prompt:`Build ${board.purpose}. Architecture: ${board.architectureClass}. Required distinguishing behavior: ${(board.distinguishingFeatures||[]).join('; ')}. Preserve the ${family} mechanical intent.`,
     intent:[board.purpose,board.architectureClass,...(board.distinguishingFeatures||[]),`${family} custom mechanical envelope`],
     preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||outlineFor(family,width,height,index), holes:connectorEarFixture?.holes||[],
+    ...(connectorEarFixture?{placementTopologyId:'can-controller-connector-ears'}:{}),
     catalog:{boardId:board.id,minimumFunctionalBlocks:board.minimumFunctionalBlocks,maximumAreaMm2:board.maximumAreaMm2,outlineFamily:family},
   }
 }

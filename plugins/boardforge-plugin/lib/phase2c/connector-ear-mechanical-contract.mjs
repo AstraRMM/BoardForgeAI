@@ -2,12 +2,12 @@ export const CONNECTOR_EAR_MECHANICAL_CONTRACT=Object.freeze({
   schema:'boardforge.phase2c.connector-ear-mechanical-contract.v1',
   maximumAreaMm2:3000,
   envelopeMm:Object.freeze({width:62,height:38}),
-  mounting:Object.freeze({requiredCount:4,diameterMm:2.2,minimumEdgeClearanceMm:1}),
+  mounting:Object.freeze({requiredCount:4,diameterMm:2.2,minimumEdgeClearanceMm:2}),
 })
 
 export function createConnectorEarMechanicalFixture(){
   const outline=[[4,0],[58,0],[58,6],[62,6],[62,14],[58,14],[58,24],[62,24],[62,32],[58,32],[58,38],[4,38],[4,32],[0,32],[0,24],[4,24],[4,14],[0,14],[0,6],[4,6]]
-  const holes=[[2.5,10],[59.5,10],[2.5,28],[59.5,28]].map(([x,y])=>({x,y,diameterMm:2.2}))
+  const holes=[[3.25,10],[58.75,10],[3.25,28],[58.75,28]].map(([x,y])=>({x,y,diameterMm:2.2}))
   return{schema:'boardforge.phase2c.connector-ear-mechanical-fixture.v1',outline,holes,widthMm:62,heightMm:38,actualEnvelopeMm:{minX:0,minY:0,maxX:62,maxY:38,width:62,height:38},areaMm2:polygonArea(outline)}
 }
 

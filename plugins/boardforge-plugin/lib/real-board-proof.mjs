@@ -880,7 +880,7 @@ function authoritativeProductionPlacement(board,projected){
     if(!asset||!component)throw new Error(`Approved authoritative placement asset is missing for ${row.ref}`)
     return {ref:row.ref,value:row.value,mpn:row.mpn,footprint:asset.footprint.libId,pinMap:topologyPinMaps[row.ref]||asset.footprintPadMap}
   })
-  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:board.topologyId||board.id||'generic'})
+  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:board.placementTopologyId||board.topologyId||board.id||'generic'})
 }
 
 function footprintPadToSymbolPin(board,ref,pad){
@@ -1085,7 +1085,7 @@ function addStm32MandatorySupportEvidence(evidence){
   const u1=evidence.footprints.find(row=>row.ref==='U1');u1.pads.push(pad('7',-4,-1,.55,.55,net.NRST,'NRST'),pad('34',4,1,.55,.55,net.SWDIO,'SWDIO'),pad('37',4,2,.55,.55,net.SWCLK,'SWCLK'),pad('44',4,3,.55,.55,net.BOOT0,'BOOT0'))
   const u2=evidence.footprints.find(row=>row.ref==='U2');u2.pads.push(pad('8',2.9,0,.7,.55,n.GND,'GND'))
   const j1=evidence.footprints.find(row=>row.ref==='J1');j1.value='SWD header';j1.footprint='Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical';j1.at={x:8,y:19};j1.body={w:3,h:14};j1.pads=[pad('1',0,-5,1,1,n['3V3'],'3V3'),pad('2',0,-3,1,1,net.SWDIO,'SWDIO'),pad('3',0,-1,1,1,net.SWCLK,'SWCLK'),pad('4',0,1,1,1,net.NRST,'NRST'),pad('5',0,3,1,1,n.GND,'GND'),pad('6',0,5,1,1,0,'')]
-  const j2=evidence.footprints.find(row=>row.ref==='J2');j2.pads=[pad('1',-2,-3,1,1,n['5V'],'5V'),pad('2',-1,0,1,1,n.GND,'GND'),pad('3',0,3,1,1,n.CANH,'CANH'),pad('4',1,5,1,1,n.CANL,'CANL'),pad('5',2,7,1,1,n.I2C_SCL,'I2C_SCL'),pad('6',3,9,1,1,n.I2C_SDA,'I2C_SDA')]
+  const j2=evidence.footprints.find(row=>row.ref==='J2');j2.pads=[pad('1',-2,-3,1,1,net['5V_RAW'],'5V_RAW'),pad('2',-1,0,1,1,n.GND,'GND'),pad('3',0,3,1,1,n.CANH,'CANH'),pad('4',1,5,1,1,n.CANL,'CANL'),pad('5',2,7,1,1,n.I2C_SCL,'I2C_SCL'),pad('6',3,9,1,1,n.I2C_SDA,'I2C_SDA')]
   const r1=evidence.footprints.find(row=>row.ref==='R1');r1.pads[1]={...r1.pads[1],netNumber:net.TERM_LINK,netName:'TERM_LINK'}
   evidence.footprints.push(
     {ref:'Q1',value:'SI7465DP-T1-GE3',footprint:'Package_SO:PowerPAK_SO-8_Single',at:{x:14,y:5},body:{w:6,h:6},pads:[pad('1',-2,-2,.8,.8,net['5V_RAW'],'5V_RAW'),pad('2',-2,0,.8,.8,net['5V_RAW'],'5V_RAW'),pad('3',-2,2,.8,.8,net['5V_RAW'],'5V_RAW'),pad('4',0,3,.8,.8,n.GND,'GND'),pad('5',2,2,.8,.8,n['5V'],'5V'),pad('6',2,0,.8,.8,n['5V'],'5V'),pad('7',2,-1,.8,.8,n['5V'],'5V'),pad('8',2,-2,.8,.8,n['5V'],'5V')]},
@@ -1395,9 +1395,9 @@ export function categorySchematicPinMaps(board) {
       U1: approvedAssetFor('STM32F103C8T6').pinMap,
       U2: approvedAssetFor('SN65HVD230DR').pinMap,
       U3: { 1:'GND', 2:'3V3', 3:'5V' },
-      J1: approvedAssetFor('M20-9990245').pinMap,
-      J2: { 1: 'GND', 2: '3V3', 3: 'CANH', 4: 'CANL', 5: 'I2C_SCL', 6: 'I2C_SDA' },
-      R1: { 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
+      J1: (board.bom||[]).some(row=>row.ref==='R_BOOT')?{1:'3V3',2:'SWDIO',3:'SWCLK',4:'NRST',5:'GND'}:approvedAssetFor('M20-9990245').pinMap,
+      J2: (board.bom||[]).some(row=>row.ref==='R_BOOT')?{1:'5V_RAW',2:'GND',3:'CANH',4:'CANL',5:'I2C_SCL',6:'I2C_SDA'}:{ 1: 'GND', 2: '3V3', 3: 'CANH', 4: 'CANL', 5: 'I2C_SCL', 6: 'I2C_SDA' },
+      R1: (board.bom||[]).some(row=>row.ref==='R_BOOT')?{1:'CANH',2:'TERM_LINK'}:{ 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
       D1: approvedAssetFor('NUP2105LT1G').pinMap,
       Q1:{1:'5V_RAW',2:'5V_RAW',3:'5V_RAW',4:'GND',5:'5V',6:'5V',7:'5V',8:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
     },
@@ -1500,6 +1500,7 @@ function categoryPowerFlags(board){
     {ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'FIELD_24V_RAW',source:{ref:'J1',kind:'external-field-supply'},reason:'The field terminal is the explicit 24 V field input.'},
     {ref:'#FLG05',symbolLibId:'power:PWR_FLAG',rail:'FIELD_GND',source:{ref:'J1',kind:'external-field-return'},reason:'The field terminal is the explicit isolated field return.'},
   ]
+  if(topology==='stm32-controller'&&(board.bom||[]).some(row=>row.ref==='R_BOOT'))return planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceRef:'J2'})
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }
