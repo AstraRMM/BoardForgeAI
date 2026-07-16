@@ -234,13 +234,19 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     tracks.push({net:'3V3',layer:'In1.Cu',start:{x:railAnchors[0].x,y:railAnchors[0].y},end:{x:6.51,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:6.51,y:34},end:{x:43.4,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:uDog,end:{x:10.3,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:cDog,end:{x:15.47,y:34},width:trackWidth})
     const caps=[[at('3V3','C1','1'),{x:27.27,y:9.3}],[at('3V3','C2','1'),{x:43.4,y:11.8}],[at('3V3','C4','1'),{x:34.71,y:13.2}],[at('3V3','C6','1'),{x:41,y:12.175}]]
     if(caps.every(([p])=>p)){for(const[p,d]of caps){tracks.push({net:'3V3',layer:'F.Cu',start:{x:p.x,y:p.y},end:d,width:trackWidth},{net:'3V3',layer:'In1.Cu',start:d,end:{x:d.x,y:34},width:trackWidth});vias.push({net:'3V3',x:d.x,y:d.y,diameter:viaDiameter,drill:.3})}}
-    const reset=at('3V3','R_RESET','1'),c5=at('3V3','C5','1')
-    if(reset&&c5&&near(reset.x,31.415)&&near(reset.y,28.99)&&near(c5.x,34.71)&&near(c5.y,27.105)){
+    const reset=at('3V3','R_RESET','1'),c5=at('3V3','C5','1'),resetOk=reset&&c5&&near(reset.x,31.415)&&near(reset.y,28.99)&&near(c5.x,34.71)&&near(c5.y,27.105)
+    if(resetOk){
       const rd={x:30.4,y:27.8},cd={x:34.71,y:28}
       tracks.push({net:'3V3',layer:'F.Cu',start:{x:reset.x,y:reset.y},end:{x:30.4,y:28.99},width:trackWidth},{net:'3V3',layer:'F.Cu',start:{x:30.4,y:28.99},end:rd,width:trackWidth},{net:'3V3',layer:'F.Cu',start:{x:c5.x,y:c5.y},end:cd,width:trackWidth},{net:'3V3',layer:'In1.Cu',start:rd,end:{x:rd.x,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:cd,end:{x:cd.x,y:34},width:trackWidth})
       vias.push({net:'3V3',x:rd.x,y:rd.y,diameter:viaDiameter,drill:.3},{net:'3V3',x:cd.x,y:cd.y,diameter:viaDiameter,drill:.3})
     }
-    partialNets.push('3V3')
+    const remaining=[[at('3V3','U1','1'),26.837,16.25,{x:25.7,y:16.25}],[at('3V3','U1','9'),26.837,20.25,{x:25.7,y:20.25}],[at('3V3','U1','24'),33.75,23.163,{x:33.75,y:24.3}],[at('3V3','U1','36'),35.163,16.25,{x:38,y:16.25}],[at('3V3','U1','48'),28.25,14.838,{x:28.25,y:13.7}],[at('3V3','U2','3'),40.925,19.635,{x:39.8,y:19.635}]]
+    const remainingOk=remaining.every(([p,x,y])=>p&&near(p.x,x)&&near(p.y,y))
+    if(remainingOk&&resetOk){
+      for(const[p,,,d]of remaining){tracks.push({net:'3V3',layer:'F.Cu',start:{x:p.x,y:p.y},end:d,width:trackWidth});vias.push({net:'3V3',x:d.x,y:d.y,diameter:viaDiameter,drill:.3})}
+      tracks.push({net:'3V3',layer:'In1.Cu',start:remaining[0][3],end:{x:25.7,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:remaining[1][3],end:remaining[0][3],width:trackWidth},{net:'3V3',layer:'In1.Cu',start:remaining[2][3],end:{x:33.75,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:remaining[3][3],end:{x:38,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:remaining[4][3],end:{x:28.25,y:24.8},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:28.25,y:24.8},end:{x:27,y:24.8},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:27,y:24.8},end:{x:27,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:remaining[5][3],end:{x:39.8,y:34},width:trackWidth})
+      completedNets.push('3V3')
+    }else partialNets.push('3V3')
   }
   return{tracks,vias,completedNets,partialNets}
 }
