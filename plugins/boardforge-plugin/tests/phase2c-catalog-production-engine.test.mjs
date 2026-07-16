@@ -276,6 +276,12 @@ test('Board042 requires a protected calibrated oscilloscope acquisition chain',(
   for(const code of ['custom-outline-exceeds-maximum-area','oscilloscope-input-connector-missing','oscilloscope-attenuator-missing','oscilloscope-overload-protection-missing','oscilloscope-coupling-termination-missing','oscilloscope-front-end-amplifier-missing','oscilloscope-antialias-filter-missing','oscilloscope-adc-missing','oscilloscope-reference-clock-missing','oscilloscope-trigger-pickoff-missing','oscilloscope-shield-grounding-missing','oscilloscope-bandwidth-linearity-evidence-missing','oscilloscope-calibration-overload-evidence-missing','oscilloscope-category-mapped-to-generic-usb-instrument'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board043 requires a guarded calibrated resistance and voltage measurement chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[42],42))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','measurement-kelvin-input-missing','measurement-protected-voltage-input-missing','measurement-current-source-missing','measurement-input-multiplexer-missing','measurement-low-bias-amplifier-missing','measurement-precision-adc-missing','measurement-reference-missing','measurement-guarding-missing','measurement-isolated-power-data-missing','measurement-calibration-storage-missing','measurement-uncertainty-evidence-missing','measurement-leakage-noise-evidence-missing','measurement-category-mapped-to-generic-usb-instrument'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
