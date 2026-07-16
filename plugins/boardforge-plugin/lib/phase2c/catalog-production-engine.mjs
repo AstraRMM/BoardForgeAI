@@ -460,7 +460,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['power-monitor-production-test-missing',/(power|rail).*(known.*load|calibration.*fixture|production.*test)/],
   ])
   if(/multi-rail power telemetry/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('power-monitor-category-mapped-to-pd-sink')
-  if(/isolated current measurement/.test(semanticText))requireCapabilities([['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation/],['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],['current-measurement-output-missing',/measurement.*output|isolated.*adc/]])
+  if(/isolated current measurement/.test(semanticText))requireCapabilities([
+    ['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation|hall.*current|fluxgate/],
+    ['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],
+    ['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],
+    ['current-sensor-rated-insulation-missing',/(current|sensor).*(working.*voltage|reinforced|basic.*insulation|isolation.*rating)/],
+    ['current-sensor-primary-protection-missing',/(primary|busbar|shunt).*(fuse|fault.*energy|overcurrent|protection)/],
+    ['current-sensor-secondary-power-missing',/(current|sensor).*(isolated.*power|low.noise.*supply|secondary.*supply)/],
+    ['current-measurement-output-missing',/measurement.*output|isolated.*adc|current.*sensor.*output/],
+    ['current-sensor-output-protection-missing',/(output|secondary).*(esd|clamp|protection).*current|current.*output.*protection/],
+    ['current-sensor-offset-calibration-missing',/(current|sensor).*(offset.*calibration|zero.*calibration|coefficient.*storage)/],
+    ['current-sensor-range-bandwidth-evidence-missing',/(current.*range|bandwidth|response.*time).*(verified|measured|budget|evidence)/],
+    ['current-sensor-thermal-error-evidence-missing',/(current|shunt|sensor).*(temperature.*rise|thermal.*drift|error.*budget).*evidence/],
+    ['current-sensor-saturation-fault-test-missing',/(current|sensor).*(saturation|overcurrent.*recovery|fault.*test|production.*test)/],
+  ])
+  if(/isolated current measurement/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('current-sensor-category-mapped-to-pd-sink')
   if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
   if(/high-density connector adaptation/.test(semanticText))requireCapabilities([['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],['breakout-protection-missing',/connector.*esd|signal.*protection/]])
   return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}

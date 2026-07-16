@@ -294,6 +294,12 @@ test('Board045 requires independently calibrated protected multi-rail power tele
   for(const code of ['power-monitor-rail-connectors-missing','power-monitor-current-sense-elements-missing','power-monitor-kelvin-sense-missing','power-monitor-multichannel-converter-missing','power-monitor-voltage-divider-protection-missing','power-monitor-common-mode-evidence-missing','power-monitor-isolation-grounding-missing','power-monitor-telemetry-interface-missing','power-monitor-rail-protection-missing','power-monitor-calibration-storage-missing','power-monitor-accuracy-thermal-evidence-missing','power-monitor-production-test-missing','power-monitor-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board046 requires a rated isolated and fault-tested current measurement path',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[45],45))
+  assert.equal(gate.ok,false)
+  for(const code of ['isolated-current-sensor-missing','current-conductor-or-shunt-missing','current-isolation-barrier-missing','current-sensor-rated-insulation-missing','current-sensor-primary-protection-missing','current-sensor-secondary-power-missing','current-measurement-output-missing','current-sensor-output-protection-missing','current-sensor-offset-calibration-missing','current-sensor-range-bandwidth-evidence-missing','current-sensor-thermal-error-evidence-missing','current-sensor-saturation-fault-test-missing','current-sensor-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
