@@ -150,6 +150,12 @@ test('Board021 requires a mapped and protected flight-stack peripheral fabric',(
   for(const code of ['custom-outline-exceeds-maximum-area','drone-stack-connectors-missing','drone-peripheral-ports-missing','drone-port-protection-missing','drone-power-rail-distribution-missing','drone-power-monitoring-missing','drone-level-translation-missing','drone-port-ground-return-evidence-missing','drone-stack-pin-map-evidence-missing','drone-peripheral-category-mapped-to-can-controller'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board022 requires complete GNSS RF and inertial sensor signal chains',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[21],21))
+  assert.equal(gate.ok,false)
+  for(const code of ['gnss-receiver-missing','imu-sensor-missing','gnss-antenna-path-missing','gnss-rf-protection-filter-missing','gnss-antenna-bias-evidence-missing','gnss-backup-supply-missing','gnss-pps-interface-missing','imu-low-noise-supply-missing','imu-interrupt-interface-missing','imu-orientation-evidence-missing','gps-imu-category-mapped-to-esp32-shell'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
