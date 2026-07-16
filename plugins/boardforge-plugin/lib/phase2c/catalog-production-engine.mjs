@@ -475,7 +475,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['current-sensor-saturation-fault-test-missing',/(current|sensor).*(saturation|overcurrent.*recovery|fault.*test|production.*test)/],
   ])
   if(/isolated current measurement/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('current-sensor-category-mapped-to-pd-sink')
-  if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
+  if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([
+    ['high-voltage-input-terminal-missing',/(high.voltage|hv).*(terminal|input.*connector)/],
+    ['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],
+    ['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],
+    ['high-voltage-discharge-path-missing',/(high.voltage|divider).*(bleeder|discharge|safe.*voltage)/],
+    ['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],
+    ['voltage-measurement-reference-missing',/(voltage|adc).*(precision.*reference|voltage.*reference)/],
+    ['high-voltage-isolation-data-missing',/(high.voltage|telemetry).*(isolated.*data|digital.*isolator|isolated.*adc)/],
+    ['high-voltage-isolated-power-missing',/(high.voltage|telemetry).*(isolated.*power|isolation.*converter)/],
+    ['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/],
+    ['high-voltage-rating-evidence-missing',/(working.*voltage|overvoltage.*category|pollution.*degree|transient.*voltage).*(verified|declared|evidence)/],
+    ['high-voltage-telemetry-interface-missing',/(voltage|telemetry).*(host.*interface|can|rs.?485|ethernet|usb)/],
+    ['high-voltage-calibration-safety-test-missing',/(high.voltage|voltage.*monitor).*(calibration|hipot|dielectric|production.*test)/],
+  ])
+  if(/protected high-voltage telemetry/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('voltage-monitor-category-mapped-to-pd-sink')
   if(/high-density connector adaptation/.test(semanticText))requireCapabilities([['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],['breakout-protection-missing',/connector.*esd|signal.*protection/]])
   return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}
 }

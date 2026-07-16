@@ -300,6 +300,12 @@ test('Board046 requires a rated isolated and fault-tested current measurement pa
   for(const code of ['isolated-current-sensor-missing','current-conductor-or-shunt-missing','current-isolation-barrier-missing','current-sensor-rated-insulation-missing','current-sensor-primary-protection-missing','current-sensor-secondary-power-missing','current-measurement-output-missing','current-sensor-output-protection-missing','current-sensor-offset-calibration-missing','current-sensor-range-bandwidth-evidence-missing','current-sensor-thermal-error-evidence-missing','current-sensor-saturation-fault-test-missing','current-sensor-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board047 requires a rated protected isolated high-voltage telemetry chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[46],46))
+  assert.equal(gate.ok,false)
+  for(const code of ['high-voltage-input-terminal-missing','high-voltage-divider-missing','high-voltage-input-protection-missing','high-voltage-discharge-path-missing','voltage-measurement-adc-missing','voltage-measurement-reference-missing','high-voltage-isolation-data-missing','high-voltage-isolated-power-missing','high-voltage-spacing-evidence-missing','high-voltage-rating-evidence-missing','high-voltage-telemetry-interface-missing','high-voltage-calibration-safety-test-missing','voltage-monitor-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
