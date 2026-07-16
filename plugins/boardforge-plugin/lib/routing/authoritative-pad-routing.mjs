@@ -185,8 +185,33 @@ export function authoritativeFixedCorridors(input,options){
   if(pdSink.completedNets.length)return pdSink
   const rp2040=rp2040InstrumentFixedCorridors(input,options)
   if(rp2040.completedNets.length)return rp2040
+  const board007=board007CanControllerFixedCorridors(input,options)
+  if(board007.completedNets.length)return board007
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/** Exact first corridor for the hardened Board007 CAN controller. The two
+ * logic endpoints escape outward before entering the contract-reserved B.Cu
+ * MCU_CAN_LOGIC window; any placement change disables this proof. */
+export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiameter=.5}={}){
+  const byNet=new Map(input.nets.map(row=>[row.net,row.endpoints])),at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad)),u=at('CAN_TX','U1','33'),t=at('CAN_TX','U2','1')
+  const signature=[u,t,at('CAN_RX','U1','32'),at('CAN_RX','U2','4'),at('CANH','U2','7'),at('CANL','U2','6')]
+  if(input.bounds?.maxX!==61||input.bounds?.maxY!==37||!signature.every(Boolean)||!near(u.x,35.163)||!near(u.y,17.75)||!near(t.x,40.925)||!near(t.y,17.095))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const a={x:36.3,y:17.75},b={x:40,y:17.095},tracks=[
+    {net:'CAN_TX',layer:'F.Cu',start:{x:u.x,y:u.y},end:a,width:trackWidth},
+    {net:'CAN_TX',layer:'B.Cu',start:a,end:{x:36.3,y:12},width:trackWidth},
+    {net:'CAN_TX',layer:'B.Cu',start:{x:36.3,y:12},end:{x:40,y:12},width:trackWidth},
+    {net:'CAN_TX',layer:'B.Cu',start:{x:40,y:12},end:b,width:trackWidth},
+    {net:'CAN_TX',layer:'F.Cu',start:b,end:{x:t.x,y:t.y},width:trackWidth},
+  ],vias=[{net:'CAN_TX',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'CAN_TX',x:b.x,y:b.y,diameter:viaDiameter,drill:.3}],completedNets=['CAN_TX']
+  const rx=at('CAN_RX','U1','32'),r=at('CAN_RX','U2','4')
+  if(rx&&r&&near(rx.x,35.163)&&near(rx.y,18.25)&&near(r.x,40.925)&&near(r.y,20.905)){
+    const c={x:37,y:19.2},d={x:39.2,y:20.905}
+    tracks.push({net:'CAN_RX',layer:'F.Cu',start:{x:rx.x,y:rx.y},end:{x:35.95,y:18.25},width:trackWidth},{net:'CAN_RX',layer:'F.Cu',start:{x:35.95,y:18.25},end:c,width:trackWidth},{net:'CAN_RX',layer:'B.Cu',start:c,end:{x:37,y:13},width:trackWidth},{net:'CAN_RX',layer:'B.Cu',start:{x:37,y:13},end:{x:39.2,y:13},width:trackWidth},{net:'CAN_RX',layer:'B.Cu',start:{x:39.2,y:13},end:d,width:trackWidth},{net:'CAN_RX',layer:'F.Cu',start:d,end:{x:r.x,y:r.y},width:trackWidth})
+    vias.push({net:'CAN_RX',x:c.x,y:c.y,diameter:viaDiameter,drill:.3},{net:'CAN_RX',x:d.x,y:d.y,diameter:viaDiameter,drill:.3});completedNets.push('CAN_RX')
+  }
+  return{tracks,vias,completedNets,partialNets:[]}
 }
 
 /** Topology-gated first corridor for the six-layer TPS25750 source proof.
@@ -209,6 +234,12 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     tracks.push({net:'3V3',layer:'In3.Cu',start:{x:dogs[0].x,y:laneY},end:{x:dogs[2].x,y:laneY},width:trackWidth})
     completedNets.push('3V3')
   }
+  const compactRail=[at('3V3','U1','2'),at('3V3','U2','38')]
+  if(!completedNets.includes('3V3')&&byNet.get('3V3')?.length===2&&compactRail.every(Boolean)&&near(compactRail[0].x,19.45)&&near(compactRail[0].y,14.438)&&near(compactRail[1].x,36.1)&&near(compactRail[1].y,21.575)){
+    const dogs=[{x:18.3,y:14.438},{x:36.1,y:20.8}]
+    for(let i=0;i<2;i++){tracks.push({net:'3V3',layer:'F.Cu',start:{x:compactRail[i].x,y:compactRail[i].y},end:dogs[i],width:trackWidth});vias.push({net:'3V3',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3});tracks.push({net:'3V3',layer:'In3.Cu',start:dogs[i],end:{x:dogs[i].x,y:10},width:trackWidth})}
+    tracks.push({net:'3V3',layer:'In3.Cu',start:{x:dogs[0].x,y:10},end:{x:dogs[1].x,y:10},width:trackWidth});completedNets.push('3V3')
+  }
   const rail1v5=[at('1V5','U2','4'),at('1V5','C_1V5','1')]
   if(rail1v5.every(Boolean)){
     const dogs=[{x:35,y:23.7},{x:22,y:24.75}]
@@ -219,13 +250,17 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
   if(sda.every(Boolean)){
     const a={x:39,y:26.5},b={x:35,y:25.405}
     tracks.push({net:'EEPROM_SDA',layer:'F.Cu',start:{x:sda[0].x,y:sda[0].y},end:{x:39.7,y:26},width:trackWidth},{net:'EEPROM_SDA',layer:'F.Cu',start:{x:39.7,y:26},end:a,width:trackWidth},{net:'EEPROM_SDA',layer:'F.Cu',start:{x:sda[1].x,y:sda[1].y},end:b,width:trackWidth},{net:'EEPROM_SDA',layer:'In1.Cu',start:a,end:b,width:trackWidth})
-    vias.push({net:'EEPROM_SDA',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SDA',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('EEPROM_SDA')
+    vias.push({net:'EEPROM_SDA',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SDA',x:b.x,y:b.y,diameter:viaDiameter,drill:.3})
+    const pullup=at('EEPROM_SDA','R_EEPROM_SDA','2'),pullupOk=pullup&&byNet.get('EEPROM_SDA')?.length===3&&near(pullup.x,21.825)&&near(pullup.y,29.75);if(pullupOk){const d={x:21.825,y:28.5};tracks.push({net:'EEPROM_SDA',layer:'F.Cu',start:{x:pullup.x,y:pullup.y},end:d,width:trackWidth},{net:'EEPROM_SDA',layer:'In1.Cu',start:d,end:{x:21.825,y:26.2},width:trackWidth},{net:'EEPROM_SDA',layer:'In1.Cu',start:{x:21.825,y:26.2},end:{x:35,y:26.2},width:trackWidth},{net:'EEPROM_SDA',layer:'In1.Cu',start:{x:35,y:26.2},end:b,width:trackWidth});vias.push({net:'EEPROM_SDA',x:d.x,y:d.y,diameter:viaDiameter,drill:.3})}
+    if(byNet.get('EEPROM_SDA')?.length===2||pullupOk)completedNets.push('EEPROM_SDA')
   }
   const scl=[at('EEPROM_SCL','U2','17'),at('EEPROM_SCL','U3','6')]
   if(scl.every(Boolean)){
     const a={x:40.8,y:26.8},b={x:31.5,y:23}
     tracks.push({net:'EEPROM_SCL',layer:'F.Cu',start:{x:scl[0].x,y:scl[0].y},end:{x:40.1,y:26.2},width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:40.1,y:26.2},end:a,width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:scl[1].x,y:scl[1].y},end:{x:32,y:24.135},width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:32,y:24.135},end:b,width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:a,end:{x:43,y:26.8},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:43,y:26.8},end:{x:43,y:20},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:43,y:20},end:{x:31.5,y:20},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:31.5,y:20},end:b,width:trackWidth})
-    vias.push({net:'EEPROM_SCL',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SCL',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('EEPROM_SCL')
+    vias.push({net:'EEPROM_SCL',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SCL',x:b.x,y:b.y,diameter:viaDiameter,drill:.3})
+    const pullup=at('EEPROM_SCL','R_EEPROM_SCL','2'),pullupOk=pullup&&byNet.get('EEPROM_SCL')?.length===3&&near(pullup.x,18.075)&&near(pullup.y,29.75);if(pullupOk){const d={x:18.075,y:28.5};tracks.push({net:'EEPROM_SCL',layer:'F.Cu',start:{x:pullup.x,y:pullup.y},end:d,width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:d,end:{x:18.075,y:29.2},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:18.075,y:29.2},end:{x:31.5,y:29.2},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:31.5,y:29.2},end:b,width:trackWidth});vias.push({net:'EEPROM_SCL',x:d.x,y:d.y,diameter:viaDiameter,drill:.3})}
+    if(byNet.get('EEPROM_SCL')?.length===2||pullupOk)completedNets.push('EEPROM_SCL')
   }
   const cc1=[at('CC1','J2','A5'),at('CC1','U2','28')]
   if(cc1.every(Boolean)){

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { authoritativePadRoutingInput,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
+import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 const scan={boardSize:{bounds:{minX:0,minY:0,maxX:50,maxY:30}},layers:[{name:'F.Cu',type:'signal'},{name:'In1.Cu',type:'signal'},{name:'In2.Cu',type:'signal'},{name:'B.Cu',type:'signal'}],nets:[{name:'USB_D+',number:1},{name:'USB_D-',number:2},{name:'I2C_SCL',number:3},{name:'I2C_SDA',number:4},{name:'BLOCKER',number:5}],tracks:[],vias:[],pads:[
@@ -46,6 +46,21 @@ test('compact authoritative USB fanout uses manufacturable drills and staggered 
   for(let i=0;i<usb.length;i++)for(let j=i+1;j<usb.length;j++)if(usb[i].net!==usb[j].net)assert.ok(Math.hypot(usb[i].x-usb[j].x,usb[i].y-usb[j].y)>=.7-1e-9)
   assert.deepEqual(result.vias.filter(v=>v.net==='USB_DN').slice(0,2).map(v=>[v.x,v.y]),[[8.5,6],[8,7]])
   assert.ok(result.tracks.some(t=>t.net==='USB_DN'&&t.layer==='In2.Cu'&&t.start.y===19&&t.end.y===19))
+})
+test('Board007 admits CAN_TX only for its exact reserved logic corridor topology',()=>{
+  const p=(ref,pad,x,y)=>({ref,pad,x,y}),input={bounds:{maxX:61,maxY:37},nets:[
+    {net:'CAN_TX',endpoints:[p('U1','33',35.163,17.75),p('U2','1',40.925,17.095)]},
+    {net:'CAN_RX',endpoints:[p('U1','32',35.163,18.25),p('U2','4',40.925,20.905)]},
+    {net:'CANH',endpoints:[p('U2','7',45.875,18.365),p('J2','3',54.24,22.83)]},
+    {net:'CANL',endpoints:[p('U2','6',45.875,19.635),p('J2','4',54.24,25.37)]},
+  ]}
+  const result=board007CanControllerFixedCorridors(input,{trackWidth:.2,viaDiameter:.5})
+  assert.deepEqual(result.completedNets,['CAN_TX','CAN_RX'])
+  assert.equal(result.vias.length,4)
+  assert.ok(result.tracks.some(t=>t.net==='CAN_TX'&&t.layer==='B.Cu'&&t.start.y===12&&t.end.y===12))
+  assert.ok(result.tracks.some(t=>t.net==='CAN_RX'&&t.layer==='B.Cu'&&t.start.y===13&&t.end.y===13))
+  const moved=structuredClone(input);moved.nets[0].endpoints[0].x+=.1
+  assert.deepEqual(board007CanControllerFixedCorridors(moved,{}).completedNets,[])
 })
 test('STM32 authoritative corridor proof activates only for its exact endpoint topology',()=>{
   const endpoints=(items)=>items.map(value=>{const [ref,pad]=value.split(':');return{ref,pad,x:ref==='U2'&&pad==='1'?27.275:0,y:ref==='U2'&&pad==='1'?8.345:0}})
