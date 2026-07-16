@@ -227,6 +227,18 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     tracks.push({net:'EEPROM_SCL',layer:'F.Cu',start:{x:scl[0].x,y:scl[0].y},end:{x:40.1,y:26.2},width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:40.1,y:26.2},end:a,width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:scl[1].x,y:scl[1].y},end:{x:32,y:24.135},width:trackWidth},{net:'EEPROM_SCL',layer:'F.Cu',start:{x:32,y:24.135},end:b,width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:a,end:{x:43,y:26.8},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:43,y:26.8},end:{x:43,y:20},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:43,y:20},end:{x:31.5,y:20},width:trackWidth},{net:'EEPROM_SCL',layer:'B.Cu',start:{x:31.5,y:20},end:b,width:trackWidth})
     vias.push({net:'EEPROM_SCL',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'EEPROM_SCL',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('EEPROM_SCL')
   }
+  const cc1=[at('CC1','J2','A5'),at('CC1','U2','28')]
+  if(cc1.every(Boolean)){
+    const a={x:19.75,y:8.5},b={x:40.1,y:18.8}
+    tracks.push({net:'CC1',layer:'F.Cu',start:{x:cc1[0].x,y:cc1[0].y},end:a,width:trackWidth},{net:'CC1',layer:'In4.Cu',start:a,end:{x:15,y:8.5},width:trackWidth},{net:'CC1',layer:'In4.Cu',start:{x:15,y:8.5},end:{x:15,y:18},width:trackWidth},{net:'CC1',layer:'In4.Cu',start:{x:15,y:18},end:{x:40.1,y:18},width:trackWidth},{net:'CC1',layer:'In4.Cu',start:{x:40.1,y:18},end:b,width:trackWidth},{net:'CC1',layer:'F.Cu',start:b,end:{x:cc1[1].x,y:cc1[1].y},width:trackWidth})
+    vias.push({net:'CC1',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'CC1',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('CC1')
+  }
+  const cc2=[at('CC2','J2','B5'),at('CC2','U2','29')]
+  if(cc2.every(Boolean)){
+    const a={x:22.75,y:9},b={x:38.5,y:20.8}
+    tracks.push({net:'CC2',layer:'F.Cu',start:{x:cc2[0].x,y:cc2[0].y},end:a,width:trackWidth},{net:'CC2',layer:'In1.Cu',start:a,end:{x:26,y:9},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:9},end:{x:26,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:15},end:{x:38.5,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:38.5,y:15},end:b,width:trackWidth},{net:'CC2',layer:'F.Cu',start:b,end:{x:39.7,y:20.8},width:trackWidth},{net:'CC2',layer:'F.Cu',start:{x:39.7,y:20.8},end:{x:cc2[1].x,y:cc2[1].y},width:trackWidth})
+    vias.push({net:'CC2',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'CC2',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('CC2')
+  }
   return{tracks,vias,completedNets,partialNets:[]}
 }
 
