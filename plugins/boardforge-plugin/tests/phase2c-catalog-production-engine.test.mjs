@@ -114,6 +114,12 @@ test('Board015 servo controller cannot masquerade as a generic CAN controller',(
   for(const code of ['servo-channel-connectors-missing','servo-pwm-controller-missing','servo-power-entry-protection-missing','servo-rail-bulk-decoupling-missing','servo-rail-current-capability-missing','servo-signal-protection-missing','servo-failsafe-output-state-missing','servo-supply-monitoring-missing'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board016 BLDC controller requires a complete protected three-phase power path',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[15],15))
+  assert.equal(gate.ok,false)
+  for(const code of ['bldc-controller-missing','bldc-three-phase-gate-drive-missing','bldc-power-switches-missing','bldc-current-sense-missing','bldc-motor-connector-missing','bldc-dc-link-decoupling-missing','bldc-power-entry-protection-missing','bldc-rotor-position-interface-missing','bldc-safe-gate-disable-missing','bldc-regeneration-handling-missing'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
