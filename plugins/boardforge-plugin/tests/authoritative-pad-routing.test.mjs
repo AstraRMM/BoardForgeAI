@@ -25,7 +25,6 @@ test('derives ESP32-class topology and obstacles from transformed placed pads',(
   assert.equal(routed.diagnostics.netsRouted,4)
   assert.deepEqual(routed.diagnostics.crossNetCollisions,[])
 })
-
 test('existing foreign occupancy is enforced instead of silently discarded',()=>{
   const base={nets:[{net:'A',endpoints:[{x:5,y:5},{x:45,y:5}]}],bounds:{minX:0,minY:0,maxX:50,maxY:20},layers:['F.Cu'],clearance:.2,trackWidth:.15,viaDiameter:.5}
   const clear=routeCollisionAwareChannelsV2(base)
@@ -33,7 +32,6 @@ test('existing foreign occupancy is enforced instead of silently discarded',()=>
   assert.notDeepEqual(blocked.tracks,clear.tracks)
   assert.deepEqual(blocked.diagnostics.crossNetCollisions,[])
 })
-
 test('compact authoritative USB fanout uses manufacturable drills and staggered foreign-net vias',()=>{
   const ep=(ref,x,y)=>({ref,x,y}),nets=[
     {net:'USB_DP',endpoints:[ep('J1',9.68,6.5),ep('J1',9.68,7.5),ep('U1',29.1,19.25)]},
@@ -49,7 +47,6 @@ test('compact authoritative USB fanout uses manufacturable drills and staggered 
   assert.deepEqual(result.vias.filter(v=>v.net==='USB_DN').slice(0,2).map(v=>[v.x,v.y]),[[8.5,6],[8,7]])
   assert.ok(result.tracks.some(t=>t.net==='USB_DN'&&t.layer==='In2.Cu'&&t.start.y===19&&t.end.y===19))
 })
-
 test('STM32 authoritative corridor proof activates only for its exact endpoint topology',()=>{
   const endpoints=(items)=>items.map(value=>{const [ref,pad]=value.split(':');return{ref,pad,x:ref==='U2'&&pad==='1'?27.275:0,y:ref==='U2'&&pad==='1'?8.345:0}})
   const specs={CANH:['D1:1','J2:3','R1:1','U2:7'],CANL:['D1:2','J2:4','R1:2','U2:6'],GND:['C1:2','C2:2','C3:2','D1:3','J1:2','J2:1','U1:23','U1:35','U1:47','U2:2','U3:1'],'3V3':['C1:1','C2:1','C3:1','J2:2','U1:24','U1:36','U1:48','U2:3','U3:2'],CAN_TX:['U1:33','U2:1'],CAN_RX:['U1:32','U2:4'],I2C_SCL:['J2:5','U1:42'],I2C_SDA:['J2:6','U1:43'],'5V':['J1:1','U3:3']}
@@ -62,7 +59,6 @@ test('STM32 authoritative corridor proof activates only for its exact endpoint t
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CANH').endpoints[0].pad='99'
   assert.deepEqual(stm32AuthoritativeFixedCorridors(changed,{}).completedNets,[])
 })
-
 test('TPS25750 source raw input corridor activates only for exact transformed topology',()=>{
   const p=(ref,pad,x,y)=>({ref,pad,x,y}),input={bounds:{maxX:61,maxY:31},nets:[
     {net:'5V_RAW',endpoints:[p('J1','1',38.5,28.5),p('F1','1',29.288,28.5)]},
@@ -74,9 +70,10 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
     {net:'EEPROM_SDA',endpoints:[p('U2','16',39.7,25.425),p('U3','5',33.575,25.405)]},
     {net:'EEPROM_SCL',endpoints:[p('U2','17',40.1,25.425),p('U3','6',33.575,24.135)]},
     {net:'DRAIN',endpoints:[p('U2','15',39.3,25.425),p('U2','30',39.3,21.575),p('U2','40',40.06,22.425),p('U2','40',40.06,23.5),p('U2','40',40.06,24.575)]},
+    {net:'VBUS',endpoints:[p('U2','23',41.425,22.837),p('U2','32',38.3,21.575),p('J2','A4',18.6,2.32),p('J2','A9',23.4,2.32),p('D2','1',39.75,16.75),p('C_VBUS','1',39.75,9.05)]},
   ]}
   const result=tps25750SourceFixedCorridors(input,{trackWidth:.2,viaDiameter:.6})
-  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V'])
+  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V','VBUS'])
   assert.equal(result.tracks[1].layer,'In4.Cu')
   assert.deepEqual([result.vias[0].x,result.vias[0].y],[27.5,28.5])
   assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='F.Cu').length,5)
@@ -90,10 +87,12 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
   assert.ok(result.tracks.some(x=>x.net==='DRAIN'&&x.layer==='In2.Cu'&&x.start.y===22.425&&x.end.y===24.575))
   assert.equal(result.vias.filter(x=>x.net==='PP5V').length,5)
   assert.ok(result.tracks.some(x=>x.net==='PP5V'&&x.layer==='In2.Cu'&&x.start.y===13&&x.end.y===13))
+  assert.deepEqual(result.partialNets,[])
+  assert.equal(result.vias.filter(x=>x.net==='VBUS').length,7)
+  assert.ok(result.tracks.some(x=>x.net==='VBUS'&&x.start.x===38.3&&x.start.y===21.575))
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CC1').endpoints[0].pad='99'
   assert.deepEqual(tps25750SourceFixedCorridors(changed,{}).completedNets,[])
 })
-
 test('RP2040 frozen topology includes the cumulatively proven SCLK perimeter corridor',()=>{
   const p=(ref,pad,x,y)=>({ref,pad,x,y}),nets=[
     {net:'USB_DP',endpoints:[p('D1','6',18.418,21.05),p('U1','47',33,16.563)]},{net:'USB_DN',endpoints:[p('D1','4',18.418,22.95),p('U1','46',33.4,16.563)]},

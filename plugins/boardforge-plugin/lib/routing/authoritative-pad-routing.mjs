@@ -199,7 +199,7 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
   const dog={x:27.5,y:28.5},tracks=[
     {net:'5V_RAW',layer:'F.Cu',start:{x:f.x,y:f.y},end:dog,width:trackWidth},
     {net:'5V_RAW',layer:'In4.Cu',start:dog,end:{x:j.x,y:j.y},width:trackWidth},
-  ],vias=[{net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3}],completedNets=['5V_RAW']
+  ],vias=[{net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3}],completedNets=['5V_RAW'],partialNets=[]
   const rail=[at('3V3','U1','2'),at('3V3','U2','1'),at('3V3','U2','38'),at('3V3','U3','8'),at('3V3','C_3V3','1')]
   if(rail.every(Boolean)){
     const dogs=[{x:18.3,y:14.438},{x:35,y:22.5},{x:36.1,y:20.8},{x:32.3,y:21.595},{x:29.45,y:9}]
@@ -235,8 +235,8 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
   }
   const cc2=[at('CC2','J2','B5'),at('CC2','U2','29')]
   if(cc2.every(Boolean)){
-    const a={x:22.75,y:9},b={x:38.5,y:20.8}
-    tracks.push({net:'CC2',layer:'F.Cu',start:{x:cc2[0].x,y:cc2[0].y},end:a,width:trackWidth},{net:'CC2',layer:'In1.Cu',start:a,end:{x:26,y:9},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:9},end:{x:26,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:15},end:{x:38.5,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:38.5,y:15},end:b,width:trackWidth},{net:'CC2',layer:'F.Cu',start:b,end:{x:39.7,y:20.8},width:trackWidth},{net:'CC2',layer:'F.Cu',start:{x:39.7,y:20.8},end:{x:cc2[1].x,y:cc2[1].y},width:trackWidth})
+    const a={x:22.75,y:9},b={x:38.5,y:19.2}
+    tracks.push({net:'CC2',layer:'F.Cu',start:{x:cc2[0].x,y:cc2[0].y},end:a,width:trackWidth},{net:'CC2',layer:'In1.Cu',start:a,end:{x:26,y:9},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:9},end:{x:26,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:15},end:{x:38.5,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:38.5,y:15},end:b,width:trackWidth},{net:'CC2',layer:'F.Cu',start:b,end:{x:38.5,y:19.7},width:trackWidth},{net:'CC2',layer:'F.Cu',start:{x:38.5,y:19.7},end:{x:39.7,y:19.7},width:trackWidth},{net:'CC2',layer:'F.Cu',start:{x:39.7,y:19.7},end:{x:cc2[1].x,y:cc2[1].y},width:trackWidth})
     vias.push({net:'CC2',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'CC2',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('CC2')
   }
   const drain=(byNet.get('DRAIN')||[]).filter(p=>p.ref==='U2'),d15=at('DRAIN','U2','15'),d30=at('DRAIN','U2','30'),ep=drain.filter(p=>String(p.pad)==='40').sort((a,b)=>a.y-b.y)
@@ -250,7 +250,15 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     for(let i=0;i<pp.length;i++){tracks.push({net:'PP5V',layer:'F.Cu',start:{x:pp[i].x,y:pp[i].y},end:dogs[i],width:trackWidth});vias.push({net:'PP5V',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3});if(i)tracks.push({net:'PP5V',layer:'In2.Cu',start:dogs[i],end:{x:dogs[i].x,y:13},width:trackWidth})}
     tracks.push({net:'PP5V',layer:'In2.Cu',start:dogs[0],end:{x:36.5,y:25.8},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:36.5,y:25.8},end:{x:45,y:25.8},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:45,y:25.8},end:{x:45,y:13},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:dogs[2].x,y:13},end:{x:45,y:13},width:trackWidth});completedNets.push('PP5V')
   }
-  return{tracks,vias,completedNets,partialNets:[]}
+  const vbus=[at('VBUS','U2','23'),at('VBUS','U2','32'),at('VBUS','J2','A4'),at('VBUS','J2','A9'),at('VBUS','D2','1'),at('VBUS','C_VBUS','1')]
+  if(vbus.every(Boolean)&&[[41.425,22.837],[38.3,21.575],[18.6,2.32],[23.4,2.32],[39.75,16.75],[39.75,9.05]].every(([x,y],i)=>near(vbus[i].x,x)&&near(vbus[i].y,y))){
+    const dogs=[{x:42.2,y:22.837},{x:18.6,y:2.32},{x:23.4,y:2.32},{x:42.2,y:16.75},{x:42.2,y:9.05},{x:38.3,y:20.8}]
+    tracks.push({net:'VBUS',layer:'F.Cu',start:{x:vbus[0].x,y:vbus[0].y},end:dogs[0],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[1].x,y:vbus[1].y},end:dogs[5],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[4].x,y:vbus[4].y},end:dogs[3],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[5].x,y:vbus[5].y},end:dogs[4],width:trackWidth})
+    for(const d of dogs)vias.push({net:'VBUS',x:d.x,y:d.y,diameter:.5,drill:.3})
+    const transition={x:30,y:11};vias.push({net:'VBUS',x:transition.x,y:transition.y,diameter:.5,drill:.3})
+    tracks.push({net:'VBUS',layer:'In2.Cu',start:dogs[1],end:{x:20.5,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:2.32},end:{x:20.5,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:dogs[2],end:{x:21.8,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:21.8,y:2.32},end:{x:21.8,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:11},end:transition,width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:transition,end:{x:47,y:11},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:{x:47,y:9.05},end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[0],end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[3],end:{x:47,y:16.75},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[4],end:{x:47,y:9.05},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[5],end:{x:47,y:20.8},width:trackWidth});completedNets.push('VBUS')
+  }
+  return{tracks,vias,completedNets,partialNets}
 }
 
 /** Fixed, topology-gated corridors for the isolated USB-C PD sink proof. */
