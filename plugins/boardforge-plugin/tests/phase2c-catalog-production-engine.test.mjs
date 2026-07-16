@@ -180,6 +180,12 @@ test('Board026 requires a protected two-sided WiFi protocol gateway',()=>{
   for(const code of ['custom-outline-exceeds-maximum-area','wifi-gateway-radio-missing','wifi-gateway-antenna-network-missing','wifi-gateway-secondary-protocol-missing','wifi-gateway-field-connector-missing','wifi-gateway-interface-protection-missing','wifi-gateway-security-storage-missing','wifi-gateway-provisioning-recovery-missing','wifi-gateway-throughput-evidence-missing','wifi-gateway-burst-power-evidence-missing','wifi-gateway-category-mapped-to-sensor-shell'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board027 requires Ethernet plus a protected second gateway protocol',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[26],26))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','ethernet-mac-controller-missing','ethernet-phy-missing','ethernet-rj45-connector-missing','ethernet-magnetics-missing','ethernet-gateway-second-protocol-missing','ethernet-gateway-second-port-missing','ethernet-gateway-second-port-protection-missing','ethernet-gateway-throughput-evidence-missing','ethernet-gateway-buffering-backpressure-missing','ethernet-gateway-security-storage-missing','ethernet-gateway-recovery-update-missing','ethernet-gateway-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

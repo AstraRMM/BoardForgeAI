@@ -108,6 +108,16 @@ export function validateCatalogSemanticTopology(definition={}){
     if(!hasRole(/phy.*decoupling|ethernet.*decoupling/))errors.push('ethernet-phy-decoupling-missing')
     if(!hasRole(/phy.*(regulator|supply)|ethernet.*power/))errors.push('ethernet-phy-power-missing')
   }
+  if(/wired protocol gateway/.test(semanticText))requireCapabilities([
+    ['ethernet-gateway-second-protocol-missing',/(can|rs.?485|uart|modbus|second.*ethernet).*(controller|transceiver|interface)|protocol.*bridge.*interface/],
+    ['ethernet-gateway-second-port-missing',/(second|field).*(port|connector)|dual.*port.*connector/],
+    ['ethernet-gateway-second-port-protection-missing',/(second|field).*(esd|tvs|isolation|protection)|dual.*port.*protection/],
+    ['ethernet-gateway-throughput-evidence-missing',/(throughput|latency|packet.*rate).*(verified|budget|evidence)/],
+    ['ethernet-gateway-buffering-backpressure-missing',/(buffer|backpressure|flow.*control).*(gateway|bridge)/],
+    ['ethernet-gateway-security-storage-missing',/(secure.*element|credential.*storage|hardware.*key)|gateway.*secure.*storage/],
+    ['ethernet-gateway-recovery-update-missing',/(gateway|ethernet).*(recovery|secure.*update|watchdog)/],
+  ])
+  if(/wired protocol gateway/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('ethernet-gateway-category-mapped-to-pd-sink')
   if(definition.id==='usb-hub'||/four-port usb expansion/i.test(String(definition.prompt||''))){
     const hubControllers=bom.filter(row=>/usb.*hub.*controller|hub.*controller/.test(String(row.role||'').toLowerCase()))
     const upstream=bom.filter(row=>/upstream.*usb|usb.*upstream/.test(String(row.role||'').toLowerCase()))
