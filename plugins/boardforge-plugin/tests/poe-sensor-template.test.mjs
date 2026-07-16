@@ -9,8 +9,9 @@ test('Board009 proposal is source-backed and explicitly blocked pending exact as
  assert.equal(poeSensorProductionProposal.maximumAreaMm2,900)
  assert.match(poeSensorProductionProposal.status,/^BLOCKED_/)
  assert.ok(poeSensorProductionProposal.candidates.some(x=>x.exactMpn==='W5500'))
- assert.ok(poeSensorProductionProposal.candidates.some(x=>x.exactMpn==='Ag9900M'))
- assert.ok(poeSensorProductionProposal.candidates.some(x=>x.role==='POE_MAGJACK'&&x.exactMpn===null))
+ assert.ok(poeSensorProductionProposal.candidates.some(x=>x.exactMpn==='Ag9905LP'))
+ assert.ok(poeSensorProductionProposal.candidates.some(x=>x.exactMpn==='7499010121A'&&/PROHIBITED_AS_POE/.test(x.status)))
+ assert.ok(poeSensorProductionProposal.candidates.some(x=>x.exactMpn==='Q22FA2380184517'))
 })
 
 test('Board009 generic sensor shell fails the PoE architecture gate before generation',()=>{
