@@ -57,6 +57,30 @@ test('USB hub semantic gate requires one upstream and at least four downstream p
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
+test('remaining catalog clones cannot pass without their advertised architecture hardware',()=>{
+  const expected=new Map([
+    [15,'bldc-controller-missing'],[21,'gnss-receiver-missing'],[22,'environmental-sensors-missing'],[23,'lora-radio-missing'],[27,'data-acquisition-front-end-missing'],[31,'soil-sensor-interface-missing'],[38,'compute-module-connector-missing'],[39,'fpga-device-missing'],[43,'encoder-sensor-interface-missing'],[45,'isolated-current-sensor-missing'],[46,'high-voltage-divider-missing'],[47,'high-density-connectors-missing'],
+  ])
+  for(const [index,code]of expected){const definition=catalogDefinition(manifest.boards[index],index),gate=validateCatalogSemanticTopology(definition);assert.equal(gate.ok,false,manifest.boards[index].id);assert.ok(gate.errors.includes(code),`${manifest.boards[index].id}: ${code}`)}
+})
+
+test('all unsupported catalog clones 007-050 fail semantic validation before generation',()=>{
+  const passing=[];for(let index=6;index<manifest.boards.length;index++){const definition=catalogDefinition(manifest.boards[index],index);if(validateCatalogSemanticTopology(definition).ok)passing.push(manifest.boards[index].id)}
+  assert.deepEqual(passing,[])
+})
+
+test('Board012 ESP32 shell cannot masquerade as a USB isolator',()=>{
+  const definition=catalogDefinition(manifest.boards[11],11),gate=validateCatalogSemanticTopology(definition)
+  assert.equal(definition.topologyId,'usb-c-esp32-sensor');assert.equal(gate.ok,false)
+  for(const code of['usb-isolator-device-missing','usb-isolator-isolated-power-missing','usb-isolator-upstream-connector-missing','usb-isolator-downstream-connector-missing','usb-isolator-upstream-esd-missing','usb-isolator-downstream-esd-missing','usb-isolator-upstream-decoupling-missing','usb-isolator-downstream-decoupling-missing','usb-isolator-rating-primary-source-unverified','usb-isolator-power-rating-primary-source-unverified','usb-isolator-creepage-clearance-unverified','usb-isolator-category-mapped-to-esp32-sensor'])assert.ok(gate.errors.includes(code),code)
+})
+
+test('USB isolator gate accepts only complete source-backed isolation evidence',()=>{
+  const roles=['USB data isolator','isolated DC power converter','upstream USB connector','downstream USB connector','upstream USB ESD','downstream USB ESD','upstream rail decoupling','downstream rail decoupling']
+  const definition={id:'usb-isolator',topologyId:'usb-isolator',name:'galvanically isolated USB',bom:roles.map((role,index)=>({ref:`X${index}`,role})),semanticEvidence:{usbIsolation:{isolatorPrimarySourceVerified:true,isolationVrms:2500,isolatedPowerPrimarySourceVerified:true,powerIsolationVrms:1500,keepoutVerified:true,creepageMm:4,clearanceMm:3.2}}}
+  assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
+})
+
 test('Board010 USB bench topology cannot masquerade as an Ethernet controller',()=>{
   const definition=catalogDefinition(manifest.boards[9],9),gate=validateCatalogSemanticTopology(definition)
   assert.equal(gate.ok,false)

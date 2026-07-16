@@ -120,8 +120,40 @@ export function validateCatalogSemanticTopology(definition={}){
     if(!hasRole(/hub.*clock|crystal.*hub|hub.*crystal/))errors.push('usb-hub-clock-evidence-missing')
     if(topology==='rp2040-instrument')errors.push('usb-hub-category-mapped-to-mcu-instrument')
   }
+  if(definition.id==='usb-isolator'||/galvanically isolated usb/i.test(semanticText)){
+    const upstream=bom.filter(row=>/upstream.*usb.*connector|upstream.*connector.*usb|usb.*upstream.*connector/.test(String(row.role||'').toLowerCase()))
+    const downstream=bom.filter(row=>/downstream.*usb.*connector|downstream.*connector.*usb|usb.*downstream.*connector/.test(String(row.role||'').toLowerCase()))
+    const isolation=evidenceUsbIsolation(definition)
+    if(!hasRole(/usb.*isolator|isolator.*usb/))errors.push('usb-isolator-device-missing')
+    if(!hasRole(/isolated.*(power|dc)|(?:power|dc).*isolated/))errors.push('usb-isolator-isolated-power-missing')
+    if(upstream.length!==1)errors.push('usb-isolator-upstream-connector-missing')
+    if(downstream.length!==1)errors.push('usb-isolator-downstream-connector-missing')
+    if(!hasRole(/upstream.*(esd|tvs)|(?:esd|tvs).*upstream/))errors.push('usb-isolator-upstream-esd-missing')
+    if(!hasRole(/downstream.*(esd|tvs)|(?:esd|tvs).*downstream/))errors.push('usb-isolator-downstream-esd-missing')
+    if(!hasRole(/upstream.*decoupling|decoupling.*upstream/))errors.push('usb-isolator-upstream-decoupling-missing')
+    if(!hasRole(/downstream.*decoupling|decoupling.*downstream/))errors.push('usb-isolator-downstream-decoupling-missing')
+    if(!isolation.isolatorPrimarySourceVerified||!(isolation.isolationVrms>0))errors.push('usb-isolator-rating-primary-source-unverified')
+    if(!isolation.isolatedPowerPrimarySourceVerified||!(isolation.powerIsolationVrms>0))errors.push('usb-isolator-power-rating-primary-source-unverified')
+    if(!isolation.keepoutVerified||!(isolation.creepageMm>0)||!(isolation.clearanceMm>0))errors.push('usb-isolator-creepage-clearance-unverified')
+    if(topology==='usb-c-esp32-sensor')errors.push('usb-isolator-category-mapped-to-esp32-sensor')
+  }
+  const requireCapabilities=requirements=>{for(const [code,pattern,minimum=1]of requirements)if(roles.filter(role=>pattern.test(role)).length<minimum)errors.push(code)}
+  if(/three-phase motor control/.test(semanticText))requireCapabilities([['bldc-controller-missing',/bldc|motor.*controller|commutation.*controller/],['bldc-three-phase-gate-drive-missing',/three.phase.*gate|gate.*driver/],['bldc-power-switches-missing',/phase.*mosfet|power.*mosfet|half.bridge/,3],['bldc-current-sense-missing',/phase.*current.*sense|current.*shunt/],['bldc-motor-connector-missing',/motor.*connector|phase.*connector/],['bldc-dc-link-decoupling-missing',/dc.link|bulk.*motor/]])
+  if(/navigation and inertial sensing/.test(semanticText))requireCapabilities([['gnss-receiver-missing',/gnss|gps.*receiver/],['imu-sensor-missing',/imu|inertial.*sensor/],['gnss-antenna-path-missing',/gnss.*antenna|gps.*antenna/]])
+  if(/long-duration environmental logging/.test(semanticText))requireCapabilities([['environmental-sensors-missing',/environmental.*sensor|temperature.*humidity|pressure.*sensor/],['logger-storage-missing',/storage|sd.*card|flash.*log/],['logger-rtc-missing',/rtc|real.time.clock/],['logger-backup-power-missing',/backup.*battery|battery.*backup/]])
+  if(/long-range low-power telemetry/.test(semanticText))requireCapabilities([['lora-radio-missing',/lora|sub.?ghz.*radio/],['lora-antenna-network-missing',/lora.*antenna|sub.?ghz.*antenna|antenna.*match/],['low-power-supply-control-missing',/low.power.*(regulator|load.switch)|sleep.*power/]])
+  if(/multi-channel removable logging/.test(semanticText))requireCapabilities([['data-acquisition-front-end-missing',/adc|data.*acquisition|analog.*front.end/],['multi-channel-input-missing',/multi.channel.*input|channel.*connector/],['removable-storage-missing',/sd.*card|removable.*storage/],['logger-storage-protection-missing',/storage.*esd|card.*esd/]])
+  if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/]])
+  if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])
+  if(/high-speed fpga expansion/.test(semanticText))requireCapabilities([['fpga-device-missing',/fpga/],['fpga-configuration-memory-missing',/configuration.*flash|fpga.*flash/],['fpga-high-speed-connector-missing',/high.speed.*connector|mezzanine/],['fpga-bank-decoupling-missing',/fpga.*decoupling|bank.*decoupling/],['fpga-clock-missing',/fpga.*clock|oscillator/]])
+  if(/position feedback sensing/.test(semanticText))requireCapabilities([['encoder-sensor-interface-missing',/encoder|quadrature|position.*sensor/],['encoder-connector-missing',/encoder.*connector|sensor.*connector/],['encoder-input-protection-missing',/encoder.*(esd|protection)|input.*protection/]])
+  if(/isolated current measurement/.test(semanticText))requireCapabilities([['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation/],['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],['current-measurement-output-missing',/measurement.*output|isolated.*adc/]])
+  if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
+  if(/high-density connector adaptation/.test(semanticText))requireCapabilities([['high-density-connectors-missing',/high.density.*connector|mezzanine/,2],['breakout-pin-map-evidence-missing',/pin.map|signal.*mapping|breakout.*mapping/],['breakout-protection-missing',/connector.*esd|signal.*protection/]])
   return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref),outlineAreaMm2:outlineArea,maximumAreaMm2:maximumAreaMm2??null}
 }
+
+function evidenceUsbIsolation(definition){return definition.semanticEvidence?.usbIsolation||{}}
 
 export async function verifyCatalogAuthoritativePcbSelection({pcbFile,routing}={}){
   const errors=[]
