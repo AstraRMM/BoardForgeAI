@@ -198,6 +198,17 @@ export function validateCatalogSemanticTopology(definition={}){
     ['bms-threshold-evidence-missing',/(overvoltage|undervoltage|overcurrent).*(threshold|protection)/],
   ])
   if(/cell protection and balancing/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('bms-category-mapped-to-pd-sink')
+  if(/safe rechargeable pack charging/.test(semanticText))requireCapabilities([
+    ['battery-charger-controller-missing',/(battery|pack).*(charger|charging.*controller)|charge.*controller/],
+    ['battery-charger-pack-connector-missing',/(battery|pack).*(connector|terminal)|charge.*output.*connector/],
+    ['battery-charger-current-programming-missing',/charge.*(current|sense|program)|current.*program.*charger/],
+    ['battery-charger-voltage-chemistry-evidence-missing',/(chemistry|cell.*count|charge.*voltage).*(verified|configuration|selection)/],
+    ['battery-charger-temperature-qualification-missing',/(battery|pack).*(temperature|thermistor|jeita)|ntc.*charg/],
+    ['battery-charger-termination-status-missing',/charge.*(termination|status|done)|power.good.*charger/],
+    ['battery-charger-reverse-or-power-path-missing',/(battery|charger).*(reverse|power.*path|ideal.*diode)|ship.*mode/],
+    ['battery-charger-safety-timer-missing',/charge.*safety.*timer|watchdog.*charger/],
+  ])
+  if(/safe rechargeable pack charging/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('battery-charger-category-mapped-to-pd-sink')
   if(/three-phase motor control/.test(semanticText))requireCapabilities([['bldc-controller-missing',/bldc|motor.*controller|commutation.*controller/],['bldc-three-phase-gate-drive-missing',/three.phase.*gate|gate.*driver/],['bldc-power-switches-missing',/phase.*mosfet|power.*mosfet|half.bridge/,3],['bldc-current-sense-missing',/phase.*current.*sense|current.*shunt/],['bldc-motor-connector-missing',/motor.*connector|phase.*connector/],['bldc-dc-link-decoupling-missing',/dc.link|bulk.*motor/],['bldc-power-entry-protection-missing',/motor.*(fuse|reverse|surge|tvs)|power.*entry.*protection/],['bldc-rotor-position-interface-missing',/hall.*sensor|encoder.*motor|sensorless.*bemf|back.emf/],['bldc-safe-gate-disable-missing',/gate.*(disable|shutdown)|motor.*failsafe|default.off/],['bldc-regeneration-handling-missing',/regen|regenerat.*(clamp|brak|handling)|brake.*resistor/]])
   if(/navigation and inertial sensing/.test(semanticText))requireCapabilities([['gnss-receiver-missing',/gnss|gps.*receiver/],['imu-sensor-missing',/imu|inertial.*sensor/],['gnss-antenna-path-missing',/gnss.*antenna|gps.*antenna/]])
   if(/long-duration environmental logging/.test(semanticText))requireCapabilities([['environmental-sensors-missing',/environmental.*sensor|temperature.*humidity|pressure.*sensor/],['logger-storage-missing',/storage|sd.*card|flash.*log/],['logger-rtc-missing',/rtc|real.time.clock/],['logger-backup-power-missing',/backup.*battery|battery.*backup/]])
