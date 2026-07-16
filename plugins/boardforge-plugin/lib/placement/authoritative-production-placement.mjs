@@ -16,6 +16,12 @@ const RP2040_TOPOLOGY = {
   R1:{nx:.22,ny:.75,rotations:[0,90,180,270]},R2:{nx:.28,ny:.75,rotations:[0,90,180,270]},
   C1:{nx:.42,ny:.28,rotations:[0,90,180,270]},C2:{nx:.50,ny:.28,rotations:[0,90,180,270]},C3:{nx:.58,ny:.28,rotations:[0,90,180,270]},
 }
+const USB_PD_SINK_TOPOLOGY = {
+  // Rotate the receptacle so its contact row faces the left board edge. The
+  // remaining packages retain collision-aware generic packing behind it.
+  // nx=.21 makes the contact copper tangent to the notch clearance envelope.
+  J1:{nx:.23,ny:.50,rotations:[90]},
+}
 
 export const COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY = Object.freeze({
   mpn: 'ESP32-S3-WROOM-1U-N8R8',
@@ -44,7 +50,7 @@ export function placeAuthoritativeProductionFootprints({
   resolved.sort((a, b) => area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
   const placed = []
   for (const component of resolved) {
-    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : null
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : null
     const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
     const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : candidateTransforms(preference, bounds)
     let winner = null

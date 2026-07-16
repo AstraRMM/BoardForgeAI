@@ -27,7 +27,7 @@ export const approvedProductionAssets=Object.freeze({
   'M20-9990245':entry('M20-9990245','Connector_Generic:Conn_01x02','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',{1:'5V',2:'GND'},'1x2 2.54mm vertical'),
   'STUSB4500QTR':entry('STUSB4500QTR','Interface_USB:STUSB4500QTR','Package_DFN_QFN:QFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.7mm',{1:'CC1DB',2:'CC1',3:'NC',4:'CC2',5:'CC2DB',6:'RESET',7:'SCL',8:'SDA',9:'DISCH',10:'GND',11:'ATTACH',12:'ADDR0',13:'ADDR1',14:'POWER_OK3',15:'GPIO',16:'VBUS_EN_SNK',17:'A_B_SIDE',18:'VBUS_VS_DISCH',19:'ALERT',20:'POWER_OK2',21:'VREG_1V2',22:'VSYS',23:'VREG_2V7',24:'VDD',25:'GND'},'QFN-24-EP'),
   'SI7465DP-T1-GE3':entry('SI7465DP-T1-GE3','Transistor_FET:Q_PMOS_GSD','Package_SO:PowerPAK_SO-8_Single',{1:'S',2:'S',3:'S',4:'G',5:'D',6:'D',7:'D',8:'D'},'PowerPAK-SO-8'),
-  'TPS54202DDCR':entry('TPS54202DDCR','Regulator_Switching:TPS54202DDC','Package_TO_SOT_SMD:SOT-23-6',{1:'BST',2:'GND',3:'FB',4:'EN',5:'VIN',6:'SW'},'SOT-23-6'),
+  'TPS54202DDCR':entry('TPS54202DDCR','Regulator_Switching:TPS54202DDC','Package_TO_SOT_SMD:SOT-23-6',{1:'GND',2:'SW',3:'VIN',4:'FB',5:'EN',6:'BOOT'},'SOT-23-6'),
   'SMAJ24A':entry('SMAJ24A','Device:D_TVS','Diode_SMD:D_SMA',{1:'VBUS_PROTECTED',2:'GND'},'SMA-2'),
   '3413.0218.22':entry('3413.0218.22','Device:Fuse','Resistor_SMD:R_2512_6332Metric',{1:'VBUS_RAW',2:'VBUS_FUSED'},'2410-2'),
   'SRN6045TA-4R7M':entry('SRN6045TA-4R7M','Device:L','Inductor_SMD:L_Bourns_SRN6045TA',{1:'SW',2:'5V'},'6x6mm-2'),

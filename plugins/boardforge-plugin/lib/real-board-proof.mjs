@@ -92,7 +92,7 @@ export const REAL_BOARD_PROOF_BOARDS = [
       bom('D1','SMAJ24A','VBUS TVS','APPROVED_MAPPING','SMAJ24A'),bom('F1','3413.0218.22','input fuse','APPROVED_MAPPING','3413.0218.22'),
       bom('L1','SRN6045TA-4R7M','buck inductor','APPROVED_MAPPING','SRN6045TA-4R7M'),bom('C1','UWT1H100MCL1GB','HV input bulk','APPROVED_MAPPING','UWT1H100MCL1GB'),
       bom('C2','UWT1E220MCL1GB','5V output bulk','APPROVED_MAPPING','UWT1E220MCL1GB'),bom('R_FB_TOP','73.2k','buck feedback top','APPROVED_MAPPING','RC0603FR-0773K2L'),
-      bom('R_FB_BOTTOM','10k','buck feedback bottom','APPROVED_MAPPING','RC0603FR-0710KL'),bom('J2','M20-9990245','5V output','APPROVED_MAPPING','M20-9990245'),
+      bom('R_FB_BOTTOM','10k','buck feedback bottom','APPROVED_MAPPING','RC0603FR-0710KL'),bom('R_GATE_PULLUP','10k','PMOS gate pull-up','APPROVED_MAPPING','RC0603FR-0710KL'),bom('C_BOOT','100n','buck bootstrap capacitor','APPROVED_MAPPING','CL10B104KB8NNNC'),bom('J2','M20-9990245','5V output','APPROVED_MAPPING','M20-9990245'),
     ],
   },
   {
@@ -963,7 +963,7 @@ export function usbCPdSourceCategoryPcbEvidence(){
 }
 
 export function usbCPdSinkCategoryPcbEvidence(){
-  const names=['','GND','VBUS_RAW','VBUS_PROTECTED','VBUS_SWITCHED','5V','CC1','CC2','VBUS_EN_SNK','SW','FB']
+  const names=['','GND','VBUS_RAW','VBUS_PROTECTED','VBUS_SWITCHED','5V','CC1','CC2','VBUS_EN_SNK','SW','FB','BOOT']
   const nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
   const fp=(ref,value,footprint,x,y,w,h,pads)=>({ref,value,footprint,at:{x,y},body:{w,h},pads})
   const footprints=[
@@ -976,7 +976,7 @@ export function usbCPdSinkCategoryPcbEvidence(){
     fp('L1','SRN6045TA-4R7M','Inductor_SMD:L_Bourns_SRN6045',43,16,6,6,[pad('1',-3.5,0,1.5,1.5,n.SW,'SW'),pad('2',3.5,0,1.5,1.5,n['5V'],'5V')]),
     fp('C1','UWT1H100MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',30,28,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n.VBUS_PROTECTED,'VBUS_PROTECTED'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
     fp('C2','UWT1E220MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',46,25,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n['5V'],'5V'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
-    passiveFootprint('R_FB_TOP','73.2k',39,23,n['5V'],'5V',n.FB,'FB'),passiveFootprint('R_FB_BOTTOM','10k',39,27,n.FB,'FB',n.GND,'GND'),
+    passiveFootprint('R_FB_TOP','73.2k',39,23,n['5V'],'5V',n.FB,'FB'),passiveFootprint('R_FB_BOTTOM','10k',39,27,n.FB,'FB',n.GND,'GND'),passiveFootprint('R_GATE_PULLUP','10k',27,22,n.VBUS_PROTECTED,'VBUS_PROTECTED',n.VBUS_EN_SNK,'VBUS_EN_SNK'),passiveFootprint('C_BOOT','100n',39,12,n.BOOT,'BOOT',n.SW,'SW'),
     fp('J2','M20-9990245','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',53,20,3,6,[pad('1',0,-1.3,1,1,n['5V'],'5V'),pad('2',0,1.3,1,1,n.GND,'GND')]),
   ]
   const evidence={nets,footprints,segments:[],vias:[]},byNet=new Map(names.filter(Boolean).map(name=>[name,[]]))
@@ -1393,11 +1393,11 @@ function categorySchematicPinMaps(board) {
       C1: { 1:'3V3', 2:'GND' }, C2: { 1:'3V3', 2:'GND' }, C3: { 1:'3V3', 2:'GND' },
     },
     'usb-c-pd-sink': {
-      J1:{A1:'GND',B12:'GND',A4:'VBUS_RAW',B9:'VBUS_RAW',A5:'CC1',B5:'CC2',S1:'GND'},
-      U1:{1:'CC1',2:'CC2',3:'VBUS_EN_SNK',4:'VBUS_PROTECTED',17:'VBUS_PROTECTED',18:'VBUS_PROTECTED',19:'GND',25:'GND'},
-      Q1:{1:'VBUS_PROTECTED',2:'VBUS_PROTECTED',3:'VBUS_PROTECTED',4:'VBUS_EN_SNK',5:'VBUS_SWITCHED',6:'VBUS_SWITCHED',7:'VBUS_SWITCHED',8:'VBUS_SWITCHED'},
-      U2:{1:'SW',2:'GND',3:'FB',4:'VBUS_SWITCHED',5:'VBUS_SWITCHED',6:'SW'},
-      D1:{1:'VBUS_PROTECTED',2:'GND'},F1:{1:'VBUS_RAW',2:'VBUS_PROTECTED'},L1:{1:'SW',2:'5V'},C1:{1:'VBUS_PROTECTED',2:'GND'},C2:{1:'5V',2:'GND'},R_FB_TOP:{1:'5V',2:'FB'},R_FB_BOTTOM:{1:'FB',2:'GND'},J2:{1:'5V',2:'GND'},
+      J1:{A1:'GND',A12:'GND',B1:'GND',B12:'GND',A4:'VBUS_RAW',A9:'VBUS_RAW',B4:'VBUS_RAW',B9:'VBUS_RAW',A5:'CC1',B5:'CC2',SH:'GND'},
+      U1:{2:'CC1',4:'CC2',10:'GND',16:'VBUS_EN_SNK',18:'VBUS_PROTECTED',22:'VBUS_PROTECTED',24:'VBUS_PROTECTED',25:'GND'},
+      Q1:{1:'VBUS_EN_SNK',2:'VBUS_PROTECTED',3:'VBUS_SWITCHED'},
+      U2:{1:'GND',2:'SW',3:'VBUS_SWITCHED',4:'FB',5:'VBUS_SWITCHED',6:'BOOT'},
+      D1:{1:'VBUS_PROTECTED',2:'GND'},F1:{1:'VBUS_RAW',2:'VBUS_PROTECTED'},L1:{1:'SW',2:'5V'},C1:{1:'VBUS_PROTECTED',2:'GND'},C2:{1:'5V',2:'GND'},R_FB_TOP:{1:'5V',2:'FB'},R_FB_BOTTOM:{1:'FB',2:'GND'},R_GATE_PULLUP:{1:'VBUS_PROTECTED',2:'VBUS_EN_SNK'},C_BOOT:{1:'BOOT',2:'SW'},J2:{1:'5V',2:'GND'},
     },
     'usb-c-pd-source': {
       J1:{1:'5V_RAW',2:'GND'},F1:{1:'5V_RAW',2:'PP5V'},D1:{1:'PP5V',2:'GND'},U1:{1:'GND',2:'3V3',3:'PP5V'},
@@ -1459,6 +1459,7 @@ function categoryPowerFlags(board){
   const topology=board.topologyId||board.id
   if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
   if(topology==='rp2040-instrument')return planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
+  if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',source:{ref:'F1',kind:'fused-external-power'},reason:'The input fuse is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'The protected MOSFET output is the physical source for the downstream buck VIN rail.'}]
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }

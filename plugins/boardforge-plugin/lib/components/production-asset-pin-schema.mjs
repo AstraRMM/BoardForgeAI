@@ -26,3 +26,14 @@ export function planExternalConnectorPowerFlags({powerNet='5V',groundNet='GND',s
     {ref:'#FLG02',symbolLibId:'power:PWR_FLAG',rail:groundNet,source:{ref:sourceRef,kind:`${sourceKind}-return`},reason:`${sourceRef} supplies the external power return through passive connector pins.`},
   ]
 }
+
+export function validateUsbPdSinkBuckTopology(components=[]){
+  const byRef=new Map(components.map(row=>[row.ref,row])),errors=[]
+  const buck=byRef.get('U2'),bootstrap=byRef.get('C_BOOT'),gatePullup=byRef.get('R_GATE_PULLUP')
+  const expect=(component,pin,net,label)=>{if(component?.pinMap?.[pin]!==net)errors.push(`${label}.${pin} must connect to ${net}`)}
+  expect(buck,'1','GND','U2');expect(buck,'2','SW','U2');expect(buck,'3','VBUS_SWITCHED','U2');expect(buck,'4','FB','U2');expect(buck,'5','VBUS_SWITCHED','U2');expect(buck,'6','BOOT','U2')
+  if(!bootstrap)errors.push('C_BOOT bootstrap capacitor is required between BOOT and SW')
+  else if(new Set(Object.values(bootstrap.pinMap||{})).size!==2||!Object.values(bootstrap.pinMap||{}).includes('BOOT')||!Object.values(bootstrap.pinMap||{}).includes('SW'))errors.push('C_BOOT must connect exactly between BOOT and SW')
+  if(!gatePullup||!Object.values(gatePullup.pinMap||{}).includes('VBUS_PROTECTED')||!Object.values(gatePullup.pinMap||{}).includes('VBUS_EN_SNK'))errors.push('R_GATE_PULLUP is required between VBUS_PROTECTED and VBUS_EN_SNK')
+  return{schema:'boardforge.usb-pd-sink-buck-topology-gate.v1',valid:errors.length===0,errors}
+}
