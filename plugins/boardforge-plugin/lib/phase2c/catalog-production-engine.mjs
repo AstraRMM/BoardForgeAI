@@ -299,6 +299,19 @@ export function validateCatalogSemanticTopology(definition={}){
     ['industrial-sensor-temperature-evidence-missing',/(sensor|analog).*(temperature.*range|drift|thermal.*error).*evidence/],
   ])
   if(/rugged analog field sensing/.test(semanticText)&&topology==='stm32-controller')errors.push('industrial-sensor-category-mapped-to-can-controller')
+  if(/robot platform coordination/.test(semanticText))requireCapabilities([
+    ['robotics-real-time-controller-missing',/(robot|motion).*(real.time.*controller|control.*mcu)|deterministic.*robot.*controller/],
+    ['robotics-actuator-interface-missing',/(motor|servo|actuator).*(interface|connector|bus)/],
+    ['robotics-sensor-interface-missing',/(encoder|sensor|imu).*(interface|connector|bus)/],
+    ['robotics-platform-connectors-missing',/(robot|platform).*(connector|port)/,3],
+    ['robotics-interface-protection-missing',/(robot|actuator|sensor|field).*(esd|tvs|protection|isolation)/],
+    ['robotics-power-tree-missing',/(robot|battery).*(power.*tree|regulated.*rail|power.*distribution)/],
+    ['robotics-power-monitoring-missing',/(robot|battery|rail).*(voltage|current).*monitor|power.*telemetry/],
+    ['robotics-emergency-stop-missing',/(emergency.*stop|e.stop|safe.*enable|actuator.*inhibit)/],
+    ['robotics-watchdog-supervisor-missing',/(hardware.*watchdog|safety.*supervisor|brownout.*supervisor)/],
+    ['robotics-safe-default-state-missing',/(robot|actuator).*(default.off|failsafe|reset.*safe)/],
+  ])
+  if(/robot platform coordination/.test(semanticText)&&topology==='stm32-controller')errors.push('robotics-main-category-mapped-to-generic-can-controller')
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/],['agriculture-probe-excitation-missing',/(soil|probe).*(excitation|bias|polarity.*reversal|power.*switch)/],['agriculture-cable-surge-path-missing',/(probe|field.*cable).*(surge|eft|common.mode|chassis.*discharge)/],['agriculture-antenna-network-missing',/(agriculture|radio).*(antenna|matching)|antenna.*field.*node/],['agriculture-energy-source-missing',/(solar|battery).*(charger|energy.*storage|source)|field.*energy.*source/],['agriculture-energy-budget-missing',/(mission.*life|energy.*budget|solar.*balance).*(verified|calculated|evidence)/],['agriculture-local-storage-timebase-missing',/(rtc|timebase|local.*storage|data.*buffer).*(agriculture|field|logger)/],['agriculture-ingress-condensation-missing',/(ingress|ip\d\d|condensation|membrane.*vent).*(verified|protection|evidence)/],['agriculture-corrosion-uv-evidence-missing',/(corrosion|uv|chemical.*exposure).*(verified|protection|evidence)/]])
   if(/remote soil and climate monitoring/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('agriculture-category-mapped-to-indoor-sensor-shell')
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])

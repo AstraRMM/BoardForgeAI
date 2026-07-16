@@ -216,6 +216,12 @@ test('Board032 requires a weatherproof energy-balanced remote agriculture node',
   for(const code of ['soil-sensor-interface-missing','climate-sensor-missing','agriculture-radio-missing','field-interface-protection-missing','agriculture-probe-excitation-missing','agriculture-cable-surge-path-missing','agriculture-antenna-network-missing','agriculture-energy-source-missing','agriculture-energy-budget-missing','agriculture-local-storage-timebase-missing','agriculture-ingress-condensation-missing','agriculture-corrosion-uv-evidence-missing','agriculture-category-mapped-to-indoor-sensor-shell'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board033 requires protected robot interfaces, power and hardware safety',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[32],32))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','robotics-real-time-controller-missing','robotics-actuator-interface-missing','robotics-sensor-interface-missing','robotics-platform-connectors-missing','robotics-interface-protection-missing','robotics-power-tree-missing','robotics-power-monitoring-missing','robotics-emergency-stop-missing','robotics-watchdog-supervisor-missing','robotics-safe-default-state-missing','robotics-main-category-mapped-to-generic-can-controller'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
