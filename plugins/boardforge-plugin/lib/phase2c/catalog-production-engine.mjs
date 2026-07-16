@@ -7,7 +7,9 @@ import { REAL_BOARD_PROOF_BOARDS, runRealBoardProof } from '../real-board-proof.
 import { productionAssetBindings, runPhase2cManufacturingPipeline } from './manufacturing-pipeline.mjs'
 import {createConnectorEarMechanicalFixture,validateConnectorEarMechanicalFixture} from './connector-ear-mechanical-contract.mjs'
 import {createBoard008MechanicalPlacementFixture,validateBoard008MechanicalPlacementFixture} from './board008-mechanical-placement-contract.mjs'
+import {createBoard009IsolationWaistFixture,validateBoard009IsolationWaistFixture} from './board009-isolation-waist-contract.mjs'
 import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
+import {validatePoeSensorArchitecture} from './templates/poe-sensor.mjs'
 
 const execFile=promisify(execFileCallback)
 const repo=path.resolve(import.meta.dirname,'../../../..')
@@ -27,14 +29,17 @@ export function catalogDefinition(board,index=0) {
   if(connectorEarFixture){const mechanical=validateConnectorEarMechanicalFixture(connectorEarFixture);if(!mechanical.ok)throw new Error(`Connector-ear mechanical fixture is invalid: ${mechanical.errors.join('; ')}`)}
   const gatewayFixture=/asymmetric ports-can-gateway/i.test(family)?createBoard008MechanicalPlacementFixture():null
   if(gatewayFixture){const mechanical=validateBoard008MechanicalPlacementFixture(gatewayFixture);if(!mechanical.ok)throw new Error(`CAN-gateway mechanical fixture is invalid: ${mechanical.errors.join('; ')}`)}
+  const poeFixture=/isolation waist-poe-sensor/i.test(family)?createBoard009IsolationWaistFixture():null
+  if(poeFixture){const mechanical=validateBoard009IsolationWaistFixture(poeFixture);if(!mechanical.ok)throw new Error(`PoE-sensor isolation-waist fixture is invalid: ${mechanical.errors.join('; ')}`)}
   return {
     ...structuredClone(productionBase), id:board.slug, topologyId:gateway?'can-gateway':topologyId,
     name:`${board.id} ${title(board.slug)}`,
     prompt:`Build ${board.purpose}. Architecture: ${board.architectureClass}. Required distinguishing behavior: ${(board.distinguishingFeatures||[]).join('; ')}. Preserve the ${family} mechanical intent.`,
     intent:[board.purpose,board.architectureClass,...(board.distinguishingFeatures||[]),`${family} custom mechanical envelope`],
-    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||gatewayFixture?.outline||outlineFor(family,width,height,index), holes:connectorEarFixture?.holes||gatewayFixture?.holes||[],
+    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||gatewayFixture?.outline||poeFixture?.outline||outlineFor(family,width,height,index), holes:connectorEarFixture?.holes||gatewayFixture?.holes||poeFixture?.holes||[],
     ...(connectorEarFixture?{placementTopologyId:'can-controller-connector-ears'}:{}),
     ...(gatewayFixture?{placementTopologyId:'can-gateway-asymmetric-dual-port',mechanicalPlacementContract:gatewayFixture}:{}),
+    ...(poeFixture?{widthMm:poeFixture.widthMm,heightMm:poeFixture.heightMm,placementTopologyId:'poe-sensor-isolation-waist',mechanicalPlacementContract:poeFixture}:{}),
     catalog:{boardId:board.id,minimumFunctionalBlocks:board.minimumFunctionalBlocks,maximumAreaMm2:board.maximumAreaMm2,outlineFamily:family},
   }
 }
@@ -92,6 +97,7 @@ export function validateCatalogSemanticTopology(definition={}){
   const requireCapabilities=requirements=>{for(const [code,pattern,minimum=1]of requirements)if(roles.filter(role=>pattern.test(role)).length<minimum)errors.push(code)}
   const outlineArea=Array.isArray(definition.outlinePoints)&&definition.outlinePoints.length>=3?polygonArea(definition.outlinePoints):null,maximumAreaMm2=definition.catalog?.maximumAreaMm2
   if(Number.isFinite(maximumAreaMm2)&&(!Number.isFinite(outlineArea)||outlineArea>maximumAreaMm2))errors.push('custom-outline-exceeds-maximum-area')
+  if(/ethernet powered sensing|poe-edge|poe sensor/.test(semanticText))errors.push(...validatePoeSensorArchitecture(definition).errors)
   if(topology==='stm32-controller'||topology==='can-gateway'){
     if(!hasRole(/boot.*(bias|strap)|(?:bias|strap).*boot/))errors.push('mcu-boot-bias-network-missing')
     if(!hasRole(/reset.*(bias|rc)|(?:bias|rc).*reset/))errors.push('mcu-reset-network-missing')
