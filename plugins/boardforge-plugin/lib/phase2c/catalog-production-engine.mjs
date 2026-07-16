@@ -49,6 +49,8 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
   const generated=summary.boards[0],projectDir=generated.outputFolder,files=await readdir(projectDir)
   const schematicFile=path.join(projectDir,files.find(name=>name.endsWith('.kicad_sch'))||'missing.kicad_sch')
   const pcbFile=path.join(projectDir,files.find(name=>name.endsWith('.kicad_pcb'))||'missing.kicad_pcb')
+  const authoritativeGate=await verifyCatalogAuthoritativePcbSelection({pcbFile,routing:generated.categoryPcbEvidence?.authoritativeRouting})
+  if(!authoritativeGate.ok){const error=new Error(`Catalog manufacturing refused non-authoritative PCB: ${authoritativeGate.errors.join('; ')}`);error.code='CATALOG_AUTHORITATIVE_PCB_NOT_PROMOTED';error.gate=authoritativeGate;throw error}
   const sourcing=JSON.parse(await readFile(path.join(projectDir,'BoardForge_Make_Sourcable_Report.json'),'utf8'))
   const sourceBytes=(await readFile(pcbFile)).length
   const rustCli=path.join(repo,'rust','target','debug','boardforge-kicad.exe')
@@ -62,6 +64,21 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
   await writeFile(path.join(projectDir,'Reports','BoardForge_Campaign_Report.json'),JSON.stringify(report,null,2)+'\n')
   await writeFile(path.join(projectDir,'Reports','BoardForge_Failure_Fix_History.json'),JSON.stringify(history,null,2)+'\n')
   return {acceptance:manufacturing.acceptance,manufacturingEvidence:manufacturing,production:{generator:'catalog-production-engine',projectDir,definitionDigest:createHash('sha256').update(JSON.stringify(definition)).digest('hex')},catalogReport:report}
+}
+
+export async function verifyCatalogAuthoritativePcbSelection({pcbFile,routing}={}){
+  const errors=[]
+  if(!pcbFile)errors.push('manufacturing-pcb-missing')
+  if(routing?.status!=='CANDIDATE_PROMOTED')errors.push(`authoritative-routing-status:${routing?.status||'missing'}`)
+  if(!routing?.sourcePcb||!pcbFile||path.resolve(routing.sourcePcb)!==path.resolve(pcbFile))errors.push('authoritative-source-path-mismatch')
+  if(!routing?.candidatePcb)errors.push('authoritative-candidate-path-missing')
+  let sourceSha256=null,candidateSha256=null
+  if(errors.length===0){
+    try{sourceSha256=createHash('sha256').update(await readFile(pcbFile)).digest('hex');candidateSha256=createHash('sha256').update(await readFile(routing.candidatePcb)).digest('hex')}
+    catch{errors.push('authoritative-pcb-evidence-unreadable')}
+    if(sourceSha256&&candidateSha256&&sourceSha256!==candidateSha256)errors.push('promoted-source-does-not-match-authoritative-candidate')
+  }
+  return{schema:'boardforge.phase2c.catalog-authoritative-pcb-gate.v1',ok:errors.length===0,errors,pcbFile,routingStatus:routing?.status||null,sourceSha256,candidateSha256}
 }
 
 function topologyFor(board,index){const a=String(board.architectureClass||'').toLowerCase();if(/fieldbus|can|industrial|control/.test(a))return'stm32-controller';if(/usb-c-power|battery|power/.test(a))return'usb-c-pd-sink';if(/usb|test|digital/.test(a))return'rp2040-instrument';if(/wireless|radio|sensor/.test(a))return'usb-c-esp32-sensor';return topologyIds[index%topologyIds.length]}
