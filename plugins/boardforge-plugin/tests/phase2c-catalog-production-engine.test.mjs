@@ -162,6 +162,12 @@ test('Board023 requires a durable low-power environmental logging chain',()=>{
   for(const code of ['environmental-sensors-missing','logger-storage-missing','logger-rtc-missing','logger-backup-power-missing','logger-controller-missing','logger-storage-protection-missing','logger-sensor-power-control-missing','logger-low-power-evidence-missing','logger-watchdog-brownout-missing','logger-sensor-self-heating-evidence-missing','logger-condensation-protection-missing','environmental-logger-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board024 requires a region-qualified low-power LoRa RF chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[23],23))
+  assert.equal(gate.ok,false)
+  for(const code of ['lora-radio-missing','lora-antenna-network-missing','low-power-supply-control-missing','lora-region-frequency-evidence-missing','lora-rf-filter-match-missing','lora-rf-esd-missing','lora-reference-clock-missing','lora-host-control-interface-missing','lora-tx-current-decoupling-missing','lora-link-budget-evidence-missing','lora-category-mapped-to-esp32-shell'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
