@@ -366,6 +366,19 @@ export function validateCatalogSemanticTopology(definition={}){
     ['touch-production-raw-count-test-missing',/(touch|electrode).*(raw.*count|production.*test|sensitivity.*test)/],
   ])
   if(/capacitive user input/.test(semanticText)&&topology==='stm32-controller')errors.push('touch-interface-category-mapped-to-can-controller')
+  if(/display and operator controls/.test(semanticText))requireCapabilities([
+    ['hmi-display-interface-missing',/(display|lcd|oled).*(connector|interface|controller)/],
+    ['hmi-display-power-backlight-missing',/(display|backlight).*(driver|power.*rail|current.*control)/],
+    ['hmi-operator-controls-missing',/(button|encoder|touch|keypad).*(operator|control|input)|operator.*control/],
+    ['hmi-control-protection-missing',/(operator|button|encoder|touch).*(esd|protection|filter)/],
+    ['hmi-application-controller-missing',/(hmi|display).*(controller|graphics.*mcu|application.*processor)/],
+    ['hmi-ui-storage-missing',/(font|graphic|ui).*(flash|storage)|display.*asset.*storage/],
+    ['hmi-host-interface-missing',/(hmi|operator).*(host.*connector|can|rs.?485|ethernet|usb.*device)/],
+    ['hmi-watchdog-recovery-missing',/(hmi|display).*(watchdog|recovery|brownout)/],
+    ['hmi-display-timing-evidence-missing',/(frame.*rate|pixel.*clock|display.*timing|memory.*bandwidth).*(verified|budget|evidence)/],
+    ['hmi-safe-state-evidence-missing',/(hmi|operator).*(safe.*state|fault.*indication|failsafe).*evidence/],
+  ])
+  if(/display and operator controls/.test(semanticText)&&topology==='rp2040-instrument')errors.push('hmi-category-mapped-to-usb-instrument')
   if(/remote soil and climate monitoring/.test(semanticText))requireCapabilities([['soil-sensor-interface-missing',/soil.*sensor|moisture.*interface/],['climate-sensor-missing',/climate.*sensor|temperature.*humidity/],['agriculture-radio-missing',/lora|cellular|wireless.*radio/],['field-interface-protection-missing',/field.*protection|sensor.*esd|surge.*sensor/],['agriculture-probe-excitation-missing',/(soil|probe).*(excitation|bias|polarity.*reversal|power.*switch)/],['agriculture-cable-surge-path-missing',/(probe|field.*cable).*(surge|eft|common.mode|chassis.*discharge)/],['agriculture-antenna-network-missing',/(agriculture|radio).*(antenna|matching)|antenna.*field.*node/],['agriculture-energy-source-missing',/(solar|battery).*(charger|energy.*storage|source)|field.*energy.*source/],['agriculture-energy-budget-missing',/(mission.*life|energy.*budget|solar.*balance).*(verified|calculated|evidence)/],['agriculture-local-storage-timebase-missing',/(rtc|timebase|local.*storage|data.*buffer).*(agriculture|field|logger)/],['agriculture-ingress-condensation-missing',/(ingress|ip\d\d|condensation|membrane.*vent).*(verified|protection|evidence)/],['agriculture-corrosion-uv-evidence-missing',/(corrosion|uv|chemical.*exposure).*(verified|protection|evidence)/]])
   if(/remote soil and climate monitoring/.test(semanticText)&&topology==='usb-c-esp32-sensor')errors.push('agriculture-category-mapped-to-indoor-sensor-shell')
   if(/compact compute-module carrier/.test(semanticText))requireCapabilities([['compute-module-connector-missing',/compute.*module.*connector|module.*socket/],['carrier-power-tree-missing',/carrier.*power|module.*regulator|power.*sequenc/],['carrier-storage-interface-missing',/emmc|sd.*card|storage.*connector/],['carrier-high-speed-io-missing',/pcie|ethernet|usb.*host|csi|dsi/]])
