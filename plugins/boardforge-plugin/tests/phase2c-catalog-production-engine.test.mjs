@@ -264,6 +264,12 @@ test('Board040 requires a bank-planned sequenced high-speed FPGA platform',()=>{
   for(const code of ['fpga-device-missing','fpga-configuration-memory-missing','fpga-high-speed-connector-missing','fpga-bank-decoupling-missing','fpga-clock-missing','fpga-bank-voltage-plan-missing','fpga-power-sequencing-missing','fpga-jtag-reset-missing','fpga-mezzanine-pin-map-missing','fpga-high-speed-channel-evidence-missing','fpga-pdn-evidence-missing','fpga-timing-analysis-missing','fpga-thermal-solution-missing','fpga-category-mapped-to-usb-instrument'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board041 requires protected deterministic multi-channel digital capture',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[40],40))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','logic-analyzer-probe-connectors-missing','logic-analyzer-input-channels-missing','logic-analyzer-input-protection-missing','logic-analyzer-level-threshold-missing','logic-analyzer-capture-engine-missing','logic-analyzer-trigger-engine-missing','logic-analyzer-sample-clock-missing','logic-analyzer-capture-buffer-missing','logic-analyzer-host-stream-missing','logic-analyzer-bandwidth-evidence-missing','logic-analyzer-timing-evidence-missing','logic-analyzer-production-test-missing','logic-analyzer-category-mapped-to-generic-usb-instrument'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

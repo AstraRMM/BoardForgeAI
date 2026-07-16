@@ -385,6 +385,21 @@ export function validateCatalogSemanticTopology(definition={}){
   if(/compact compute-module carrier/.test(semanticText)&&topology==='usb-c-pd-sink')errors.push('linux-carrier-category-mapped-to-pd-sink')
   if(/high-speed fpga expansion/.test(semanticText))requireCapabilities([['fpga-device-missing',/fpga/],['fpga-configuration-memory-missing',/configuration.*flash|fpga.*flash/],['fpga-high-speed-connector-missing',/high.speed.*connector|mezzanine/],['fpga-bank-decoupling-missing',/fpga.*decoupling|bank.*decoupling/],['fpga-clock-missing',/fpga.*clock|oscillator/],['fpga-bank-voltage-plan-missing',/(fpga|io.*bank).*(vcco|bank.*voltage|io.*standard).*plan/],['fpga-power-sequencing-missing',/(fpga|core|aux|transceiver).*(power.*sequence|sequencer|power.good)/],['fpga-jtag-reset-missing',/(fpga).*(jtag|configuration.*reset|program.*header)/],['fpga-mezzanine-pin-map-missing',/(fpga|mezzanine).*(pin.*map|lane.*map|connector.*mapping)/],['fpga-high-speed-channel-evidence-missing',/(transceiver|pcie|high.speed).*(impedance|loss|skew|channel.*budget).*evidence/],['fpga-pdn-evidence-missing',/(fpga|core.*rail).*(pdn|target.*impedance|transient.*current).*evidence/],['fpga-timing-analysis-missing',/(fpga|design).*(timing.*analysis|static.*timing|constraints).*evidence/],['fpga-thermal-solution-missing',/(fpga).*(thermal.*analysis|heatsink|junction.*temperature)/]])
   if(/high-speed fpga expansion/.test(semanticText)&&topology==='rp2040-instrument')errors.push('fpga-category-mapped-to-usb-instrument')
+  if(/multi-channel digital capture/.test(semanticText))requireCapabilities([
+    ['logic-analyzer-probe-connectors-missing',/(logic|digital).*(probe.*connector|channel.*connector|input.*header)/],
+    ['logic-analyzer-input-channels-missing',/(logic|digital).*(input.*channel|capture.*channel|channel.*bank)/],
+    ['logic-analyzer-input-protection-missing',/(probe|digital.*input).*(esd|overvoltage|clamp|protection)/],
+    ['logic-analyzer-level-threshold-missing',/(logic|digital.*input).*(level.*translator|threshold|comparator|voltage.*domain)/],
+    ['logic-analyzer-capture-engine-missing',/(logic|capture).*(fpga|cpld|pio|capture.*engine|sampler)/],
+    ['logic-analyzer-trigger-engine-missing',/(logic|capture).*(hardware.*trigger|trigger.*engine|pattern.*trigger)/],
+    ['logic-analyzer-sample-clock-missing',/(logic|capture).*(sample.*clock|timebase|oscillator|pll)/],
+    ['logic-analyzer-capture-buffer-missing',/(logic|capture).*(sram|fifo|capture.*buffer|memory)/],
+    ['logic-analyzer-host-stream-missing',/(logic|analyzer).*(usb|ethernet|host.*interface|streaming)/],
+    ['logic-analyzer-bandwidth-evidence-missing',/(sample.*rate|input.*bandwidth|toggle.*rate).*(verified|measured|budget|evidence)/],
+    ['logic-analyzer-timing-evidence-missing',/(setup|hold|aperture|channel.*skew|timing.*uncertainty).*(verified|measured|budget|evidence)/],
+    ['logic-analyzer-production-test-missing',/(logic|capture).*(loopback|known.*pattern|production.*test|channel.*test)/],
+  ])
+  if(/multi-channel digital capture/.test(semanticText)&&topology==='rp2040-instrument')errors.push('logic-analyzer-category-mapped-to-generic-usb-instrument')
   if(/position feedback sensing/.test(semanticText))requireCapabilities([['encoder-sensor-interface-missing',/encoder|quadrature|position.*sensor/],['encoder-connector-missing',/encoder.*connector|sensor.*connector/],['encoder-input-protection-missing',/encoder.*(esd|protection)|input.*protection/]])
   if(/isolated current measurement/.test(semanticText))requireCapabilities([['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation/],['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],['current-measurement-output-missing',/measurement.*output|isolated.*adc/]])
   if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
