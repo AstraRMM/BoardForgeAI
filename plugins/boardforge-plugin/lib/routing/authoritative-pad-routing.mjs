@@ -262,6 +262,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     for(const d of dogs)tracks.push({net:'5V',layer:'In2.Cu',start:d,end:{x:d.x,y:7},width:trackWidth})
     tracks.push({net:'5V',layer:'In2.Cu',start:{x:dogs[0].x,y:7},end:{x:dogs[1].x,y:7},width:trackWidth});completedNets.push('5V')
   }
+  const swclk=[at('SWCLK','J1','3'),at('SWCLK','U1','37')]
+  if(swclk.every(Boolean)&&near(swclk[0].x,11.59)&&near(swclk[0].y,19)&&near(swclk[1].x,33.75)&&near(swclk[1].y,14.838)){
+    const dog={x:33.75,y:13.7}
+    tracks.push({net:'SWCLK',layer:'F.Cu',start:{x:swclk[1].x,y:swclk[1].y},end:dog,width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:dog,end:{x:33.75,y:8},width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:{x:swclk[0].x,y:8},end:{x:33.75,y:8},width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:{x:swclk[0].x,y:8},end:{x:swclk[0].x,y:swclk[0].y},width:trackWidth})
+    vias.push({net:'SWCLK',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('SWCLK')
+  }
   return{tracks,vias,completedNets,partialNets}
 }
 
