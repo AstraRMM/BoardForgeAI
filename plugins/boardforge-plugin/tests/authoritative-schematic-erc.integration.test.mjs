@@ -24,6 +24,14 @@ test('NUP2105 production asset resolves to authoritative KiCad symbol and common
   assert.equal(asset.pinSchema.valid,true)
 })
 
+test('RP2040 production asset resolves from the installed KiCad 10 manufacturer library',()=>{
+  const asset=approvedAssetFor('SC0914(13)')
+  const symbol=resolveAuthoritativeKiCadSymbol(asset.symbol.libId)
+  assert.equal(asset.symbol.libId,'MCU_RaspberryPi:RP2040')
+  assert.equal(symbol.pinMap['52'],'QSPI_SCLK')
+  assert.equal(symbol.pinMap['57'],'GND')
+})
+
 test('power flags fail closed unless a named real source component drives the asserted rail',()=>{
   const components=[component('J1','USB4105-GF-A')]
   assert.throws(()=>generateSchematicModel({name:'empty-rail'},components,{powerFlags:[{rail:'',source:{ref:'J1',kind:'external'}}]}),/must name a driven rail/)
@@ -66,6 +74,28 @@ test('authoritative STM32 controller schematic has real KiCad ERC zero with J1-b
   try{
     const sch=path.join(dir,'stm32.kicad_sch'),report=path.join(dir,'erc.json')
     await writeFile(sch,kicadSchematicFromModel({name:'authoritative-stm32-controller'},model),'utf8')
+    const cli=await detectKiCadCli(),result=await runErc({schFile:sch,outputFile:report,kicadCliPath:cli.path})
+    assert.equal(result.exitCode,0,`${result.stderr}\n${await readFile(report,'utf8')}`)
+    assert.deepEqual(result.issueCounts,{errors:0,warnings:0})
+  }finally{await rm(dir,{recursive:true,force:true})}
+})
+
+test('authoritative RP2040 instrument has real KiCad ERC zero with USB-backed VBUS flags',{skip:!existsSync('C:\\Program Files\\KiCad\\10.0\\bin\\kicad-cli.exe'),timeout:120000},async()=>{
+  const components=[
+    component('U1','SC0914(13)'), component('U2','W25Q128JVSIQ'),
+    component('U3','MCP1700T-3302E/TT',{1:'GND',2:'3V3',3:'VBUS'}),
+    component('J1','USB4105-GF-A',{A1:'GND',A12:'GND',B1:'GND',B12:'GND',A4:'VBUS',A9:'VBUS',B4:'VBUS',B9:'VBUS',A5:'CC1',B5:'CC2',A6:'USB_DP_CONN',B6:'USB_DP_CONN',A7:'USB_DN_CONN',B7:'USB_DN_CONN',SH:'GND'}),
+    component('D1','USBLC6-2SC6'), component('J2','M20-9990645',{1:'GND',2:'3V3',3:'I2C_SCL',4:'I2C_SDA',5:'SWCLK',6:'SWDIO'}),
+    component('R1','RC0603FR-075K1L',{1:'CC1',2:'GND'}), component('R2','RC0603FR-075K1L',{1:'CC2',2:'GND'}),
+    component('C1','CL10B104KB8NNNC'), component('C2','CL10B104KB8NNNC'), component('C3','CL10B104KB8NNNC'),
+  ]
+  const nets=[...new Set(components.flatMap(row=>Object.values(row.pinMap)))].map(name=>({name}))
+  const flags=planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
+  const model=generateSchematicModel({name:'authoritative-rp2040-instrument'},components,{nets,emitConnectivityLabels:true,powerFlags:flags})
+  const dir=await mkdtemp(path.join(os.tmpdir(),'boardforge-authoritative-rp2040-erc-'))
+  try{
+    const sch=path.join(dir,'rp2040.kicad_sch'),report=path.join(dir,'erc.json')
+    await writeFile(sch,kicadSchematicFromModel({name:'authoritative-rp2040-instrument'},model),'utf8')
     const cli=await detectKiCadCli(),result=await runErc({schFile:sch,outputFile:report,kicadCliPath:cli.path})
     assert.equal(result.exitCode,0,`${result.stderr}\n${await readFile(report,'utf8')}`)
     assert.deepEqual(result.issueCounts,{errors:0,warnings:0})

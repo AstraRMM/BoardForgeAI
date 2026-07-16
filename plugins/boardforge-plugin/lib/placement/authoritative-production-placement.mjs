@@ -9,6 +9,13 @@ const ESP32_TOPOLOGY = {
   R1: { nx: .30, ny: .68, rotations: [0, 90, 180, 270] },
   R2: { nx: .37, ny: .68, rotations: [0, 90, 180, 270] },
 }
+const RP2040_TOPOLOGY = {
+  J1:{nx:.13,ny:.50,rotations:[0,180]},D1:{nx:.27,ny:.55,rotations:[0,180]},
+  U1:{nx:.50,ny:.50,rotations:[0,90,270,180]},U2:{nx:.70,ny:.50,rotations:[0,180,90,270]},
+  U3:{nx:.38,ny:.25,rotations:[0,180,90,270]},J2:{nx:.88,ny:.50,rotations:[0,180]},
+  R1:{nx:.22,ny:.75,rotations:[0,90,180,270]},R2:{nx:.28,ny:.75,rotations:[0,90,180,270]},
+  C1:{nx:.42,ny:.28,rotations:[0,90,180,270]},C2:{nx:.50,ny:.28,rotations:[0,90,180,270]},C3:{nx:.58,ny:.28,rotations:[0,90,180,270]},
+}
 
 export const COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY = Object.freeze({
   mpn: 'ESP32-S3-WROOM-1U-N8R8',
@@ -37,7 +44,7 @@ export function placeAuthoritativeProductionFootprints({
   resolved.sort((a, b) => area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
   const placed = []
   for (const component of resolved) {
-    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : null
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : null
     const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
     const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : candidateTransforms(preference, bounds)
     let winner = null
@@ -109,7 +116,9 @@ function legalPlacement(rect, body, pads, outline, holes, placed, rules, rfPolic
 }
 
 function transformRect(rect, { x, y, rotation }) {
-  const radians = rotation * Math.PI / 180, c = Math.cos(radians), s = Math.sin(radians)
+  // Match KiCad's Y-down board-coordinate rotation convention. This matters
+  // for asymmetric courtyards such as vertical pin headers.
+  const radians = -rotation * Math.PI / 180, c = Math.cos(radians), s = Math.sin(radians)
   const points = rectCorners(rect).map(p => ({ x: x + p.x * c - p.y * s, y: y + p.x * s + p.y * c }))
   const b = polygonBounds(points)
   return { minX: b.minX, minY: b.minY, maxX: b.maxX, maxY: b.maxY, x: b.minX, y: b.minY, width: b.width, height: b.height, source: rect.source }

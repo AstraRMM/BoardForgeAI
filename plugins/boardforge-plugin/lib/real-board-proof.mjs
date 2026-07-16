@@ -21,7 +21,7 @@ import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
 import { COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY, placeAuthoritativeProductionFootprints } from './placement/authoritative-production-placement.mjs'
 import { generateTps25750GlobalHandoff, generateTps25750LocalBreakoutV4 } from './routing/dense-qfn-power-breakout-planner.mjs'
-import { regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
+import { createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -839,10 +839,16 @@ export function usbEsp32CategoryPcbEvidence() {
 }
 
 async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
-  const candidateDir=path.join(projectDir,'.boardforge-candidates'),candidateFile=path.join(candidateDir,`${path.basename(pcbFile,'.kicad_pcb')}.authoritative-route.kicad_pcb`)
+  const candidateDir=path.join(projectDir,'.boardforge-candidates'),stem=path.basename(pcbFile,'.kicad_pcb'),copperlessFile=path.join(candidateDir,`${stem}.authoritative-copperless.kicad_pcb`),candidateFile=path.join(candidateDir,`${stem}.authoritative-route.kicad_pcb`)
   await mkdir(candidateDir,{recursive:true})
   try{
-    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile,candidateFile})
+    const copperless=await createCopperlessAuthoritativeCandidate({pcbFile,candidateFile:copperlessFile})
+    const copperlessScan=await scanKiCadProject(copperlessFile)
+    // The generic channel search is combinatorial on dense MCU fanout. Preserve
+    // a deterministic zero-copper transaction baseline instead of consuming
+    // the campaign watchdog or falling back to stale proof-coordinate copper.
+    if((copperlessScan.pads?.length||0)>80)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
+    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile})
     if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
     const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
     const rules=await readFile(sourceRules,'utf8').catch(()=>null);if(rules)await writeFile(candidateRules,rules,'utf8')
@@ -861,7 +867,7 @@ function authoritativeProductionPlacement(board,projected){
     if(!asset||!component)throw new Error(`Approved authoritative placement asset is missing for ${row.ref}`)
     return {ref:row.ref,value:row.value,mpn:row.mpn,footprint:asset.footprint.libId,pinMap:topologyPinMaps[row.ref]||asset.footprintPadMap}
   })
-  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:'generic'})
+  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:board.topologyId||'generic'})
 }
 
 function footprintPadToSymbolPin(board,ref,pad){
@@ -1372,7 +1378,7 @@ function categorySchematicPinMaps(board) {
     },
     'rp2040-instrument': {
       U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,
-      U3: { 1:'GND', 2:'3V3', 3:'VBUS' }, J1: { A1:'GND', B12:'GND', A4:'VBUS', B9:'VBUS', A5:'CC1', B5:'CC2', A6:'USB_DP_CONN', B6:'USB_DP_CONN', A7:'USB_DN_CONN', B7:'USB_DN_CONN', S1:'GND' },
+      U3: { 1:'GND', 2:'3V3', 3:'VBUS' }, J1: { A1:'GND', A12:'GND', B1:'GND', B12:'GND', A4:'VBUS', A9:'VBUS', B4:'VBUS', B9:'VBUS', A5:'CC1', B5:'CC2', A6:'USB_DP_CONN', B6:'USB_DP_CONN', A7:'USB_DN_CONN', B7:'USB_DN_CONN', SH:'GND' },
       D1: approvedAssetFor('USBLC6-2SC6').pinMap,
       J2: { 1:'GND', 2:'3V3', 3:'I2C_SCL', 4:'I2C_SDA', 5:'SWCLK', 6:'SWDIO' },
       R1: { 1:'CC1', 2:'GND' }, R2: { 1:'CC2', 2:'GND' },
@@ -1444,6 +1450,7 @@ function categorySchematicPinMaps(board) {
 function categoryPowerFlags(board){
   const topology=board.topologyId||board.id
   if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
+  if(topology==='rp2040-instrument')return planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }

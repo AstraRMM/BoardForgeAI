@@ -678,7 +678,7 @@ function inferGroup(component) {
 }
 
 function isPowerNet(name) {
-  return /^(GND|3V3|5V|VIN|VBAT|VUSB|VCC|VDD|VDDA|CHASSIS)$/i.test(name || '')
+  return /^(GND|3V3|5V|VIN|VBAT|VBUS|VUSB|VCC|VDD|VDDA|CHASSIS)$/i.test(name || '')
 }
 
 function safe(value) {

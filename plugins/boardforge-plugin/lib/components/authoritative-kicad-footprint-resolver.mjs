@@ -35,7 +35,9 @@ export function extractFootprintPads(definition){
 }
 
 export function transformAuthoritativePads(pads,{x=0,y=0,rotation=0,side='front'}={}){
-  const angle=rotation*Math.PI/180,mirror=side==='back'?-1:1
+  // KiCad board coordinates are Y-down, so a positive footprint rotation is
+  // the opposite sign from the conventional Cartesian transform.
+  const angle=-rotation*Math.PI/180,mirror=side==='back'?-1:1
   return pads.map(pad=>{const lx=pad.x*mirror,ly=pad.y,px=x+lx*Math.cos(angle)-ly*Math.sin(angle),py=y+lx*Math.sin(angle)+ly*Math.cos(angle);return{...pad,x:px,y:py,rotation:(pad.rotation*mirror+rotation+360)%360,side}})
 }
 

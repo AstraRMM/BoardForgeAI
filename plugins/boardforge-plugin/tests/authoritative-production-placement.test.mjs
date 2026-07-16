@@ -31,6 +31,17 @@ test('authoritative placement fails closed when exact courtyards cannot fit', ()
   assert.throws(() => placeAuthoritativeProductionFootprints({ components:[{ref:'U1',footprint:'huge'}], outline:[{x:0,y:0},{x:5,y:0},{x:5,y:5},{x:0,y:5}], resolver:()=>fp('huge',10,10,[{number:'1',x:0,y:0,widthMm:1,heightMm:1,layers:['F.Cu']}]) }), error => error.code === 'AUTHORITATIVE_PRODUCTION_PLACEMENT_BLOCKED')
 })
 
+test('asymmetric courtyard rotation follows KiCad board coordinates', () => {
+  const header=fp('Connector:AsymmetricHeader',4,16,[{number:'1',x:0,y:0,widthMm:1,heightMm:1,layers:['*.Cu']},{number:'6',x:0,y:12.7,widthMm:1,heightMm:1,layers:['*.Cu']}])
+  // Replace the centered test courtyard with the installed-header pattern:
+  // the footprint origin is at pad 1 and the body extends in +Y.
+  header.definition='(footprint "Connector:AsymmetricHeader" (fp_rect (start -2 -2) (end 2 14.7) (layer "F.CrtYd")))'
+  const result=placeAuthoritativeProductionFootprints({components:[{ref:'J1',footprint:'header',fixedAt:{x:20,y:20,rotation:270}}],outline:[{x:0,y:0},{x:40,y:0},{x:40,y:40},{x:0,y:40}],resolver:()=>header})
+  const placed=result.placements[0]
+  assert.ok(placed.occupancy.minX<6,`expected KiCad -Y projection, got minX ${placed.occupancy.minX}`)
+  assert.ok(Math.abs(placed.endpoints.find(row=>row.pad==='6').x-7.3)<1e-9)
+})
+
 test('installed ESP32 RF courtyard is honored instead of shrinking to proof body geometry', () => {
   const occupancy = footprintOccupancy(resolveAuthoritativeKiCadFootprint('RF_Module:ESP32-S3-WROOM-1'))
   assert.equal(occupancy.source, 'F.CrtYd')
