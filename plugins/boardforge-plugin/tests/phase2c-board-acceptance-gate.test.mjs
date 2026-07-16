@@ -9,8 +9,13 @@ import { evaluateBoardAcceptance } from '../lib/challenge/board-acceptance-gate.
 async function fixture() {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'bf-acceptance-'))
   const put = async (name, text) => { const file = path.join(dir, name); await writeFile(file, text); return file }
-  const schematic = await put('board.kicad_sch', '(kicad_sch '.padEnd(80, ')'))
-  const pcb = await put('board.kicad_pcb', '(kicad_pcb '.padEnd(80, ')'))
+  const schematic = await put('board.kicad_sch', `(kicad_sch
+    (symbol (lib_id "MCU_Test:REAL_MCU") (property "Reference" "U1") (pin "1" (uuid 00000000-0000-0000-0000-000000000001)))
+  )`)
+  const pcb = await put('board.kicad_pcb', `(kicad_pcb
+    (footprint "Package_Test:REAL_QFN" (property "Reference" "U1")
+      (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net "GND")))
+  )`)
   const gerber = await put('board-F_Cu.gtl', 'G04 BoardForge production gerber*\n%FSLAX46Y46*%\nM02*')
   const drill = await put('board.drl', 'M48\nMETRIC\nT1C0.300\n%\nM30')
   const bom = await put('board-bom.csv', 'Refs,Value,Footprint,MPN\nU1,MCU,QFN,REAL-1')
@@ -32,6 +37,7 @@ async function fixture() {
       digikey: { live: true, queriedAt: '2026-07-15T00:00:00Z', requestId: 'dk-1', stockStatus: 'IN_STOCK', quantityAvailable: 100 },
       mouser: { live: true, queriedAt: '2026-07-15T00:00:00Z', requestId: 'mo-1', stockStatus: 'IN_STOCK', quantityAvailable: 50 },
     } }] },
+    assetBindings: { components: [{ ref:'U1',mpn:'REAL-1',exactMpnVerified:true,symbol:'MCU_Test:REAL_MCU',footprint:'Package_Test:REAL_QFN',pinMapVerified:true,symbolPinMap:{1:'GND'},footprintPadMap:{1:'GND'} }] },
     sourceProtection: { unchanged: true, beforeSha256: sha, afterSha256: sha },
     proof: { rustReparsePassed: true, structuralDiff: { changed: 1 } },
     metrics: { boardAreaMm2: 100, componentDensity: 0.1 },
@@ -73,4 +79,15 @@ test('rejects warnings counted as a zero-error KiCad result', async () => {
   evidence.erc.violations = 1
   const result = await evaluateBoardAcceptance(evidence)
   assert.ok(result.blockers.some(({ code }) => code === 'ERC_ZERO_ERRORS'))
+})
+
+test('projection gate does not borrow a later pad net for an unnetted required pad',async()=>{
+  const evidence=await fixture()
+  await writeFile(evidence.project.pcb,`(kicad_pcb
+    (footprint "Package_Test:REAL_QFN" (property "Reference" "U1")
+      (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu"))
+      (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu") (net "GND")))
+  )`)
+  const result=await evaluateBoardAcceptance(evidence)
+  assert.ok(result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
 })

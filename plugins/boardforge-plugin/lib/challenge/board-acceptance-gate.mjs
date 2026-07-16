@@ -33,6 +33,7 @@ export async function evaluateBoardAcceptance(evidence = {}, options = {}) {
   ]) await requireArtifactSet(value, kind, extension, add)
 
   validateSourcing(evidence.sourcing, add, options)
+  await validateProductionAssets(evidence, add)
   add('SOURCE_UNCHANGED', Boolean(evidence.sourceProtection?.unchanged) && sameHash(evidence.sourceProtection), 'Source hashes must be present, equal, and independently marked unchanged.')
   add('STRUCTURAL_PROOF', Boolean(evidence.proof?.rustReparsePassed && evidence.proof?.structuralDiff), 'Rust reparse and a structural diff are required.')
   add('COMPACTNESS_MEASURED', finitePositive(evidence.metrics?.boardAreaMm2) && finitePositive(evidence.metrics?.componentDensity), 'Measured positive board area and component density are required.')
@@ -45,6 +46,72 @@ export async function evaluateBoardAcceptance(evidence = {}, options = {}) {
     blockers,
     evidenceDigest: digest(evidence),
   }
+}
+
+async function validateProductionAssets(evidence, add) {
+  const components = Array.isArray(evidence.assetBindings?.components) ? evidence.assetBindings.components : []
+  const complete = components.length > 0
+  add('EXACT_MPN_EVERY_REF', complete && components.every(row => row.ref && row.mpn && row.exactMpnVerified === true), 'Every populated reference requires an exact verified manufacturer MPN.')
+  add('PRODUCTION_SYMBOL_EVERY_REF', complete && components.every(row => productionAsset(row.symbol)), 'Every populated reference requires a production symbol; review/proof connector abstractions are forbidden.')
+  add('PRODUCTION_FOOTPRINT_EVERY_REF', complete && components.every(row => productionAsset(row.footprint)), 'Every populated reference requires a production footprint; review/proof placeholders are forbidden.')
+  add('PIN_MAP_VERIFIED_EVERY_REF', complete && components.every(row => row.pinMapVerified === true && (row.symbolPinMap||row.pinMap) && Object.keys(row.symbolPinMap||row.pinMap).length > 0 && (row.footprintPadMap||row.pinMap)), 'Every populated reference requires explicitly verified symbol-pin and footprint-pad maps.')
+
+  let projected = false
+  try {
+    const [sch, pcb] = await Promise.all([readFile(evidence.project?.schematic, 'utf8'), readFile(evidence.project?.pcb, 'utf8')])
+    const schRows = indexedBlocks(sch, 'symbol'), pcbRows = indexedBlocks(pcb, 'footprint')
+    projected = complete && components.every(row => {
+      const schBlock = schRows.get(row.ref), pcbBlock = pcbRows.get(row.ref)
+      if (!schBlock || !pcbBlock) return false
+      const symbol = capture(schBlock, /\(lib_id\s+"([^"]+)"\)/)
+      const footprint = capture(pcbBlock, /^\(footprint\s+"([^"]+)"/)
+      if (!sameAsset(symbol, row.symbol) || !sameAsset(footprint, row.footprint)) return false
+      const symbolPinMap=row.symbolPinMap||row.pinMap,footprintPadMap=row.footprintPadMap||row.pinMap
+      if(!Object.entries(symbolPinMap).every(([pin])=>schBlock.includes(`(pin "${pin}"`)))return false
+      const padRows=indexedPads(pcbBlock)
+      return Object.entries(footprintPadMap).every(([pad, net]) => {
+        const padBlock=padRows.get(String(pad)),expected=String(net)
+        if(!padBlock)return false
+        // KiCad 10 saved boards use `(net "NAME")`; generated sources may
+        // still use `(net CODE "NAME")`. Accept both canonical encodings.
+        const match = padBlock.match(/\(net\s+(?:\d+\s+)?"([^"]+)"\)/)
+        return match?.[1] === expected
+      })
+    })
+  } catch {}
+  add('BINDINGS_PROJECTED_INTO_KICAD', projected, 'Actual schematic symbols, PCB footprints, and pad-net maps must match the verified production bindings for every reference.')
+}
+
+const NON_PRODUCTION = /BoardForge:BF_CONN|reviewrequired|review_required|placeholder|proof/i
+function productionAsset(value) { return typeof value === 'string' && value.includes(':') && !NON_PRODUCTION.test(value) }
+function sameAsset(actual, expected) { return actual === expected || actual?.split(':').at(-1) === expected?.split(':').at(-1) }
+function capture(text, pattern) { return text.match(pattern)?.[1] }
+function escapeRegex(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+function indexedBlocks(text, kind) {
+  const rows = new Map(), needle = `(${kind}`
+  for (let start = text.indexOf(needle); start >= 0; start = text.indexOf(needle, start + 1)) {
+    let depth = 0, quoted = false, escaped = false, end = start
+    for (; end < text.length; end++) {
+      const ch = text[end]
+      if (quoted) { if (escaped) escaped = false; else if (ch === '\\') escaped = true; else if (ch === '"') quoted = false; continue }
+      if (ch === '"') quoted = true
+      else if (ch === '(') depth++
+      else if (ch === ')' && --depth === 0) { end++; break }
+    }
+    const block = text.slice(start, end), ref = capture(block, /\(property\s+"Reference"\s+"([^"]+)"/)
+    if (ref) rows.set(ref, block)
+  }
+  return rows
+}
+function indexedPads(footprintBlock){
+  const rows=new Map(),needle='(pad '
+  for(let start=footprintBlock.indexOf(needle);start>=0;start=footprintBlock.indexOf(needle,start+1)){
+    let depth=0,quoted=false,escaped=false,end=start
+    for(;end<footprintBlock.length;end++){const ch=footprintBlock[end];if(quoted){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')quoted=false;continue}if(ch==='"')quoted=true;else if(ch==='(')depth++;else if(ch===')'&&--depth===0){end++;break}}
+    const block=footprintBlock.slice(start,end),number=block.match(/^\(pad\s+"?([^"\s)]+)"?/)?.[1]
+    if(number&&!rows.has(number))rows.set(number,block)
+  }
+  return rows
 }
 
 function validateKiCadRun(run, label, add) {

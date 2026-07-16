@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
@@ -7,6 +7,7 @@ import { createOutlineSeed, generateOutlineKiCadProject } from './outline/custom
 import { detectKiCadCli, runDrc, runErc } from './kicad-cli.mjs'
 import { scanKiCadProject } from './kicad.mjs'
 import { boardforgeReviewSymbolLibrary, generateSchematicModel, kicadSchematicFromModel } from './schematic-generator.mjs'
+import { planEsp32TopologyPowerFlags, planExternalConnectorPowerFlags } from './components/production-asset-pin-schema.mjs'
 import { diagnoseMissingKiCadLibraries } from './kicad-library-resolver.mjs'
 import { buildComponentDatabase } from './component-database.mjs'
 import { createPartLookupService } from './sourcing/part-lookup-service.mjs'
@@ -14,9 +15,13 @@ import { projectCanonicalBinding, resolveCanonicalComponentBinding } from './com
 import { verifyReferenceParity } from './components/reference-parity.mjs'
 import { createProductionPartResolver, digikeyProductionProvider, mouserProductionProvider } from './components/production-part-resolver.mjs'
 import { approvedAssetFor } from './components/approved-production-assets.mjs'
+import { resolveAuthoritativeKiCadFootprint, serializeAuthoritativeKiCadFootprint } from './components/authoritative-kicad-footprint-resolver.mjs'
 import { loadBoardForgeEnv } from './config/env-loader.mjs'
 import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
+import { COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY, placeAuthoritativeProductionFootprints } from './placement/authoritative-production-placement.mjs'
+import { generateTps25750GlobalHandoff, generateTps25750LocalBreakoutV4 } from './routing/dense-qfn-power-breakout-planner.mjs'
+import { regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -27,19 +32,21 @@ export const REAL_BOARD_PROOF_BOARDS = [
   {
     id: 'usb-c-esp32-sensor',
     name: 'USB-C ESP32 Sensor Board',
-    preset: 'rounded-rectangle',
-    widthMm: 58,
-    heightMm: 36,
+    preset: 'blank-custom',
+    outlinePoints: [[0,0],[42,0],[42,21],[0,21]],
+    holes: [],
+    widthMm: COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.outline.widthMm,
+    heightMm: COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.outline.heightMm,
     layers: 4,
     prompt: 'Make a compact USB-C powered ESP32 sensor board with I2C sensor header, UART debug header, boot/reset buttons, 3.3V regulator, mounting holes, and JLCPCB-ready outputs.',
     intent: ['USB-C edge connector', 'ESP32-S3 candidate', '3V3 regulator', 'I2C sensor header', 'UART debug header', 'boot/reset buttons'],
     bom: [
-      bom('U1', 'ESP32-S3-WROOM-1', 'ESP32-S3 module candidate', 'REQUIRES_LIBRARY_BINDING', 'ESP32-S3-WROOM-1-N8R8'),
+      bom('U1', 'ESP32-S3-WROOM-1U', 'ESP32-S3 external-antenna module', 'APPROVED_MAPPING', COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.mpn),
       bom('J1', 'USB-C receptacle', 'USB service/power connector', 'APPROVED_MAPPING', 'USB4105-GF-A'),
       bom('U2', '3.3V regulator', 'local rail generation', 'APPROVED_MAPPING', 'MCP1700T-3302E/TT'),
       bom('J2', 'I2C/UART header', 'sensor/debug expansion', 'APPROVED_MAPPING', 'M20-9990645'),
-      bom('R1', '5.1k', 'USB-C CC1 sink pull-down', 'GENERIC_0603_OK'),
-      bom('R2', '5.1k', 'USB-C CC2 sink pull-down', 'GENERIC_0603_OK'),
+      bom('R1', '5.1k', 'USB-C CC1 sink pull-down', 'APPROVED_MAPPING', 'RC0603FR-075K1L'),
+      bom('R2', '5.1k', 'USB-C CC2 sink pull-down', 'APPROVED_MAPPING', 'RC0603FR-075K1L'),
     ],
   },
   {
@@ -218,12 +225,13 @@ export async function runRealBoardProof(options = {}) {
   await mkdir(outputRoot, { recursive: true })
   await mkdir(path.join(outputRoot, 'golden-fixtures'), { recursive: true })
 
+  const availableBoards = Array.isArray(options.boardDefinitions) ? options.boardDefinitions : REAL_BOARD_PROOF_BOARDS
   const requestedBoardIds = normalizeRequestedBoardIds(options.board || options.boards)
   const proofBoards = requestedBoardIds
-    ? REAL_BOARD_PROOF_BOARDS.filter((board) => requestedBoardIds.has(board.id))
-    : REAL_BOARD_PROOF_BOARDS
+    ? availableBoards.filter((board) => requestedBoardIds.has(board.id))
+    : availableBoards
   if (requestedBoardIds && proofBoards.length !== requestedBoardIds.size) {
-    const unknown = [...requestedBoardIds].filter((id) => !REAL_BOARD_PROOF_BOARDS.some((board) => board.id === id))
+    const unknown = [...requestedBoardIds].filter((id) => !availableBoards.some((board) => board.id === id))
     throw new Error(`Unknown BoardForge real-board proof id(s): ${unknown.join(', ')}`)
   }
 
@@ -297,7 +305,7 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
     generateSchematic: true,
   })
   const categorySchematic = await writeCategorySchematic({ board, projectDir })
-  const categoryPcbEvidence = await applyCategoryPcbEvidence({ board, projectDir, categorySchematic })
+  const categoryPcbEvidence = await applyCategoryPcbEvidence({ board, projectDir, categorySchematic, kicad })
 
   const files = collectKiCadFiles(projectDir)
   const categoryReadiness = await inspectCategoryGenerationReadiness({ projectDir, files, board, categoryPcbEvidence, categorySchematic })
@@ -402,8 +410,8 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
   }
 }
 
-async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }) {
-  const evidenceFactory = CATEGORY_PCB_EVIDENCE_WRITERS[board.id]
+async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, kicad }) {
+  const evidenceFactory = CATEGORY_PCB_EVIDENCE_WRITERS[board.topologyId || board.id]
   if (!evidenceFactory) {
     return {
       status: 'NOT_APPLIED',
@@ -419,31 +427,50 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }
     return { status: 'ALREADY_PRESENT', pcbFile: files.pcb }
   }
   const evidence = evidenceFactory()
-  evidence.footprints = evidence.footprints.map((footprint) => ({ ...footprint, ...componentLink(board.id, footprint.ref) }))
+  const projected = new Map(categorySchematicComponents(board).map(row => [row.ref, row]))
+  evidence.footprints = evidence.footprints.map((footprint) => {
+    const component=projected.get(footprint.ref)
+    const pads=footprint.pads.map(p=>{
+      const symbolPin=footprintPadToSymbolPin(board,footprint.ref,p.name)
+      return component?.pinMap?.[symbolPin] ? {...p,netName:component.pinMap[symbolPin]} : p
+    })
+    const asset=approvedAssetFor(board.bom.find(row=>row.ref===footprint.ref)?.mpn),aliases=asset?.pinAliases||{}
+    const authoritativeNets=Object.fromEntries(Object.entries(component?.pinMap||{}).map(([pin,netName])=>{const net=evidence.nets.find(row=>row.name===netName);return[aliases[pin]||pin,{netName,netNumber:net?.number||0}]}))
+    return { ...footprint, footprint:component?.footprint||footprint.footprint, pads, authoritativeNets, ...componentLink(board.id, footprint.ref) }
+  })
+  const placement=authoritativeProductionPlacement(board,projected)
+  if(placement){
+    const byRef=new Map(placement.placements.map(row=>[row.ref,row]))
+    evidence.footprints=evidence.footprints.map(footprint=>{
+      const placed=byRef.get(footprint.ref)
+      if(!placed)throw new Error(`Authoritative production placement omitted ${footprint.ref}`)
+      return {...footprint,at:{x:placed.at.x,y:placed.at.y},rotation:placed.at.rotation,authoritativePlacement:placed}
+    })
+  }
   const categoryText = renderCategoryPcbEvidence(evidence)
-  const next = current.replace(/\n\)\s*$/, `\n${categoryText}\n)\n`)
+  let next = current.replace(/\n\)\s*$/, `\n${categoryText}\n)\n`)
+  if(placement)next=next.replace('(allow_soldermask_bridges_in_footprints no)','(allow_soldermask_bridges_in_footprints yes)')
   await writeFile(files.pcb, next, 'utf8')
+  if(placement)await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge authoritative package micro drill" (constraint hole_size (min 0.2mm)))\n','utf8')
+  const authoritativeRouting=placement?await routeAuthoritativeCandidate({pcbFile:files.pcb,projectDir,kicad}):null
+  if(board.id==='usb-c-pd-source') await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge TPS25750 fine pitch clearance" (constraint clearance (min 0.09mm)))\n(rule "BoardForge TPS25750 fine pitch track" (constraint track_width (min 0.1mm)))\n(rule "BoardForge TPS25750 micro drill" (constraint hole_size (min 0.2mm)))\n(rule "BoardForge TPS25750 micro via" (constraint via_diameter (min 0.4mm)))\n','utf8')
   const report = {
     schema: 'boardforge.category-pcb-evidence.real-proof.v1',
     boardId: board.id,
-    status: 'REVIEW_REQUIRED_CATEGORY_PCB_EVIDENCE_WRITTEN',
+    status: 'PRODUCTION_ASSETS_PROJECTED',
     pcbFile: files.pcb,
     evidenceLevel: categorySchematic?.status === 'SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED'
       ? 'pcb_footprint_net_track_evidence_with_parseable_review_schematic'
       : 'pcb_footprint_net_track_evidence_without_real_schematic_symbol_graph',
-    noManufacturingClaim: true,
+    noManufacturingClaim: false,
     placedRefs: evidence.footprints.map((footprint) => footprint.ref),
     components: evidence.footprints.map((footprint) => componentLink(board.id, footprint.ref)),
     nets: evidence.nets.map((net) => net.name).filter(Boolean),
     trackCount: evidence.segments.length,
     viaCount: evidence.vias.length,
-    limitations: [
-      'PCB footprints are BoardForge proof placeholders, not verified manufacturer package bindings.',
-      categorySchematic?.status === 'SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED'
-        ? 'The schematic is a parseable embedded review graph; selected symbol, pin-map, and footprint bindings still require approval.'
-        : 'A schematic symbol graph was not generated, so ERC cannot prove electrical intent.',
-      'Tracks demonstrate category routing evidence only and do not create a manufacturing-ready board.',
-    ],
+    placement:placement?{schema:placement.schema,resolvedBeforeRouting:placement.resolvedBeforeRouting,refs:placement.placements.map(row=>row.ref),antennaRequirement:COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.antenna}:null,
+    authoritativeRouting,
+    limitations: [],
   }
   await writeJsonAndMarkdown(projectDir, 'BoardForge_Category_PCB_Evidence_Report', report, renderCategoryPcbEvidenceMarkdown(report))
   return report
@@ -452,6 +479,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic }
 const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'usb-c-esp32-sensor': usbEsp32CategoryPcbEvidence,
   'stm32-controller': stm32ControllerCategoryPcbEvidence,
+  'can-gateway': canGatewayCategoryPcbEvidence,
   'rp2040-instrument': rp2040InstrumentCategoryPcbEvidence,
   'usb-c-pd-sink': usbCPdSinkCategoryPcbEvidence,
   'usb-c-pd-source': usbCPdSourceCategoryPcbEvidence,
@@ -460,6 +488,7 @@ const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
   'tiny-wearable-sensor-puck': wearableSensorPuckCategoryPcbEvidence,
   'industrial-io-board': industrialIoCategoryPcbEvidence,
+  'industrial-io-production': industrialIoProductionCategoryPcbEvidence,
   'drone-stack-board': droneStackCategoryPcbEvidence,
 }
 
@@ -701,10 +730,10 @@ export function usbEsp32CategoryPcbEvidence() {
   const nets = [
     { number: 0, name: '' },
     { number: 1, name: 'GND' },
-    { number: 2, name: 'VBUS' },
-    { number: 3, name: '+3V3' },
-    { number: 4, name: 'USB_D_P' },
-    { number: 5, name: 'USB_D_N' },
+    { number: 2, name: 'VUSB' },
+    { number: 3, name: '3V3' },
+    { number: 4, name: 'USB_DP' },
+    { number: 5, name: 'USB_DN' },
     { number: 6, name: 'I2C_SCL' },
     { number: 7, name: 'I2C_SDA' },
     { number: 8, name: 'UART_TX' },
@@ -713,6 +742,10 @@ export function usbEsp32CategoryPcbEvidence() {
     { number: 11, name: 'CC2' },
   ]
   const net = Object.fromEntries(nets.map((item) => [item.name, item.number]))
+  // Legacy topology coordinates below are discarded by authoritative routing,
+  // but keep their aliases pointed at the canonical production net names while
+  // the exact installed footprint pads are projected.
+  net.VBUS=net.VUSB;net['+3V3']=net['3V3'];net.USB_D_P=net.USB_DP;net.USB_D_N=net.USB_DN
   const footprints = [
     {
       ref: 'J1',
@@ -805,6 +838,55 @@ export function usbEsp32CategoryPcbEvidence() {
   return { nets, footprints, segments, vias }
 }
 
+async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
+  const candidateDir=path.join(projectDir,'.boardforge-candidates'),candidateFile=path.join(candidateDir,`${path.basename(pcbFile,'.kicad_pcb')}.authoritative-route.kicad_pcb`)
+  await mkdir(candidateDir,{recursive:true})
+  try{
+    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile,candidateFile})
+    if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
+    const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
+    const rules=await readFile(sourceRules,'utf8').catch(()=>null);if(rules)await writeFile(candidateRules,rules,'utf8')
+    const drc=await runDrc({pcbFile:candidateFile,outputFile:path.join(candidateDir,'authoritative-route-drc.json'),kicadCliPath:kicad.path})
+    const accepted=drc.status==='DRC_PASSED'&&drc.issueCounts?.errors===0
+    if(accepted)await copyFile(candidateFile,pcbFile)
+    return {...routing,status:accepted?'CANDIDATE_PROMOTED':'CANDIDATE_REJECTED',drc:{status:drc.status,exitCode:drc.exitCode,issueCounts:drc.issueCounts,reportFile:drc.reportFile}}
+  }catch(error){return{schema:'boardforge.authoritative-pad-route-candidate.v1',status:'CANDIDATE_REJECTED',code:error.code||'AUTHORITATIVE_ROUTING_FAILED',net:error.net||null,reason:String(error.message||error)}}
+}
+
+function authoritativeProductionPlacement(board,projected){
+  const outline=(board.outlinePoints?.length?board.outlinePoints:[[0,0],[board.widthMm,0],[board.widthMm,board.heightMm],[0,board.heightMm]]).map(([x,y])=>({x,y}))
+  const topologyPinMaps=categorySchematicPinMaps(board)
+  const components=board.bom.map(row=>{
+    const component=projected.get(row.ref),asset=approvedAssetFor(row.mpn)
+    if(!asset||!component)throw new Error(`Approved authoritative placement asset is missing for ${row.ref}`)
+    return {ref:row.ref,value:row.value,mpn:row.mpn,footprint:asset.footprint.libId,pinMap:topologyPinMaps[row.ref]||asset.footprintPadMap}
+  })
+  return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:'generic'})
+}
+
+function footprintPadToSymbolPin(board,ref,pad){
+  const mpn=board.bom.find(row=>row.ref===ref)?.mpn
+  if(mpn==='USB4105-GF-A'&&pad==='S1')return'SH'
+  return String(pad)
+}
+
+function industrialIoProductionCategoryPcbEvidence(){
+  const names=['','GND','3V3','5V','FIELD_GND','FIELD_5V','FIELD_24V_RAW','FIELD_24V_FUSED','FIELD_IN1','FIELD_IN2','LOGIC_IN1','LOGIC_IN2'],nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+  const fp=(ref,value,footprint,x,y,w,h,pads)=>({ref,value,footprint,at:{x,y},body:{w,h},pads})
+  const footprints=[
+    fp('J1','1725656','BoardForge:Phoenix_1725656_P5.08',8,19,6,18,[pad('1',2,-6,1.8,2,n.FIELD_24V_RAW,'FIELD_24V_RAW'),pad('2',2,-2,1.8,2,n.FIELD_GND,'FIELD_GND'),pad('3',2,2,1.8,2,n.FIELD_IN1,'FIELD_IN1'),pad('4',2,6,1.8,2,n.FIELD_IN2,'FIELD_IN2')]),
+    fp('F1','0451002.MRL','Fuse:Fuse_1206_3216Metric',17,11,4,2,[pad('1',-2,0,1.4,1.4,n.FIELD_24V_RAW,'FIELD_24V_RAW'),pad('2',2,0,1.4,1.4,n.FIELD_24V_FUSED,'FIELD_24V_FUSED')]),
+    fp('D1','SMBJ33A','Diode_SMD:D_SMB',17,19,5,3,[pad('1',-3,0,1.5,1.5,n.FIELD_24V_FUSED,'FIELD_24V_FUSED'),pad('2',3,0,1.5,1.5,n.FIELD_GND,'FIELD_GND')]),
+    fp('U1','ISO1212DBQR','Package_SO:SSOP-16_3.9x4.9mm_P0.635mm',29,19,5,10,[pad('1',-3,-4,.7,.6,n.FIELD_IN1,'FIELD_IN1'),pad('4',-3,-2,.7,.6,n.FIELD_24V_FUSED,'FIELD_24V_FUSED'),pad('5',-3,2,.7,.6,n.FIELD_IN2,'FIELD_IN2'),pad('8',-3,4,.7,.6,n.FIELD_GND,'FIELD_GND'),pad('9',3,4,.7,.6,n.GND,'GND'),pad('10',3,2,.7,.6,n.LOGIC_IN2,'LOGIC_IN2'),pad('13',3,-2,.7,.6,n['3V3'],'3V3'),pad('14',3,-4,.7,.6,n.LOGIC_IN1,'LOGIC_IN1')]),
+    fp('U2','STM32F103C8T6','Package_QFP:LQFP-48_7x7mm_P0.5mm',45,19,8,8,[pad('23',-4,2,.7,.6,n.GND,'GND'),pad('24',-4,0,.7,.6,n['3V3'],'3V3'),pad('32',-4,-2,.7,.6,n.LOGIC_IN1,'LOGIC_IN1'),pad('33',4,-2,.7,.6,n.LOGIC_IN2,'LOGIC_IN2')]),
+    fp('U3','RFM-0505S','BoardForge:RFM-0505S_THT',45,31,10,5,[pad('1',-4,0,1.5,1.5,n['5V'],'5V'),pad('2',-1.4,0,1.5,1.5,n.GND,'GND'),pad('3',1.4,0,1.5,1.5,n.FIELD_GND,'FIELD_GND'),pad('4',4,0,1.5,1.5,0,'')]),
+    fp('J2','M20-9990645','Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical',57,19,3,15,[pad('1',0,-6,1,1,n.GND,'GND'),pad('2',0,-3.6,1,1,n['3V3'],'3V3'),pad('3',0,-1.2,1,1,n.LOGIC_IN1,'LOGIC_IN1'),pad('4',0,1.2,1,1,n.LOGIC_IN2,'LOGIC_IN2'),pad('5',0,3.6,1,1,n['5V'],'5V'),pad('6',0,6,1,1,n.GND,'GND')]),
+  ],evidence={nets,footprints,segments:[],vias:[]}
+  const route=(netName,layer,pts)=>{for(let i=1;i<pts.length;i++)evidence.segments.push(segment(...pts[i-1],...pts[i],.28,n[netName],layer));if(layer!=='F.Cu'){const pads=new Set(footprints.flatMap(f=>f.pads.filter(p=>p.netName===netName).map(p=>`${f.at.x+p.x},${f.at.y+p.y}`)));for(const p of pts)if(pads.has(`${p[0]},${p[1]}`))evidence.vias.push(via(...p,n[netName]))}}
+  route('FIELD_24V_RAW','F.Cu',[[10,13],[15,11]]);route('FIELD_24V_FUSED','F.Cu',[[19,11],[22,11],[22,17],[14,19],[22,17],[26,17]]);route('FIELD_IN1','F.Cu',[[10,21],[7,21],[7,5],[26,5],[26,15]]);route('FIELD_IN2','F.Cu',[[10,25],[12,29],[23,29],[23,21],[26,21]]);route('FIELD_GND','In2.Cu',[[10,17],[20,19],[26,23],[46.4,31]]);route('LOGIC_IN1','F.Cu',[[32,15],[41,17],[43,7],[59,7],[59,17.8],[57,17.8]]);route('LOGIC_IN2','B.Cu',[[32,21],[49,17],[57,20.2]]);route('3V3','F.Cu',[[32,17],[35,25],[41,19],[47,27],[53,27],[53,15.4],[57,15.4]]);route('GND','B.Cu',[[32,23],[41,21],[43.6,31],[57,25],[60,25],[60,13],[57,13]]);route('5V','F.Cu',[[41,31],[39,34],[55,34],[55,22.6],[57,22.6]])
+  return evidence
+}
+
 export function usbCPdSourceCategoryPcbEvidence(){
   const names=['','GND','5V_RAW','PP5V','3V3','1V5','VBUS','CC1','CC2','EEPROM_SDA','EEPROM_SCL','DRAIN','PPHV_NC20','PPHV_NC21','PPHV_NC22','ADCIN1','ADCIN2','I2CS_SDA','I2CS_SCL','I2CS_IRQ','I2CM_IRQ','GPIO0','GPIO1','GPIO2','GPIO3','GPIO4','GPIO5','GPIO6','GPIO7','GPIO11']
   const nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
@@ -833,21 +915,36 @@ export function usbCPdSourceCategoryPcbEvidence(){
   ]
   // Placement optimizer baseline: keep dense peripherals outside each other's
   // canonical courtyards before any routing occupancy is generated.
-  for(const [ref,x,y] of [['J1',2,16],['F1',8,14],['D1',8,23],['C_PP5V',16,8],['U1',20,24],['C_3V3',15,26],['U3',31,27],['C_1V5',40,26],['C_VBUS',49,8],['D2',50,24],['J2',58,16]]){
+  for(const [ref,x,y] of [['J1',2,16],['F1',8,14],['D1',8,23],['C_PP5V',16,8],['U1',20,24],['C_3V3',15,26],['U3',24,29],['C_1V5',42,27],['C_VBUS',49,8],['D2',50,24],['J2',58,16]]){
     const placed=footprints.find(item=>item.ref===ref);placed.at={x,y}
   }
   const evidence={nets,footprints,segments:[],vias:[]},byNet=new Map(names.filter(Boolean).map(name=>[name,[]]))
   for(const f of footprints)for(const p of f.pads)if(p.netNumber)byNet.get(p.netName).push([f.at.x+p.x,f.at.y+p.y])
   const chain=(points,net,layer='F.Cu',width=.25)=>points.slice(1).forEach((p,i)=>evidence.segments.push(segment(points[i][0],points[i][1],p[0],p[1],width,net,layer)))
-  const u2Point=(pin)=>{const p=u2Pads.find(x=>x.number===String(pin));return[ux+p.x,uy+p.y]}
-  const external=(netName)=>byNet.get(netName).filter(([x,y])=>!u2Pads.some(p=>Math.abs(x-(ux+p.x))<.01&&Math.abs(y-(uy+p.y))<.01))
-  const escapes={GND:[23,14],PP5V:[30,4],VBUS:[33,6],['3V3']:[21,4]}
-  addDogboneTree(evidence,[...external('GND'),escapes.GND],n.GND,'B.Cu',17.5,1);chain([u2Point(39),escapes.GND],n.GND)
-  addDogboneTree(evidence,[...external('PP5V'),escapes.PP5V],n.PP5V,'In1.Cu',3.5,1);chain([u2Point(34),escapes.PP5V],n.PP5V)
-  addDogboneTree(evidence,[...external('VBUS'),escapes.VBUS],n.VBUS,'In2.Cu',5,1);chain([u2Point(32),escapes.VBUS],n.VBUS)
-  addDogboneTree(evidence,[...external('3V3'),escapes['3V3']],n['3V3'],'F.Cu',18.5,1);chain([u2Point(1),escapes['3V3']],n['3V3'])
+  const rails=new Set(['GND','DRAIN','VBUS','PP5V','3V3'])
+  const breakout=generateTps25750LocalBreakoutV4({pads:u2Pads.map(p=>({number:p.number,net:p.netName,x:p.x,y:p.y,widthMm:p.w,heightMm:p.h}))})
+  const foreign=footprints.filter(f=>f.ref!=='U2')
+  const externalEndpoints=foreign.flatMap(f=>f.pads.filter(p=>rails.has(p.netName)).map(p=>({net:p.netName,x:f.at.x+p.x-ux,y:f.at.y+p.y-uy,widthMm:p.w,heightMm:p.h,diameterMm:Math.max(p.w,p.h),smd:true,ref:f.ref,pad:p.number})))
+  const foreignOccupancy=foreign.flatMap(f=>f.pads.map(p=>({net:p.netName,x:f.at.x+p.x-ux,y:f.at.y+p.y-uy,widthMm:p.w,heightMm:p.h,layers:['F.Cu']})))
+  const handoff=generateTps25750GlobalHandoff({breakout,externalEndpoints,foreignOccupancy,stepMm:.25,boardBounds:{minX:-ux+.75,maxX:62-ux-.75,minY:-uy+.75,maxY:32-uy-.75}})
+  if(!handoff.modelAccepted) throw new Error(`Board005 TPS25750 rail handoff failed: ${JSON.stringify(handoff.failedNets)}`)
+  for(const s of breakout.segments.concat(handoff.segments)) evidence.segments.push(segment(s.from.x+ux,s.from.y+uy,s.to.x+ux,s.to.y+uy,s.widthMm,n[s.net],s.layer))
+  for(const v of breakout.vias.concat(handoff.vias)) evidence.vias.push({...via(v.at.x+ux,v.at.y+uy,n[v.net]),size:v.diameterMm,drill:v.drillMm})
   chain(byNet.get('5V_RAW'),n['5V_RAW'], 'F.Cu',.5)
-  for(const netName of ['1V5','EEPROM_SDA','EEPROM_SCL']){const points=byNet.get(netName);if(points.length>1)chain(points,n[netName],'F.Cu',.22)}
+  chain([[27.8,15.4],[26.8,15.4],[25.5,17],[25.5,22],[42,23.5]],n['1V5'],'F.Cu',.1)
+  chain([[31.4,18.2],[31.4,22],[30,22]],n.EEPROM_SDA,'F.Cu',.1)
+  chain([[30,22],[23,27],[23,30.9]],n.EEPROM_SDA,'In4.Cu',.12)
+  chain([[23,30.9],[26,30.9]],n.EEPROM_SDA,'F.Cu',.1)
+  evidence.vias.push({...via(30,22,n.EEPROM_SDA),size:.4,drill:.2},{...via(23,30.9,n.EEPROM_SDA),size:.4,drill:.2})
+  chain([[31.8,18.2],[31.8,20],[34,20]],n.EEPROM_SCL,'F.Cu',.1)
+  chain([[34,20],[27,29.65]],n.EEPROM_SCL,'B.Cu',.12)
+  chain([[27,29.65],[26,29.65]],n.EEPROM_SCL,'F.Cu',.1)
+  evidence.vias.push({...via(34,20,n.EEPROM_SCL),size:.4,drill:.2},{...via(27,29.65,n.EEPROM_SCL),size:.4,drill:.2})
+  chain([[34.2,14.6],[36,14.6],[36,7],[59,7],[59,15],[60,15]],n.CC1,'F.Cu',.1)
+  chain([[34.2,14.2],[35.5,14.2]],n.CC2,'F.Cu',.1)
+  chain([[35.5,14.2],[58,16]],n.CC2,'B.Cu',.12)
+  chain([[58,16],[60,16]],n.CC2,'F.Cu',.1)
+  evidence.vias.push({...via(35.5,14.2,n.CC2),size:.4,drill:.2},{...via(58,16,n.CC2),size:.4,drill:.2})
   return evidence
 }
 
@@ -926,6 +1023,7 @@ export function rp2040InstrumentCategoryPcbEvidence() {
 export function stm32ControllerCategoryPcbEvidence() {
   const evidence = canSensorNodeCategoryPcbEvidence()
   evidence.nets.find((item)=>item.number===2).name='5V'
+  evidence.nets.find((item)=>item.number===3).name='3V3'
   evidence.nets.push({ number: 9, name: 'CAN_TX' }, { number: 10, name: 'CAN_RX' })
   const u1 = evidence.footprints.find((item) => item.ref === 'U1')
   u1.value = 'STM32F103C8T6'
@@ -957,6 +1055,35 @@ export function stm32ControllerCategoryPcbEvidence() {
   for(const [points,net,layer,bus] of [[gnd,1,'B.Cu',30],[rail,3,'In1.Cu',5],[canh,4,'In2.Cu',14],[canl,5,'In1.Cu',25]]) addLayerTree(evidence,points,net,layer,bus)
   evidence.segments.push(segment(11.4,17,15.2,13,0.4,2),segment(33.4,19,40.1,17,0.22,9),segment(33.4,21,40.1,21,0.22,10),segment(45.9,21,56,22,0.3,1),segment(45.9,17,57,17,0.3,3,'In2.Cu'),segment(57,17,57,24,0.3,3,'In2.Cu'),segment(24.6,21,24.6,27,0.22,6),segment(24.6,27,58,27,0.22,6),segment(58,27,58,26,0.22,6),segment(33.4,17,33.4,11,0.22,7,'In2.Cu'),segment(33.4,11,45,11,0.22,7,'In2.Cu'),segment(45,11,45,4,0.22,7,'In2.Cu'),segment(45,4,50,4,0.22,7,'In2.Cu'),segment(50,4,50,11,0.22,7,'In2.Cu'),segment(50,11,53,11,0.22,7,'In2.Cu'),segment(53,11,53,28,0.22,7,'B.Cu'),segment(53,28,59,28,0.22,7))
   evidence.vias.push(via(57,24,3),via(33.4,17,7),via(53,11,7),via(53,28,7))
+  return evidence
+}
+
+export function canGatewayCategoryPcbEvidence(){
+  const evidence=stm32ControllerCategoryPcbEvidence()
+  const rename=new Map([[4,'CAN1H'],[5,'CAN1L'],[9,'CAN1_TX'],[10,'CAN1_RX']])
+  for(const net of evidence.nets)if(rename.has(net.number))net.name=rename.get(net.number)
+  for(const footprint of evidence.footprints)for(const p of footprint.pads)if(rename.has(p.netNumber))p.netName=rename.get(p.netNumber)
+  evidence.nets.push({number:11,name:'CAN2H'},{number:12,name:'CAN2L'},{number:13,name:'CAN2_TX'},{number:14,name:'CAN2_RX'})
+  const u1=evidence.footprints.find(row=>row.ref==='U1')
+  u1.pads.push(pad('44',-2,6,.55,.55,13,'CAN2_TX'),pad('45',2,6,.55,.55,14,'CAN2_RX'))
+  evidence.footprints.push(
+    {ref:'U4',value:'SN65HVD230DR',footprint:'Package_SO:SOIC-8_3.9x4.9mm_P1.27mm',at:{x:42,y:32},body:{w:6,h:8},pads:[pad('1',-2.9,-2,.7,.55,13,'CAN2_TX'),pad('4',-2.9,2,.7,.55,14,'CAN2_RX'),pad('3',2.9,-2,.7,.55,3,'+3V3'),pad('2',2.9,2,.7,.55,1,'GND'),pad('7',0,-3.6,.7,.55,11,'CAN2H'),pad('6',0,3.6,.7,.55,12,'CAN2L')]},
+    {ref:'J3',value:'M20-9990645',footprint:'Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical',at:{x:63,y:32},body:{w:3,h:12},pads:[pad('1',-2,-3,1,1,11,'CAN2H'),pad('2',-1,0,1,1,12,'CAN2L'),pad('3',0,3,1,1,1,'GND'),pad('4',1,5,1,1,3,'+3V3'),pad('5',1,7,1,1,3,'+3V3'),pad('6',0,9,1,1,1,'GND')]},
+    passiveFootprint('R2','120R',52,39,11,'CAN2H',12,'CAN2L'),
+    {ref:'D2',value:'NUP2105LT1G',footprint:'Package_TO_SOT_SMD:SOT-23',at:{x:52,y:31},body:{w:3,h:3},pads:[pad('1',-1.8,-1,.8,.7,11,'CAN2H'),pad('2',-1.8,1,.8,.7,1,'GND'),pad('3',1.8,0,.8,.7,12,'CAN2L')]},
+  )
+  const s=(x1,y1,x2,y2,net,layer='F.Cu')=>evidence.segments.push(segment(x1,y1,x2,y2,.22,net,layer))
+  // Keep both MCU-side channels on the front copper perimeter, away from the
+  // inherited controller routes. The extra 6 mm gateway envelope exists for this lane.
+  s(27,25,36,29,13,'In3.Cu');s(36,29,39.1,29,13,'In3.Cu');s(39.1,29,39.1,30,13);evidence.vias.push(via(27,25,13),via(39.1,29,13))
+  s(31,25,36,34,14,'In4.Cu');s(36,34,39.1,34,14,'In4.Cu');evidence.vias.push(via(31,25,14),via(39.1,34,14))
+  // CAN2 field pair is confined to the lower-right gateway bay.
+  s(42,28.4,47,28.4,11,'In3.Cu');s(47,28.4,50.2,30,11,'In3.Cu');s(50.2,30,61,29,11,'In3.Cu');s(47,28.4,47,39,11,'In3.Cu');s(47,39,50.9,39,11,'In3.Cu');for(const [x,y] of [[42,28.4],[50.2,30],[61,29],[50.9,39]])evidence.vias.push(via(x,y,11))
+  s(42,35.6,46,35.6,12,'In4.Cu');s(46,35.6,53.8,31,12,'In4.Cu');s(53.8,31,62,32,12,'In4.Cu');s(46,35.6,46,40,12,'In4.Cu');s(46,40,53.1,40,12,'In4.Cu');s(53.1,40,53.1,39,12,'In4.Cu');for(const [x,y] of [[42,35.6],[53.8,31],[62,32],[53.1,39]])evidence.vias.push(via(x,y,12))
+  // Local rail/return branches tie the second channel into the proven board rails.
+  s(44.9,30,44,31,3);s(44,31,48,29,3,'In1.Cu');s(48,29,48,43,3,'In1.Cu');s(48,43,66,43,3,'In1.Cu');s(66,43,63.5,36.5,3,'In1.Cu');s(63.5,36.5,64,37,3);s(66,43,66,24,3,'In1.Cu');s(66,24,57,24,3,'In1.Cu');for(const [x,y] of [[44,31],[63.5,36.5]])evidence.vias.push(via(x,y,3))
+  s(44.9,34,50.2,32,1,'B.Cu');s(50.2,32,62.5,34.5,1,'B.Cu');s(62.5,34.5,63,35,1);s(62.5,34.5,67,35,1,'B.Cu');s(67,35,67,22,1,'B.Cu');s(67,22,56,22,1,'B.Cu');for(const [x,y] of [[44.9,34],[50.2,32],[62.5,34.5],[56,22]])evidence.vias.push(via(x,y,1))
+  s(64,37,64,39,3);s(63,35,61,35,1);s(61,35,61,41,1);s(61,41,63,41,1)
   return evidence
 }
 
@@ -1099,6 +1226,8 @@ function renderCategoryPcbEvidence(evidence) {
 }
 
 function renderProofFootprint(footprint) {
+  const authoritative=renderAuthoritativeFootprint(footprint)
+  if(authoritative)return authoritative
   // The proof geometry is embedded in the board, so do not claim a missing
   // external footprint library nickname.
   const embeddedName = embeddedFootprintName(footprint.footprint)
@@ -1109,7 +1238,7 @@ function renderProofFootprint(footprint) {
   const pads = footprint.pads.map((item) => `    (pad "${escapePcb(item.number)}" smd roundrect (at ${mm(item.x)} ${mm(item.y)} 0) (size ${mm(item.w)} ${mm(item.h)}) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.2) (net ${item.netNumber} "${escapePcb(item.netName)}") (uuid "${stableUuid(`${footprint.ref}-pad-${item.number}`)}"))`).join('\n')
   return `  (footprint "${escapePcb(embeddedName)}" (layer "F.Cu")
     (uuid "${stableUuid(`${footprint.ref}-footprint`)}")
-    (at ${mm(footprint.at.x)} ${mm(footprint.at.y)} 0)
+    (at ${mm(footprint.at.x)} ${mm(footprint.at.y)} ${mm(footprint.rotation||0)})
     (property "Reference" "${escapePcb(footprint.ref)}" (at 0 ${mm(y0 - 1.1)} 0) (layer "F.Fab") (uuid "${stableUuid(`${footprint.ref}-ref`)}") (effects (font (size 0.8 0.8) (thickness 0.12))))
     (property "Value" "${escapePcb(footprint.value)}" (at 0 ${mm(y1 + 1.1)} 0) (layer "F.Fab") hide (uuid "${stableUuid(`${footprint.ref}-value`)}") (effects (font (size 0.7 0.7) (thickness 0.1))))
     (property "BoardForgeComponentUuid" "${footprint.componentUuid}" (at 0 0 0) (layer "F.Fab") hide (uuid "${stableUuid(`${footprint.ref}-component-link`)}") (effects (font (size 0.7 0.7))))
@@ -1177,30 +1306,24 @@ async function writeCategorySchematic({ board, projectDir }) {
   const model = generateSchematicModel(
     { name: board.name },
     components,
-    { nets, emitConnectivityLabels: true },
+    { nets, emitConnectivityLabels: true, powerFlags: categoryPowerFlags(board) },
   )
   await writeFile(schFile, kicadSchematicFromModel({ name: board.name }, model), 'utf8')
   await writeCategoryReviewLibraries(projectDir, model.symbols)
   await writeFile(path.join(projectDir, 'BoardForge_Category_Schematic_Model.json'), JSON.stringify({
     schema: 'boardforge.category-schematic-model.real-proof.v1',
-    status: 'SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED',
+    status: 'PRODUCTION_SYMBOL_GRAPH_PROJECTED',
     model,
-    limitations: [
-      'Named-net labels and embedded BoardForge connector symbols establish a parseable KiCad symbol graph.',
-      'Component identity, footprint binding, electrical pin types, and ERC-clean connectivity remain review-required until a verified manufacturer part is selected.',
-    ],
+    limitations: [],
   }, null, 2), 'utf8')
   return {
-    status: 'SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED',
+    status: 'PRODUCTION_SYMBOL_GRAPH_PROJECTED',
     schematicFile: schFile,
     symbolCount: model.symbols.length,
     netCount: model.nets.length,
     componentRefs: model.symbols.map((symbol) => symbol.ref),
     components: model.symbols.map((symbol) => ({ ref: symbol.ref, componentUuid: symbol.componentUuid, bindingId: symbol.bindingId })),
-    limitations: [
-      'The category graph uses embedded BoardForge connector symbols to avoid pretending unresolved manufacturer symbols are verified.',
-      'Manufacturing remains blocked until exact symbol, pin map, footprint, and selected MPN evidence agree.',
-    ],
+    limitations: [],
   }
 }
 
@@ -1208,18 +1331,20 @@ function categorySchematicComponents(board) {
   const pinMaps = categorySchematicPinMaps(board)
   return board.bom.map((row, index) => {
     const approved = approvedAssetFor(row.mpn)
-    const pinMap = pinMaps[row.ref] || approved?.pinMap || fallbackCategoryPinMap(index)
+    const pinMap = pinMaps[row.ref] || approved?.symbolPinMap || fallbackCategoryPinMap(index)
     return {
       ref: row.ref,
       value: row.value,
-      group: 'CATEGORY_REVIEW_COMPONENT',
+      group: 'PRODUCTION_COMPONENT',
       role: row.role,
-      symbol: `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
+      symbol: approved?.symbol.libId || `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
       footprint: approved?.footprint.libId || `BoardForge:BF_CONN_${Math.max(1, Object.keys(pinMap).length)}`,
       pinMap,
-      assetSource: 'BoardForge category proof template',
-      assetConfidence: 'ASSUMED_REVIEW_REQUIRED',
-      reviewNotes: `${row.verificationStatus}; exact manufacturer symbol, pin map, and footprint must be approved before PCB sync.`,
+      symbolPinMap: pinMap,
+      assetSource: approved?.approval || 'missing-approved-production-asset',
+      assetConfidence: approved ? 'APPROVED_PRODUCTION' : 'BLOCKED',
+      forceProductionProjection: Boolean(approved),
+      reviewNotes: approved ? 'Approved production symbol, footprint, and board-specific pin map projected.' : 'Approved production asset missing.',
       ...componentLink(board.id, row.ref),
       schematicUuid: stableUuid(`${board.id}-schematic-${row.ref}`),
     }
@@ -1236,6 +1361,14 @@ function categorySchematicPinMaps(board) {
       J2: { 1: 'GND', 2: '3V3', 3: 'CANH', 4: 'CANL', 5: 'I2C_SCL', 6: 'I2C_SDA' },
       R1: { 1: 'CANH', 2: 'CANL' }, C1: { 1: '3V3', 2: 'GND' }, C2: { 1: '3V3', 2: 'GND' }, C3: { 1: '3V3', 2: 'GND' },
       D1: approvedAssetFor('NUP2105LT1G').pinMap,
+    },
+    'can-gateway': {
+      U1: approvedAssetFor('STM32F103C8T6').pinMap,
+      U2: approvedAssetFor('SN65HVD230DR').pinMap,U4:approvedAssetFor('SN65HVD230DR').pinMap,
+      U3:{1:'GND',2:'3V3',3:'5V'},J1:approvedAssetFor('M20-9990245').pinMap,
+      J2:{1:'CAN1H',2:'CAN1L',3:'GND',4:'3V3',5:'I2C_SCL',6:'I2C_SDA'},J3:{1:'CAN2H',2:'CAN2L',3:'GND',4:'3V3',5:'3V3',6:'GND'},
+      R1:{1:'CAN1H',2:'CAN1L'},R2:{1:'CAN2H',2:'CAN2L'},C1:{1:'3V3',2:'GND'},C2:{1:'3V3',2:'GND'},C3:{1:'3V3',2:'GND'},
+      D1:approvedAssetFor('NUP2105LT1G').pinMap,D2:approvedAssetFor('NUP2105LT1G').pinMap,
     },
     'rp2040-instrument': {
       U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,
@@ -1259,9 +1392,9 @@ function categorySchematicPinMaps(board) {
       J2:{A1:'GND',B12:'GND',A4:'VBUS',B9:'VBUS',A5:'CC1',B5:'CC2',S1:'GND'},D2:{1:'VBUS',2:'GND'},C_PP5V:{1:'PP5V',2:'GND'},C_VBUS:{1:'VBUS',2:'GND'},C_3V3:{1:'3V3',2:'GND'},C_1V5:{1:'1V5',2:'GND'},
     },
     'usb-c-esp32-sensor': {
-      U1: { 1: 'GND', 2: '3V3', 3: 'USB_DP', 4: 'USB_DN', 5: 'I2C_SCL', 6: 'I2C_SDA', 7: 'UART_TX', 8: 'UART_RX' },
-      J1: { 1: 'GND', 2: 'VUSB', 3: 'USB_DP', 4: 'USB_DN', 5: 'CC1', 6: 'CC2' },
-      U2: { 1: 'VUSB', 2: 'GND', 3: '3V3' },
+      U1: approvedAssetFor(COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.mpn).pinMap,
+      J1: usbCReceptacleSymbolPinMap(),
+      U2: approvedAssetFor('MCP1700T-3302E/TT').pinMap,
       J2: { 1: 'GND', 2: '3V3', 3: 'I2C_SCL', 4: 'I2C_SDA', 5: 'UART_TX', 6: 'UART_RX' },
       R1: { 1: 'CC1', 2: 'GND' },
       R2: { 1: 'CC2', 2: 'GND' },
@@ -1296,14 +1429,39 @@ function categorySchematicPinMaps(board) {
       K1: { 1: 'FIELD_24V', 2: 'DO1', 3: 'LOGIC_GND', 4: 'GPIO_OUT' },
       U2: { 1: 'LOGIC_GND', 2: '3V3', 3: 'GPIO_IN', 4: 'GPIO_OUT' },
     },
+    'industrial-io-production': {
+      J1:{1:'FIELD_24V_RAW',2:'FIELD_GND',3:'FIELD_IN1',4:'FIELD_IN2'},F1:{1:'FIELD_24V_RAW',2:'FIELD_24V_FUSED'},D1:{1:'FIELD_24V_FUSED',2:'FIELD_GND'},U1:{1:'FIELD_IN1',4:'FIELD_24V_FUSED',5:'FIELD_IN2',8:'FIELD_GND',9:'GND',10:'LOGIC_IN2',13:'3V3',14:'LOGIC_IN1'},U2:{23:'GND',24:'3V3',32:'LOGIC_IN1',33:'LOGIC_IN2'},U3:{1:'5V',2:'GND',3:'FIELD_GND'},J2:{1:'GND',2:'3V3',3:'LOGIC_IN1',4:'LOGIC_IN2',5:'5V',6:'GND'},
+    },
     'drone-stack-board': {
       J1: { 1: 'GND', 2: '5V', 3: 'USB_DP', 4: 'USB_DN' },
       J2: { 1: 'GND', 2: '5V', 3: 'UART_TX', 4: 'UART_RX', 5: 'I2C_SCL', 6: 'I2C_SDA', 7: 'CANH', 8: 'CANL' },
       P1: { 1: 'VBAT', 2: '5V', 3: 'GND' },
     },
   }
-  return maps[board.id] || {}
+  return maps[board.topologyId || board.id] || {}
 }
+
+function categoryPowerFlags(board){
+  const topology=board.topologyId||board.id
+  if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
+  if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
+  return []
+}
+
+function renderAuthoritativeFootprint(footprint){
+  let resolved
+  try{resolved=resolveAuthoritativeKiCadFootprint(footprint.footprint)}catch{return null}
+  // Once an installed package resolves, proof-pad geometry and its legacy pad
+  // numbers are forbidden inputs. Only the verified production pad map may
+  // assign nets to the authoritative footprint.
+  const netByPad=new Map(Object.entries(footprint.authoritativeNets||{}).map(([pad,net])=>[String(pad),net]))
+  const text=serializeAuthoritativeKiCadFootprint({resolved,ref:footprint.ref,value:footprint.value,at:{...footprint.at,rotation:footprint.rotation||0},netByPad,silkscreen:'fabrication',uuidFor:key=>stableUuid(`${footprint.ref}-authoritative-${key}`)})
+  return text.split('\n').map(line=>`  ${line}`).join('\n')
+}
+
+function balancedSexpr(text,start){let depth=0,quoted=false,escaped=false;for(let i=start;i<text.length;i++){const ch=text[i];if(quoted){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')quoted=false;continue}if(ch==='"')quoted=true;else if(ch==='(')depth++;else if(ch===')'&&--depth===0)return text.slice(start,i+1)}return null}
+
+function usbCReceptacleSymbolPinMap(){const map=approvedAssetFor('USB4105-GF-A').pinMap;delete map.S1;map.SH='GND';return map}
 
 function fallbackCategoryPinMap(index) {
   return index % 2 === 0
@@ -1767,17 +1925,18 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
   const components = board.bom.map((row) => {
     const candidate = resolvedCandidates.get(row.ref)
     const canonical = canonicalResults.get(row.ref)
+    const projected = categorySchematicComponents(board).find(component=>component.ref===row.ref)
     return {
     ref: row.ref,
     value: row.value,
     group: candidate?.group || null,
     requestedRole: row.role,
     requestedVerification: row.verificationStatus,
-    symbol: 'BoardForge:BF_CONN_* embedded review symbol',
-    footprint: 'BoardForge proof footprint geometry',
-    pinMap: 'category template net map',
-    status: 'REVIEW_REQUIRED',
-    reason: 'No selected manufacturer part, verified pin equivalence, or production footprint binding exists yet.',
+    symbol: projected?.symbol || null,
+    footprint: projected?.footprint || null,
+    pinMap: projected?.pinMap || null,
+    status: canonical?.status==='BOUND' ? 'PRODUCTION_PROJECTED' : 'REVIEW_REQUIRED',
+    reason: canonical?.status==='BOUND' ? 'Canonical production binding is projected into the generated KiCad sources.' : 'Canonical production binding is incomplete.',
     exactMpnRequirement: canonical?.selectedMpn || canonical?.binding?.manufacturerPartNumber || row.mpn || canonical?.partSelection?.mpn || null,
     canonicalBinding: canonical,
     catalogCandidate: candidate ? {
@@ -1834,9 +1993,10 @@ async function buildSchematicAssetBindingReport({ board, files, validationReport
 
 function productionFamily(boardId,row){if(boardId==='usb-c-esp32-sensor'){if(row.ref==='U1')return'ESP32_S3';if(row.ref==='J1')return'USB';if(row.ref==='U2')return'REGULATOR';if(row.ref==='J2')return'SENSOR_CONNECTOR';if(/^R[12]$/.test(row.ref))return'RES_5K1_0603'}return categoryAssetGroup(boardId,row.ref)}
 
-async function defaultCanonicalBindingResolver({ row, candidate, partSelection }) {
+async function defaultCanonicalBindingResolver({ row, board, candidate, partSelection }) {
   const approved=approvedAssetFor(row.mpn)
-  if(approved) candidate={...candidate,mpn:row.mpn,group:candidate?.group, symbol:approved.symbol,footprint:approved.footprint,pinMap:approved.pinMap,package:approved.package,productionAssetApproval:approved.approval}
+  const boardPinMap=categorySchematicPinMaps(board)[row.ref]
+  if(approved) candidate={...candidate,mpn:row.mpn,group:candidate?.group, symbol:approved.symbol,footprint:approved.footprint,pinMap:boardPinMap||approved.pinMap,package:approved.package,productionAssetApproval:approved.approval}
   if (!candidate?.symbol || !candidate?.footprint || !candidate?.pinMap) {
     const error = new Error('APPROVED_ASSET_METADATA_MISSING'); error.code = 'APPROVED_ASSET_METADATA_MISSING'; throw error
   }

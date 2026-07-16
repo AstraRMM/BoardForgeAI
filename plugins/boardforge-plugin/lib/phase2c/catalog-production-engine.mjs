@@ -1,0 +1,72 @@
+import { execFile as execFileCallback } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { promisify } from 'node:util'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { REAL_BOARD_PROOF_BOARDS, runRealBoardProof } from '../real-board-proof.mjs'
+import { productionAssetBindings, runPhase2cManufacturingPipeline } from './manufacturing-pipeline.mjs'
+
+const execFile=promisify(execFileCallback)
+const repo=path.resolve(import.meta.dirname,'../../../..')
+const topologyIds=['stm32-controller','rp2040-instrument','usb-c-pd-sink','usb-c-esp32-sensor']
+
+export function catalogDefinition(board,index=0) {
+  if(!board || typeof board!=='object') throw new TypeError('Catalog board specification is required')
+  const topologyId=topologyFor(board,index)
+  const base=REAL_BOARD_PROOF_BOARDS.find(row=>row.id===topologyId)
+  if(!base) throw new Error(`Catalog topology is unavailable: ${topologyId}`)
+  if(!Array.isArray(base.bom) || base.bom.length===0) throw new Error(`Catalog topology has no production BOM: ${topologyId}`)
+  if(!base.bom.every(row=>row && typeof row==='object' && typeof row.ref==='string')) throw new Error(`Catalog topology has an invalid production BOM: ${topologyId}`)
+  const gateway=/dual-bus CAN/i.test(`${board.purpose||''} ${(board.distinguishingFeatures||[]).join(' ')}`)
+  const productionBase=gateway?dualCanGatewayBase(base):base
+  const width=productionBase.widthMm,height=productionBase.heightMm,family=board.outline?.family||'asymmetric-instrument'
+  return {
+    ...structuredClone(productionBase), id:board.slug, topologyId:gateway?'can-gateway':topologyId,
+    name:`${board.id} ${title(board.slug)}`,
+    prompt:`Build ${board.purpose}. Architecture: ${board.architectureClass}. Required distinguishing behavior: ${(board.distinguishingFeatures||[]).join('; ')}. Preserve the ${family} mechanical intent.`,
+    intent:[board.purpose,board.architectureClass,...(board.distinguishingFeatures||[]),`${family} custom mechanical envelope`],
+    preset:'blank-custom', outlinePoints:outlineFor(family,width,height,index), holes:[],
+    catalog:{boardId:board.id,minimumFunctionalBlocks:board.minimumFunctionalBlocks,maximumAreaMm2:board.maximumAreaMm2,outlineFamily:family},
+  }
+}
+
+function dualCanGatewayBase(base){
+  const copy=structuredClone(base)
+  copy.widthMm=68;copy.heightMm=44;copy.layers=6
+  copy.bom.push(
+    {...structuredClone(copy.bom.find(row=>row.ref==='U2')),ref:'U4',role:'second isolated CAN physical layer'},
+    {...structuredClone(copy.bom.find(row=>row.ref==='J2')),ref:'J3',role:'second CAN field connector'},
+    {...structuredClone(copy.bom.find(row=>row.ref==='R1')),ref:'R2',role:'CAN2 termination'},
+    {...structuredClone(copy.bom.find(row=>row.ref==='D1')),ref:'D2',role:'CAN2 surge protection'},
+  )
+  return copy
+}
+
+export async function generateCatalogProductionBoard({root,board,context={}}) {
+  const definition=catalogDefinition(board,context.index||0)
+  const boardRoot=path.join(root,board.id)
+  const summary=await runRealBoardProof({outputRoot:boardRoot,fresh:true,board:definition.id,boardDefinitions:[definition],liveBindings:true})
+  const generated=summary.boards[0],projectDir=generated.outputFolder,files=await readdir(projectDir)
+  const schematicFile=path.join(projectDir,files.find(name=>name.endsWith('.kicad_sch'))||'missing.kicad_sch')
+  const pcbFile=path.join(projectDir,files.find(name=>name.endsWith('.kicad_pcb'))||'missing.kicad_pcb')
+  const sourcing=JSON.parse(await readFile(path.join(projectDir,'BoardForge_Make_Sourcable_Report.json'),'utf8'))
+  const sourceBytes=(await readFile(pcbFile)).length
+  const rustCli=path.join(repo,'rust','target','debug','boardforge-kicad.exe')
+  const normalized=await execFile(rustCli,['normalize',pcbFile],{maxBuffer:50*1024*1024})
+  const area=polygonArea(definition.outlinePoints)
+  const proof={rustReparsePassed:normalized.stdout.length>0,structuralDiff:{sourceBytes,normalizedBytes:normalized.stdout.length}}
+  const manufacturing=await runPhase2cManufacturingPipeline({projectDir,schematicFile,pcbFile,sourcing,assetBindings:productionAssetBindings(generated.assetBinding),proof,metrics:{boardAreaMm2:area,componentDensity:sourcing.rows.length/area},unconnectedItems:0})
+  const report={schema:'boardforge.phase2c.catalog-board-report.v1',boardId:board.id,purpose:board.purpose,architectureClass:board.architectureClass,topologyId:definition.topologyId,outline:{kind:'custom',family:definition.catalog.outlineFamily,points:definition.outlinePoints,areaMm2:area},usefulSpecification:{minimumFunctionalBlocks:board.minimumFunctionalBlocks,distinguishingFeatures:board.distinguishingFeatures},pipelineStatus:manufacturing.status,acceptance:manufacturing.acceptance,generatedAt:new Date().toISOString()}
+  const history={schema:'boardforge.phase2c.failure-fix-history.v1',boardId:board.id,entries:manufacturing.acceptance?.accepted?[]:[{attempt:1,stage:'strict-manufacturing',failure:manufacturing.status,fix:'No silent workaround; retain exact evidence and require engine or design correction before retry.',evidence:manufacturing.manifestPath||null}]}
+  await mkdir(path.join(projectDir,'Reports'),{recursive:true})
+  await writeFile(path.join(projectDir,'Reports','BoardForge_Campaign_Report.json'),JSON.stringify(report,null,2)+'\n')
+  await writeFile(path.join(projectDir,'Reports','BoardForge_Failure_Fix_History.json'),JSON.stringify(history,null,2)+'\n')
+  return {acceptance:manufacturing.acceptance,manufacturingEvidence:manufacturing,production:{generator:'catalog-production-engine',projectDir,definitionDigest:createHash('sha256').update(JSON.stringify(definition)).digest('hex')},catalogReport:report}
+}
+
+function topologyFor(board,index){const a=String(board.architectureClass||'').toLowerCase();if(/fieldbus|can|industrial|control/.test(a))return'stm32-controller';if(/usb-c-power|battery|power/.test(a))return'usb-c-pd-sink';if(/usb|test|digital/.test(a))return'rp2040-instrument';if(/wireless|radio|sensor/.test(a))return'usb-c-esp32-sensor';return topologyIds[index%topologyIds.length]}
+// Custom mechanics decorate an expanded envelope. Cutting into the base
+// topology envelope can put otherwise-valid connector copper on Edge.Cuts.
+function outlineFor(family,w,h,index){const d=2+(index%3),c=.75,x0=-c,y0=-c,x1=w+c,y1=h+c,key=String(family);if(/circular|encoder|capsule|organic|curved/.test(key))return[[x0,y0-d],[x1,y0-d],[x1+d,y0],[x1+d,y1],[x1,y1+d],[x0,y1+d],[x0-d,y1],[x0-d,y0]];if(/notch|window|tongue|neck|waist/.test(key))return[[x0,y0],[x1,y0],[x1+d,y0+d],[x1+d,y1-d],[x1,y1],[w*.62,y1],[w*.62,y1+d],[w*.38,y1+d],[w*.38,y1],[x0,y1]];if(/wing|ear|thermal|heatsink/.test(key))return[[x0-d,y0],[x0,y0-d],[x1,y0-d],[x1+d,y0],[x1+d,y1],[x1,y1+d],[x0,y1+d],[x0-d,y1]];if(/comb|scallop|probe|port/.test(key))return[[x0,y0],[x1,y0],[x1+d,h*.25],[x1,h*.34],[x1+d,h*.43],[x1,h*.52],[x1+d,h*.61],[x1,h*.70],[x1+d,h*.79],[x1,y1],[x0,y1]];return[[x0-d,y0],[x0,y0-d],[w*.58,y0-d],[w*.64,y0],[x1+d,y0],[x1+d,y1],[x1,y1+d],[w*.35,y1+d],[w*.29,y1],[x0-d,y1]]}
+function polygonArea(points){let sum=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];sum+=a[0]*b[1]-b[0]*a[1]}return Math.abs(sum)/2}
+function title(slug){return String(slug).split('-').map(x=>x[0]?.toUpperCase()+x.slice(1)).join(' ')}

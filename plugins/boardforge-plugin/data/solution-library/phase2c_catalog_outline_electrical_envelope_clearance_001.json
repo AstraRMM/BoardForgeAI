@@ -1,0 +1,14 @@
+{
+  "id": "phase2c_catalog_outline_electrical_envelope_clearance_001",
+  "problemType": "catalog_custom_outline_intrudes_into_routed_topology",
+  "rootCause": "Catalog outline families were created by removing material from the proven topology's base rectangle. Topologies with connector or return copper near that rectangle, especially the ESP32 family, then failed real KiCad DRC with copper_edge_clearance violations.",
+  "fixSummary": "Treat the proven topology rectangle as an immutable electrical placement envelope and express mechanical personality only outside it, with at least 0.75 mm expansion on every side.",
+  "regressions": [
+    "Every Board007-050 catalog outline encloses the topology width and height with at least 0.75 mm clearance on all sides",
+    "Wireless catalog representative passes real KiCad ERC and DRC after custom outline export"
+  ],
+  "never": [
+    "Cut a catalog outline inward across an already-routed topology envelope",
+    "Assume polygon validity alone proves copper-to-edge clearance"
+  ]
+}

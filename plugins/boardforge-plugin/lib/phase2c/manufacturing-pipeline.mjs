@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { approvedAssetFor } from '../components/approved-production-assets.mjs'
 import { detectKiCadCli, exportBom, exportCpl, exportDrill, exportGerbers, packageJlcpcb, runDrc, runErc } from '../kicad-cli.mjs'
 import { evaluateBoardAcceptance } from '../challenge/board-acceptance-gate.mjs'
 
 const defaults={detectKiCadCli,exportBom,exportCpl,exportDrill,exportGerbers,packageJlcpcb,runDrc,runErc}
 
 export async function runPhase2cManufacturingPipeline(input, adapters=defaults) {
-  const {projectDir,schematicFile,pcbFile,sourcing,proof,metrics}=input
+  const {projectDir,schematicFile,pcbFile,sourcing,proof,metrics,assetBindings}=input
   const outputDir=path.join(projectDir,'Manufacturing')
   const reportsDir=path.join(projectDir,'Evidence')
   await mkdir(outputDir,{recursive:true}); await mkdir(reportsDir,{recursive:true})
@@ -43,7 +44,7 @@ export async function runPhase2cManufacturingPipeline(input, adapters=defaults) 
     project:{schematic:schematicFile,pcb:pcbFile},
     erc:acceptanceRun(erc,ercFile,executedAt),drc:{...acceptanceRun(drc,drcFile,executedAt),unconnectedItems:input.unconnectedItems},
     manufacturing:{gerbers:gerbers.files,drill:drill.files,bom:bom.files[0],cpl:cpl.files[0],zip:zipFile},
-    sourcing,proof,metrics,sourceProtection:{unchanged:sourceBefore===sourceAfter,beforeSha256:sourceBefore,afterSha256:sourceAfter},
+    sourcing,proof,metrics,assetBindings,sourceProtection:{unchanged:sourceBefore===sourceAfter,beforeSha256:sourceBefore,afterSha256:sourceAfter},
   }
   const acceptance=packaging.status==='MANUFACTURING_PACKAGE_GENERATED_NEEDS_REVIEW'
     ? await evaluateBoardAcceptance(evidence,input.acceptanceOptions)
@@ -52,6 +53,9 @@ export async function runPhase2cManufacturingPipeline(input, adapters=defaults) 
   const manifestPath=path.join(reportsDir,'BoardForge_Manufacturing_Evidence.json')
   await writeFile(manifestPath,JSON.stringify(manifest,null,2)+'\n','utf8')
   return {...manifest,manifestPath,evidence}
+}
+export function productionAssetBindings(report) {
+  return {status:report?.status,manufacturingAllowed:report?.manufacturingAllowed===true,components:(report?.components||[]).map(row=>{const mpn=row.canonicalBinding?.binding?.manufacturerPartNumber||row.exactMpnRequirement,pinMap=row.canonicalBinding?.binding?.pinMap||row.pinMap,asset=approvedAssetFor(mpn),aliases=asset?.pinAliases||{},padMap=Object.fromEntries(Object.entries(pinMap||{}).map(([pin,net])=>[aliases[pin]||pin,net]));return{ref:row.ref,mpn,exactMpnVerified:row.canonicalBinding?.status==='BOUND',symbol:row.canonicalBinding?.projections?.schematic?.symbol?.libId||row.symbol,footprint:row.canonicalBinding?.projections?.schematic?.footprint||row.footprint,pinMapVerified:row.canonicalBinding?.status==='BOUND',pinMap,symbolPinMap:pinMap,footprintPadMap:padMap,pinAliases:aliases,bindingId:row.canonicalBinding?.binding?.bindingId||null}})}
 }
 export function challengeResumeAfterAcceptance(acceptance) {
   return acceptance?.accepted===true

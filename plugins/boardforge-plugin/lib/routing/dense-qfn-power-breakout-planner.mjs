@@ -258,7 +258,12 @@ export function generateTps25750LocalBreakoutV4({ pads = [], center = { x: 0, y:
     const meanY = cluster.pads.reduce((sum, pad) => sum + pad.y, 0) / cluster.pads.length
     let at
     if (cluster.face === 'left') at = { x: center.x - courtyard.halfWidthMm - 0.5 - index, y: center.y - 2.4 + index * 1.2 }
-    if (cluster.face === 'right') at = { x: center.x + courtyard.halfWidthMm + 0.5 + index, y: center.y - 2.4 + index * 1.2 }
+    // Keep right-face power fanout on the power-pad side of the package.  The
+    // former fixed -2.4 mm ordinate swept VBUS diagonally through the adjacent
+    // CC1/CC2 escape corridor on TPS25750, making those signal pads physically
+    // unroutable in the complete board even though the isolated rail fixture
+    // was connected.
+    if (cluster.face === 'right') at = { x: center.x + courtyard.halfWidthMm + 0.5 + index, y: meanY }
     if (cluster.face === 'top') at = { x: center.x - 2.4 + index * 1.2, y: center.y - courtyard.halfHeightMm - 0.5 - index }
     if (cluster.face === 'bottom') at = { x: center.x - 2.4 + index * 1.2, y: center.y + courtyard.halfHeightMm + 0.5 + index }
     if (cluster.face === 'thermal') at = { x: meanX, y: meanY }

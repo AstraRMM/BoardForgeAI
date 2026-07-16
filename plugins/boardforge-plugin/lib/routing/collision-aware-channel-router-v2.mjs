@@ -28,12 +28,21 @@ export function routeCollisionAwareChannelsV2({nets=[],bounds,layers=['F.Cu','In
   const merged=new Map(prior.map(tree=>[tree.net,tree]))
   for(const tree of nets)merged.set(tree.net,structuredClone(tree))
   const requested=new Set(nets.map(tree=>tree.net))
-  const tracks=[],vias=[...[...merged.values()].filter(tree=>powerRank(tree)===0).flatMap(tree=>(tree.endpoints||[]).map(p=>({net:tree.net,x:p.x,y:p.y,diameter:viaDiameter,drill:viaDiameter/2,kind:'reserved-power'})))],addedTracks=[],addedVias=[]
-  const ordered=[...merged.values()].sort((a,b)=>routeClass(a)-routeClass(b)||ioRank(a)-ioRank(b)||qspiRank(a)-qspiRank(b)||routeDifficulty(a)-routeDifficulty(b)||String(a.net).localeCompare(String(b.net)))
+  // Occupancy is authoritative geometry, not a routing hint. In particular,
+  // projected footprint pads are supplied as pad-obstacle vias so a regenerated
+  // route cannot cross copper belonging to another net.
+  const tracks=(occupancy.tracks||[]).map(item=>structuredClone(item)),vias=[
+    ...(occupancy.vias||[]).map(item=>structuredClone(item)),
+    ...(occupancy.tracks||[]).filter(item=>/^GND$/i.test(item.net)&&item.kind==='projected-pad-obstacle').map(item=>({net:'GND',x:(item.start.x+item.end.x)/2,y:(item.start.y+item.end.y)/2,diameter:viaDiameter,drill:viaDiameter/2,kind:'ground-plane-pad-guard'})),
+    ...[...merged.values()].filter(tree=>powerRank(tree)===0).flatMap(tree=>(tree.endpoints||[]).map(p=>({net:tree.net,x:p.x,y:p.y,diameter:viaDiameter,drill:viaDiameter/2,kind:'reserved-power'}))),
+  ],addedTracks=[],addedVias=[]
+  const ordered=[...merged.values()].flatMap(partitionLargeTree).sort((a,b)=>routeClass(a)-routeClass(b)||ioRank(a)-ioRank(b)||qspiRank(a)-qspiRank(b)||routeDifficulty(a)-routeDifficulty(b)||String(a.net).localeCompare(String(b.net))||Number(a.partition||0)-Number(b.partition||0))
   const bundled=new Set()
   for(const names of [['I2C_SCL','I2C_SDA'],['SWCLK','SWDIO']]){
     const group=names.map(name=>ordered.find(tree=>tree.net===name)).filter(Boolean)
-    if(group.length!==names.length||group.some(tree=>tree.endpoints?.length!==2))continue
+    // Direct bundle endpoint vias are only valid for PTH endpoints. Canonical
+    // SMD packages must use the general dogbone/halo escape path below.
+    if(group.length!==names.length||group.some(tree=>tree.endpoints?.length!==2||tree.endpoints.some(p=>!p.throughHole)))continue
     const candidate=buildCoupledBundle(group,{bounds,layers,tracks,vias,clearance,trackWidth,viaDiameter,lanePitch})
     if(!candidate)throw Object.assign(new Error(`physical routing lanes exhausted for bundle ${names.join('/')}`),{code:'PHYSICAL_LANES_EXHAUSTED',net:names.join('/')})
     tracks.push(...candidate.tracks);vias.push(...candidate.vias);for(const tree of group){bundled.add(tree.net);if(requested.has(tree.net)){addedTracks.push(...candidate.tracks.filter(x=>x.net===tree.net));addedVias.push(...candidate.vias.filter(x=>x.net===tree.net))}}
@@ -46,13 +55,13 @@ export function routeCollisionAwareChannelsV2({nets=[],bounds,layers=['F.Cu','In
       const candidate=laneY===null
         ?buildShortestCandidate(tree.net,endpoints,layer,{bounds,trackWidth,viaDiameter,tracks,vias,clearance,lanePitch})
         :buildCandidate(tree.net,endpoints,layer,laneY,{bounds,dogbone,trackWidth,viaDiameter,tracks,vias,clearance})
-      if(candidate&&!findCrossNetCollisions({tracks:[...tracks,...candidate.tracks],vias:[...vias,...candidate.vias],clearance}).length){accepted=candidate;break}
+      if(candidate&&!introducedCollisions(tracks,vias,candidate.tracks,candidate.vias,clearance).length){accepted=candidate;break}
     }
-    if(!accepted)throw Object.assign(new Error(`physical routing lanes exhausted for ${tree.net}`),{code:'PHYSICAL_LANES_EXHAUSTED',net:tree.net})
+    if(!accepted)throw Object.assign(new Error(`physical routing lanes exhausted for ${tree.net}`),{code:'PHYSICAL_LANES_EXHAUSTED',net:tree.net,partialResult:{schema:'boardforge.collision-aware-channel-routing.v2.partial',tracks:[...addedTracks],vias:[...addedVias],failedNet:tree.net,completedNets:[...new Set(addedTracks.map(item=>item.net))]}})
     tracks.push(...accepted.tracks);vias.push(...accepted.vias);if(requested.has(tree.net)){addedTracks.push(...accepted.tracks);addedVias.push(...accepted.vias)}
   }
   const result={schema:'boardforge.collision-aware-channel-routing.v2',tracks:addedTracks,vias:addedVias,occupancy:{tracks,vias,routedNets:[...merged.values()].map(tree=>structuredClone(tree))}}
-  result.diagnostics={crossNetCollisions:findCrossNetCollisions({tracks,vias,clearance}),netsRouted:new Set(tracks.map(t=>t.net)).size}
+  result.diagnostics={crossNetCollisions:introducedCollisions(occupancy.tracks||[],occupancy.vias||[],addedTracks,addedVias,clearance),netsRouted:new Set(addedTracks.map(t=>t.net)).size}
   return result
 }
 
@@ -68,7 +77,7 @@ function buildCoupledBundle(group,o){
       if(layer!=='F.Cu')for(const p of[a,b])vias.push({net:tree.net,x:p.x,y:p.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'bundle-endpoint'})
     }
     if(tracks.some(t=>[t.start,t.end].some(p=>p.x<o.bounds.minX+1||p.x>o.bounds.maxX-1||p.y<o.bounds.minY+1||p.y>o.bounds.maxY-1)))continue
-    if(!findCrossNetCollisions({tracks:[...o.tracks,...tracks],vias:[...o.vias,...vias],clearance:o.clearance}).length)return{tracks,vias}
+    if(!introducedCollisions(o.tracks,o.vias,tracks,vias,o.clearance).length)return{tracks,vias}
   }
   return null
 }
@@ -80,13 +89,13 @@ function buildShortestCandidate(net,endpoints,layer,o){
   if(direct)return direct
   if(endpoints.length>2){
     const vias=layer==='F.Cu'?[]:endpoints.map(p=>({net,x:p.x,y:p.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'endpoint'}))
-    if(findCrossNetCollisions({tracks:o.tracks,vias:[...o.vias,...vias],clearance:o.clearance}).length)return null
+    if(introducedCollisions(o.tracks,o.vias,[],vias,o.clearance).length)return null
     const tracks=[]
     for(let i=1;i<endpoints.length;i++){
       let found=null
       for(const points of orthogonalPaths(endpoints[i-1],endpoints[i],o)){
         const part=[];for(let j=1;j<points.length;j++)if(points[j-1].x!==points[j].x||points[j-1].y!==points[j].y)part.push(track(net,layer,points[j-1],points[j],o.trackWidth,'tree'))
-        if(!findCrossNetCollisions({tracks:[...o.tracks,...tracks,...part],vias:[...o.vias,...vias],clearance:o.clearance}).length){found=part;break}
+        if(!introducedCollisions(o.tracks,o.vias,[...tracks,...part],vias,o.clearance).length){found=part;break}
       }
       if(!found)return null;tracks.push(...found)
     }
@@ -97,7 +106,7 @@ function buildShortestCandidate(net,endpoints,layer,o){
   for(const points of paths){
     const tracks=[];for(let i=1;i<points.length;i++)if(points[i-1].x!==points[i].x||points[i-1].y!==points[i].y)tracks.push(track(net,layer,points[i-1],points[i],o.trackWidth,'orthogonal'))
     const vias=layer==='F.Cu'?[]:endpoints.map(p=>({net,x:p.x,y:p.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'endpoint'}))
-    if(!findCrossNetCollisions({tracks:[...o.tracks,...tracks],vias:[...o.vias,...vias],clearance:o.clearance}).length)return{tracks,vias}
+    if(!introducedCollisions(o.tracks,o.vias,tracks,vias,o.clearance).length)return{tracks,vias}
   }
   return null
 }
@@ -113,16 +122,17 @@ function orthogonalPaths(a,b,o){
 }
 
 function routeDifficulty(tree){const p=tree.endpoints||[];if(p.length<2)return 0;const xs=p.map(x=>x.x),ys=p.map(x=>x.y);return (Math.max(...xs)-Math.min(...xs)+Math.max(...ys)-Math.min(...ys))*Math.max(1,p.length-1)}
+function partitionLargeTree(tree){const endpoints=tree.endpoints||[];if(endpoints.length<=6)return[tree];const anchor=endpoints.find(p=>p.throughHole)||endpoints[0],rest=endpoints.filter(p=>p!==anchor),out=[];for(let i=0;i<rest.length;i+=4)out.push({...tree,partition:i/4,endpoints:[anchor,...rest.slice(i,i+4)]});return out}
 function powerRank(tree){return /^(GND|3V3|5V|VBUS)$/i.test(tree.net)?0:1}
 function qspiRank(tree){if(!/^QSPI_/.test(tree.net))return 1000;return tree.endpoints?.[0]?.y||0}
 function ioRank(tree){return tree.net==='I2C_SCL'?0:tree.net==='I2C_SDA'?1:2}
 function signalClass(tree){return /^I2C_/.test(tree.net)?0:/^QSPI_/.test(tree.net)?1:2}
-function routeClass(tree){return /^I2C_/.test(tree.net)?0:powerRank(tree)===0?1:/^QSPI_/.test(tree.net)?2:3}
+function routeClass(tree){if(/^(3V3|5V|VBUS|VUSB)$/i.test(tree.net))return 0;const dense={I2C_SDA:1,UART_TX:2,UART_RX:3,I2C_SCL:4}[tree.net];return dense??(/^GND$/i.test(tree.net)?99:/^QSPI_/.test(tree.net)?6:7)}
 function preferredLayers(tree,layers){
   const preferred=/^GND$/i.test(tree.net)?'In1.Cu':/^(3V3|5V|VBUS)$/i.test(tree.net)?'In2.Cu':null
   if(preferred&&layers.includes(preferred))return[preferred]
-  if(tree.net==='I2C_SCL'&&layers.includes('F.Cu'))return['F.Cu']
-  if(tree.net==='I2C_SDA'&&layers.includes('B.Cu'))return['B.Cu']
+  const densePreferred={I2C_SCL:'In1.Cu',I2C_SDA:'In2.Cu',UART_TX:'B.Cu',UART_RX:'In1.Cu'}[tree.net]
+  if(densePreferred&&layers.includes(densePreferred))return[densePreferred,...layers.filter(layer=>layer!==densePreferred)]
   const outer=layers.filter(x=>x==='F.Cu'||x==='B.Cu'),inner=layers.filter(x=>!outer.includes(x))
   if(/^(SWDIO|SWCLK|I2C_SCL|I2C_SDA)$/i.test(tree.net))return[...outer,...inner]
   return outer.length?outer:[...outer,...inner]
@@ -132,15 +142,36 @@ function preferredLayers(tree,layers){
 // MCU fan-out case) form non-crossing segments and therefore reuse a layer safely.
 // Channel search remains the deterministic fallback for obstructed topologies.
 function buildDirectCandidate(net,endpoints,layer,o){
+  // A plated through-hole pad already spans copper layers. SMD pads do not:
+  // placing a via at their center can drill the pad or collide with an adjacent
+  // canonical lead. Force SMD non-front routes through the halo escape path.
+  if(layer!=='F.Cu'&&endpoints.some(p=>p.throughHole!==true))return null
   const tracks=[],vias=[]
   const edgeMargin=o.clearance+Math.max(o.trackWidth,o.viaDiameter)/2
   if(endpoints.some(p=>p.x-o.bounds.minX<edgeMargin||o.bounds.maxX-p.x<edgeMargin||p.y-o.bounds.minY<edgeMargin||o.bounds.maxY-p.y<edgeMargin))return null
   for(let i=1;i<endpoints.length;i++)tracks.push(track(net,layer,endpoints[i-1],endpoints[i],o.trackWidth,'direct'))
-  if(layer!=='F.Cu')for(const p of endpoints)vias.push({net,x:p.x,y:p.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'endpoint'})
-  return findCrossNetCollisions({tracks:[...o.tracks,...tracks],vias:[...o.vias,...vias],clearance:o.clearance}).length?null:{tracks,vias}
+  if(layer!=='F.Cu')for(const p of endpoints)if(!p.throughHole)vias.push({net,x:p.x,y:p.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'endpoint'})
+  return introducedCollisions(o.tracks,o.vias,tracks,vias,o.clearance).length?null:{tracks,vias}
 }
 
-function buildCandidate(net,endpoints,layer,laneY,o){const tracks=[],vias=[];for(let i=0;i<endpoints.length;i++){const p=endpoints[i],escape=findEscape(p,i,net,o);if(!escape)return null;tracks.push(track(net,'F.Cu',p,escape,o.trackWidth,'dogbone'));vias.push({net,x:escape.x,y:escape.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'dogbone'});tracks.push(track(net,layer,escape,{x:escape.x,y:laneY},o.trackWidth,'drop'))}const xs=vias.map(v=>v.x);tracks.push(track(net,layer,{x:Math.min(...xs),y:laneY},{x:Math.max(...xs),y:laneY},o.trackWidth,'lane'));const combined={tracks:[...o.tracks,...tracks],vias:[...o.vias,...vias]};return findCrossNetCollisions({...combined,clearance:o.clearance}).length?null:{tracks,vias}}
-function findEscape(p,index,net,o){for(let ring=1;ring<=16;ring++)for(const sign of(index%2?[1,-1]:[-1,1]))for(const dy of[0,o.dogbone,-o.dogbone]){const q={x:p.x+sign*o.dogbone*ring,y:p.y+dy};if(q.x<o.bounds.minX+1||q.x>o.bounds.maxX-1||q.y<o.bounds.minY+1||q.y>o.bounds.maxY-1)continue;const probe={tracks:o.tracks,vias:[...o.vias,{net,x:q.x,y:q.y,diameter:o.viaDiameter}]};if(!findCrossNetCollisions({...probe,clearance:o.clearance}).length)return q}return null}
+function buildCandidate(net,endpoints,layer,laneY,o){const tracks=[],vias=[],anchors=[];for(let i=0;i<endpoints.length;i++){const p=endpoints[i];if(p.throughHole){anchors.push(p);tracks.push(track(net,layer,p,{x:p.x,y:laneY},o.trackWidth,'pth-drop'));continue}const escape=findEscape(p,i,net,{...o,tracks:[...o.tracks,...tracks],vias:[...o.vias,...vias]});if(!escape)return null;anchors.push(escape);tracks.push(track(net,'F.Cu',p,escape,o.trackWidth,'dogbone'));vias.push({net,x:escape.x,y:escape.y,diameter:o.viaDiameter,drill:o.viaDiameter/2,kind:'dogbone'});tracks.push(track(net,layer,escape,{x:escape.x,y:laneY},o.trackWidth,'drop'))}const xs=anchors.map(v=>v.x);tracks.push(track(net,layer,{x:Math.min(...xs),y:laneY},{x:Math.max(...xs),y:laneY},o.trackWidth,'lane'));return introducedCollisions(o.tracks,o.vias,tracks,vias,o.clearance).length?null:{tracks,vias}}
+function findEscape(p,index,net,o){
+  // Canonical packages expose pads on every side (and thermal grids), so an
+  // x-only dogbone search can falsely declare routable geometry exhausted.
+  // Search deterministic radial spokes; the final full-candidate collision
+  // check still fails closed if the escape segment itself is not legal.
+  const directions=Array.from({length:16},(_,i)=>{const angle=(i+(index%2?8:0))*Math.PI/8;return{x:Math.cos(angle),y:Math.sin(angle)}})
+  for(let ring=1;ring<=24;ring++)for(const direction of directions){
+    const q={x:p.x+direction.x*o.dogbone*ring,y:p.y+direction.y*o.dogbone*ring}
+    if(q.x<o.bounds.minX+1||q.x>o.bounds.maxX-1||q.y<o.bounds.minY+1||q.y>o.bounds.maxY-1)continue
+    const probe={tracks:[...o.tracks,track(net,'F.Cu',p,q,o.trackWidth,'escape-probe')],vias:[...o.vias,{net,x:q.x,y:q.y,diameter:o.viaDiameter}]}
+    if(!introducedCollisions(o.tracks,o.vias,[probe.tracks.at(-1)],[probe.vias.at(-1)],o.clearance).length)return q
+  }
+  return null
+}
 function* laneCandidates(b,p){const center=(b.minY+b.maxY)/2;for(let i=0;;i++){const ys=i===0?[center]:[center+i*p,center-i*p];let yielded=false;for(const y of ys)if(y>b.minY+1&&y<b.maxY-1){yielded=true;yield y}if(!yielded&&center+i*p>=b.maxY-1&&center-i*p<=b.minY+1)return}}
+function introducedCollisions(baseTracks,baseVias,newTracks,newVias,clearance){
+  const bt=baseTracks.length,bv=baseVias.length
+  return findCrossNetCollisions({tracks:[...baseTracks,...newTracks],vias:[...baseVias,...newVias],clearance}).filter(hit=>hit.type==='track-track'?(hit.a>=bt||hit.b>=bt):hit.type==='via-track'?(hit.a>=bv||hit.b>=bt):(hit.a>=bv||hit.b>=bv))
+}
 function track(net,layer,start,end,width,kind){return{net,layer,start,end,width,kind}}

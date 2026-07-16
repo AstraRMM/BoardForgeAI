@@ -6,7 +6,8 @@ import { ACCEPTANCE_SCHEMA, LEARNING_SCHEMA, appendLearningEntry, evaluateBoardA
 test('50-board manifest is unique, useful, compactness-bounded, and meets custom outline quota', () => {
   const result = validateChallengeManifest(manifest);
   assert.deepEqual(result.errors, []);
-  assert.equal(result.customOutlineCount, 32);
+  assert.equal(result.customOutlineCount, 50);
+  assert.equal(new Set(manifest.boards.map((board) => board.outline.family)).size, 50);
   assert.equal(new Set(manifest.boards.map((board) => board.architectureClass)).size >= 20, true);
   assert.equal(manifest.boards.some((board) => /(^|_)ESC($|_)/.test(board.id)), false);
   assert.equal(manifest.boards.some((board) => /(^|_)FC($|_)/.test(board.id)), false);

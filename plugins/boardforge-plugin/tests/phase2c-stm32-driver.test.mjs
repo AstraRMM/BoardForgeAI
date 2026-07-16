@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { createPhase2cChallengeDriver, verifyRp2040ProductionContract, verifyStm32ProductionContract, verifyUsbCPdSinkProductionContract, verifyUsbCPdSourceProductionContract } from '../../../scripts/phase2c-challenge-driver.mjs'
@@ -22,6 +22,17 @@ test('board002 invokes STM32 production generator with validated contract and ex
   const result=await driver.executeBoard(stm32,{index:1})
   assert.equal(result.acceptance.accepted,true);assert.equal(invocation.template.id,'002_STM32_CONTROLLER');assert.equal(invocation.context.index,1)
   assert.ok(invocation.template.requirements.some(row=>row.role==='MCU'))
+})
+test('board002 reuses contained hardened manufacturing evidence without regenerating or replacing it',async()=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'bf-stm32-existing-')),project=path.join(root,stm32.id,stm32.slug),evidenceDir=path.join(project,'Evidence'),manufacturing=path.join(project,'Manufacturing')
+  await mkdir(evidenceDir,{recursive:true});await mkdir(manufacturing,{recursive:true})
+  const artifacts=[]
+  for(let i=0;i<5;i++){const data=Buffer.from(`existing-${i}`),file=path.join(manufacturing,`artifact-${i}.dat`);await writeFile(file,data);artifacts.push({path:file,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')})}
+  const zip=path.join(manufacturing,'stm32-controller_Manufacturing.zip');await writeFile(zip,'zip')
+  const digest=createHash('sha256').update('existing-stm32').digest('hex'),evidence={schema:'boardforge.phase2c.manufacturing-evidence.v1',status:'MANUFACTURING_ACCEPTED',sourceProtection:{unchanged:true},artifacts,packaging:{zip},acceptance:{status:'BOARD_ACCEPTED',accepted:true,evidenceDigest:digest}}
+  await writeFile(path.join(evidenceDir,'BoardForge_Manufacturing_Evidence.json'),JSON.stringify(evidence))
+  let generated=false;const driver=createPhase2cChallengeDriver({root,generateStm32:async()=>{generated=true;throw Error('must not regenerate')}}),result=await driver.executeBoard(stm32,{index:1})
+  assert.equal(generated,false);assert.equal(result.acceptance.evidenceDigest,digest);assert.equal(result.production.generator,'existing-hardened-manufacturing-evidence')
 })
 test('pilot cannot be replayed through board execution',async()=>{
   let called=false;const driver=createPhase2cChallengeDriver({generateStm32:async()=>{called=true;return accepted}})

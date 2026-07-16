@@ -63,7 +63,7 @@ export const manifest = {
    slug, purpose, architectureClass,
    minimumFunctionalBlocks: index % 4 + 3,
    maximumAreaMm2: 900 + (index % 8) * 350,
-   outline: index < 32 ? { kind: 'custom', family: shape, purpose: `${shape} supports mechanical, connector, RF, or thermal constraints` } : { kind: 'standard', family: 'compact-rounded-rectangle' },
+   outline: { kind: 'custom', family: `${shape}-${slug}`, purpose: `${shape} supports mechanical, connector, RF, thermal, or human-interface constraints` },
    distinguishingFeatures: [`${architectureClass} architecture`, `${purpose} validation profile`],
    acceptanceProfile: 'strict-production-v1',
  })),

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -88,7 +88,7 @@ test('real board proof writes real KiCad category symbol graphs without fake man
   }
 })
 
-test('pilot report consumes canonical projections and exposes missing exact MPN blockers', async () => {
+test('pilot projects canonical production assets into actual KiCad sources', async () => {
   const tempParent = await mkdtemp(path.join(os.tmpdir(), 'BoardForge_Real_Board_Proofs_Canonical_Test_'))
   try {
     const summary = await runRealBoardProof({
@@ -104,8 +104,26 @@ test('pilot report consumes canonical projections and exposes missing exact MPN 
     const report = JSON.parse(await readFile(path.join(board.outputFolder, 'BoardForge_Schematic_Asset_Binding_Report.json'), 'utf8'))
     assert.equal(report.components.find((row) => row.ref === 'U1').canonicalBinding.status, 'BOUND')
     assert.equal(report.components.find((row) => row.ref === 'U1').canonicalBinding.projections.bom.bindingId, 'a'.repeat(64))
-    assert.equal(report.components.find((row) => row.ref === 'U2').canonicalBinding.blocker.code, 'EXACT_MPN_REQUIREMENT_MISSING')
-    assert.equal(report.canonicalBindingStatus, 'CANONICAL_BINDINGS_BLOCKED')
-    assert.ok(report.canonicalBlockers.some((row) => row.stage === 'component_selection'))
+    assert.equal(report.canonicalBindingStatus, 'CANONICAL_BINDINGS_COMPLETE')
+    const files=await readdir(board.outputFolder)
+    const sch=await readFile(path.join(board.outputFolder,files.find(name=>name.endsWith('.kicad_sch'))),'utf8')
+    const pcb=await readFile(path.join(board.outputFolder,files.find(name=>name.endsWith('.kicad_pcb'))),'utf8')
+    assert.doesNotMatch(sch,/\(lib_id "BoardForge:BF_CONN/)
+    assert.doesNotMatch(pcb,/ReviewRequired/)
+    assert.match(pcb,/\(pad "41" thru_hole circle/,'authoritative ESP32 thermal/ground pad 41 must be projected')
+    assert.match(pcb,/\(drill 1\)/,'authoritative drilled package geometry must be preserved')
+    assert.match(pcb,/\(footprint "ESP32-S3-WROOM-1U"/,'compact external-antenna package must be projected')
+    const placement=JSON.parse(await readFile(path.join(board.outputFolder,'BoardForge_Category_PCB_Evidence_Report.json'),'utf8'))
+    assert.equal(placement.placement.resolvedBeforeRouting,true)
+    assert.deepEqual(placement.placement.refs,['U1','J1','U2','J2','R1','R2'])
+    assert.equal(placement.authoritativeRouting.status,'CANDIDATE_PROMOTED','authoritative projected routing must pass real KiCad before promotion')
+    assert.equal(placement.authoritativeRouting.drc.issueCounts.errors,0)
+    assert.equal(board.drc.errors,0,'promoted canonical pilot must remain DRC clean after final KiCad validation')
+    const preview=JSON.parse(await readFile(path.join(board.outputFolder,'BoardForge_Board_Preview.json'),'utf8'))
+    assert.equal(preview.validation.areaMm2,882,'representative production topology must remain below the 900 mm2 cap')
+    for(const component of report.components){
+      assert.match(sch,new RegExp(`\\(lib_id "${component.symbol.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}"\\)`))
+      assert.match(pcb,new RegExp(`\\(footprint "(?:[^"\\n]+:)?${component.footprint.split(':').at(-1).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}"`))
+    }
   } finally { await rm(tempParent, { recursive: true, force: true }) }
 })

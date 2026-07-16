@@ -19,7 +19,9 @@ export function outlineSummary(points) {
 
 export function writeKiCadPcbText({ projectName = 'boardforge-custom-outline', points = [], holes = [], layerCount = 2 }) {
   const normalized = normalizePoints(points)
-  const copperLayers = layerCount >= 4
+  const copperLayers = layerCount >= 6
+    ? '  (layers\n    (0 "F.Cu" signal)\n    (1 "In1.Cu" signal)\n    (2 "In2.Cu" signal)\n    (3 "In3.Cu" signal)\n    (4 "In4.Cu" signal)\n    (31 "B.Cu" signal)\n    (44 "Edge.Cuts" user)\n  )'
+    : layerCount >= 4
     ? '  (layers\n    (0 "F.Cu" signal)\n    (1 "In1.Cu" signal)\n    (2 "In2.Cu" signal)\n    (31 "B.Cu" signal)\n    (44 "Edge.Cuts" user)\n  )'
     : '  (layers\n    (0 "F.Cu" signal)\n    (31 "B.Cu" signal)\n    (44 "Edge.Cuts" user)\n  )'
   const edgeLines = normalized.map((point, index) => {

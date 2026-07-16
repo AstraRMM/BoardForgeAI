@@ -1,0 +1,9 @@
+{
+  "id": "authoritative_projected_pad_routing_001",
+  "problemType": "routing",
+  "symptom": "Legacy proof tracks remain electrically clean after canonical footprints move or change pad geometry, but no longer prove the projected production PCB.",
+  "rootCause": "Routing regeneration consumed historical endpoint coordinates and treated occupancy as advisory; transformed pad copper was not authoritative collision geometry.",
+  "solution": "Parse placed KiCad pads after canonical projection, derive net endpoint trees from their board coordinates, model every projected pad as same-net-aware occupancy, discard proof copper during full regeneration, and write only a candidate PCB for KiCad DRC promotion.",
+  "regression": "plugins/boardforge-plugin/tests/authoritative-pad-routing.test.mjs",
+  "acceptance": ["candidate-only write", "zero cross-net collisions", "KiCad DRC zero", "KiCad unconnected zero"]
+}

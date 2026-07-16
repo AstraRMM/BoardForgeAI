@@ -1,22 +1,30 @@
 import crypto from 'node:crypto'
 import { assignNetsToClasses } from './net-classes.mjs'
+import { flattenForSchematicCache, resolveAuthoritativeKiCadSymbol } from './components/authoritative-kicad-symbol-resolver.mjs'
 
 export function generateSchematicModel(board, components = [], input = {}) {
   const nets = assignNetsToClasses(normalizeNets(input.nets, components))
   const symbols = placeSymbols(components.map((component) => {
     const fallback = fallbackAssets(component)
     const footprint = component.footprint?.libId || component.footprint || fallback.footprint
-    const pinMap = hasUsefulPinMap(component.pinMap) ? component.pinMap : fallbackPinMap(component)
+    // Schematic pins and footprint pads may use different identifiers (for
+    // example USB-C SH versus footprint pad S1). Prefer the explicit symbol
+    // domain whenever a canonical binding supplies both maps.
+    const pinMap = hasUsefulPinMap(component.symbolPinMap)
+      ? component.symbolPinMap
+      : (hasUsefulPinMap(component.pinMap) ? component.pinMap : fallbackPinMap(component))
     const rawSymbol = normalizeSchematicSymbol(component, component.symbol?.libId || component.symbol || fallback.symbol, footprint)
     const useNative = shouldUseNativeSymbol(component, rawSymbol, pinMap)
     const schematicPinMap = useNative ? pinMap : schematicConnectorPinMap(pinMap)
     const symbol = useNative ? rawSymbol : (schematicConnectorSymbol(schematicPinMap) || rawSymbol)
+    const installed=useNative?authoritativeSymbol(symbol):null
     return {
       ref: component.ref,
       value: component.value || component.group || 'component',
       group: component.group || inferGroup(component),
       role: component.role || null,
       symbol,
+      pinGeometry:installed?.pinGeometry||null,
       footprint,
       model3d: component.model3d || fallback.model3d || null,
       package: component.package || fallback.package || null,
@@ -36,6 +44,7 @@ export function generateSchematicModel(board, components = [], input = {}) {
     }
   }))
   const powerSymbols = [...new Set(nets.filter((net) => isPowerNet(net.name)).map((net) => net.name))]
+  const powerFlags = normalizeSourceBackedPowerFlags(input.powerFlags, components, nets)
   const diffPairs = detectDiffPairs(nets)
   const warnings = schematicWarnings(symbols, nets)
   const readinessGates = [
@@ -64,6 +73,7 @@ export function generateSchematicModel(board, components = [], input = {}) {
     symbols,
     nets,
     powerSymbols,
+    powerFlags,
     powerRails: powerSymbols.map((name) => ({
       name,
       pins: pinsForNet(name, symbols).length,
@@ -132,6 +142,7 @@ function normalizeSchematicSymbol(component, symbol, footprint = '') {
 }
 
 function shouldUseNativeSymbol(component = {}, symbol = '', pinMap = {}) {
+  if (component.forceProductionProjection === true) return Boolean(symbol) && !/^BoardForge:BF_CONN_/i.test(symbol)
   const group = component.group || inferGroup(component)
   if (!symbol) return false
   if (/^BoardForge:BF_CONN_/i.test(symbol)) return false
@@ -188,14 +199,15 @@ function schematicConnectorSymbol(pinMap = {}) {
 }
 
 export function kicadSchematicFromModel(board, schematicModel) {
-  const libSymbols = embeddedLibSymbols(schematicModel.symbols)
-  const symbolText = schematicModel.symbols.map((symbol) => symbolObject(symbol, 'BoardForge')).join('\n')
+  const allSymbols=[...schematicModel.symbols,...powerFlagSymbols(schematicModel.powerFlags)]
+  const libSymbols = embeddedLibSymbols(allSymbols)
+  const symbolText = allSymbols.map((symbol) => symbolObject(symbol, 'BoardForge')).join('\n')
   const connectivity = schematicModel.input?.emitConnectivityLabels === true
-    ? netLabelConnectivityObjects(schematicModel.symbols)
+    ? netLabelConnectivityObjects(allSymbols)
     : []
   const netLabels = schematicModel.nets.map((net, index) => noteObject(`net ${net.name}`, 25, 176 + index * 4))
   const reviewText = reviewObjects(schematicModel)
-  const instances = schematicModel.symbols.map((symbol) => `\t\t(path "/${symbol.uuid}" (reference "${safe(symbol.ref)}") (unit 1) (value "${safe(symbol.value)}") (footprint "${safe(String(symbol.footprint || '').split(':').pop())}"))`).join('\n')
+  const instances = allSymbols.map((symbol) => `\t\t(path "/${symbol.uuid}" (reference "${safe(symbol.ref)}") (unit 1) (value "${safe(symbol.value)}") (footprint "${safe(String(symbol.footprint || '').split(':').pop())}"))`).join('\n')
   return `(kicad_sch
 \t(version 20250114)
 \t(generator "BoardForge Plugin CLI")
@@ -226,11 +238,68 @@ ${instances}
 }
 
 function embeddedLibSymbols(symbols = []) {
-  const counts = [...new Set(symbols.map((symbol) => {
-    const match = String(symbol.symbol || '').match(/BoardForge:BF_CONN_(\d+)/)
-    return match ? Number(match[1]) : null
-  }).filter(Boolean))].sort((a, b) => a - b)
-  return counts.map((count) => embeddedConnectorSymbol(count)).join('\n')
+  const unique = new Map()
+  for (const symbol of symbols) if (!unique.has(symbol.symbol)) unique.set(symbol.symbol, symbol)
+  const emitted=new Set(),definitions=[]
+  for(const symbol of unique.values()){
+    const installed=authoritativeSymbol(symbol.symbol)
+    if(!installed){definitions.push(embeddedMappedSymbol(symbol.symbol,Object.keys(symbol.pinMap||{})));continue}
+    for(const definition of installed.definitions)if(!emitted.has(definition)){emitted.add(definition);definitions.push(definition)}
+  }
+  return definitions.join('\n')
+}
+
+function powerFlagSymbols(flags=[]){return flags.map((flag,index)=>{const installed=authoritativeSymbol('power:PWR_FLAG');return{ref:flag.ref||`#FLG0${index+1}`,value:'PWR_FLAG',group:'POWER_FLAG',symbol:'power:PWR_FLAG',footprint:'',pinMap:{1:flag.rail},pinGeometry:installed?.pinGeometry||null,at:{x:25.4+index*7.62,y:165.1},uuid:crypto.randomUUID(),componentUuid:null,bindingId:null,powerSource:flag.source,reason:flag.reason}})}
+
+/**
+ * PWR_FLAG is an electrical source assertion, not a cosmetic ERC suppressor.
+ * Accept only plans that identify a real component already connected to the
+ * asserted rail. Ground is allowed only as an explicit source return; it is
+ * never inferred merely because a net happens to be named GND.
+ */
+function normalizeSourceBackedPowerFlags(flags=[],components=[],nets=[]){
+  if(flags==null)return[]
+  if(!Array.isArray(flags))throw new TypeError('powerFlags must be an array of source-backed rail assertions')
+  const refs=new Map(components.map(component=>[component.ref,component]))
+  const netNames=new Set(nets.map(net=>net.name))
+  return flags.map((flag,index)=>{
+    const rail=String(flag?.rail||''),sourceRef=String(flag?.source?.ref||''),kind=String(flag?.source?.kind||'')
+    if(!rail)throw new Error(`Power flag ${index+1} must name a driven rail`)
+    if(!netNames.has(rail))throw new Error(`Power flag ${index+1} references unknown rail ${rail}`)
+    const source=refs.get(sourceRef)
+    if(!source)throw new Error(`Power flag ${index+1} source component is missing: ${sourceRef||'empty'}`)
+    if(!Object.values(source.pinMap||{}).includes(rail))throw new Error(`Power flag ${index+1} source ${sourceRef} is not connected to ${rail}`)
+    if(!kind)throw new Error(`Power flag ${index+1} source kind is required`)
+    return Object.freeze({...flag,rail,source:Object.freeze({...flag.source,ref:sourceRef,kind})})
+  })
+}
+
+function authoritativeSymbol(libId){
+  try{
+    const resolved=resolveAuthoritativeKiCadSymbol(libId),library=resolved.library
+    const definitions=[flattenForSchematicCache(resolved)]
+    return {definitions,pinGeometry:Object.fromEntries(resolved.pins.map(pin=>[pin.number,pin]))}
+  }catch{return null}
+}
+
+function embeddedMappedSymbol(libId, pinNumbers) {
+  const pins = pinNumbers.length ? pinNumbers : ['1']
+  const rows = pins.map((_, index) => round(((pins.length - 1) / 2 - index) * 2.54))
+  const top = round(Math.max(...rows) + 2.54), bottom = round(Math.min(...rows) - 2.54)
+  const bodyName=String(libId||'BoardForge:Unknown').split(':').at(-1)
+  const pinText=pins.map((number,index)=>{const left=index%2===0,x=left?-5.08:5.08,rotation=left?0:180;return `\t\t\t\t(pin passive line (at ${x} ${rows[index]} ${rotation}) (length 2.54) (name "P${safe(number)}" (effects (font (size 1.0 1.0)))) (number "${safe(number)}" (effects (font (size 1.0 1.0)))))`}).join('\n')
+  return `\t\t(symbol "${safe(libId)}"
+\t\t\t(pin_names (offset 1.016))
+\t\t\t(exclude_from_sim no)
+\t\t\t(in_bom yes)
+\t\t\t(on_board yes)
+\t\t\t(property "Reference" "U" (at 0 ${round(top+2.54)} 0) (effects (font (size 1.27 1.27))))
+\t\t\t(property "Value" "${safe(bodyName)}" (at 0 ${round(bottom-2.54)} 0) (effects (font (size 1.27 1.27))))
+\t\t\t(symbol "${safe(bodyName)}_0_1"
+\t\t\t\t(rectangle (start -5.08 ${top}) (end 5.08 ${bottom}) (stroke (width 0.254) (type default)) (fill (type background)))
+${pinText}
+\t\t\t)
+\t\t)`
 }
 
 function embeddedConnectorSymbol(count, { libraryQualified = true } = {}) {
@@ -347,14 +416,25 @@ function netConnectivityObjects(symbols = []) {
 
 function netLabelConnectivityObjects(symbols = []) {
   const objects = []
+  const emittedLabels = new Set()
   for (const symbol of symbols) {
     Object.entries(symbol.pinMap || {}).forEach(([pin, net], index) => {
       if (!net) return
       const pinAt = schematicPinCoordinate(symbol, pin, index)
-      const labelAt = labelCoordinateForPin(pinAt)
-      objects.push(wireObject(pinAt.x, pinAt.y, labelAt.x, labelAt.y))
-      objects.push(labelObject(net, labelAt.x, labelAt.y, isPowerNet(net), labelAt.rotation))
+      const labelKey=`${net}@${pinAt.x},${pinAt.y}`
+      if(emittedLabels.has(labelKey))return
+      emittedLabels.add(labelKey)
+      if(symbol.group==='POWER_FLAG'){
+        objects.push(wireObject(pinAt.x,pinAt.y,pinAt.x,round(pinAt.y-5.08)))
+        objects.push(labelObject(net,pinAt.x,round(pinAt.y-5.08),true,90))
+      }else objects.push(labelObject(net, pinAt.x, pinAt.y, isPowerNet(net), pinAt.rotation||0))
     })
+    for(const pin of Object.keys(symbol.pinGeometry||{})){
+      if(Object.prototype.hasOwnProperty.call(symbol.pinMap||{},pin))continue
+      const at=schematicPinCoordinate(symbol,pin,0)
+      if(Object.keys(symbol.pinMap||{}).some(mapped=>{const other=schematicPinCoordinate(symbol,mapped,0);return other.x===at.x&&other.y===at.y}))continue
+      objects.push(noConnectObject(at.x,at.y))
+    }
   }
   return objects
 }
@@ -368,6 +448,8 @@ function noConnectObject(x, y) {
 }
 
 function schematicPinCoordinate(symbol, pin, index) {
+  const actual=symbol.pinGeometry?.[String(pin)]
+  if(actual)return {x:round(symbol.at.x+actual.x),y:round(symbol.at.y-actual.y),rotation:actual.rotation||0}
   const offsets = pinOffsetsForSymbol(symbol)
   const offset = offsets[String(pin)] || { x: 18, y: index * 3, rotation: 0 }
   return { x: round(symbol.at.x + offset.x), y: round(symbol.at.y + offset.y), rotation: offset.rotation || 0 }
@@ -375,7 +457,10 @@ function schematicPinCoordinate(symbol, pin, index) {
 
 function labelCoordinateForPin(pinAt) {
   const length = 7.62
-  const pointsRight = Number(pinAt.rotation || 0) === 180
+  const rotation=Number(pinAt.rotation||0)%360
+  if(rotation===90)return{x:round(pinAt.x),y:round(pinAt.y+length),rotation:90}
+  if(rotation===270)return{x:round(pinAt.x),y:round(pinAt.y-length),rotation:90}
+  const pointsRight = rotation === 180
   return {
     x: round(pinAt.x + (pointsRight ? length : -length)),
     y: round(pinAt.y),

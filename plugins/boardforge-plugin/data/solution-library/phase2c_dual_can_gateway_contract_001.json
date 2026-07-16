@@ -1,0 +1,8 @@
+{
+  "id":"phase2c_dual_can_gateway_contract_001",
+  "problemType":"semantic_acceptance_single_bus_reused_for_dual_bus_gateway",
+  "rootCause":"The strict manufacturing pipeline proved file and sourcing authenticity but had no topology-specific semantic gate, allowing a dual-bus CAN gateway request to reuse and accept the single-bus STM32 CAN controller unchanged.",
+  "fixSummary":"Recognize dual-bus CAN intent in the catalog adapter and construct a dedicated production topology with two SN65HVD230 transceivers, two protected and terminated CAN channel pairs, independent CAN1/CAN2 nets, and separate field connectors.",
+  "regressions":["dual-bus CAN gateway has two independently named CAN physical channels"],
+  "never":["Treat ERC/DRC zero as proof that requested channel multiplicity exists","Rename a single-bus design to satisfy a dual-bus request"]
+}

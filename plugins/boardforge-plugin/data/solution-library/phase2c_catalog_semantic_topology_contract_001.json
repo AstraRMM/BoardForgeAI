@@ -1,0 +1,14 @@
+{
+  "id": "phase2c_catalog_semantic_topology_contract_001",
+  "problemType": "catalog_topology_undefined_map_and_semantic_mismatch",
+  "rootCause": "Catalog boards with architecture classes not covered by semantic rules fell through to index-modulo topology selection. Incomplete or mismatched topology data could then reach downstream array operations and fail as an opaque undefined .map error; Board007 fieldbus also selected a USB-PD topology instead of a CAN-capable controller.",
+  "fixSummary": "Validate catalog input and production BOM structure at the adapter boundary, and map fieldbus/CAN/industrial control architectures to the STM32 CAN production topology before any index fallback.",
+  "regressions": [
+    "CAN/fieldbus catalog boards select the CAN-capable STM32 production topology",
+    "catalog definition rejects missing board input with an actionable contract error"
+  ],
+  "never": [
+    "Allow an incomplete topology record to reach downstream map operations",
+    "Use board index as the primary electrical architecture selector"
+  ]
+}

@@ -6,9 +6,11 @@ import path from 'node:path'
 import JSZip from 'jszip'
 import { challengeResumeAfterAcceptance, runPhase2cManufacturingPipeline } from '../lib/phase2c/manufacturing-pipeline.mjs'
 
-async function setup({dirty=false}={}) {
+async function setup({dirty=false,placeholder=false}={}) {
   const root=await mkdtemp(path.join(os.tmpdir(),'bf-phase2c-mfg-')),sch=path.join(root,'pilot.kicad_sch'),pcb=path.join(root,'pilot.kicad_pcb')
-  await writeFile(sch,'(kicad_sch '.padEnd(80,')')); await writeFile(pcb,'(kicad_pcb '.padEnd(80,')'))
+  const symbol=placeholder?'BoardForge:BF_CONN_2':'Device:R',footprint=placeholder?'BoardForge:BF_CONN_2':'Resistor_SMD:R_0603_1608Metric'
+  await writeFile(sch,`(kicad_sch (symbol (lib_id "${symbol}") (property "Reference" "U1") (property "Footprint" "${footprint}") (pin "1") (pin "2")))`.padEnd(140,')'))
+  await writeFile(pcb,`(kicad_pcb (footprint "${footprint}" (property "Reference" "U1") (pad "1" smd rect (net 1 "SIGNAL")) (pad "2" smd rect (net 2 "GND"))))`.padEnd(160,')'))
   let exportsCalled=0
   const emit=async(target,name,text)=>{await mkdir(path.extname(target)?path.dirname(target):target,{recursive:true});const file=path.extname(target)?target:path.join(target,name);await writeFile(file,text);return file}
   const adapters={
@@ -22,7 +24,7 @@ async function setup({dirty=false}={}) {
     packageJlcpcb:async({outputFile,requiredFiles})=>{const z=new JSZip();for(const f of requiredFiles)z.file(path.basename(f),await import('node:fs/promises').then(x=>x.readFile(f)));await writeFile(outputFile,await z.generateAsync({type:'nodebuffer'}));return {status:'MANUFACTURING_PACKAGE_GENERATED_NEEDS_REVIEW',outputFile}},
   }
   const sha='a'.repeat(64)
-  const input={projectDir:root,schematicFile:sch,pcbFile:pcb,unconnectedItems:0,sourcing:{rows:[{mpn:'REAL-1',providers:{digikey:{live:true,queriedAt:'now',requestId:'d',stockStatus:'IN_STOCK',quantityAvailable:1},mouser:{live:true,queriedAt:'now',requestId:'m',stockStatus:'IN_STOCK',quantityAvailable:1}}}]},proof:{rustReparsePassed:true,structuralDiff:{changed:1}},metrics:{boardAreaMm2:100,componentDensity:.1},acceptanceOptions:{requireInStock:true}}
+  const input={projectDir:root,schematicFile:sch,pcbFile:pcb,unconnectedItems:0,sourcing:{rows:[{mpn:'REAL-1',providers:{digikey:{live:true,queriedAt:'now',requestId:'d',stockStatus:'IN_STOCK',quantityAvailable:1},mouser:{live:true,queriedAt:'now',requestId:'m',stockStatus:'IN_STOCK',quantityAvailable:1}}}]},assetBindings:{status:'ASSET_BINDINGS_VERIFIED',manufacturingAllowed:true,components:[{ref:'U1',mpn:'REAL-1',exactMpnVerified:true,symbol,footprint,pinMapVerified:true,pinMap:{1:'SIGNAL',2:'GND'}}]},proof:{rustReparsePassed:true,structuralDiff:{changed:1}},metrics:{boardAreaMm2:100,componentDensity:.1},acceptanceOptions:{requireInStock:true}}
   return {input,adapters,get exportsCalled(){return exportsCalled}}
 }
 
@@ -35,6 +37,13 @@ test('pipeline exports authentic artifact set, hashes it, accepts, then permits 
 test('dirty validation stops before manufacturing export and cannot resume',async()=>{
   const x=await setup({dirty:true}),result=await runPhase2cManufacturingPipeline(x.input,x.adapters)
   assert.equal(result.status,'ERC_DRC_NOT_CLEAN'); assert.equal(x.exportsCalled,0); assert.equal(result.resume.allowed,false)
+})
+test('verified report cannot smuggle BF_CONN review assets through manufacturing acceptance',async()=>{
+  const x=await setup({placeholder:true}),result=await runPhase2cManufacturingPipeline(x.input,x.adapters)
+  assert.equal(result.status,'MANUFACTURING_REJECTED')
+  assert.equal(result.acceptance.accepted,false)
+  assert.ok(result.acceptance.blockers.some(row=>row.code==='PRODUCTION_SYMBOL_EVERY_REF'))
+  assert.ok(result.acceptance.blockers.some(row=>row.code==='PRODUCTION_FOOTPRINT_EVERY_REF'))
 })
 test('challenge resume is impossible for a rejected or missing acceptance result',()=>{
   assert.equal(challengeResumeAfterAcceptance({accepted:false}).command,null)

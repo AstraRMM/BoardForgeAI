@@ -1,0 +1,15 @@
+{
+  "schema": "boardforge.solution-library.lesson.v1",
+  "id": "compact_authoritative_usb_fanout_transaction_001",
+  "problem": "Generic channel search cannot escape the interleaved A/B contacts of an authoritative compact USB-C footprint, while synthetic fixed dogbones can collide with shield and NPTH geometry.",
+  "rootCause": "Routing began from nominal connector centers without a package-specific escape pattern or a real-KiCad per-net transaction gate.",
+  "solution": "Stagger the duplicated DP/DN via escapes from transformed pad coordinates, reserve distinct inner-layer trunks, enforce production drill minima, exclude plane-backed GND from channel search, and merge only nets that independently reduce ratsnest count with zero real KiCad violations.",
+  "evidence": {
+    "pilotBaseline": {"violations": 0, "unconnected": 22},
+    "transactionallyAcceptedNets": ["USB_DP", "VUSB", "I2C_SDA", "CC1", "3V3", "CC2"],
+    "pilotAfterAcceptedNets": {"violations": 0, "unconnected": 8},
+    "cc2Repair": "Move the resistor escape away from the 3V3 via field and reserve an In2.Cu lane above the VUSB trunk.",
+    "usbDnRepair": "Route USB_DN before explicit GND: escape A7/B7 left through 0.5/0.3 mm vias, merge at x=7.2, and cross In2.Cu at y=19 above CC2 and 3V3."
+  },
+  "reusable": true
+}
