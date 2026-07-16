@@ -279,7 +279,7 @@ test('Board042 requires a protected calibrated oscilloscope acquisition chain',(
 test('Board043 requires a guarded calibrated resistance and voltage measurement chain',()=>{
   const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[42],42))
   assert.equal(gate.ok,false)
-  for(const code of ['custom-outline-exceeds-maximum-area','measurement-kelvin-input-missing','measurement-protected-voltage-input-missing','measurement-current-source-missing','measurement-input-multiplexer-missing','measurement-low-bias-amplifier-missing','measurement-precision-adc-missing','measurement-reference-missing','measurement-guarding-missing','measurement-isolated-power-data-missing','measurement-calibration-storage-missing','measurement-uncertainty-evidence-missing','measurement-leakage-noise-evidence-missing','measurement-category-mapped-to-generic-usb-instrument'])assert.ok(gate.errors.includes(code),code)
+  for(const code of ['custom-outline-exceeds-maximum-area','measurement-kelvin-input-missing','measurement-protected-voltage-input-missing','measurement-current-source-missing','measurement-input-multiplexer-missing','measurement-low-bias-amplifier-missing','measurement-precision-adc-missing','measurement-reference-missing','measurement-guarding-missing','measurement-isolated-power-data-missing','measurement-calibration-storage-missing','measurement-uncertainty-evidence-missing','measurement-leakage-noise-evidence-missing','measurement-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
