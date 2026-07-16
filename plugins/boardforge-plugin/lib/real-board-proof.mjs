@@ -1384,11 +1384,11 @@ function categorySchematicPinMaps(board) {
     },
     'can-gateway': {
       U1: approvedAssetFor('STM32F103C8T6').pinMap,
-      U2: approvedAssetFor('SN65HVD230DR').pinMap,U4:approvedAssetFor('SN65HVD230DR').pinMap,
+      U2:{1:'CAN1_TX',2:'GND',3:'3V3',4:'CAN1_RX',6:'CAN1L',7:'CAN1H',8:'GND'},U4:{1:'CAN2_TX',2:'GND',3:'3V3',4:'CAN2_RX',6:'CAN2L',7:'CAN2H',8:'GND'},
       U3:{1:'GND',2:'3V3',3:'5V'},J1:approvedAssetFor('M20-9990245').pinMap,
       J2:{1:'CAN1H',2:'CAN1L',3:'GND',4:'3V3',5:'I2C_SCL',6:'I2C_SDA'},J3:{1:'CAN2H',2:'CAN2L',3:'GND',4:'3V3',5:'3V3',6:'GND'},
       R1:{1:'CAN1H',2:'CAN1L'},R2:{1:'CAN2H',2:'CAN2L'},C1:{1:'3V3',2:'GND'},C2:{1:'3V3',2:'GND'},C3:{1:'3V3',2:'GND'},
-      D1:approvedAssetFor('NUP2105LT1G').pinMap,D2:approvedAssetFor('NUP2105LT1G').pinMap,
+      D1:{1:'CAN1H',2:'CAN1L',3:'GND'},D2:{1:'CAN2H',2:'CAN2L',3:'GND'},
     },
     'rp2040-instrument': {
       U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,

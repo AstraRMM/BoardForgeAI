@@ -34,7 +34,7 @@ function dualCanGatewayBase(base){
   const copy=structuredClone(base)
   copy.widthMm=68;copy.heightMm=44;copy.layers=6
   copy.bom.push(
-    {...structuredClone(copy.bom.find(row=>row.ref==='U2')),ref:'U4',role:'second isolated CAN physical layer'},
+    {...structuredClone(copy.bom.find(row=>row.ref==='U2')),ref:'U4',role:'second CAN physical layer'},
     {...structuredClone(copy.bom.find(row=>row.ref==='J2')),ref:'J3',role:'second CAN field connector'},
     {...structuredClone(copy.bom.find(row=>row.ref==='R1')),ref:'R2',role:'CAN2 termination'},
     {...structuredClone(copy.bom.find(row=>row.ref==='D1')),ref:'D2',role:'CAN2 surge protection'},
@@ -44,6 +44,8 @@ function dualCanGatewayBase(base){
 
 export async function generateCatalogProductionBoard({root,board,context={}}) {
   const definition=catalogDefinition(board,context.index||0)
+  const semanticGate=validateCatalogSemanticTopology(definition)
+  if(!semanticGate.ok){const error=new Error(`Catalog semantic topology is incomplete: ${semanticGate.errors.join('; ')}`);error.code='CATALOG_SEMANTIC_TOPOLOGY_INCOMPLETE';error.gate=semanticGate;throw error}
   const boardRoot=path.join(root,board.id)
   const summary=await runRealBoardProof({outputRoot:boardRoot,fresh:true,board:definition.id,boardDefinitions:[definition],liveBindings:true})
   const generated=summary.boards[0],projectDir=generated.outputFolder,files=await readdir(projectDir)
@@ -64,6 +66,34 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
   await writeFile(path.join(projectDir,'Reports','BoardForge_Campaign_Report.json'),JSON.stringify(report,null,2)+'\n')
   await writeFile(path.join(projectDir,'Reports','BoardForge_Failure_Fix_History.json'),JSON.stringify(history,null,2)+'\n')
   return {acceptance:manufacturing.acceptance,manufacturingEvidence:manufacturing,production:{generator:'catalog-production-engine',projectDir,definitionDigest:createHash('sha256').update(JSON.stringify(definition)).digest('hex')},catalogReport:report}
+}
+
+export function validateCatalogSemanticTopology(definition={}){
+  const errors=[],bom=Array.isArray(definition.bom)?definition.bom:[],topology=definition.topologyId||definition.id,roles=bom.map(row=>String(row.role||'').toLowerCase())
+  const hasRole=pattern=>roles.some(role=>pattern.test(role))
+  if(topology==='stm32-controller'||topology==='can-gateway'){
+    if(!hasRole(/boot.*(bias|strap)|(?:bias|strap).*boot/))errors.push('mcu-boot-bias-network-missing')
+    if(!hasRole(/reset.*(bias|rc)|(?:bias|rc).*reset/))errors.push('mcu-reset-network-missing')
+    if(!hasRole(/swd|debug.*header|programming.*header/))errors.push('mcu-debug-connector-missing')
+    if(!hasRole(/input.*(fuse|protection)|reverse.*polarity|power.*protection/))errors.push('power-entry-protection-missing')
+  }
+  if(topology==='can-gateway'){
+    const transceivers=bom.filter(row=>row.mpn==='SN65HVD230DR')
+    const controller=bom.find(row=>/^U1$/i.test(row.ref)||/controller/.test(String(row.role||'').toLowerCase()))
+    const externalCanControllers=bom.filter(row=>/external.*can.*controller|spi.*can.*controller/.test(String(row.role||'').toLowerCase()))
+    if(controller?.mpn==='STM32F103C8T6'&&externalCanControllers.length===0)errors.push('dual-can-controller-capability-missing')
+    if(transceivers.length<2)errors.push('dual-can-transceivers-missing')
+    if(bom.filter(row=>/^J[23]$/i.test(row.ref)&&/can/i.test(String(row.role||''))).length<2)errors.push('dual-can-field-connectors-missing')
+    if(bom.filter(row=>/^R[12]$/i.test(row.ref)&&/termination/i.test(String(row.role||''))).length<2)errors.push('dual-can-termination-missing')
+    if(bom.filter(row=>/^D[12]$/i.test(row.ref)&&/surge|tvs/i.test(String(row.role||''))).length<2)errors.push('dual-can-tvs-missing')
+    if(!hasRole(/selectable.*termination|termination.*(jumper|switch|selectable)/))errors.push('dual-can-termination-not-selectable')
+    if(!hasRole(/transceiver.*mode|rs.*(bias|strap)|slope.*control/))errors.push('dual-can-phy-mode-bias-missing')
+    if(bom.filter(row=>/decoupling/i.test(String(row.role||''))).length<6)errors.push('gateway-per-rail-decoupling-insufficient')
+    if(!hasRole(/surge.*(input|power)|input.*surge/))errors.push('power-entry-surge-suppression-missing')
+    if(!hasRole(/bulk.*(input|power|decoupl)/))errors.push('power-entry-bulk-decoupling-missing')
+    if(bom.some(row=>row.mpn==='SN65HVD230DR'&&/isolated/i.test(String(row.role||''))))errors.push('non-isolated-transceiver-labeled-isolated')
+  }
+  return{schema:'boardforge.phase2c.catalog-semantic-topology-gate.v1',ok:errors.length===0,errors,topologyId:topology,refs:bom.map(row=>row.ref)}
 }
 
 export async function verifyCatalogAuthoritativePcbSelection({pcbFile,routing}={}){

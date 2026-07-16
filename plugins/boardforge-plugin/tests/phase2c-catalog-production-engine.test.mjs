@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
-import { catalogDefinition, verifyCatalogAuthoritativePcbSelection } from '../lib/phase2c/catalog-production-engine.mjs'
+import { catalogDefinition, validateCatalogSemanticTopology, verifyCatalogAuthoritativePcbSelection } from '../lib/phase2c/catalog-production-engine.mjs'
 import { validateChallengeManifest } from '../lib/challenge/phase2c-challenge.mjs'
 
 test('all 50 campaign specifications retain unique custom outline intent',()=>{const result=validateChallengeManifest(manifest);assert.equal(result.ok,true,result.errors.join('; '));assert.equal(result.customOutlineCount,50);assert.equal(new Set(manifest.boards.map(b=>b.outline.family)).size,50)})
@@ -27,6 +27,20 @@ test('dual-bus CAN gateway has two independently named CAN physical channels',()
   assert.equal(d.bom.filter(row=>row.mpn==='SN65HVD230DR').length,2)
   assert.ok(d.bom.some(row=>row.ref==='J3'))
   assert.ok(d.bom.some(row=>row.ref==='R2'))
+})
+
+test('Board008 clone-based dual CAN shell fails closed before placement or routing',()=>{
+  const definition=catalogDefinition(manifest.boards[7],7),gate=validateCatalogSemanticTopology(definition)
+  assert.equal(gate.ok,false)
+  for(const code of['dual-can-controller-capability-missing','mcu-boot-bias-network-missing','mcu-reset-network-missing','mcu-debug-connector-missing','power-entry-protection-missing','dual-can-termination-not-selectable','dual-can-phy-mode-bias-missing','gateway-per-rail-decoupling-insufficient','power-entry-surge-suppression-missing','power-entry-bulk-decoupling-missing'])assert.ok(gate.errors.includes(code),code)
+  assert.equal(definition.bom.find(row=>row.ref==='U1').mpn,'STM32F103C8T6')
+})
+
+test('dual CAN semantic gate requires explicit controller capability and support circuits',()=>{
+  const definition=catalogDefinition(manifest.boards[7],7)
+  definition.bom=definition.bom.map(row=>row.ref==='U1'?{...row,mpn:'DUAL_CAN_MCU',role:'dual CAN controller'}:row.ref==='U4'?{...row,role:'second CAN physical layer'}:row)
+  definition.bom.push({ref:'R_BOOT',role:'BOOT0 bias strap'},{ref:'R_RESET',role:'reset bias RC'},{ref:'J_SWD',role:'SWD debug header'},{ref:'F_PWR',role:'input fuse protection'},{ref:'JP_TERM',role:'selectable termination jumper'},{ref:'R_MODE1',role:'CAN transceiver mode bias'},{ref:'R_MODE2',role:'CAN transceiver mode bias'},{ref:'D_PWR',role:'input surge suppression'},{ref:'C_BULK',role:'power input bulk decoupling'},{ref:'C4',role:'MCU decoupling'},{ref:'C5',role:'MCU decoupling'},{ref:'C6',role:'CAN decoupling'})
+  assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
 test('catalog mechanics preserve clearance around every topology placement envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
