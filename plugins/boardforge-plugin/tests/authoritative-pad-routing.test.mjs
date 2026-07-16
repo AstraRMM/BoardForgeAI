@@ -66,16 +66,17 @@ test('STM32 authoritative corridor proof activates only for its exact endpoint t
 test('TPS25750 source raw input corridor activates only for exact transformed topology',()=>{
   const p=(ref,pad,x,y)=>({ref,pad,x,y}),input={bounds:{maxX:61,maxY:31},nets:[
     {net:'5V_RAW',endpoints:[p('J1','1',38.5,28.5),p('F1','1',29.288,28.5)]},
-    {net:'PP5V',endpoints:[p('F1','2',35.212,28.5)]},
+    {net:'PP5V',endpoints:[p('F1','2',35.212,28.5),p('D1','1',22.25,16.75),p('U1','3',18.5,12.563),p('U2','34',37.5,21.575),p('C_PP5V','1',27.3,16)]},
     {net:'CC1',endpoints:[p('U2','28',40.1,21.575),p('J2','A5',19.75,2.32)]},
     {net:'CC2',endpoints:[p('U2','29',39.7,21.575),p('J2','B5',22.75,2.32)]},
     {net:'3V3',endpoints:[p('U1','2',19.45,14.438),p('U2','1',35.575,22.5),p('U2','38',36.1,21.575),p('U3','8',33.575,21.595),p('C_3V3','1',29.45,7.25)]},
     {net:'1V5',endpoints:[p('U2','4',35.575,23.7),p('C_1V5','1',19.45,24.75)]},
     {net:'EEPROM_SDA',endpoints:[p('U2','16',39.7,25.425),p('U3','5',33.575,25.405)]},
     {net:'EEPROM_SCL',endpoints:[p('U2','17',40.1,25.425),p('U3','6',33.575,24.135)]},
+    {net:'DRAIN',endpoints:[p('U2','15',39.3,25.425),p('U2','30',39.3,21.575),p('U2','40',40.06,22.425),p('U2','40',40.06,23.5),p('U2','40',40.06,24.575)]},
   ]}
   const result=tps25750SourceFixedCorridors(input,{trackWidth:.2,viaDiameter:.6})
-  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2'])
+  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V'])
   assert.equal(result.tracks[1].layer,'In4.Cu')
   assert.deepEqual([result.vias[0].x,result.vias[0].y],[27.5,28.5])
   assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='F.Cu').length,5)
@@ -86,6 +87,9 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
   assert.ok(result.tracks.some(x=>x.net==='EEPROM_SCL'&&x.layer==='B.Cu'&&x.start.y===20&&x.end.y===20))
   assert.ok(result.tracks.some(x=>x.net==='CC1'&&x.layer==='In4.Cu'&&x.start.y===18&&x.end.y===18))
   assert.ok(result.tracks.some(x=>x.net==='CC2'&&x.layer==='In1.Cu'&&x.start.y===15&&x.end.y===15))
+  assert.ok(result.tracks.some(x=>x.net==='DRAIN'&&x.layer==='In2.Cu'&&x.start.y===22.425&&x.end.y===24.575))
+  assert.equal(result.vias.filter(x=>x.net==='PP5V').length,5)
+  assert.ok(result.tracks.some(x=>x.net==='PP5V'&&x.layer==='In2.Cu'&&x.start.y===13&&x.end.y===13))
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CC1').endpoints[0].pad='99'
   assert.deepEqual(tps25750SourceFixedCorridors(changed,{}).completedNets,[])
 })

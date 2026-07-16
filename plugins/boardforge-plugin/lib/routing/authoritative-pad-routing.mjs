@@ -239,6 +239,17 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     tracks.push({net:'CC2',layer:'F.Cu',start:{x:cc2[0].x,y:cc2[0].y},end:a,width:trackWidth},{net:'CC2',layer:'In1.Cu',start:a,end:{x:26,y:9},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:9},end:{x:26,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:26,y:15},end:{x:38.5,y:15},width:trackWidth},{net:'CC2',layer:'In1.Cu',start:{x:38.5,y:15},end:b,width:trackWidth},{net:'CC2',layer:'F.Cu',start:b,end:{x:39.7,y:20.8},width:trackWidth},{net:'CC2',layer:'F.Cu',start:{x:39.7,y:20.8},end:{x:cc2[1].x,y:cc2[1].y},width:trackWidth})
     vias.push({net:'CC2',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'CC2',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('CC2')
   }
+  const drain=(byNet.get('DRAIN')||[]).filter(p=>p.ref==='U2'),d15=at('DRAIN','U2','15'),d30=at('DRAIN','U2','30'),ep=drain.filter(p=>String(p.pad)==='40').sort((a,b)=>a.y-b.y)
+  if(d15&&d30&&ep.length===3&&near(d15.x,39.3)&&near(d15.y,25.425)&&near(d30.x,39.3)&&near(d30.y,21.575)&&ep.every((p,i)=>near(p.x,40.06)&&near(p.y,[22.425,23.5,24.575][i]))){
+    tracks.push({net:'DRAIN',layer:'F.Cu',start:{x:d30.x,y:d30.y},end:{x:d30.x,y:22.2},width:trackWidth},{net:'DRAIN',layer:'F.Cu',start:{x:d30.x,y:22.2},end:{x:ep[0].x,y:ep[0].y},width:trackWidth},{net:'DRAIN',layer:'In2.Cu',start:{x:ep[0].x,y:ep[0].y},end:{x:ep[2].x,y:ep[2].y},width:trackWidth},{net:'DRAIN',layer:'F.Cu',start:{x:ep[2].x,y:ep[2].y},end:{x:d15.x,y:24.8},width:trackWidth},{net:'DRAIN',layer:'F.Cu',start:{x:d15.x,y:24.8},end:{x:d15.x,y:d15.y},width:trackWidth})
+    completedNets.push('DRAIN')
+  }
+  const pp=[at('PP5V','F1','2'),at('PP5V','D1','1'),at('PP5V','U1','3'),at('PP5V','U2','34'),at('PP5V','C_PP5V','1')]
+  if(pp.every(Boolean)&&[[35.212,28.5],[22.25,16.75],[18.5,12.563],[37.5,21.575],[27.3,16]].every(([x,y],i)=>near(pp[i].x,x)&&near(pp[i].y,y))){
+    const dogs=[{x:36.5,y:27},{x:22.25,y:14.5},{x:17.5,y:12.563},{x:37.5,y:19.2},{x:27.3,y:14}]
+    for(let i=0;i<pp.length;i++){tracks.push({net:'PP5V',layer:'F.Cu',start:{x:pp[i].x,y:pp[i].y},end:dogs[i],width:trackWidth});vias.push({net:'PP5V',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3});if(i)tracks.push({net:'PP5V',layer:'In2.Cu',start:dogs[i],end:{x:dogs[i].x,y:13},width:trackWidth})}
+    tracks.push({net:'PP5V',layer:'In2.Cu',start:dogs[0],end:{x:36.5,y:25.8},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:36.5,y:25.8},end:{x:45,y:25.8},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:45,y:25.8},end:{x:45,y:13},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:dogs[2].x,y:13},end:{x:45,y:13},width:trackWidth});completedNets.push('PP5V')
+  }
   return{tracks,vias,completedNets,partialNets:[]}
 }
 
