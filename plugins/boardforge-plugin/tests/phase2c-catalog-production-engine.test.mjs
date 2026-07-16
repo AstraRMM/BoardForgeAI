@@ -270,6 +270,12 @@ test('Board041 requires protected deterministic multi-channel digital capture',(
   for(const code of ['custom-outline-exceeds-maximum-area','logic-analyzer-probe-connectors-missing','logic-analyzer-input-channels-missing','logic-analyzer-input-protection-missing','logic-analyzer-level-threshold-missing','logic-analyzer-capture-engine-missing','logic-analyzer-trigger-engine-missing','logic-analyzer-sample-clock-missing','logic-analyzer-capture-buffer-missing','logic-analyzer-host-stream-missing','logic-analyzer-bandwidth-evidence-missing','logic-analyzer-timing-evidence-missing','logic-analyzer-production-test-missing','logic-analyzer-category-mapped-to-generic-usb-instrument'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board042 requires a protected calibrated oscilloscope acquisition chain',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[41],41))
+  assert.equal(gate.ok,false)
+  for(const code of ['custom-outline-exceeds-maximum-area','oscilloscope-input-connector-missing','oscilloscope-attenuator-missing','oscilloscope-overload-protection-missing','oscilloscope-coupling-termination-missing','oscilloscope-front-end-amplifier-missing','oscilloscope-antialias-filter-missing','oscilloscope-adc-missing','oscilloscope-reference-clock-missing','oscilloscope-trigger-pickoff-missing','oscilloscope-shield-grounding-missing','oscilloscope-bandwidth-linearity-evidence-missing','oscilloscope-calibration-overload-evidence-missing','oscilloscope-category-mapped-to-generic-usb-instrument'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')

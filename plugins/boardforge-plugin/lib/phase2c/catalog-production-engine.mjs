@@ -400,6 +400,21 @@ export function validateCatalogSemanticTopology(definition={}){
     ['logic-analyzer-production-test-missing',/(logic|capture).*(loopback|known.*pattern|production.*test|channel.*test)/],
   ])
   if(/multi-channel digital capture/.test(semanticText)&&topology==='rp2040-instrument')errors.push('logic-analyzer-category-mapped-to-generic-usb-instrument')
+  if(/protected analog acquisition/.test(semanticText))requireCapabilities([
+    ['oscilloscope-input-connector-missing',/(oscilloscope|analog).*(input.*connector|bnc|mcx)/],
+    ['oscilloscope-attenuator-missing',/(oscilloscope|analog.*input).*(attenuator|gain.*range|input.*divider)/],
+    ['oscilloscope-overload-protection-missing',/(oscilloscope|analog.*input).*(overload|surge|clamp|protection)/],
+    ['oscilloscope-coupling-termination-missing',/(oscilloscope|analog.*input).*(ac.*coupling|dc.*coupling|50.*ohm|1.*meg)/],
+    ['oscilloscope-front-end-amplifier-missing',/(oscilloscope|analog).*(front.end.*amplifier|variable.*gain|adc.*driver)/],
+    ['oscilloscope-antialias-filter-missing',/(oscilloscope|adc).*(anti.alias|low.pass.*filter)/],
+    ['oscilloscope-adc-missing',/(oscilloscope|acquisition).*(adc|analog.to.digital)/],
+    ['oscilloscope-reference-clock-missing',/(oscilloscope|adc).*(voltage.*reference|sample.*clock|low.jitter.*clock)/],
+    ['oscilloscope-trigger-pickoff-missing',/(oscilloscope|analog).*(trigger.*pickoff|trigger.*comparator)/],
+    ['oscilloscope-shield-grounding-missing',/(oscilloscope|front.end).*(shield|guard|chassis|grounding)/],
+    ['oscilloscope-bandwidth-linearity-evidence-missing',/(bandwidth|flatness|linearity|distortion).*(verified|measured|budget|evidence)/],
+    ['oscilloscope-calibration-overload-evidence-missing',/(calibration|compensation|overload.*recovery).*(verified|measured|procedure|evidence)/],
+  ])
+  if(/protected analog acquisition/.test(semanticText)&&topology==='rp2040-instrument')errors.push('oscilloscope-category-mapped-to-generic-usb-instrument')
   if(/position feedback sensing/.test(semanticText))requireCapabilities([['encoder-sensor-interface-missing',/encoder|quadrature|position.*sensor/],['encoder-connector-missing',/encoder.*connector|sensor.*connector/],['encoder-input-protection-missing',/encoder.*(esd|protection)|input.*protection/]])
   if(/isolated current measurement/.test(semanticText))requireCapabilities([['isolated-current-sensor-missing',/isolated.*current.*sensor|current.*isolation/],['current-conductor-or-shunt-missing',/busbar|current.*shunt|primary.*conductor/],['current-isolation-barrier-missing',/isolation.*(barrier|creepage|clearance)/],['current-measurement-output-missing',/measurement.*output|isolated.*adc/]])
   if(/protected high-voltage telemetry/.test(semanticText))requireCapabilities([['high-voltage-divider-missing',/high.voltage.*divider|divider.*high.voltage/],['high-voltage-input-protection-missing',/high.voltage.*protection|input.*surge|voltage.*clamp/],['voltage-measurement-adc-missing',/measurement.*adc|adc.*front.end/],['high-voltage-spacing-evidence-missing',/high.voltage.*(creepage|clearance)|isolation.*barrier/]])
