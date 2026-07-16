@@ -1,0 +1,13 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
+import {catalogDefinition,validateCatalogSemanticTopology} from '../lib/phase2c/catalog-production-engine.mjs'
+import {relayControllerProductionProposal,validateRelayControllerProductionProposal} from '../lib/phase2c/templates/relay-controller.mjs'
+
+test('Board013 generic controller shell cannot pass as protected relay hardware',()=>{const d=catalogDefinition(manifest.boards[12],12),g=validateCatalogSemanticTopology(d);assert.equal(g.ok,false);for(const code of ['relay-output-devices-missing','relay-coil-drivers-missing','relay-flyback-protection-missing','relay-contact-connectors-missing','relay-output-protection-missing','relay-input-isolation-or-protection-missing'])assert.ok(g.errors.includes(code),code)})
+
+test('Board013 contract counts four complete relay channels and fails closed on unresolved exact power parts',()=>{const p=relayControllerProductionProposal,g=validateRelayControllerProductionProposal(p);assert.equal(p.channelCount,4);assert.equal(g.ok,false);assert.ok(g.errors.includes('relay-exact-assets-unapproved'));assert.deepEqual(g.blockedRefs,['K','U_DRV','D_FLY','J_CONTACT','P_OUT','U_LOGIC','P_COIL']);for(const ref of ['U_IN','F_IN','D_IN','D_COIL','C_LOGIC'])assert.equal(p.bom.find(x=>x.ref===ref).status,'APPROVED_EXACT_ASSET',ref)})
+
+test('Board013 requires isolated/protected inputs and declared load evidence',()=>{const p=structuredClone(relayControllerProductionProposal);p.bom=p.bom.filter(x=>x.ref!=='U_IN');assert.ok(validateRelayControllerProductionProposal(p).errors.includes('relay-input-isolation-or-protection-missing'));for(const key of ['loadEnvelopeDeclared','relayContactRatingVerified','coilPickupDropoutBudgetVerified','simultaneousCoilThermalBudgetVerified','contactLogicClearanceVerified'])assert.ok(relayControllerProductionProposal.evidenceRequired.includes(key),key)})
+
+test('Board013 terminal-ear outline is purposeful and within 2300 mm2',()=>{const g=validateRelayControllerProductionProposal(relayControllerProductionProposal);assert.equal(g.areaMm2,2096);assert.ok(g.areaMm2<=2300);assert.equal(relayControllerProductionProposal.outline.purposefulFeatures.terminalEarCount,2);assert.equal(relayControllerProductionProposal.outline.purposefulFeatures.contactLogicPartitionRequired,true)})
