@@ -186,6 +186,12 @@ test('Board027 requires Ethernet plus a protected second gateway protocol',()=>{
   for(const code of ['custom-outline-exceeds-maximum-area','ethernet-mac-controller-missing','ethernet-phy-missing','ethernet-rj45-connector-missing','ethernet-magnetics-missing','ethernet-gateway-second-protocol-missing','ethernet-gateway-second-port-missing','ethernet-gateway-second-port-protection-missing','ethernet-gateway-throughput-evidence-missing','ethernet-gateway-buffering-backpressure-missing','ethernet-gateway-security-storage-missing','ethernet-gateway-recovery-update-missing','ethernet-gateway-category-mapped-to-pd-sink'])assert.ok(gate.errors.includes(code),code)
 })
 
+test('Board028 requires calibrated acquisition and power-fail-safe removable logging',()=>{
+  const gate=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[27],27))
+  assert.equal(gate.ok,false)
+  for(const code of ['data-acquisition-front-end-missing','multi-channel-input-missing','removable-storage-missing','logger-storage-protection-missing','data-logger-input-protection-missing','data-logger-antialias-filter-missing','data-logger-voltage-reference-missing','data-logger-controller-buffering-missing','data-logger-timebase-missing','data-logger-card-power-control-missing','data-logger-power-fail-integrity-missing','data-logger-calibration-evidence-missing','data-logger-category-mapped-to-sensor-shell'])assert.ok(gate.errors.includes(code),code)
+})
+
 test('catalog manufacturing refuses stale source copper and accepts only byte-identical promoted candidate',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-catalog-authoritative-')),source=path.join(root,'board.kicad_pcb'),candidate=path.join(root,'candidate.kicad_pcb')
   await fs.writeFile(source,'legacy proof-coordinate copper');await fs.writeFile(candidate,'authoritative routed copper')
