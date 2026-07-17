@@ -3,6 +3,7 @@ export const ROBOTICS_MAIN_MECHANICAL_CONTRACT=Object.freeze({
  wheelReliefs:Object.freeze({requiredCount:2,minimumDepthMm:4,minimumSpanMm:12}),
  chassisPattern:Object.freeze({requiredHoleCount:4,minimumWidthMm:22,minimumHeightMm:12,minimumDiameterMm:2.5,minimumKeepoutRadiusMm:2.5}),
  placement:Object.freeze({frontSensorsMinimumYmm:18,rearPowerMaximumYmm:6,coreMinXmm:12,coreMaxXmm:28}),
+ safetyZones:Object.freeze({minimumEstopToMotorInterfaceMm:6,minimumEstopToPowerSwitchingMm:8}),
 })
 
 export function validateRoboticsMainMechanicalGeometry(evidence={}){
@@ -28,6 +29,8 @@ export function validateRoboticsMainMechanicalGeometry(evidence={}){
  if(!Array.isArray(p.motorInterfaces)||p.motorInterfaces.length!==2||p.motorInterfaces.some(x=>x.alignedToSide!==true))errors.push('robot-motor-interfaces-not-side-aligned')
  if(evidence.cableRouting?.clearOfWheelSweeps!==true||evidence.cableRouting?.strainReliefAndChassisTiePointsVerified!==true)errors.push('robot-chassis-cable-routing-unverified')
  if(evidence.assemblyClearance?.maximumHeightVerified!==true||evidence.assemblyClearance?.batteryAndFrameClearanceVerified!==true)errors.push('robot-chassis-assembly-clearance-unverified')
+ const safety=evidence.safetyZones||{}
+ if(safety.estopConnectorKeepoutVerified!==true||safety.estopTraceIndependentFromMotorCommands!==true||(safety.estopToMotorInterfaceMm||0)<c.safetyZones.minimumEstopToMotorInterfaceMm||(safety.estopToPowerSwitchingMm||0)<c.safetyZones.minimumEstopToPowerSwitchingMm)errors.push('robot-estop-mechanical-separation-unverified')
  return{schema:'boardforge.phase2c.robotics-main-mechanical-validation.v1',ok:errors.length===0,errors,areaMm2:area,bounds,maximumAreaMm2:c.maximumAreaMm2}
 }
 
