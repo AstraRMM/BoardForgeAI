@@ -110,3 +110,115 @@ test("Board011 protected aggregate 5V source remains quantitatively blocked inst
     assert.ok(g.errors.includes(code), code);
   assert.match(p.releaseRule, /1600 mm2 outline/);
 });
+
+test("Board011 exact hub and four-port power topology preserves authoritative pin and pad identities", () => {
+  const hub = approvedAssetFor("USB2514B_Bi"),
+    dfp = approvedAssetFor("TPS25810RVCR"),
+    hubSymbol = resolveAuthoritativeKiCadSymbol(hub.symbol.libId),
+    hubFootprint = resolveAuthoritativeKiCadFootprint(hub.footprint.libId),
+    dfpSymbol = resolveAuthoritativeKiCadSymbol(dfp.symbol.libId),
+    dfpFootprint = resolveAuthoritativeKiCadFootprint(dfp.footprint.libId);
+  assert.equal(
+    usbHubProductionProposal.bom.find((x) => x.ref === "U1").quantity,
+    1,
+  );
+  assert.equal(
+    usbHubProductionProposal.bom.find((x) => x.ref === "U_DFP").quantity,
+    4,
+  );
+  assert.equal(hub.symbolPinMap[37], "GND");
+  assert.equal(hub.footprintPadMap[37], "GND");
+  assert.equal(
+    hubSymbol.pins.some((x) => String(x.number) === "37"),
+    true,
+  );
+  assert.equal(
+    hubFootprint.pads.some((x) => String(x.number) === "37"),
+    true,
+  );
+  assert.deepEqual(
+    Object.fromEntries(
+      ["1", "2", "3", "4", "5", "6", "10", "11", "13", "14", "15", "21"].map(
+        (k) => [k, dfp.symbolPinMap[k]],
+      ),
+    ),
+    {
+      1: "FAULT_N",
+      2: "5V_PROTECTED",
+      3: "5V_PROTECTED",
+      4: "5V_PROTECTED",
+      5: "3V3",
+      6: "PORT_ENABLE",
+      10: "REF",
+      11: "CC1",
+      13: "CC2",
+      14: "PORT_VBUS",
+      15: "PORT_VBUS",
+      21: "GND",
+    },
+  );
+  for (const pad of [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "10",
+    "11",
+    "13",
+    "14",
+    "15",
+    "21",
+  ]) {
+    assert.equal(
+      dfpSymbol.pins.some((x) => String(x.number) === pad),
+      true,
+      `TPS25810 symbol pin ${pad}`,
+    );
+    assert.equal(
+      dfpFootprint.pads.some((x) => String(x.number) === pad),
+      true,
+      `TPS25810 footprint pad ${pad}`,
+    );
+  }
+});
+
+test("Board011 5V architecture cannot release at exactly 2A before hub loss and inrush margin", () => {
+  const x = structuredClone(usbHubProductionProposal);
+  x.fiveVoltArchitecture.aggregateDesignCurrentA = 2;
+  const g = validateUsbHubProductionProposal(x);
+  assert.ok(
+    g.errors.includes("usb-hub-aggregate-5v-design-current-undeclared"),
+  );
+  assert.equal(g.ok, false);
+});
+
+test("Board011 four-scallop mechanics fail closed on open excess-area or wrong-port geometry", () => {
+  const open = structuredClone(usbHubProductionProposal);
+  open.outline.closed = false;
+  assert.ok(
+    validateUsbHubProductionProposal(open).errors.includes(
+      "usb-hub-purposeful-outline-invalid",
+    ),
+  );
+  const count = structuredClone(usbHubProductionProposal);
+  count.outline.purposefulFeatures.downstreamPortScallops = 3;
+  assert.ok(
+    validateUsbHubProductionProposal(count).errors.includes(
+      "usb-hub-purposeful-outline-invalid",
+    ),
+  );
+  const huge = structuredClone(usbHubProductionProposal);
+  huge.outline.points = [
+    [0, 0],
+    [60, 0],
+    [60, 30],
+    [0, 30],
+  ];
+  assert.ok(
+    validateUsbHubProductionProposal(huge).errors.includes(
+      "usb-hub-purposeful-outline-invalid",
+    ),
+  );
+});
