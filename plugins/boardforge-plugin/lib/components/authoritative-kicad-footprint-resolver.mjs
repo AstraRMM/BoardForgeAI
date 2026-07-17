@@ -46,7 +46,7 @@ export function transformAuthoritativePads(pads,{x=0,y=0,rotation=0,side='front'
  * orientation in board coordinates, so the instance rotation must be added to
  * every pad orientation. Geometry coordinates and sizes remain untouched.
  */
-export function serializeAuthoritativeKiCadFootprint({resolved,ref,value='',at,netByPad={},uuidFor=()=>null,silkscreen='preserve'}={}){
+export function serializeAuthoritativeKiCadFootprint({resolved,ref,value='',at,netByPad={},padNumberAliases={},properties={},uuidFor=()=>null,silkscreen='preserve'}={}){
   if(!resolved?.definition||!resolved?.name)throw new TypeError('A resolved authoritative footprint is required')
   const rotation=Number(at?.rotation||0),nets=netByPad instanceof Map?netByPad:new Map(Object.entries(netByPad).map(([key,value])=>[String(key),value]))
   let text=resolved.definition
@@ -54,10 +54,13 @@ export function serializeAuthoritativeKiCadFootprint({resolved,ref,value='',at,n
     .replace(/(\(layer\s+"F\.Cu"\))/,`$1\n\t(at ${format(at?.x)} ${format(at?.y)} ${format(rotation)})${uuidFor('footprint')?`\n\t(uuid "${uuidFor('footprint')}")`:''}`)
     .replace(/\(property\s+"Reference"\s+"[^"]+"/,`(property "Reference" "${escapeText(ref)}"`)
     .replace(/\(property\s+"Value"\s+"[^"]+"/,`(property "Value" "${escapeText(value)}"`)
+  const extraProperties=Object.entries(properties).filter(([,propertyValue])=>propertyValue!=null).map(([name,propertyValue],index)=>`\n\t(property "${escapeText(name)}" "${escapeText(propertyValue)}"\n\t\t(at 0 0 0)\n\t\t(layer "F.Fab")\n\t\t(hide yes)\n\t\t(uuid "${uuidFor(`property-${index}-${name}`)}")\n\t\t(effects (font (size 1 1) (thickness 0.15)))\n\t)`).join('')
+  if(extraProperties)text=text.replace(/(\(property\s+"Value"[\s\S]*?\n\t\))/,(match)=>match+extraProperties)
   if(silkscreen==='fabrication')text=text.replace(/\(layer\s+"F\.SilkS"\)/g,'(layer "F.Fab")')
   let cursor=0,out='',padIndex=0
   while(true){const start=text.indexOf('(pad ',cursor);if(start<0){out+=text.slice(cursor);break}out+=text.slice(cursor,start);const block=balanced(text,start);if(!block){out+=text.slice(start);break}
     const number=unquote(block.match(/^\(pad\s+("(?:[^"\\]|\\.)*"|[^\s()]+)/)?.[1]||'""'),net=nets.get(String(number));let next=rotatePadOrientation(block,rotation)
+    if(padNumberAliases[number])next=next.replace(/^\(pad\s+("(?:[^"\\]|\\.)*"|[^\s()]+)/,`(pad "${escapeText(padNumberAliases[number])}"`)
     if(net?.netNumber&&net?.netName&&!/\(net\s+\d+\s+"/.test(next))next=next.replace(/\)\s*$/,`\n\t\t(net ${net.netNumber} "${escapeText(net.netName)}")\n\t)`)
     out+=next;cursor=start+block.length;padIndex++
   }

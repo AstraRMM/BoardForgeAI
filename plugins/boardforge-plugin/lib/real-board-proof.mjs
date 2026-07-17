@@ -16,6 +16,7 @@ import { verifyReferenceParity } from './components/reference-parity.mjs'
 import { createProductionPartResolver, digikeyProductionProvider, mouserProductionProvider } from './components/production-part-resolver.mjs'
 import { approvedAssetFor } from './components/approved-production-assets.mjs'
 import { resolveAuthoritativeKiCadFootprint, serializeAuthoritativeKiCadFootprint } from './components/authoritative-kicad-footprint-resolver.mjs'
+import { resolveAuthoritativeKiCadSymbol } from './components/authoritative-kicad-symbol-resolver.mjs'
 import { loadBoardForgeEnv } from './config/env-loader.mjs'
 import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
@@ -441,10 +442,12 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
       const symbolPin=footprintPadToSymbolPin(board,footprint.ref,p.name)
       return component?.pinMap?.[symbolPin] ? {...p,netName:component.pinMap[symbolPin]} : p
     })
-    const asset=approvedAssetFor(board.bom.find(row=>row.ref===footprint.ref)?.mpn),aliases=asset?.pinAliases||{}
+    const asset=approvedAssetFor(board.bom.find(row=>row.ref===footprint.ref)?.mpn),aliases=asset?.pinAliases||{},padAliases=asset?.footprintPadAliases||{}
     const authoritativeNets=Object.fromEntries(Object.entries(component?.pinMap||{}).map(([pin,netName])=>{const net=evidence.nets.find(row=>row.name===netName);return[aliases[pin]||pin,{netName,netNumber:net?.number||0}]}))
-    return { ...footprint, footprint:component?.footprint||footprint.footprint, pads, authoritativeNets, ...componentLink(board.id, footprint.ref) }
+    for(const [pad,canonical] of Object.entries(padAliases))if(authoritativeNets[canonical])authoritativeNets[pad]=authoritativeNets[canonical]
+    return { ...footprint, mpn:board.bom.find(row=>row.ref===footprint.ref)?.mpn||null, value:component?.value||footprint.value, footprint:component?.footprint||footprint.footprint, pads, authoritativeNets, ...componentLink(board.id, footprint.ref) }
   })
+  addAuthoritativeUnconnectedPadNets(evidence,board)
   const placement=authoritativeProductionPlacement(board,projected)
   if(placement){
     const byRef=new Map(placement.placements.map(row=>[row.ref,row]))
@@ -456,6 +459,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
   }
   const categoryText = renderCategoryPcbEvidence(evidence)
   let next = current.replace(/\n\)\s*$/, `\n${categoryText}\n)\n`)
+  next=markMountingHolesBoardOnly(next)
   if(placement)next=next.replace('(allow_soldermask_bridges_in_footprints no)','(allow_soldermask_bridges_in_footprints yes)')
   await writeFile(files.pcb, next, 'utf8')
   if(placement)await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge authoritative package micro drill" (constraint hole_size (min 0.2mm)))\n','utf8')
@@ -1562,8 +1566,37 @@ function renderAuthoritativeFootprint(footprint){
   // numbers are forbidden inputs. Only the verified production pad map may
   // assign nets to the authoritative footprint.
   const netByPad=new Map(Object.entries(footprint.authoritativeNets||{}).map(([pad,net])=>[String(pad),net]))
-  const text=serializeAuthoritativeKiCadFootprint({resolved,ref:footprint.ref,value:footprint.value,at:{...footprint.at,rotation:footprint.rotation||0},netByPad,silkscreen:'fabrication',uuidFor:key=>stableUuid(`${footprint.ref}-authoritative-${key}`)})
+  const asset=approvedAssetFor(footprint.mpn),text=serializeAuthoritativeKiCadFootprint({resolved,ref:footprint.ref,value:footprint.value,at:{...footprint.at,rotation:footprint.rotation||0},netByPad,padNumberAliases:logicalKiCadPadNumbers(asset),properties:{BoardForgeComponentUuid:footprint.componentUuid,BoardForgeBindingId:footprint.bindingId},silkscreen:'fabrication',uuidFor:key=>stableUuid(`${footprint.ref}-authoritative-${key}`)})
   return text.split('\n').map(line=>`  ${line}`).join('\n')
+}
+
+function logicalKiCadPadNumbers(asset){
+  if(!Object.keys(asset?.footprintPadAliases||{}).length)return{}
+  const logicalByCanonical=Object.fromEntries(Object.keys(asset.symbolPinMap||{}).map(pin=>[String(asset.pinAliases?.[pin]||pin),String(pin)]))
+  return Object.fromEntries(Object.keys(asset.footprintPadMap||{}).map(pad=>{const canonical=String(asset.footprintPadAliases?.[pad]||pad);return[pad,logicalByCanonical[canonical]||pad]}))
+}
+
+function addAuthoritativeUnconnectedPadNets(evidence,board){
+  let next=Math.max(0,...evidence.nets.map(row=>row.number||0))+1
+  for(const footprint of evidence.footprints){
+    let resolved
+    try{resolved=resolveAuthoritativeKiCadFootprint(footprint.footprint)}catch{continue}
+    const asset=approvedAssetFor(board.bom.find(row=>row.ref===footprint.ref)?.mpn),symbolPins=new Map()
+    try{for(const pin of resolveAuthoritativeKiCadSymbol(asset?.symbol?.libId).pins)symbolPins.set(String(asset?.pinAliases?.[pin.number]||pin.number),pin.name)}catch{}
+    for(const pad of resolved.pads){const number=String(pad.number);if(!number||footprint.authoritativeNets[number])continue
+      const pinName=String(symbolPins.get(number)||`Pin_${number}`).replaceAll('/','{slash}')
+      const netName=`unconnected-(${footprint.ref}-${pinName}-Pad${number})`
+      evidence.nets.push({number:next,name:netName});footprint.authoritativeNets[number]={netName,netNumber:next};next++
+    }
+  }
+}
+
+function markMountingHolesBoardOnly(text){
+  let cursor=0,out=''
+  while(true){const start=text.indexOf('(footprint ',cursor);if(start<0)return out+text.slice(cursor);out+=text.slice(cursor,start);const block=balancedSexpr(text,start);if(!block)return out+text.slice(start)
+    const isHole=/\(property\s+"Reference"\s+"H\d+"/.test(block),next=isHole&&!/\(attr\s+[^)]*board_only/.test(block)?block.replace(/(\(layer\s+"[^"]+"\))/,`$1\n\t(attr board_only)`):block
+    out+=next;cursor=start+block.length
+  }
 }
 
 function balancedSexpr(text,start){let depth=0,quoted=false,escaped=false;for(let i=start;i<text.length;i++){const ch=text[i];if(quoted){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')quoted=false;continue}if(ch==='"')quoted=true;else if(ch==='(')depth++;else if(ch===')'&&--depth===0)return text.slice(start,i+1)}return null}

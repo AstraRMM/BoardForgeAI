@@ -36,3 +36,19 @@ test('PCB serialization keeps local coordinates and adds footprint rotation to p
   assert.match(text,/\(pad "1"[\s\S]*?\(at -8\.75 -8\.41 90\)[\s\S]*?\(size 1\.5 0\.9\)[\s\S]*?\(net 4 "GND"\)/)
   assert.doesNotMatch(text,/\(pad "1"[\s\S]*?\(at 12\.59 19\.25/)
 })
+
+test('PCB serialization carries canonical custom fields into authoritative footprint instances',()=>{
+  const fp=resolveAuthoritativeKiCadFootprint('Resistor_SMD:R_0603_1608Metric')
+  const text=serializeAuthoritativeKiCadFootprint({resolved:fp,ref:'R1',value:'10k',at:{x:10,y:10},properties:{BoardForgeComponentUuid:'component-uuid',BoardForgeBindingId:'binding-id'},uuidFor:key=>`00000000-0000-4000-8000-${String(key.length).padStart(12,'0')}`})
+  assert.match(text,/\(property "BoardForgeComponentUuid" "component-uuid"/)
+  assert.match(text,/\(property "BoardForgeBindingId" "binding-id"/)
+})
+
+test('PCB serialization repeats logical pin numbers for physically grouped package lands',()=>{
+  const fp=resolveAuthoritativeKiCadFootprint('Package_SO:PowerPAK_SO-8_Single')
+  const text=serializeAuthoritativeKiCadFootprint({resolved:fp,ref:'Q1',value:'SI7465DP-T1-GE3',at:{x:10,y:10},netByPad:{1:{netNumber:1,netName:'SOURCE'},2:{netNumber:1,netName:'SOURCE'},3:{netNumber:1,netName:'SOURCE'},4:{netNumber:2,netName:'GATE'},5:{netNumber:3,netName:'DRAIN'},6:{netNumber:3,netName:'DRAIN'},7:{netNumber:3,netName:'DRAIN'},8:{netNumber:3,netName:'DRAIN'}},padNumberAliases:{1:'2',2:'2',3:'2',4:'1',5:'3',6:'3',7:'3',8:'3'}})
+  assert.equal([...text.matchAll(/\(pad "2"/g)].length,3)
+  assert.equal([...text.matchAll(/\(pad "1"/g)].length,1)
+  assert.equal([...text.matchAll(/\(pad "3"/g)].length,5)
+  assert.doesNotMatch(text,/\(pad "[4-8]"/)
+})

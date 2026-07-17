@@ -212,14 +212,14 @@ export function board008DualCanGatewayFixedCorridors(input,{trackWidth=.2,viaDia
     add('3V3','In1.Cu',at('3V3','J1','1'),{x:3.62,y:36});add('3V3','In1.Cu',{x:3.62,y:36},{x:7.5,y:36});add('3V3','In1.Cu',{x:7.5,y:36},{x:7.5,y:trunkY});add('3V3','In1.Cu',{x:7.5,y:trunkY},{x:54,y:trunkY})
     add('3V3','In1.Cu',at('3V3','J3','4'),{x:54,y:33.88});add('3V3','In1.Cu',{x:54,y:33.88},{x:54,y:trunkY});add('3V3','In1.Cu',at('3V3','J3','5'),{x:54,y:33.88});completedNets.push('3V3')
   }else partialNets.push('3V3')
-  const five=byNet.get('5V')||[],fiveDogs=[[at('5V','U3','3'),{x:25.3,y:11.35}],[at('5V','D_PWR','1'),{x:5,y:22.37}],[at('5V','C_BULK','1'),{x:11.5,y:10.12}]],q=at('5V','Q1','5')
+  const five=byNet.get('5V')||[],fiveDogs=[[at('5V','U3','3'),{x:25.3,y:11.35}],[at('5V','D_PWR','1'),{x:5,y:22.37}],[at('5V','C_BULK','1'),{x:11.5,y:10.12}]],q=at('5V','Q1','3')
   if(five.length===8&&q&&fiveDogs.every(([p])=>p)){
     const qDog={x:25,y:24.2},trunkY=8
     for(const[p,d]of fiveDogs){add('5V','F.Cu',p,d);putVia('5V',d);add('5V','In2.Cu',d,{x:d.x,y:trunkY})}
     add('5V','F.Cu',q,qDog);putVia('5V',qDog);add('5V','In2.Cu',qDog,{x:qDog.x,y:trunkY});add('5V','In2.Cu',{x:5,y:trunkY},{x:25.3,y:trunkY});completedNets.push('5V')
   }else partialNets.push('5V')
-  const raw=[at('5V_RAW','J2','1'),at('5V_RAW','Q1','1')]
-  if(raw.every(Boolean)){const dog={x:18.41,y:20.5};add('5V_RAW','F.Cu',raw[1],dog);putVia('5V_RAW',dog);add('5V_RAW','In3.Cu',dog,{x:18.41,y:7});add('5V_RAW','In3.Cu',{x:18.41,y:7},{x:63.92,y:7});add('5V_RAW','In3.Cu',{x:63.92,y:7},raw[0]);completedNets.push('5V_RAW')}
+  const raw=[at('5V_RAW','J2','1'),at('5V_RAW','Q1','2')]
+  if(raw.every(Boolean)){const dog={x:18.41,y:20.5},sources=(byNet.get('5V_RAW')||[]).filter(p=>p.ref==='Q1').sort((a,b)=>a.y-b.y);add('5V_RAW','F.Cu',raw[1],dog);for(let i=1;i<sources.length;i++)add('5V_RAW','F.Cu',sources[i-1],sources[i]);putVia('5V_RAW',dog);add('5V_RAW','In3.Cu',dog,{x:18.41,y:7});add('5V_RAW','In3.Cu',{x:18.41,y:7},{x:63.92,y:7});add('5V_RAW','In3.Cu',{x:63.92,y:7},raw[0]);completedNets.push('5V_RAW')}
   const bus=(net,layer,points,dogs,trunk)=>{if(!points.every(Boolean))return;for(let i=0;i<dogs.length;i++){add(net,'F.Cu',points[i],dogs[i]);putVia(net,dogs[i]);add(net,layer,dogs[i],trunk[i])}for(let i=1;i<trunk.length;i++)add(net,layer,trunk[i-1],trunk[i]);completedNets.push(net)}
   bus('CAN1H','B.Cu',[at('CAN1H','D1','1'),at('CAN1H','U2','7'),at('CAN1H','R1','1')],[{x:43.5,y:8.22},{x:53.5,y:15.065},{x:58.115,y:8.2}],[{x:43.5,y:19.5},{x:53.5,y:19.5},{x:58.115,y:19.5},at('CAN1H','J2','3')])
   bus('CAN1L','In4.Cu',[at('CAN1L','D1','2'),at('CAN1L','U2','6')],[{x:44.3,y:10.12},{x:52.5,y:16.335}],[{x:44.3,y:19},{x:49.58,y:19},at('CAN1L','JP1','2'),at('CAN1L','J2','4')])

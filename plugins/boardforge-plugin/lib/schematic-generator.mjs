@@ -432,7 +432,9 @@ function netLabelConnectivityObjects(symbols = []) {
       }else{
         const labelAt=labelCoordinateForPin(pinAt)
         objects.push(wireObject(pinAt.x,pinAt.y,labelAt.x,labelAt.y))
-        objects.push(labelObject(net,labelAt.x,labelAt.y,isPowerNet(net),labelAt.rotation))
+        // Global labels preserve the same bare net identity in the PCB. Local
+        // root-sheet labels are exported by KiCad as /NET and break parity.
+        objects.push(labelObject(net,labelAt.x,labelAt.y,true,labelAt.rotation))
       }
     })
     for(const pin of Object.keys(symbol.pinGeometry||{})){
