@@ -496,6 +496,7 @@ const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'can-sensor-node': canSensorNodeCategoryPcbEvidence,
   'poe-ethernet-sensor': poeEthernetSensorCategoryPcbEvidence,
   'poe-sensor': poeEthernetSensorCategoryPcbEvidence,
+  'ethernet-controller': ethernetControllerCategoryPcbEvidence,
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
   'tiny-wearable-sensor-puck': wearableSensorPuckCategoryPcbEvidence,
   'industrial-io-board': industrialIoCategoryPcbEvidence,
@@ -601,6 +602,20 @@ function poeSensorPinMaps(){return{
  U_SENSOR:{1:'SELV_GND',2:'BME_CSB_STRAP',3:'I2C_SDA',4:'I2C_SCL',5:'BME_SDO_STRAP',6:'3V3',7:'SELV_GND',8:'3V3'},
  C_POE:{1:'POE_5V',2:'SELV_GND'},
 }}
+
+export function ethernetControllerCategoryPcbEvidence(){
+ const maps=ethernetControllerPinMaps(),names=['',...new Set(Object.values(maps).flatMap(Object.values))],nets=names.map((name,number)=>({name,number})),net=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+ const bom=[['U1','SC0914(13)','Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm'],['U2','W5500','Package_QFP:LQFP-48_7x7mm_P0.5mm'],['Y1','Q22FA2380184517','Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm'],['J1','7499010121A','Connector_RJ:RJ45_Wuerth_7499010121A_Horizontal'],['U3','MCP1700T-3302E/TT','Package_TO_SOT_SMD:SOT-23'],['U4','W25Q128JVSIQ','Package_SO:SOIC-8_3.9x4.9mm_P1.27mm'],['J_PWR','M20-9990245','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical'],['C_DEC','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric'],['R_RST','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['C_RST','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric'],['R_MODE0','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_MODE1','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_MODE2','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_EXRES','RC0603FR-0712K4L','Resistor_SMD:R_0603_1608Metric'],...['R_TXP','R_TXN','R_RXP','R_RXN'].map(ref=>[ref,'RC0603FR-0749R9L','Resistor_SMD:R_0603_1608Metric']),['C_XI','GRM1885C1H120JA01D','Capacitor_SMD:C_0603_1608Metric'],['C_XO','GRM1885C1H120JA01D','Capacitor_SMD:C_0603_1608Metric'],['D_ETH','TPD4E05U06DQAR','Package_SON:USON-10_2.5x1.0mm_P0.5mm'],['FB_AVDD','MPZ1608S601ATA00','Inductor_SMD:L_0603_1608Metric'],['C_AVDD','GRM188R60J475KE19D','Capacitor_SMD:C_0603_1608Metric'],['C_TOCAP','GRM188R60J475KE19D','Capacitor_SMD:C_0603_1608Metric'],['C_1V2','GRM188R71H103KA01D','Capacitor_SMD:C_0603_1608Metric']]
+ const footprints=bom.map(([ref,value,footprint],index)=>({ref,value,footprint,at:{x:5+(index%6)*6,y:5+Math.floor(index/6)*6},body:{w:2,h:2},pads:Object.entries(maps[ref]).map(([number,netName],i)=>pad(number,(i%4)-1.5,Math.floor(i/4)-1,.6,.6,net[netName],netName))}))
+ return{nets,footprints,segments:[],vias:[]}
+}
+
+function ethernetControllerPinMaps(){return{
+ U1:{1:'3V3',6:'SPI_SCLK',7:'SPI_MOSI',8:'SPI_MISO',9:'ETH_CS_N',10:'3V3',11:'ETH_RESET_N',12:'ETH_INT_N',48:'3V3',49:'3V3',50:'3V3',51:'QSPI_SD3',52:'QSPI_SCLK',53:'QSPI_SD0',54:'QSPI_SD2',55:'QSPI_SD1',56:'QSPI_CS',57:'GND'},
+ U2:{1:'ETH_TXN',2:'ETH_TXP',3:'GND',4:'3V3A',5:'ETH_RXN',6:'ETH_RXP',8:'3V3A',9:'GND',10:'EXRES1',11:'3V3A',14:'GND',15:'3V3A',16:'GND',17:'3V3A',19:'GND',20:'TOCAP',21:'3V3A',22:'1V2O',28:'3V3',29:'GND',30:'XTAL_IN',31:'XTAL_OUT',32:'ETH_CS_N',33:'SPI_SCLK',34:'SPI_MISO',35:'SPI_MOSI',36:'ETH_INT_N',37:'ETH_RESET_N',43:'PMODE2',44:'PMODE1',45:'PMODE0',48:'GND'},
+ Y1:{1:'XTAL_IN',2:'GND',3:'XTAL_OUT',4:'GND'},J1:{1:'ETH_TXP',2:'3V3A',3:'ETH_TXN',4:'ETH_RXP',5:'3V3A',6:'ETH_RXN',8:'CHASSIS',SH:'CHASSIS'},
+ U3:{1:'GND',2:'3V3',3:'5V'},U4:{1:'QSPI_CS',2:'QSPI_SD1',3:'QSPI_SD2',4:'GND',5:'QSPI_SD0',6:'QSPI_SCLK',7:'QSPI_SD3',8:'3V3'},J_PWR:{1:'5V',2:'GND'},C_DEC:{1:'3V3',2:'GND'},R_RST:{1:'3V3',2:'ETH_RESET_N'},C_RST:{1:'ETH_RESET_N',2:'GND'},R_MODE0:{1:'3V3',2:'PMODE0'},R_MODE1:{1:'3V3',2:'PMODE1'},R_MODE2:{1:'3V3',2:'PMODE2'},R_EXRES:{1:'EXRES1',2:'GND'},R_TXP:{1:'ETH_TXP',2:'3V3A'},R_TXN:{1:'ETH_TXN',2:'3V3A'},R_RXP:{1:'ETH_RXP',2:'3V3A'},R_RXN:{1:'ETH_RXN',2:'3V3A'},C_XI:{1:'XTAL_IN',2:'GND'},C_XO:{1:'XTAL_OUT',2:'GND'},D_ETH:{1:'ETH_TXP',2:'ETH_TXN',3:'CHASSIS',4:'ETH_RXP',5:'ETH_RXN',8:'CHASSIS'},FB_AVDD:{1:'3V3',2:'3V3A'},C_AVDD:{1:'3V3A',2:'GND'},C_TOCAP:{1:'TOCAP',2:'GND'},C_1V2:{1:'1V2O',2:'GND'},
+ }}
 
 function roboticsControllerCategoryPcbEvidence() {
   const evidence = canSensorNodeCategoryPcbEvidence()
@@ -1346,7 +1361,7 @@ async function writeCategorySchematic({ board, projectDir }) {
   // The Board009 custom-outline seed is intentionally PCB-first. Once its
   // exact production assets are present, create the sibling schematic rather
   // than falling back to a generic category or reporting an undefined model.
-  if(!schFile&&(board.topologyId||board.id)==='poe-sensor'){
+  if(!schFile&&['poe-sensor','ethernet-controller'].includes(board.topologyId||board.id)){
     const pcbFile=findFirstExisting(projectDir,'.kicad_pcb')
     if(pcbFile)schFile=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_sch')
   }
@@ -1431,6 +1446,7 @@ export function categorySchematicPinMaps(board) {
       D1:{1:'CAN1H',2:'CAN1L',3:'GND'},D2:{1:'CAN2H',2:'CAN2L',3:'GND'},
     },
     'poe-sensor':poeSensorPinMaps(),
+    'ethernet-controller':ethernetControllerPinMaps(),
     'rp2040-instrument': {
       U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,
       U3: { 1:'GND', 2:'3V3', 3:'VBUS' }, J1: { A1:'GND', A12:'GND', B1:'GND', B12:'GND', A4:'VBUS', A9:'VBUS', B4:'VBUS', B9:'VBUS', A5:'CC1', B5:'CC2', A6:'USB_DP_CONN', B6:'USB_DP_CONN', A7:'USB_DN_CONN', B7:'USB_DN_CONN', SH:'GND' },
@@ -1513,6 +1529,12 @@ export function categoryPowerFlags(board){
   const topology=board.topologyId||board.id
   if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
   if(topology==='rp2040-instrument')return planExternalConnectorPowerFlags({powerNet:'VBUS',sourceKind:'external-usb-power'})
+  if(topology==='ethernet-controller')return [
+    {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'J_PWR',kind:'external-regulated-power'},reason:'J_PWR is the explicit regulated 5 V board input.'},
+    {ref:'#FLG02',symbolLibId:'power:PWR_FLAG',rail:'GND',source:{ref:'J_PWR',kind:'external-power-return'},reason:'J_PWR is the explicit board power return.'},
+    {ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'3V3A',source:{ref:'FB_AVDD',kind:'filtered-analog-supply'},reason:'FB_AVDD is the physical filtered analog-supply source.'},
+    {ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'CHASSIS',source:{ref:'J1',kind:'ethernet-shield-chassis-entry'},reason:'J1 shield pins are the explicit chassis discharge entry.'},
+  ]
   if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',source:{ref:'F1',kind:'fused-external-power'},reason:'The input fuse is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'The protected MOSFET output is the physical source for the downstream buck VIN rail.'}]
   if(topology==='usb-c-pd-source')return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceKind:'selv-input-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'PP5V',source:{ref:'F1',kind:'fused-selv-power'},reason:'The input fuse is the physical source path for the protected PP5V rail.'}]
   if(topology==='industrial-io-production')return [

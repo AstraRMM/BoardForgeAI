@@ -6,12 +6,14 @@ import {ethernetControllerProductionProposal,validateEthernetControllerProposal}
 import {approvedAssetFor} from '../lib/components/approved-production-assets.mjs'
 import {resolveAuthoritativeKiCadSymbol} from '../lib/components/authoritative-kicad-symbol-resolver.mjs'
 import {resolveAuthoritativeKiCadFootprint} from '../lib/components/authoritative-kicad-footprint-resolver.mjs'
+import {categorySchematicPinMaps,ethernetControllerCategoryPcbEvidence} from '../lib/real-board-proof.mjs'
 
-test('Board010 legacy RP2040 USB instrument fails closed as Ethernet',()=>{
+test('Board010 catalog selects the exact RP2040 W5500 topology',()=>{
   const definition=catalogDefinition(manifest.boards[9],9),gate=validateCatalogSemanticTopology(definition)
-  assert.equal(definition.topologyId,'rp2040-instrument')
-  assert.equal(gate.ok,false)
-  for(const code of ['ethernet-mac-controller-missing','ethernet-phy-missing','ethernet-rj45-connector-missing','ethernet-magnetics-missing','ethernet-reference-clock-missing','ethernet-phy-reset-network-missing','ethernet-phy-strap-network-missing','ethernet-line-protection-missing','ethernet-line-termination-missing','ethernet-phy-decoupling-missing','ethernet-phy-power-missing'])assert.ok(gate.errors.includes(code),code)
+  assert.equal(definition.topologyId,'ethernet-controller')
+  assert.equal(gate.ok,true,gate.errors.join('; '))
+  assert.deepEqual(definition.semanticEvidence.ethernetController.pmodeBits,[1,1,1])
+  assert.equal(definition.semanticEvidence.ethernetController.pmodeMeaning,'All capable, auto-negotiation enabled')
 })
 
 test('Board010 remediation proposal uses approved exact core and support assets but remains evidence blocked',()=>{
@@ -26,6 +28,8 @@ test('Board010 remediation proposal uses approved exact core and support assets 
 test('Board010 support assets resolve to authoritative installed KiCad identities',()=>{for(const mpn of ['RC0603FR-0712K4L','RC0603FR-0749R9L','GRM1885C1H120JA01D','GRM188R71H103KA01D','GRM188R60J475KE19D','MPZ1608S601ATA00','TPD4E05U06DQAR']){const a=approvedAssetFor(mpn);assert.ok(resolveAuthoritativeKiCadSymbol(a.symbol.libId).pins.length,mpn);assert.ok(resolveAuthoritativeKiCadFootprint(a.footprint.libId).pads.length,mpn)}const esd=approvedAssetFor('TPD4E05U06DQAR');assert.equal(esd.symbol.libId,'Power_Protection:TPD4E05U06DQA');assert.equal(esd.footprint.libId,'Package_SON:USON-10_2.5x1.0mm_P0.5mm');assert.deepEqual(esd.symbolPinMap,{1:'ETH_TXP_CABLE',2:'ETH_TXN_CABLE',3:'CHASSIS',4:'ETH_RXP_CABLE',5:'ETH_RXN_CABLE',8:'CHASSIS'})})
 
 test('Board010 source values and crystal-load calculation are frozen without claiming board evidence',()=>{const s=ethernetControllerProductionProposal.supportDesign;assert.equal(s.exres.resistanceOhm,12400);assert.equal(s.lineTermination.resistanceOhm,49.9);assert.equal(s.crystalLoad.crystalLoadPf,8);assert.equal((s.crystalLoad.capacitorEachPf/2)+s.crystalLoad.assumedTotalParasiticPf,8);assert.equal(s.esd.channelCapacitancePf,0.5);assert.equal(s.analogSupply.ratedCurrentA,1);assert.match(ethernetControllerProductionProposal.status,/BLOCKED/);assert.ok(validateEthernetControllerProposal(ethernetControllerProductionProposal).errors.some(x=>/ethernet-evidence-/.test(x)))})
+
+test('Board010 authoritative writer maps RP2040 host and source-backed PMODE 111',()=>{const d=catalogDefinition(manifest.boards[9],9),m=categorySchematicPinMaps(d),pcb=ethernetControllerCategoryPcbEvidence();assert.deepEqual([m.U2[43],m.U2[44],m.U2[45]],['PMODE2','PMODE1','PMODE0']);for(const ref of['R_MODE0','R_MODE1','R_MODE2'])assert.equal(m[ref][1],'3V3');assert.deepEqual({sclk:m.U1[6],mosi:m.U1[7],miso:m.U1[8],cs:m.U1[9],iovdd:m.U1[10],reset:m.U1[11],interrupt:m.U1[12]},{sclk:'SPI_SCLK',mosi:'SPI_MOSI',miso:'SPI_MISO',cs:'ETH_CS_N',iovdd:'3V3',reset:'ETH_RESET_N',interrupt:'ETH_INT_N'});assert.deepEqual(pcb.footprints.map(x=>x.ref),d.bom.map(x=>x.ref))})
 
 test('Board010 proposal records the exact non-PoE MagJack limitation and purposeful area-bounded notch',()=>{
   assert.ok(ethernetControllerProductionProposal.limitations.some(x=>/7499010121A.*non-PoE/i.test(x)))

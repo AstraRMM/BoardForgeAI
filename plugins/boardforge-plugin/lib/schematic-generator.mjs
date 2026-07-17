@@ -429,7 +429,11 @@ function netLabelConnectivityObjects(symbols = []) {
       if(symbol.group==='POWER_FLAG'){
         objects.push(wireObject(pinAt.x,pinAt.y,pinAt.x,round(pinAt.y-5.08)))
         objects.push(labelObject(net,pinAt.x,round(pinAt.y-5.08),true,90))
-      }else objects.push(labelObject(net, pinAt.x, pinAt.y, isPowerNet(net), pinAt.rotation||0))
+      }else{
+        const labelAt=labelCoordinateForPin(pinAt)
+        objects.push(wireObject(pinAt.x,pinAt.y,labelAt.x,labelAt.y))
+        objects.push(labelObject(net,labelAt.x,labelAt.y,isPowerNet(net),labelAt.rotation))
+      }
     })
     for(const pin of Object.keys(symbol.pinGeometry||{})){
       if(Object.prototype.hasOwnProperty.call(symbol.pinMap||{},pin))continue
@@ -458,7 +462,9 @@ function schematicPinCoordinate(symbol, pin, index) {
 }
 
 function labelCoordinateForPin(pinAt) {
-  const length = 7.62
+  // Keep the label stub within one 2.54 mm grid step. Longer stubs can cross
+  // adjacent authoritative pins on dense symbols and silently merge nets.
+  const length = 2.54
   const rotation=Number(pinAt.rotation||0)%360
   if(rotation===90)return{x:round(pinAt.x),y:round(pinAt.y+length),rotation:90}
   if(rotation===270)return{x:round(pinAt.x),y:round(pinAt.y-length),rotation:90}
@@ -680,7 +686,7 @@ function inferGroup(component) {
 }
 
 function isPowerNet(name) {
-  return /^(GND|3V3|5V(?:_RAW)?|PP5V|VIN|VBAT|VBUS(?:_(?:RAW|PROTECTED|SWITCHED))?|VUSB|VCC|VDD|VDDA|CHASSIS)$/i.test(name || '')
+  return /^(GND|3V3A?|5V(?:_RAW)?|PP5V|VIN|VBAT|VBUS(?:_(?:RAW|PROTECTED|SWITCHED))?|VUSB|VCC|VDD|VDDA|CHASSIS)$/i.test(name || '')
 }
 
 function safe(value) {

@@ -100,9 +100,9 @@ test('remaining catalog clones cannot pass without their advertised architecture
   for(const [index,code]of expected){const definition=catalogDefinition(manifest.boards[index],index),gate=validateCatalogSemanticTopology(definition);assert.equal(gate.ok,false,manifest.boards[index].id);assert.ok(gate.errors.includes(code),`${manifest.boards[index].id}: ${code}`)}
 })
 
-test('all unsupported catalog clones 009-050 fail semantic validation before generation',()=>{
+test('only remediated Board010 passes among unsupported catalog clones 009-050',()=>{
   const passing=[];for(let index=8;index<manifest.boards.length;index++){const definition=catalogDefinition(manifest.boards[index],index);if(validateCatalogSemanticTopology(definition).ok)passing.push(manifest.boards[index].id)}
-  assert.deepEqual(passing,[])
+  assert.deepEqual(passing,['010_ETHERNET_CONTROLLER'])
 })
 
 test('Board012 ESP32 shell cannot masquerade as a USB isolator',()=>{
@@ -117,11 +117,11 @@ test('USB isolator gate accepts only complete source-backed isolation evidence',
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
-test('Board010 USB bench topology cannot masquerade as an Ethernet controller',()=>{
+test('Board010 selects a complete exact Ethernet controller topology',()=>{
   const definition=catalogDefinition(manifest.boards[9],9),gate=validateCatalogSemanticTopology(definition)
-  assert.equal(gate.ok,false)
-  assert.equal(definition.topologyId,'rp2040-instrument')
-  for(const code of['ethernet-mac-controller-missing','ethernet-phy-missing','ethernet-rj45-connector-missing','ethernet-magnetics-missing','ethernet-reference-clock-missing','ethernet-phy-reset-network-missing','ethernet-phy-strap-network-missing','ethernet-line-protection-missing','ethernet-line-termination-missing','ethernet-phy-decoupling-missing','ethernet-phy-power-missing'])assert.ok(gate.errors.includes(code),code)
+  assert.equal(gate.ok,true,gate.errors.join('; '))
+  assert.equal(definition.topologyId,'ethernet-controller')
+  for(const ref of['U1','U2','J1','Y1','R_EXRES','D_ETH','FB_AVDD'])assert.ok(definition.bom.some(row=>row.ref===ref),ref)
 })
 
 test('Ethernet category gate accepts an explicitly complete controller path',()=>{
@@ -130,7 +130,7 @@ test('Ethernet category gate accepts an explicitly complete controller path',()=
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
-test('catalog mechanics preserve topology clearance or an explicit coherent mechanical envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);if(['connector ears-can-controller','asymmetric ports-can-gateway','isolation waist-poe-sensor'].includes(d.catalog.outlineFamily)){assert.equal(Math.min(...xs),0);assert.equal(Math.min(...ys),0);assert.equal(Math.max(...xs),d.widthMm);assert.equal(Math.max(...ys),d.heightMm);assert.equal(d.holes.length,4);continue}assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
+test('catalog mechanics preserve topology clearance or an explicit coherent mechanical envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);if(['connector ears-can-controller','asymmetric ports-can-gateway','isolation waist-poe-sensor','magnetics notch-ethernet-controller'].includes(d.catalog.outlineFamily)){assert.equal(Math.min(...xs),0);assert.equal(Math.min(...ys),0);assert.equal(Math.max(...xs),d.widthMm);assert.equal(Math.max(...ys),d.heightMm);if(d.topologyId!=='ethernet-controller')assert.equal(d.holes.length,4);continue}assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
 
 test('Board013 relay controller cannot masquerade as the generic CAN controller',()=>{
   const definition=catalogDefinition(manifest.boards[12],12),gate=validateCatalogSemanticTopology(definition)
