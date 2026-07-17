@@ -2,6 +2,20 @@ import {approvedAssetFor} from '../../components/approved-production-assets.mjs'
 
 export const USB_ISOLATOR_PROPOSAL_SCHEMA='boardforge.phase2c.production-proposal.usb-isolator.v1'
 
+export const USB_ISOLATOR_POWER_AUDIT=Object.freeze({
+  schema:'boardforge.phase2c.usb-isolator-power-audit.v1',
+  correctedMinimumIsolatedOutputMa:569,isolatedOutputV:5,requiredOutputPowerMw:2845,
+  defaultUsb2InputV:5,defaultUsb2InputMa:500,defaultInputPowerMw:2500,
+  idealPowerDeficitMw:345,minimumImpossibleEfficiencyPercent:113.8,
+  exactUpstreamTypeCCurrentContract:null,
+  providerEvidence:Object.freeze({digikeyExactMatches:0,mouserExactMatches:0,reportsChecked:Object.freeze(['BoardForge_DigiKey_Live_Lookup_Report.json','BoardForge_Mouser_Live_Lookup_Report.json'])}),
+  candidates:Object.freeze([
+    Object.freeze({mpn:'THI 3-0511',inputV:'4.5-5.5',outputV:5,outputMa:600,electricallyCapable:true,installedExactSymbol:false,installedExactFootprint:false,liveProviderEvidence:false,status:'BLOCKED_NO_AUTHORITATIVE_KICAD_ASSET_OR_LIVE_PROVIDER_EVIDENCE'}),
+    Object.freeze({family:'Murata NXE2S0505MC',outputV:5,outputMa:400,electricallyCapable:false,installedExactFootprint:true,status:'REJECTED_BELOW_569MA'}),
+  ]),
+  status:'BLOCKED_DEFAULT_USB2_INPUT_POWER_IS_LESS_THAN_REQUIRED_ISOLATED_OUTPUT_POWER',
+})
+
 // This is deliberately a proposal, not an approved production template. The
 // isolator is active but had zero live stock in the 2026-07-16 provider check.
 // The clock and USB-C DFP controller are now exact approved assets. Isolated
@@ -18,7 +32,7 @@ export const usbIsolatorProductionProposal=Object.freeze({
     typeCSource:'https://www.ti.com/lit/ds/symlink/tps25810.pdf',
     esd:'https://www.st.com/content/st_com/en/technical-documents/DS4260.html',
   },
-  requirements:{usbSpeedMbps:480,dataIsolationVrms:3750,isolatorPackageCreepageMm:5.3,isolatorPackageClearanceMm:5.3,boardKeepoutRequired:true,separateGroundDomains:true,downstreamPortCurrentMa:500,isolatorWorstCaseDownstreamMa:69,minimumIsolatedOutputMa:569},
+  requirements:{usbSpeedMbps:480,dataIsolationVrms:3750,isolatorPackageCreepageMm:5.3,isolatorPackageClearanceMm:5.3,boardKeepoutRequired:true,separateGroundDomains:true,downstreamPortCurrentMa:500,isolatorWorstCaseDownstreamMa:69,minimumIsolatedOutputMa:569,upstreamDefaultCurrentMa:500,upstreamTypeCCurrentContract:null},
   domains:{upstream:{ground:'GND_UP',power:['VBUS_UP','VDD_UP_3V3']},downstream:{ground:'GND_ISO',power:['VBUS_ISO_5V','VDD_ISO_3V3']},directCopperCrossings:[]},
   outline:{family:'isolation-waist-usb-isolator',closed:true,maximumAreaMm2:1950,points:[[0,0],[22,0],[22,4],[30,4],[30,0],[52,0],[52,34],[30,34],[30,30],[22,30],[22,34],[0,34]],purposefulFeatures:{opposedIsolationNotches:2,barrierCenterX:26,allLayerCopperKeepoutWidthMm:5,minimumCreepageMm:5.3,minimumClearanceMm:5.3,mountingHoleCount:4}},
   bom:[
@@ -39,6 +53,7 @@ export const usbIsolatorProductionProposal=Object.freeze({
     'Close the 24 MHz crystal load network only after the routed PCB stray-capacitance budget is measured; the exact 18 pF-load Epson crystal alone does not determine two safe capacitor values.',
     'Select and primary-source verify an exact isolated 5 V supply capable of at least 569 mA continuous output, including its transformer/module, rectifier, filtering, isolation rating, thermal derating, pin map, and land pattern.',
     'Prove that the upstream Type-C default-current contract and converter efficiency can supply that isolated budget, or add a separately rated upstream power input; do not claim a bus-powered 500 mA port from nominal 5 V.',
+    'At the declared USB 2.0 default 5 V / 500 mA input, 2500 mW is available but the corrected isolated output requires 2845 mW; even an impossible 100% efficient converter is short by 345 mW. Freeze a source-backed Type-C 1.5 A/3 A attach contract or separate input before selecting power hardware.',
     'Add exact converter input/output filtering only after the isolated-power architecture is selected.',
   ],
   evidenceRequired:['exactAssetsApproved','dataIsolationRatingVerified','isolatedPowerRatingVerified','separateGroundDomainsVerified','allLayerKeepoutVerified','creepageClearanceVerified','upstreamEsdDischargeVerified','downstreamEsdDischargeVerified','bothSideDecouplingVerified','typeCAttachAndPowerPolicyVerified','usbSignalIntegrityVerified','powerBudgetThermalVerified','mechanicalEnvelopeVerified','productionHipotAndFunctionalTestVerified'],
@@ -52,6 +67,9 @@ export function validateUsbIsolatorProductionProposal(proposal={}){
   const refs=new Set(bom.map(x=>x.ref));if(refs.size!==bom.length)errors.push('usb-isolator-duplicate-reference')
   const blocked=bom.filter(x=>!['APPROVED_EXACT_ASSET','APPROVED_ASSET_LIVE_STOCK'].includes(x.status));if(blocked.length)errors.push('usb-isolator-exact-assets-unapproved')
   if(proposal.requirements?.separateGroundDomains!==true||proposal.domains?.upstream?.ground===proposal.domains?.downstream?.ground||(proposal.domains?.directCopperCrossings||[]).length)errors.push('usb-isolator-ground-domain-separation-invalid')
+  const requiredMw=(proposal.requirements?.minimumIsolatedOutputMa||0)*5,inputMw=(proposal.requirements?.upstreamDefaultCurrentMa||0)*5
+  if(!proposal.requirements?.upstreamTypeCCurrentContract&&inputMw<requiredMw)errors.push('usb-isolator-default-input-power-below-corrected-output-budget')
+  if(!proposal.requirements?.upstreamTypeCCurrentContract)errors.push('usb-isolator-upstream-type-c-current-contract-unverified')
   const feature=proposal.outline?.purposefulFeatures||{},area=polygonArea(proposal.outline?.points)
   if(proposal.outline?.closed!==true||!Number.isFinite(area)||area>(proposal.maximumAreaMm2||0)||feature.opposedIsolationNotches!==2||feature.allLayerCopperKeepoutWidthMm<5||feature.minimumCreepageMm<proposal.requirements?.isolatorPackageCreepageMm||feature.minimumClearanceMm<proposal.requirements?.isolatorPackageClearanceMm)errors.push('usb-isolator-purposeful-outline-invalid')
   for(const key of proposal.evidenceRequired||[])if(proposal.semanticEvidence?.[key]!==true)errors.push(`usb-isolator-evidence-${key.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}-missing`)
