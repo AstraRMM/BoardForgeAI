@@ -1,4 +1,69 @@
-import test from'node:test';import assert from'node:assert/strict';import manifest from'../../../fixtures/phase2c/50-board-challenge-manifest.mjs';import{catalogDefinition}from'../lib/phase2c/catalog-production-engine.mjs';import{bleBeaconProductionProposal as p,validateBleBeaconArchitecture as validate}from'../lib/phase2c/templates/ble-beacon.mjs'
-test('Board025 requests a proximity beacon but catalog has no explicit beacon RF or energy architecture',()=>{const b=manifest.boards[24],d=catalogDefinition(b,24),g=validate(d);assert.equal(b.id,'025_BLE_BEACON');assert.equal(b.purpose,'compact proximity beacon');assert.equal(d.topologyId,'usb-c-esp32-sensor');assert.equal(g.ok,false);for(const code of['ble-beacon-radio-missing','ble-beacon-antenna-missing','ble-beacon-rf-network-missing','ble-beacon-frequency-reference-missing','ble-beacon-energy-source-missing','ble-beacon-provisioning-missing','ble-beacon-format-unverified','ble-beacon-range-detection-unverified','ble-beacon-energy-lifetime-unverified','ble-beacon-identity-privacy-unverified'])assert.ok(g.errors.includes(code),code)})
-test('Board025 proposal preserves BLE architecture alternatives without guessed exact assets',()=>{assert.match(p.status,/BLOCKED/);assert.deepEqual(p.candidates.map(x=>x.family),['Nordic nRF52','TI CC2340R5']);assert.ok(p.candidates.every(x=>x.exactMpn===null));assert.ok(p.mandatoryUnresolved.some(x=>/advertising interval\/power/i.test(x)));assert.ok(p.mandatoryUnresolved.some(x=>/battery chemistry/i.test(x)));assert.ok(p.requiredTopology.some(x=>/body absorption/i.test(x)))})
-test('BLE beacon gate accepts explicit RF lifetime privacy and wearable evidence',()=>{const roles=['BLE radio','2.4 GHz antenna','RF matching network','BLE clock frequency reference','beacon battery energy source','beacon provisioning programming interface'];const d={bom:roles.map((role,i)=>({ref:`X${i}`,role})),semanticEvidence:{bleBeacon:{beaconFormatVerified:true,rangeDetectionVerified:true,antennaAssemblyVerified:true,regulatoryVerified:true,energyLifetimeVerified:true,identityPrivacyVerified:true,wearableMechanicalVerified:true,productionRfTestVerified:true}}};assert.deepEqual(validate(d),{ok:true,errors:[]})})
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import { catalogDefinition } from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  bleBeaconProductionProposal as p,
+  validateBleBeaconArchitecture as validate,
+} from "../lib/phase2c/templates/ble-beacon.mjs";
+test("Board025 requests a proximity beacon but catalog has no explicit beacon RF or energy architecture", () => {
+  const b = manifest.boards[24],
+    d = catalogDefinition(b, 24),
+    g = validate(d);
+  assert.equal(b.id, "025_BLE_BEACON");
+  assert.equal(b.purpose, "compact proximity beacon");
+  assert.equal(d.topologyId, "usb-c-esp32-sensor");
+  assert.equal(g.ok, false);
+  for (const code of [
+    "ble-beacon-radio-missing",
+    "ble-beacon-antenna-missing",
+    "ble-beacon-rf-network-missing",
+    "ble-beacon-frequency-reference-missing",
+    "ble-beacon-energy-source-missing",
+    "ble-beacon-provisioning-missing",
+    "ble-beacon-format-unverified",
+    "ble-beacon-range-detection-unverified",
+    "ble-beacon-energy-lifetime-unverified",
+    "ble-beacon-identity-privacy-unverified",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board025 proposal preserves BLE architecture alternatives without guessed exact assets", () => {
+  assert.match(p.status, /BLOCKED/);
+  assert.deepEqual(
+    p.candidates.map((x) => x.family),
+    ["Nordic nRF52", "TI CC2340R5", "Bosch BME280"],
+  );
+  assert.ok(p.candidates.every((x) => x.exactMpn === null));
+  assert.ok(
+    p.mandatoryUnresolved.some((x) => /advertising interval\/power/i.test(x)),
+  );
+  assert.ok(p.mandatoryUnresolved.some((x) => /battery chemistry/i.test(x)));
+  assert.ok(p.requiredTopology.some((x) => /body absorption/i.test(x)));
+});
+test("BLE beacon gate accepts explicit RF lifetime privacy and wearable evidence", () => {
+  const roles = [
+    "BLE radio",
+    "2.4 GHz antenna",
+    "RF matching network",
+    "BLE clock frequency reference",
+    "beacon battery energy source",
+    "beacon provisioning programming interface",
+  ];
+  const d = {
+    bom: roles.map((role, i) => ({ ref: `X${i}`, role })),
+    semanticEvidence: {
+      bleBeacon: {
+        beaconFormatVerified: true,
+        rangeDetectionVerified: true,
+        antennaAssemblyVerified: true,
+        regulatoryVerified: true,
+        energyLifetimeVerified: true,
+        identityPrivacyVerified: true,
+        wearableMechanicalVerified: true,
+        productionRfTestVerified: true,
+      },
+    },
+  };
+  assert.deepEqual(validate(d), { ok: true, errors: [] });
+});
