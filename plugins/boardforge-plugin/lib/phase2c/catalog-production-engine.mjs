@@ -65,7 +65,7 @@ function singleCanControllerBase(base){
 function dualCanGatewayBase(base){
   const copy=singleCanControllerBase(base)
   copy.widthMm=68;copy.heightMm=44;copy.layers=6
-  copy.bom=copy.bom.map(row=>row.ref==='U1'?{...row,value:'STM32G0B1CBT6',mpn:'STM32G0B1CBT6',role:'dual FDCAN controller'}:row.ref==='U2'?{...row,role:'CAN1 transceiver mode RS bias grounded'}:row.ref==='J2'?{...row,role:'CAN1 field connector and power entry'}:row.ref==='R1'?{...row,role:'CAN1 termination'}:row.ref==='JP1'?{...row,role:'CAN1 selectable termination jumper'}:row.ref==='D1'?{...row,role:'CAN1 surge TVS'}:row)
+  copy.bom=copy.bom.map(row=>row.ref==='U1'?{...row,value:'STM32G0B1CCT6TR',mpn:'STM32G0B1CCT6TR',role:'dual FDCAN controller'}:row.ref==='U2'?{...row,role:'CAN1 transceiver mode RS bias grounded'}:row.ref==='J2'?{...row,role:'CAN1 field connector and power entry'}:row.ref==='R1'?{...row,role:'CAN1 termination'}:row.ref==='JP1'?{...row,role:'CAN1 selectable termination jumper'}:row.ref==='D1'?{...row,role:'CAN1 surge TVS'}:row)
   copy.bom.push(
     {...structuredClone(copy.bom.find(row=>row.ref==='U2')),ref:'U4',role:'CAN2 transceiver mode RS bias grounded'},
     {...structuredClone(copy.bom.find(row=>row.ref==='J2')),ref:'J3',role:'second CAN field connector'},
@@ -120,7 +120,7 @@ export function validateCatalogSemanticTopology(definition={}){
     const transceivers=bom.filter(row=>row.mpn==='SN65HVD230DR')
     const controller=bom.find(row=>/^U1$/i.test(row.ref)||/controller/.test(String(row.role||'').toLowerCase()))
     const externalCanControllers=bom.filter(row=>/external.*can.*controller|spi.*can.*controller/.test(String(row.role||'').toLowerCase()))
-    if(controller?.mpn!=='STM32G0B1CBT6'&&externalCanControllers.length===0)errors.push('dual-can-controller-capability-missing')
+    if(!['STM32G0B1CBT6','STM32G0B1CCT6TR'].includes(controller?.mpn)&&externalCanControllers.length===0)errors.push('dual-can-controller-capability-missing')
     if(transceivers.length<2)errors.push('dual-can-transceivers-missing')
     if(bom.filter(row=>/^J[23]$/i.test(row.ref)&&/can/i.test(String(row.role||''))).length<2)errors.push('dual-can-field-connectors-missing')
     if(bom.filter(row=>/^R[12]$/i.test(row.ref)&&/termination/i.test(String(row.role||''))).length<2)errors.push('dual-can-termination-missing')

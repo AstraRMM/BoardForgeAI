@@ -36,7 +36,7 @@ test('catalog definition rejects missing board input with an actionable contract
 test('dual-bus CAN gateway has two independently named CAN physical channels',()=>{
   const d=catalogDefinition(manifest.boards[7],7)
   assert.equal(d.topologyId,'can-gateway')
-  assert.equal(d.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CBT6')
+  assert.equal(d.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CCT6TR')
   assert.equal(d.bom.filter(row=>row.mpn==='SN65HVD230DR').length,2)
   assert.ok(d.bom.some(row=>row.ref==='J3'))
   assert.ok(d.bom.some(row=>row.ref==='R2'))
@@ -49,7 +49,7 @@ test('dual-bus CAN gateway has two independently named CAN physical channels',()
 test('Board008 no longer reuses the invalid one-CAN MCU/two-PHY shell',()=>{
   const definition=catalogDefinition(manifest.boards[7],7),gate=validateCatalogSemanticTopology(definition)
   assert.equal(gate.ok,true,gate.errors.join('; '))
-  assert.equal(definition.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CBT6')
+  assert.equal(definition.bom.find(row=>row.ref==='U1').mpn,'STM32G0B1CCT6TR')
   assert.equal(definition.bom.filter(row=>/selectable termination/.test(row.role)).length,2)
 })
 

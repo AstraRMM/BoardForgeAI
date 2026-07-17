@@ -1132,7 +1132,7 @@ export function canGatewayCategoryPcbEvidence(board={}){
   const term1=evidence.nets.find(row=>row.name==='TERM_LINK');term1.name='CAN1_TERM_LINK'
   const term2=Math.max(...evidence.nets.map(row=>row.number))+1;evidence.nets.push({number:term2,name:'CAN2_TERM_LINK'})
   const u1=evidence.footprints.find(row=>row.ref==='U1')
-  u1.value='STM32G0B1CBT6';u1.footprint='Package_QFP:LQFP-48_7x7mm_P0.5mm'
+  u1.value=(board.bom||[]).find(row=>row.ref==='U1')?.mpn||'STM32G0B1CBT6';u1.footprint='Package_QFP:LQFP-48_7x7mm_P0.5mm'
   u1.pads=[pad('4',-4,-3,.55,.55,3,'3V3'),pad('5',-4,-2,.55,.55,3,'3V3'),pad('6',-4,-1,.55,.55,3,'3V3'),pad('7',-4,0,.55,.55,1,'GND'),pad('10',-4,1,.55,.55,byName.NRST,'NRST'),pad('19',-4,2,.55,.55,can2Rx,'CAN2_RX'),pad('20',-4,3,.55,.55,can2Tx,'CAN2_TX'),pad('42',4,-4,.55,.55,byName.I2C_SCL,'I2C_SCL'),pad('43',4,-3,.55,.55,byName.I2C_SDA,'I2C_SDA'),pad('35',4,-2,.55,.55,byName.SWDIO,'SWDIO'),pad('36',4,-1,.55,.55,bootNet,'SWCLK_BOOT0'),pad('47',4,1,.55,.55,10,'CAN1_RX'),pad('48',4,2,.55,.55,9,'CAN1_TX')]
   evidence.footprints.push(
     {ref:'U4',value:'SN65HVD230DR',footprint:'Package_SO:SOIC-8_3.9x4.9mm_P1.27mm',at:{x:42,y:32},body:{w:6,h:8},pads:[pad('1',-2.9,-2,.7,.55,can2Tx,'CAN2_TX'),pad('4',-2.9,2,.7,.55,can2Rx,'CAN2_RX'),pad('3',2.9,-2,.7,.55,3,'+3V3'),pad('2',2.9,2,.7,.55,1,'GND'),pad('7',0,-3.6,.7,.55,can2H,'CAN2H'),pad('6',0,3.6,.7,.55,can2L,'CAN2L')]},
@@ -1442,7 +1442,7 @@ export function categorySchematicPinMaps(board) {
       Q1:{1:'GND',2:'5V_RAW',3:'5V'},D_PWR:{1:'5V',2:'GND'},C_BULK:{1:'5V',2:'GND'},JP1:{1:'TERM_LINK',2:'CANL'},R_BOOT:{1:'BOOT0',2:'GND'},R_RESET:{1:'3V3',2:'NRST'},C_RESET:{1:'NRST',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},
     },
     'can-gateway': {
-      U1: {...approvedAssetFor('STM32G0B1CBT6').pinMap,42:'I2C_SCL',43:'I2C_SDA'},
+      U1: {...approvedAssetFor((board.bom||[]).find(row=>row.ref==='U1')?.mpn||'STM32G0B1CBT6').pinMap,42:'I2C_SCL',43:'I2C_SDA'},
       U2:{1:'CAN1_TX',2:'GND',3:'3V3',4:'CAN1_RX',6:'CAN1L',7:'CAN1H',8:'GND'},U4:{1:'CAN2_TX',2:'GND',3:'3V3',4:'CAN2_RX',6:'CAN2L',7:'CAN2H',8:'GND'},
       U3:{1:'GND',2:'3V3',3:'5V'},J1:{1:'3V3',2:'SWDIO',3:'SWCLK_BOOT0',4:'NRST',5:'GND'},
       J2:{1:'5V_RAW',2:'GND',3:'CAN1H',4:'CAN1L',5:'I2C_SCL',6:'I2C_SDA'},J3:{1:'CAN2H',2:'CAN2L',3:'GND',4:'3V3',5:'3V3',6:'GND'},
@@ -1550,7 +1550,7 @@ export function categoryPowerFlags(board){
     {ref:'#FLG05',symbolLibId:'power:PWR_FLAG',rail:'FIELD_GND',source:{ref:'J1',kind:'external-field-return'},reason:'The field terminal is the explicit isolated field return.'},
   ]
   if(topology==='stm32-controller'&&(board.bom||[]).some(row=>row.ref==='R_BOOT'))return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceRef:'J2'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'Q1',kind:'reverse-polarity-protected-output'},reason:'The reviewed reverse-polarity PMOS output is the physical source for the protected 5 V regulator rail.'}]
-  if(topology==='can-gateway'&&(board.bom||[]).some(row=>row.mpn==='STM32G0B1CBT6'))return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceRef:'J2'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'Q1',kind:'reverse-polarity-protected-output'},reason:'The reviewed reverse-polarity PMOS output is the physical source for the protected 5 V regulator rail.'}]
+  if(topology==='can-gateway'&&(board.bom||[]).some(row=>['STM32G0B1CBT6','STM32G0B1CCT6TR'].includes(row.mpn)))return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceRef:'J2'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'Q1',kind:'reverse-polarity-protected-output'},reason:'The reviewed reverse-polarity PMOS output is the physical source for the protected 5 V regulator rail.'}]
   if(topology==='stm32-controller'||topology==='can-gateway')return planExternalConnectorPowerFlags()
   return []
 }

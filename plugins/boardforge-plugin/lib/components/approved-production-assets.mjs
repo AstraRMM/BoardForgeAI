@@ -44,6 +44,7 @@ export const approvedProductionAssets=Object.freeze({
   // ST DS13560: STM32G0B1CBT6 LQFP48 exposes two independent FDCAN
   // instances: PB8/PB9 (pins 47/48) and PB0/PB1 (pins 19/20).
   'STM32G0B1CBT6':entry('STM32G0B1CBT6','MCU_ST_STM32G0:STM32G0B1CBTx','Package_QFP:LQFP-48_7x7mm_P0.5mm',{4:'3V3',5:'3V3',6:'3V3',7:'GND',10:'NRST',19:'CAN2_RX',20:'CAN2_TX',35:'SWDIO',36:'SWCLK_BOOT0',47:'CAN1_RX',48:'CAN1_TX'},'LQFP-48'),
+  'STM32G0B1CCT6TR':entry('STM32G0B1CCT6TR','MCU_ST_STM32G0:STM32G0B1CCTx','Package_QFP:LQFP-48_7x7mm_P0.5mm',{4:'3V3',5:'3V3',6:'3V3',7:'GND',10:'NRST',19:'CAN2_RX',20:'CAN2_TX',35:'SWDIO',36:'SWCLK_BOOT0',47:'CAN1_RX',48:'CAN1_TX'},'LQFP-48',{sourceEvidence:'https://www.st.com/resource/en/datasheet/stm32g0b1cc.pdf'}),
   // RS (pin 8) must have an explicit operating-mode bias. Ground selects
   // high-speed mode; silently omitting the pin does not prove a usable PHY.
   'SN65HVD230DR':entry('SN65HVD230DR','Interface_CAN_LIN:SN65HVD230','Package_SO:SOIC-8_3.9x4.9mm_P1.27mm',{1:'CAN_TX',2:'GND',3:'3V3',4:'CAN_RX',6:'CANL',7:'CANH',8:'GND'},'SOIC-8'),
