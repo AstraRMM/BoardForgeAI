@@ -137,6 +137,16 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
   assert.ok(result.tracks.some(x=>x.net==='VBUS'&&x.start.x===38.3&&x.start.y===21.575))
   assert.ok(result.tracks.some(x=>x.net==='GND'&&x.layer==='In3.Cu'&&x.start.y===29))
   assert.ok(result.tracks.some(x=>x.net==='GND'&&x.layer==='F.Cu'&&x.start.x===38.9&&x.start.y===21.575))
+  // The authoritative USB4105 asset co-locates paired Type-C contacts and
+  // leaves shell tabs unnetted. Its physical routing inventory is smaller
+  // than the review-footprint model but must still select the proven corridor.
+  const compact=structuredClone(input)
+  compact.nets.find(n=>n.net==='VBUS').endpoints=compact.nets.find(n=>n.net==='VBUS').endpoints.filter(p=>p.pad!=='A9')
+  compact.nets.find(n=>n.net==='GND').endpoints=compact.nets.find(n=>n.net==='GND').endpoints.filter(p=>!(p.ref==='J2'&&(p.pad==='A12'||p.pad==='SH')))
+  const compactResult=tps25750SourceFixedCorridors(compact,{trackWidth:.2,viaDiameter:.6})
+  assert.deepEqual(compactResult.completedNets,result.completedNets)
+  assert.equal(compactResult.vias.filter(x=>x.net==='VBUS').length,6)
+  assert.ok(compactResult.tracks.some(x=>x.net==='GND'&&x.layer==='In3.Cu'&&x.start.y===29))
   const changed=structuredClone(input);changed.nets.find(n=>n.net==='CC1').endpoints[0].pad='99'
   assert.deepEqual(tps25750SourceFixedCorridors(changed,{}).completedNets,[])
 })

@@ -432,16 +432,40 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     for(let i=0;i<pp.length;i++){tracks.push({net:'PP5V',layer:'F.Cu',start:{x:pp[i].x,y:pp[i].y},end:dogs[i],width:trackWidth});vias.push({net:'PP5V',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3});if(i)tracks.push({net:'PP5V',layer:'In2.Cu',start:dogs[i],end:{x:dogs[i].x,y:13},width:trackWidth})}
     tracks.push({net:'PP5V',layer:'In2.Cu',start:dogs[0],end:{x:36.5,y:25.8},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:36.5,y:25.8},end:{x:45,y:25.8},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:45,y:25.8},end:{x:45,y:13},width:trackWidth},{net:'PP5V',layer:'In2.Cu',start:{x:dogs[2].x,y:13},end:{x:45,y:13},width:trackWidth});completedNets.push('PP5V')
   }
-  const vbus=[at('VBUS','U2','23'),at('VBUS','U2','32'),at('VBUS','J2','A4'),at('VBUS','J2','A9'),at('VBUS','D2','1'),at('VBUS','C_VBUS','1')]
-  if(vbus.every(Boolean)&&[[41.425,22.837],[38.3,21.575],[18.6,2.32],[23.4,2.32],[39.75,16.75],[39.75,9.05]].every(([x,y],i)=>near(vbus[i].x,x)&&near(vbus[i].y,y))){
+  // The review footprint exposes two separately placed VBUS pads, whereas
+  // USB4105's authoritative footprint co-locates its paired contacts. Keep
+  // each geometry as an explicit topology contract; neither is allowed to
+  // masquerade as the other.
+  const vbusFull=[at('VBUS','U2','23'),at('VBUS','U2','32'),at('VBUS','J2','A4'),at('VBUS','J2','A9'),at('VBUS','D2','1'),at('VBUS','C_VBUS','1')]
+  if(vbusFull.every(Boolean)&&[[41.425,22.837],[38.3,21.575],[18.6,2.32],[23.4,2.32],[39.75,16.75],[39.75,9.05]].every(([x,y],i)=>near(vbusFull[i].x,x)&&near(vbusFull[i].y,y))){
     const dogs=[{x:42.2,y:22.837},{x:18.6,y:2.32},{x:23.4,y:2.32},{x:42.2,y:16.75},{x:42.2,y:9.05},{x:38.3,y:20.8}]
-    tracks.push({net:'VBUS',layer:'F.Cu',start:{x:vbus[0].x,y:vbus[0].y},end:dogs[0],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[1].x,y:vbus[1].y},end:dogs[5],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[4].x,y:vbus[4].y},end:dogs[3],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[5].x,y:vbus[5].y},end:dogs[4],width:trackWidth})
+    tracks.push({net:'VBUS',layer:'F.Cu',start:{x:vbusFull[0].x,y:vbusFull[0].y},end:dogs[0],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbusFull[1].x,y:vbusFull[1].y},end:dogs[5],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbusFull[4].x,y:vbusFull[4].y},end:dogs[3],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbusFull[5].x,y:vbusFull[5].y},end:dogs[4],width:trackWidth})
     for(const d of dogs)vias.push({net:'VBUS',x:d.x,y:d.y,diameter:.5,drill:.3})
     const transition={x:30,y:11};vias.push({net:'VBUS',x:transition.x,y:transition.y,diameter:.5,drill:.3})
     tracks.push({net:'VBUS',layer:'In2.Cu',start:dogs[1],end:{x:20.5,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:2.32},end:{x:20.5,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:dogs[2],end:{x:21.8,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:21.8,y:2.32},end:{x:21.8,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:11},end:transition,width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:transition,end:{x:47,y:11},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:{x:47,y:9.05},end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[0],end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[3],end:{x:47,y:16.75},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[4],end:{x:47,y:9.05},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[5],end:{x:47,y:20.8},width:trackWidth});completedNets.push('VBUS')
+  }else{
+    // USB4105's paired VBUS contacts share one physical pad coordinate. The
+    // routing inventory deliberately de-duplicates physical copper, so the
+    // corridor uses the surviving physical endpoint rather than demanding a
+    // second logical alias that cannot be independently routed.
+    const vbus=[at('VBUS','U2','23'),at('VBUS','U2','32'),at('VBUS','J2','A4'),at('VBUS','D2','1'),at('VBUS','C_VBUS','1')]
+    if(vbus.every(Boolean)&&[[41.425,22.837],[38.3,21.575],[18.6,2.32],[39.75,16.75],[39.75,9.05]].every(([x,y],i)=>near(vbus[i].x,x)&&near(vbus[i].y,y))){
+    const dogs=[{x:42.2,y:22.837},{x:38.3,y:20.8},{x:18.6,y:2.32},{x:42.2,y:16.75},{x:42.2,y:9.05}]
+    tracks.push({net:'VBUS',layer:'F.Cu',start:{x:vbus[0].x,y:vbus[0].y},end:dogs[0],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[1].x,y:vbus[1].y},end:dogs[1],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[3].x,y:vbus[3].y},end:dogs[3],width:trackWidth},{net:'VBUS',layer:'F.Cu',start:{x:vbus[4].x,y:vbus[4].y},end:dogs[4],width:trackWidth})
+    for(const d of dogs)vias.push({net:'VBUS',x:d.x,y:d.y,diameter:.5,drill:.3})
+    const transition={x:30,y:11};vias.push({net:'VBUS',x:transition.x,y:transition.y,diameter:.5,drill:.3})
+      tracks.push({net:'VBUS',layer:'In2.Cu',start:dogs[2],end:{x:20.5,y:2.32},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:2.32},end:{x:20.5,y:11},width:trackWidth},{net:'VBUS',layer:'In2.Cu',start:{x:20.5,y:11},end:transition,width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:transition,end:{x:47,y:11},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:{x:47,y:9.05},end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[0],end:{x:47,y:22.837},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[3],end:{x:47,y:16.75},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[4],end:{x:47,y:9.05},width:trackWidth},{net:'VBUS',layer:'In4.Cu',start:dogs[1],end:{x:47,y:20.8},width:trackWidth});completedNets.push('VBUS')
+    }
   }
   const ground=byNet.get('GND')||[],g=(ref,pad)=>at('GND',ref,pad),g39=ground.filter(p=>p.ref==='U2'&&String(p.pad)==='39'),sh=ground.filter(p=>p.ref==='J2'&&String(p.pad)==='SH')
-  if(ground.length===28&&g39.length===5&&sh.length===4&&g('J1','2')&&g('J2','A1')&&g('J2','A12')){
+  // The production USB4105 footprint keeps the metal shell electrically
+  // isolated and co-locates the paired GND contacts.  Its physical routing
+  // inventory therefore has one J2 ground endpoint, not two contacts plus
+  // four shell tabs.  Only route the actually netted copper; do not invent a
+  // chassis connection for unnetted mechanical pads.
+  const fullUsbGround=ground.length===28&&g39.length===5&&sh.length===4&&g('J1','2')&&g('J2','A1')&&g('J2','A12')
+  const compactUsbGround=ground.length===23&&g39.length===5&&g('J1','2')&&g('J2','A1')
+  if(fullUsbGround||compactUsbGround){
     const add=(layer,points)=>points.slice(1).forEach((p,i)=>tracks.push({net:'GND',layer,start:{x:points[i].x,y:points[i].y},end:{x:p.x,y:p.y},width:trackWidth})),gv=p=>vias.push({net:'GND',x:p.x,y:p.y,diameter:.5,drill:.3}),leftX=10,rightX=55,bottomY=29
     add('In3.Cu',[{x:leftX,y:2.895},{x:leftX,y:bottomY},{x:37.2,y:bottomY},{x:37.2,y:27.2},{x:39.8,y:27.2},{x:39.8,y:bottomY},{x:rightX,y:bottomY},{x:rightX,y:5.45}])
     add('In3.Cu',[{x:g('J1','2').x,y:g('J1','2').y},{x:g('J1','2').x,y:bottomY}])
@@ -454,8 +478,11 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     const u37=g('U3','7'),u37d={x:33.8,y:22.865};add('F.Cu',[{x:u37.x,y:u37.y},u37d]);gv(u37d);add('In3.Cu',[u37d,{x:33.8,y:24},{x:leftX,y:24}])
     add('F.Cu',[[g('U2','11').x,g('U2','11').y],[37.535,24.575]].map(([x,y])=>({x,y})));add('F.Cu',[[g('U2','12').x,g('U2','12').y],[37.535,24.575]].map(([x,y])=>({x,y})));add('F.Cu',[[g('U2','14').x,g('U2','14').y],[38.9,24.8],[38.645,23.5]].map(([x,y])=>({x,y})));add('F.Cu',[[g('U2','31').x,g('U2','31').y],[38.9,22.2],[38.645,23.5]].map(([x,y])=>({x,y})))
     add('In3.Cu',[{x:36.425,y:23.5},{x:38.645,y:23.5}]);add('In3.Cu',[{x:37.535,y:22.425},{x:37.535,y:27.2}])
-    const a1=g('J2','A1'),a12=g('J2','A12'),a1d={x:15,y:2.32},a12d={x:27,y:2.32};gv({x:a1.x,y:a1.y});gv({x:a12.x,y:a12.y});add('In3.Cu',[{x:a1.x,y:a1.y},a1d,{x:15,y:7.8},{x:leftX,y:7.8}]);add('In3.Cu',[{x:a12.x,y:a12.y},a12d,{x:27,y:7.8},{x:leftX,y:7.8}])
-    for(const p of sh){const side=p.x<21?leftX:27;add('In3.Cu',[{x:p.x,y:p.y},{x:side,y:p.y}]);if(side===27)add('In3.Cu',[{x:27,y:p.y},{x:27,y:7.8}])}
+    const a1=g('J2','A1'),a1d={x:15,y:2.32};gv({x:a1.x,y:a1.y});add('In3.Cu',[{x:a1.x,y:a1.y},a1d,{x:15,y:7.8},{x:leftX,y:7.8}])
+    if(fullUsbGround){
+      const a12=g('J2','A12'),a12d={x:27,y:2.32};gv({x:a12.x,y:a12.y});add('In3.Cu',[{x:a12.x,y:a12.y},a12d,{x:27,y:7.8},{x:leftX,y:7.8}])
+      for(const p of sh){const side=p.x<21?leftX:27;add('In3.Cu',[{x:p.x,y:p.y},{x:side,y:p.y}]);if(side===27)add('In3.Cu',[{x:27,y:p.y},{x:27,y:7.8}])}
+    }
     completedNets.push('GND')
   }
   return{tracks,vias,completedNets,partialNets}
