@@ -304,13 +304,17 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
       completedNets.push('3V3')
     }else partialNets.push('3V3')
   }
-  const raw=[at('5V_RAW','J2','1'),at('5V_RAW','Q1','1')]
-  if(raw.every(Boolean)&&near(raw[0].x,54.24)&&near(raw[0].y,17.75)&&near(raw[1].x,19.65)&&near(raw[1].y,25.835)){
+  // The authoritative DMP3010LK3 footprint exposes its three duplicated
+  // source lands as pad 2 and its five duplicated drain lands as pad 3.
+  // Gate on those real pad numbers; the earlier proof-only 1/5 aliases are
+  // intentionally not accepted here.
+  const raw=[at('5V_RAW','J2','1'),at('5V_RAW','Q1','2')],q2=(byNet.get('5V_RAW')||[]).filter(p=>p.ref==='Q1'&&String(p.pad)==='2').sort((a,b)=>a.y-b.y)
+  if(raw.every(Boolean)&&q2.length===3&&q2.every((p,i)=>near(p.x,19.65)&&near(p.y,[25.835,27.105,28.375][i]))&&near(raw[0].x,54.24)&&near(raw[0].y,17.75)&&near(raw[1].x,19.65)&&near(raw[1].y,25.835)){
     const dog={x:18.5,y:25.835}
-    tracks.push({net:'5V_RAW',layer:'F.Cu',start:{x:raw[1].x,y:raw[1].y},end:dog,width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:dog,end:{x:18.5,y:32},width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:{x:18.5,y:32},end:{x:56,y:32},width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:{x:56,y:32},end:{x:56,y:17.75},width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:{x:56,y:17.75},end:{x:raw[0].x,y:raw[0].y},width:trackWidth})
+    tracks.push({net:'5V_RAW',layer:'F.Cu',start:q2[0],end:q2[1],width:trackWidth},{net:'5V_RAW',layer:'F.Cu',start:q2[1],end:q2[2],width:trackWidth},{net:'5V_RAW',layer:'F.Cu',start:{x:raw[1].x,y:raw[1].y},end:dog,width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:dog,end:{x:18.5,y:32},width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:{x:18.5,y:32},end:{x:56,y:32},width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:{x:56,y:32},end:{x:56,y:17.75},width:trackWidth},{net:'5V_RAW',layer:'In2.Cu',start:{x:56,y:17.75},end:{x:raw[0].x,y:raw[0].y},width:trackWidth})
     vias.push({net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('5V_RAW')
   }
-  const five=byNet.get('5V')||[],fiveAnchors=[at('5V','U3','3'),at('5V','D_PWR','1'),at('5V','C_BULK','1')],q5=five.filter(p=>p.ref==='Q1'&&String(p.pad)==='5')
+  const five=byNet.get('5V')||[],fiveAnchors=[at('5V','U3','3'),at('5V','D_PWR','1'),at('5V','C_BULK','1')],q5=five.filter(p=>p.ref==='Q1'&&String(p.pad)==='3')
   if(five.length===8&&q5.length===5&&fiveAnchors.every(Boolean)&&[[12.068,15.25],[17.633,14.778],[18.28,9.12]].every(([x,y],i)=>near(fiveAnchors[i].x,x)&&near(fiveAnchors[i].y,y))&&q5.some(p=>near(p.x,23.01)&&near(p.y,27.74))){
     const dogs=[{x:13.2,y:15.25},{x:16.5,y:14.778},{x:16,y:9.12},{x:23.01,y:27.74}]
     for(let i=0;i<3;i++){tracks.push({net:'5V',layer:'F.Cu',start:{x:fiveAnchors[i].x,y:fiveAnchors[i].y},end:dogs[i],width:trackWidth});vias.push({net:'5V',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})}

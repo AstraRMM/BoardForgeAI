@@ -57,8 +57,8 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
     {net:'CANH',endpoints:[p('U2','7',45.875,18.365),p('J2','3',54.24,22.83),p('R1','1',49.6,10.325),p('D1','1',47.422,26.41)]},
     {net:'CANL',endpoints:[p('U2','6',45.875,19.635),p('J2','4',54.24,25.37),p('D1','2',47.422,28.31),p('JP1','2',28.52,29.14)]},
     {net:'3V3',endpoints:[p('J1','1',6.51,19),p('U1','1',26.837,16.25),p('U1','9',26.837,20.25),p('U1','24',33.75,23.163),p('U1','36',35.163,16.25),p('U1','48',28.25,14.838),p('U2','3',40.925,19.635),p('U3','2',10.193,16.2),p('C1','1',28.52,11.035),p('C2','1',43.4,11.035),p('C3','1',15.47,23.525),p('R_RESET','1',31.415,28.99),p('C4','1',33.935,11.67),p('C5','1',34.71,27.105),p('C6','1',38.44,12.175)]},
-    {net:'5V_RAW',endpoints:[p('J2','1',54.24,17.75),p('Q1','1',19.65,25.835)]},
-    {net:'5V',endpoints:[p('U3','3',12.068,15.25),p('Q1','5',23.01,27.74),p('Q1','5',25.115,25.835),p('Q1','5',25.115,27.105),p('Q1','5',25.115,28.375),p('Q1','5',25.115,29.645),p('D_PWR','1',17.633,14.778),p('C_BULK','1',18.28,9.12)]},
+    {net:'5V_RAW',endpoints:[p('J2','1',54.24,17.75),p('Q1','2',19.65,25.835),p('Q1','2',19.65,27.105),p('Q1','2',19.65,28.375)]},
+    {net:'5V',endpoints:[p('U3','3',12.068,15.25),p('Q1','3',23.01,27.74),p('Q1','3',25.115,25.835),p('Q1','3',25.115,27.105),p('Q1','3',25.115,28.375),p('Q1','3',25.115,29.645),p('D_PWR','1',17.633,14.778),p('C_BULK','1',18.28,9.12)]},
     {net:'SWDIO',endpoints:[p('J1','2',9.05,19),p('U1','34',35.163,17.25)]},
     {net:'SWCLK',endpoints:[p('J1','3',11.59,19),p('U1','37',33.75,14.838)]},
     {net:'BOOT0',endpoints:[p('U1','44',30.25,14.838),p('R_BOOT','1',38.44,27.425)]},
@@ -78,6 +78,7 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
   assert.equal(result.vias.filter(v=>v.net==='3V3').length,14)
   assert.ok(result.vias.some(v=>v.net==='3V3'&&v.x===30.4&&v.y===27.8))
   assert.ok(result.tracks.some(t=>t.net==='5V_RAW'&&t.layer==='In2.Cu'&&t.start.y===32&&t.end.y===32))
+  assert.equal(result.tracks.filter(t=>t.net==='5V_RAW'&&t.layer==='F.Cu'&&t.start.x===19.65&&t.end.x===19.65).length,2)
   assert.equal(result.vias.filter(v=>v.net==='5V').length,4)
   assert.ok(result.tracks.some(t=>t.net==='5V'&&t.layer==='In2.Cu'&&t.start.y===7&&t.end.y===7))
   assert.ok(result.tracks.some(t=>t.net==='SWCLK'&&t.layer==='B.Cu'&&t.start.y===8&&t.end.y===8))
