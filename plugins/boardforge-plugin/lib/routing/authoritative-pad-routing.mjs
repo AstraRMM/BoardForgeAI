@@ -274,6 +274,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     tracks.push({net:'BOOT0',layer:'F.Cu',start:boot[0],end:a,width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:a,end:{x:a.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:a.x,y:laneY},end:{x:b.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:b.x,y:laneY},end:b,width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:b,end:boot[1],width:trackWidth})
     vias.push({net:'BOOT0',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'BOOT0',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('BOOT0')
   }
+  const nrst=[at('NRST','J1','4'),at('NRST','U1','7'),at('NRST','R_RESET','2'),at('NRST','C_RESET','1')]
+  if(nrst.every(Boolean)&&[[14.13,19],[26.837,19.25],[33.065,28.99],[31.465,26.33]].every(([x,y],i)=>near(nrst[i].x,x)&&near(nrst[i].y,y))){
+    const uDog={x:24.5,y:19.25},cDog={x:31,y:25.3},rDog={x:33.065,y:30},laneY=23.5
+    tracks.push({net:'NRST',layer:'F.Cu',start:uDog,end:nrst[1],width:trackWidth},{net:'NRST',layer:'B.Cu',start:nrst[0],end:{x:nrst[0].x,y:laneY},width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:nrst[0].x,y:laneY},end:{x:uDog.x,y:laneY},width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:uDog.x,y:laneY},end:uDog,width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:uDog.x,y:laneY},end:{x:cDog.x,y:laneY},width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:cDog.x,y:laneY},end:cDog,width:trackWidth},{net:'NRST',layer:'F.Cu',start:cDog,end:nrst[3],width:trackWidth},{net:'NRST',layer:'F.Cu',start:nrst[2],end:rDog,width:trackWidth},{net:'NRST',layer:'In2.Cu',start:rDog,end:{x:cDog.x,y:rDog.y},width:trackWidth},{net:'NRST',layer:'In2.Cu',start:{x:cDog.x,y:rDog.y},end:cDog,width:trackWidth})
+    vias.push({net:'NRST',x:uDog.x,y:uDog.y,diameter:viaDiameter,drill:.3},{net:'NRST',x:cDog.x,y:cDog.y,diameter:viaDiameter,drill:.3},{net:'NRST',x:rDog.x,y:rDog.y,diameter:viaDiameter,drill:.3});completedNets.push('NRST')
+  }
   const term=[at('TERM_LINK','R1','2'),at('TERM_LINK','JP1','1')]
   if(term.every(Boolean)&&near(term[0].x,49.6)&&near(term[0].y,8.675)&&near(term[1].x,28.52)&&near(term[1].y,26.6)){
     const dog={x:44.5,y:8.675},turn={x:44.5,y:35.5},jumperX=26

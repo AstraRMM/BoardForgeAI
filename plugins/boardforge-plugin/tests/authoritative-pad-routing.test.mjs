@@ -60,10 +60,11 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
     {net:'SWCLK',endpoints:[p('J1','3',11.59,19),p('U1','37',33.75,14.838)]},
     {net:'BOOT0',endpoints:[p('U1','44',30.25,14.838),p('R_BOOT','1',38.44,27.425)]},
     {net:'TERM_LINK',endpoints:[p('R1','2',49.6,8.675),p('JP1','1',28.52,26.6)]},
+    {net:'NRST',endpoints:[p('J1','4',14.13,19),p('U1','7',26.837,19.25),p('R_RESET','2',33.065,28.99),p('C_RESET','1',31.465,26.33)]},
   ]}
   const result=board007CanControllerFixedCorridors(input,{trackWidth:.2,viaDiameter:.5})
-  assert.deepEqual(result.completedNets,['CAN_TX','CAN_RX','CANH','CANL','3V3','5V_RAW','5V','SWCLK','BOOT0','TERM_LINK'])
-  assert.equal(result.vias.length,35)
+  assert.deepEqual(result.completedNets,['CAN_TX','CAN_RX','CANH','CANL','3V3','5V_RAW','5V','SWCLK','BOOT0','NRST','TERM_LINK'])
+  assert.equal(result.vias.length,38)
   assert.ok(result.tracks.some(t=>t.net==='CAN_TX'&&t.layer==='B.Cu'&&t.start.y===12&&t.end.y===12))
   assert.ok(result.tracks.some(t=>t.net==='CAN_RX'&&t.layer==='B.Cu'&&t.start.y===13&&t.end.y===13))
   assert.ok(result.tracks.some(t=>t.net==='CANH'&&t.layer==='B.Cu'&&t.start.y===27&&t.end.y===27))
@@ -78,6 +79,7 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
   assert.ok(result.tracks.some(t=>t.net==='SWCLK'&&t.layer==='B.Cu'&&t.start.y===8&&t.end.y===8))
   assert.ok(result.tracks.some(t=>t.net==='BOOT0'&&t.layer==='In2.Cu'&&t.start.y===10&&t.end.y===10))
   assert.ok(result.tracks.some(t=>t.net==='TERM_LINK'&&t.layer==='B.Cu'&&t.start.y===35.5&&t.end.y===35.5))
+  assert.ok(result.tracks.some(t=>t.net==='NRST'&&t.layer==='B.Cu'&&t.start.y===23.5&&t.end.y===23.5))
   const moved=structuredClone(input);moved.nets[0].endpoints[0].x+=.1
   assert.deepEqual(board007CanControllerFixedCorridors(moved,{}).completedNets,[])
 })
