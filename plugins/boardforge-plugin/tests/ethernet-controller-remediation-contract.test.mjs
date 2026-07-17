@@ -134,6 +134,17 @@ test("Board010 authoritative writer maps RP2040 host and source-backed PMODE 111
   );
 });
 
+test("Board010 writer clusters W5500 timing, analog and Ethernet support around the PHY", () => {
+  const byRef = Object.fromEntries(
+    ethernetControllerCategoryPcbEvidence().footprints.map((x) => [x.ref, x]),
+  );
+  const distance = (a, b) => Math.hypot(a.at.x - b.at.x, a.at.y - b.at.y);
+  for (const ref of ["Y1", "C_XI", "C_XO", "R_EXRES", "FB_AVDD", "C_AVDD", "C_TOCAP", "C_1V2"])
+    assert.ok(distance(byRef.U2, byRef[ref]) < 8, `${ref} must stay local to U2`);
+  for (const ref of ["R_TXP", "R_TXN", "R_RXP", "R_RXN", "D_ETH"])
+    assert.ok(distance(byRef.J1, byRef[ref]) < 9, `${ref} must stay local to J1`);
+});
+
 test("Board010 proposal records the exact non-PoE MagJack limitation and purposeful area-bounded notch", () => {
   assert.ok(
     ethernetControllerProductionProposal.limitations.some((x) =>

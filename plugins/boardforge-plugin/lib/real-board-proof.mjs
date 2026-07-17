@@ -615,7 +615,17 @@ function poeSensorPinMaps(){return{
 export function ethernetControllerCategoryPcbEvidence(){
  const maps=ethernetControllerPinMaps(),names=['',...new Set(Object.values(maps).flatMap(Object.values))],nets=names.map((name,number)=>({name,number})),net=Object.fromEntries(nets.map(x=>[x.name,x.number]))
  const bom=[['U1','SC0914(13)','Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm'],['U2','W5500','Package_QFP:LQFP-48_7x7mm_P0.5mm'],['Y1','Q22FA2380184517','Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm'],['J1','7499010121A','Connector_RJ:RJ45_Wuerth_7499010121A_Horizontal'],['U3','MCP1700T-3302E/TT','Package_TO_SOT_SMD:SOT-23'],['U4','W25Q128JVSIQ','Package_SO:SOIC-8_3.9x4.9mm_P1.27mm'],['J_PWR','M20-9990245','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical'],['C_DEC','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric'],['R_RST','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['C_RST','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric'],['R_MODE0','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_MODE1','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_MODE2','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_EXRES','RC0603FR-0712K4L','Resistor_SMD:R_0603_1608Metric'],...['R_TXP','R_TXN','R_RXP','R_RXN'].map(ref=>[ref,'RC0603FR-0749R9L','Resistor_SMD:R_0603_1608Metric']),['C_XI','GRM1885C1H120JA01D','Capacitor_SMD:C_0603_1608Metric'],['C_XO','GRM1885C1H120JA01D','Capacitor_SMD:C_0603_1608Metric'],['D_ETH','TPD4E05U06DQAR','Package_SON:USON-10_2.5x1.0mm_P0.5mm'],['FB_AVDD','MPZ1608S601ATA00','Inductor_SMD:L_0603_1608Metric'],['C_AVDD','GRM188R60J475KE19D','Capacitor_SMD:C_0603_1608Metric'],['C_TOCAP','GRM188R60J475KE19D','Capacitor_SMD:C_0603_1608Metric'],['C_1V2','GRM188R71H103KA01D','Capacitor_SMD:C_0603_1608Metric']]
- const footprints=bom.map(([ref,value,footprint],index)=>({ref,value,footprint,at:{x:5+(index%6)*6,y:5+Math.floor(index/6)*6},body:{w:2,h:2},pads:Object.entries(maps[ref]).map(([number,netName],i)=>pad(number,(i%4)-1.5,Math.floor(i/4)-1,.6,.6,net[netName],netName))}))
+ // The W5500 analog/RMII support is deliberately clustered around the PHY.
+ // A generic BOM grid made the 25 MHz crystal, EXRES and decoupling tens of
+ // millimetres away and was physically unroutable on this compact board.
+ const placement={
+  U1:[10,14],U2:[23,14],J1:[35,14],U3:[4,5],U4:[7,22],J_PWR:[3,4],
+  Y1:[18.5,10.5],C_XI:[19,9],C_XO:[20,9],R_EXRES:[18,17],
+  FB_AVDD:[27,14],C_AVDD:[28,14],C_TOCAP:[27,17],C_1V2:[28,17],
+  R_TXP:[29,11],R_TXN:[29,12],R_RXP:[29,16],R_RXN:[29,17],D_ETH:[32,14],
+  R_RST:[18,19],C_RST:[19,19],R_MODE0:[18,21],R_MODE1:[19,21],R_MODE2:[20,21],C_DEC:[13,20],
+ }
+ const footprints=bom.map(([ref,value,footprint],index)=>{const [x,y]=placement[ref]||[5+(index%6)*6,5+Math.floor(index/6)*6];return{ref,value,footprint,at:{x,y},body:{w:2,h:2},pads:Object.entries(maps[ref]).map(([number,netName],i)=>pad(number,(i%4)-1.5,Math.floor(i/4)-1,.6,.6,net[netName],netName))}})
  return{nets,footprints,segments:[],vias:[]}
 }
 
