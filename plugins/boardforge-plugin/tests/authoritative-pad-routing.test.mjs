@@ -1,7 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
+
+test('authoritative ground planes use solid pad connections for dense MCU ground pads',()=>{const source=readFileSync(new URL('../lib/routing/authoritative-pad-routing.mjs',import.meta.url),'utf8');assert.match(source,/connect_pads yes \(clearance \$\{fmt\(clearance\)\}\)/)})
 
 const scan={boardSize:{bounds:{minX:0,minY:0,maxX:50,maxY:30}},layers:[{name:'F.Cu',type:'signal'},{name:'In1.Cu',type:'signal'},{name:'In2.Cu',type:'signal'},{name:'B.Cu',type:'signal'}],nets:[{name:'USB_D+',number:1},{name:'USB_D-',number:2},{name:'I2C_SCL',number:3},{name:'I2C_SDA',number:4},{name:'BLOCKER',number:5}],tracks:[],vias:[],pads:[
   {ref:'U1',pad:'1',netName:'USB_D+',x:10,y:10,widthMm:.4,heightMm:1.2},
