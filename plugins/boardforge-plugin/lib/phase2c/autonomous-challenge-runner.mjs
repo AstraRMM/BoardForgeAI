@@ -34,6 +34,13 @@ export async function runAutonomousChallenge(options) {
   let processed=0
   while(state.nextBoardIndex<manifest.boards.length && processed<batchSize) {
     const index=state.nextBoardIndex,board=manifest.boards[index]
+    // A board may be independently completed while earlier boards remain
+    // blocked. Preserve that durable acceptance and skip it when the
+    // sequential runner eventually reaches the same manifest index.
+    if(state.accepted.some(row=>row.index===index)){
+      state.nextBoardIndex++;state.engineImprovementRequired=false;state.lastFailure=null;processed++
+      await saveCheckpoint(checkpointPath,state);continue
+    }
     const prior=state.retries[String(index)]||0
     let result
     try { result=await watched(()=>executeBoard(board,{...state,index}),watchdogMs) }

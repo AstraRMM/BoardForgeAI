@@ -42,3 +42,10 @@ test('acceptance claim without authentic artifact hashes is rejected',async()=>{
   const row=await accepted();row.manufacturingEvidence.artifacts[0].sha256='not-a-hash'
   assert.equal(authenticAccepted(row),false)
 })
+test('resume skips an independently accepted later board without duplicating or regenerating it',async()=>{
+  const file=await checkpoint(),seen=[]
+  const first=await runAutonomousChallenge({manifest,checkpointPath:file,batchSize:1,executePilot:async()=>accepted(),executeBoard:async board=>{seen.push(board.id);return accepted()}})
+  const state=await loadCheckpoint(file);state.accepted.push({index:2,boardId:'third',evidenceDigest:'b'.repeat(64),acceptedAt:new Date().toISOString()});await writeFile(file,JSON.stringify(state))
+  const second=await runAutonomousChallenge({manifest,checkpointPath:file,resume:true,batchSize:2,executePilot:async()=>{throw Error('pilot replayed')},executeBoard:async board=>{seen.push(board.id);return accepted()}})
+  assert.equal(second.status,'CHALLENGE_COMPLETE');assert.deepEqual(seen,['second']);assert.equal(second.state.accepted.filter(row=>row.index===2).length,1)
+})
