@@ -17,7 +17,8 @@ test('Board009 proposal is source-backed and explicitly blocked pending exact as
 test('Board009 generic sensor shell fails the PoE architecture gate before generation',()=>{
  const d=catalogDefinition(manifest.boards[8],8),gate=validateCatalogSemanticTopology(d)
  assert.equal(gate.ok,false)
- for(const code of['poe-sensor-ethernet-mac-phy-missing','poe-sensor-magjack-missing','poe-sensor-pd-missing','poe-sensor-isolated-converter-missing','poe-sensor-isolation-barrier-missing','poe-sensor-exact-assets-unapproved','poe-sensor-category-mapped-to-generic-controller'])assert.ok(gate.errors.includes(code),code)
+ assert.equal(d.topologyId,'poe-sensor')
+ for(const code of['poe-sensor-cable-protection-missing','poe-sensor-straps-missing','poe-sensor-decoupling-missing','poe-sensor-isolation-barrier-missing','poe-sensor-classification-power-unverified','poe-sensor-isolation-safety-unverified'])assert.ok(gate.errors.includes(code),code)
 })
 
 test('PoE sensor gate requires evidence even when decorative roles are present',()=>{

@@ -495,6 +495,7 @@ const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'usb-c-pd-source': usbCPdSourceCategoryPcbEvidence,
   'can-sensor-node': canSensorNodeCategoryPcbEvidence,
   'poe-ethernet-sensor': poeEthernetSensorCategoryPcbEvidence,
+  'poe-sensor': poeEthernetSensorCategoryPcbEvidence,
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
   'tiny-wearable-sensor-puck': wearableSensorPuckCategoryPcbEvidence,
   'industrial-io-board': industrialIoCategoryPcbEvidence,
@@ -576,31 +577,30 @@ function wearableSensorPuckCategoryPcbEvidence() {
   return { nets, footprints, segments, vias }
 }
 
-function poeEthernetSensorCategoryPcbEvidence() {
-  // Reuse a KiCad-validated two-layer topology, but preserve category-specific
-  // PoE/Ethernet net intent and review limitations. The proof deliberately does
-  // not claim isolation or IEEE 802.3 compliance.
-  const evidence = canSensorNodeCategoryPcbEvidence()
-  const netNames = new Map([
-    ['VBUS', 'POE_VIN'],
-    ['CANH', 'ETH_TX_P'],
-    ['CANL', 'ETH_TX_N'],
-    ['STATUS_LED', 'POE_STATUS'],
-  ])
-  evidence.nets = evidence.nets.map((net) => ({ ...net, name: netNames.get(net.name) || net.name }))
-  evidence.footprints = evidence.footprints.map((footprint) => ({
-    ...footprint,
-    value: ({
-      J1: 'RJ45 MagJack / PoE input candidate',
-      U1: 'PoE PD controller candidate',
-      U2: 'MCU candidate',
-      J2: 'I2C sensor header',
-    })[footprint.ref] || footprint.value,
-    footprint: `BoardForge_Proof:PoE_Ethernet_${footprint.ref}_ReviewRequired`,
-    pads: footprint.pads.map((item) => ({ ...item, netName: netNames.get(item.netName) || item.netName })),
-  }))
-  return evidence
+export function poeEthernetSensorCategoryPcbEvidence() {
+  const names=['','SELV_GND','3V3','ETH_TXP','ETH_TXN','ETH_RXP','ETH_RXN','ETH_TX_CT','ETH_RX_CT','XTAL_IN','XTAL_OUT','POE_5V','POE_RECT_POS','POE_RECT_NEG','CHASSIS','I2C_SDA','I2C_SCL','BME_CSB_STRAP','BME_SDO_STRAP','W5500_EXRES','W5500_TOCAP','W5500_1V2','W5500_VBG_FLOAT','SPI_SCLK','SPI_MISO','SPI_MOSI','ETH_CS_N','ETH_INT_N','ETH_RESET_N'],nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+  const fp=(ref,value,footprint,x,y,w,h,pins)=>({ref,value,footprint,at:{x,y},body:{w,h},pads:Object.entries(pins).map(([number,netName],i)=>pad(number,(i%4)-1.5,Math.floor(i/4)-1,.6,.6,n[netName],netName))})
+  const maps=poeSensorPinMaps()
+  return{nets,segments:[],vias:[],footprints:[
+    fp('U_ETH','W5500','Package_QFP:LQFP-48_7x7mm_P0.5mm',13,10,7,7,maps.U_ETH),
+    fp('J_ETH','7499010121A','Connector_RJ:RJ45_Wuerth_7499010121A_Horizontal',7,10,25.4,16.1,maps.J_ETH),
+    fp('U_POE','Ag9905LP','Converter_DCDC:Converter_DCDC_Silvertel_Ag99xxLP_THT',30,10,21,14,maps.U_POE),
+    fp('Y_ETH','Q22FA2380184517','Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm',18,5,3.2,2.5,maps.Y_ETH),
+    fp('U_SENSOR','BME280','Package_LGA:Bosch_LGA-8_2.5x2.5mm_P0.65mm_ClockwisePinNumbering',39,10,2.5,2.5,maps.U_SENSOR),
+    fp('C_POE','UWT1A151MCL1GS','Capacitor_SMD:CP_Elec_8x10.5',29,16,8,10.5,maps.C_POE),
+  ]}
 }
+
+function poeSensorPinMaps(){return{
+ U_ETH:{1:'ETH_TXN',2:'ETH_TXP',3:'SELV_GND',4:'3V3',5:'ETH_RXN',6:'ETH_RXP',8:'3V3',9:'SELV_GND',10:'W5500_EXRES',11:'3V3',14:'SELV_GND',15:'3V3',16:'SELV_GND',17:'3V3',18:'W5500_VBG_FLOAT',19:'SELV_GND',20:'W5500_TOCAP',21:'3V3',22:'W5500_1V2',28:'3V3',29:'SELV_GND',30:'XTAL_IN',31:'XTAL_OUT',32:'ETH_CS_N',33:'SPI_SCLK',34:'SPI_MISO',35:'SPI_MOSI',36:'ETH_INT_N',37:'ETH_RESET_N',48:'SELV_GND'},
+ J_ETH:{1:'ETH_TXP',2:'ETH_TX_CT',3:'ETH_TXN',4:'ETH_RXP',5:'ETH_RX_CT',6:'ETH_RXN',8:'CHASSIS',SH:'CHASSIS'},
+ U_POE:{1:'POE_5V',2:'POE_5V',3:'SELV_GND',5:'POE_RECT_POS',6:'POE_RECT_POS',7:'POE_RECT_NEG',8:'POE_RECT_NEG'},
+ Y_ETH:{1:'XTAL_IN',2:'SELV_GND',3:'XTAL_OUT',4:'SELV_GND'},
+ // Bosch BST-BME280-DS001 Table 35: CSB=2, SDI/SDA=3, SCK/SCL=4,
+ // SDO/address=5, VDDIO=6 and VDD=8. Preserve strap semantics explicitly.
+ U_SENSOR:{1:'SELV_GND',2:'BME_CSB_STRAP',3:'I2C_SDA',4:'I2C_SCL',5:'BME_SDO_STRAP',6:'3V3',7:'SELV_GND',8:'3V3'},
+ C_POE:{1:'POE_5V',2:'SELV_GND'},
+}}
 
 function roboticsControllerCategoryPcbEvidence() {
   const evidence = canSensorNodeCategoryPcbEvidence()
@@ -1342,7 +1342,14 @@ function escapePcb(value) {
 }
 
 async function writeCategorySchematic({ board, projectDir }) {
-  const schFile = findFirstExisting(projectDir, '.kicad_sch')
+  let schFile = findFirstExisting(projectDir, '.kicad_sch')
+  // The Board009 custom-outline seed is intentionally PCB-first. Once its
+  // exact production assets are present, create the sibling schematic rather
+  // than falling back to a generic category or reporting an undefined model.
+  if(!schFile&&(board.topologyId||board.id)==='poe-sensor'){
+    const pcbFile=findFirstExisting(projectDir,'.kicad_pcb')
+    if(pcbFile)schFile=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_sch')
+  }
   if (!schFile || !board.bom.length) {
     return {
       status: board.bom.length ? 'SCHEMATIC_FILE_MISSING' : 'NOT_APPLICABLE_OUTLINE_ONLY',
@@ -1423,6 +1430,7 @@ export function categorySchematicPinMaps(board) {
       R1:{1:'CAN1H',2:'CAN1_TERM_LINK'},JP1:{1:'CAN1_TERM_LINK',2:'CAN1L'},R2:{1:'CAN2H',2:'CAN2_TERM_LINK'},JP2:{1:'CAN2_TERM_LINK',2:'CAN2L'},C1:{1:'3V3',2:'GND'},C2:{1:'3V3',2:'GND'},C3:{1:'3V3',2:'GND'},C4:{1:'3V3',2:'GND'},C5:{1:'3V3',2:'GND'},C6:{1:'3V3',2:'GND'},C7:{1:'3V3',2:'GND'},
       D1:{1:'CAN1H',2:'CAN1L',3:'GND'},D2:{1:'CAN2H',2:'CAN2L',3:'GND'},
     },
+    'poe-sensor':poeSensorPinMaps(),
     'rp2040-instrument': {
       U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,
       U3: { 1:'GND', 2:'3V3', 3:'VBUS' }, J1: { A1:'GND', A12:'GND', B1:'GND', B12:'GND', A4:'VBUS', A9:'VBUS', B4:'VBUS', B9:'VBUS', A5:'CC1', B5:'CC2', A6:'USB_DP_CONN', B6:'USB_DP_CONN', A7:'USB_DN_CONN', B7:'USB_DN_CONN', SH:'GND' },

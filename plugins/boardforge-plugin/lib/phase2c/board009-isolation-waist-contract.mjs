@@ -1,7 +1,18 @@
 export const BOARD009_ISOLATION_WAIST_CONTRACT=Object.freeze({schema:'boardforge.phase2c.board009-isolation-waist-contract.v1',maximumAreaMm2:900,envelopeMm:Object.freeze({width:42,height:20}),isolation:Object.freeze({minimumClearanceMm:4,minimumCreepageMm:6,requiredSlotCount:2}),mounting:Object.freeze({requiredCount:4,diameterMm:2.2})})
 
+// Installed KiCad 10 F.CrtYd bounds for the six exact Board009 packages. This
+// is a strict lower bound; clearance, holes, isolation and support parts add area.
+export const BOARD009_EXACT_COURTYARD_AREA_PROOF=Object.freeze({schema:'boardforge.phase2c.board009-exact-courtyard-area-proof.v1',packages:Object.freeze([
+ Object.freeze({ref:'U_ETH',libId:'Package_QFP:LQFP-48_7x7mm_P0.5mm',widthMm:10.3,heightMm:10.3,areaMm2:106.09}),
+ Object.freeze({ref:'J_ETH',libId:'Connector_RJ:RJ45_Wuerth_7499010121A_Horizontal',widthMm:26.38,heightMm:18.55,areaMm2:489.349}),
+ Object.freeze({ref:'U_POE',libId:'Converter_DCDC:Converter_DCDC_Silvertel_Ag99xxLP_THT',widthMm:15.32,heightMm:22.61,areaMm2:346.3852}),
+ Object.freeze({ref:'Y_ETH',libId:'Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm',widthMm:4.2,heightMm:3.5,areaMm2:14.7}),
+ Object.freeze({ref:'U_SENSOR',libId:'Package_LGA:Bosch_LGA-8_2.5x2.5mm_P0.65mm_ClockwisePinNumbering',widthMm:2.82,heightMm:3.08,areaMm2:8.6856}),
+ Object.freeze({ref:'C_POE',libId:'Capacitor_SMD:CP_Elec_8x10.5',widthMm:12.3,heightMm:9,areaMm2:110.7}),
+]),minimumAreaMm2:1075.9098,maximumAreaMm2:900,geometricallyPossible:false,reason:'The sum of non-overlapping exact F.CrtYd rectangles exceeds the entire allowed PCB area before clearance, holes, isolation, or support components.'})
+
 export function createBoard009IsolationWaistFixture(){
- const outline=[[0,0],[18,0],[18,2],[24,2],[24,0],[42,0],[42,20],[24,20],[24,18],[18,18],[18,20],[0,20]],holes=[[3,3],[39,3],[3,17],[39,17]].map(([x,y])=>({x,y,diameterMm:2.2}))
+ const outline=[[0,0],[18,0],[18,3],[24,3],[24,0],[42,0],[42,20],[24,20],[24,17],[18,17],[18,20],[0,20]],holes=[[3.2,3.2],[38.8,3.2],[3.2,16.8],[38.8,16.8]].map(([x,y])=>({x,y,diameterMm:2.2}))
  return{schema:'boardforge.phase2c.board009-isolation-waist-fixture.v1',outline,holes,widthMm:42,heightMm:20,areaMm2:polygonArea(outline),domains:{primary:{id:'POE_PRIMARY',minX:0,maxX:18,minY:0,maxY:20,ground:'POE_GND'},secondary:{id:'SENSOR_SECONDARY',minX:24,maxX:42,minY:0,maxY:20,ground:'GND'}},isolationBarrier:{minX:18,maxX:24,minY:2,maxY:18,clearanceMm:6,creepageMm:6,allLayersKeepout:true,noPlanesTracksViasOrMountMetal:true,controlledCrossingsOnly:true},slots:[{id:'ISO_SLOT_TOP',x:21,y1:3,y2:8,widthMm:1,edgeCutsVerified:true,nonPlated:true},{id:'ISO_SLOT_BOTTOM',x:21,y1:12,y2:17,widthMm:1,edgeCutsVerified:true,nonPlated:true}],serviceZones:[{id:'ETHERNET_SERVICE',edge:'left',minX:0,maxX:7,minY:4,maxY:16,connectorRef:'J_ETH',cableExitVerified:true},{id:'SENSOR_EXPOSURE',edge:'right',minX:35,maxX:42,minY:4,maxY:16,sensorRef:'U_SENSOR',environmentExposureVerified:true}],corridors:[{id:'ETHERNET_PAIR',domain:'POE_PRIMARY',nets:['ETH_TX_P','ETH_TX_N','ETH_RX_P','ETH_RX_N'],layer:'F.Cu',minX:4,maxX:17,minY:4,maxY:8,exclusive:true},{id:'POE_POWER',domain:'POE_PRIMARY',nets:['POE_VP','POE_VN','POE_RECT'],layer:'In1.Cu',minX:4,maxX:17,minY:11,maxY:15,exclusive:true},{id:'SECONDARY_RAIL',domain:'SENSOR_SECONDARY',nets:['3V3','GND'],layer:'In2.Cu',minX:25,maxX:38,minY:11,maxY:15,exclusive:true},{id:'SENSOR_SIGNALS',domain:'SENSOR_SECONDARY',nets:['SENSOR_SCL','SENSOR_SDA','SENSOR_IRQ'],layer:'F.Cu',minX:25,maxX:40,minY:4,maxY:8,exclusive:true}],controlledCrossings:[{id:'T1_MAGNETICS',kind:'ethernet-transformer',barrierCrossingVerified:true},{id:'U_ISO_POWER',kind:'isolated-power-module',barrierCrossingVerified:true}]}
 }
 
