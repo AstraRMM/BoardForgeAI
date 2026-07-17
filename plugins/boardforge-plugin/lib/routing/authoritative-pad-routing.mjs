@@ -227,12 +227,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
   }
   const rail=byNet.get('3V3')||[],railAnchors=[at('3V3','J1','1'),at('3V3','U3','2'),at('3V3','C3','1')]
   const partialNets=[]
-  if(rail.length===15&&railAnchors.every(Boolean)&&[[6.51,19],[10.193,16.2],[15.47,16.025]].every(([x,y],i)=>near(railAnchors[i].x,x)&&near(railAnchors[i].y,y))&&[['C1',27.27,8.535],['C2',43.4,11.035],['C4',34.71,12.445],['C6',38.44,12.175]].every(([ref,x,y])=>{const p=at('3V3',ref,'1');return p&&near(p.x,x)&&near(p.y,y)})){
-    const uDog={x:10.3,y:16.2},cDog={x:15.47,y:17}
+  if(rail.length===15&&railAnchors.every(Boolean)&&[[6.51,19],[10.193,16.2],[15.47,23.525]].every(([x,y],i)=>near(railAnchors[i].x,x)&&near(railAnchors[i].y,y))&&[['C1',28.52,11.035],['C2',43.4,11.035],['C4',33.935,11.67],['C6',38.44,12.175]].every(([ref,x,y])=>{const p=at('3V3',ref,'1');return p&&near(p.x,x)&&near(p.y,y)})){
+    const uDog={x:10.3,y:16.2},cDog={x:15.47,y:24.5}
     tracks.push({net:'3V3',layer:'F.Cu',start:{x:railAnchors[1].x,y:railAnchors[1].y},end:uDog,width:trackWidth},{net:'3V3',layer:'F.Cu',start:{x:railAnchors[2].x,y:railAnchors[2].y},end:cDog,width:trackWidth})
     vias.push({net:'3V3',x:uDog.x,y:uDog.y,diameter:viaDiameter,drill:.3},{net:'3V3',x:cDog.x,y:cDog.y,diameter:viaDiameter,drill:.3})
     tracks.push({net:'3V3',layer:'In1.Cu',start:{x:railAnchors[0].x,y:railAnchors[0].y},end:{x:6.51,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:{x:6.51,y:34},end:{x:43.4,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:uDog,end:{x:10.3,y:34},width:trackWidth},{net:'3V3',layer:'In1.Cu',start:cDog,end:{x:15.47,y:34},width:trackWidth})
-    const caps=[[at('3V3','C1','1'),{x:27.27,y:9.3}],[at('3V3','C2','1'),{x:43.4,y:11.8}],[at('3V3','C4','1'),{x:34.71,y:13.2}],[at('3V3','C6','1'),{x:41,y:12.175}]]
+    const caps=[[at('3V3','C1','1'),{x:27.2,y:11.035}],[at('3V3','C2','1'),{x:43.4,y:11.8}],[at('3V3','C4','1'),{x:31.75,y:11.67}],[at('3V3','C6','1'),{x:41,y:12.175}]]
     if(caps.every(([p])=>p)){for(const[p,d]of caps){tracks.push({net:'3V3',layer:'F.Cu',start:{x:p.x,y:p.y},end:d,width:trackWidth},{net:'3V3',layer:'In1.Cu',start:d,end:{x:d.x,y:34},width:trackWidth});vias.push({net:'3V3',x:d.x,y:d.y,diameter:viaDiameter,drill:.3})}}
     const reset=at('3V3','R_RESET','1'),c5=at('3V3','C5','1'),resetOk=reset&&c5&&near(reset.x,31.415)&&near(reset.y,28.99)&&near(c5.x,34.71)&&near(c5.y,27.105)
     if(resetOk){
@@ -255,8 +255,8 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     vias.push({net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('5V_RAW')
   }
   const five=byNet.get('5V')||[],fiveAnchors=[at('5V','U3','3'),at('5V','D_PWR','1'),at('5V','C_BULK','1')],q5=five.filter(p=>p.ref==='Q1'&&String(p.pad)==='5')
-  if(five.length===8&&q5.length===5&&fiveAnchors.every(Boolean)&&[[12.068,15.25],[18,15],[18.28,9.12]].every(([x,y],i)=>near(fiveAnchors[i].x,x)&&near(fiveAnchors[i].y,y))&&q5.some(p=>near(p.x,23.01)&&near(p.y,27.74))){
-    const dogs=[{x:13.2,y:15.25},{x:17,y:15},{x:16,y:9.12},{x:23.01,y:27.74}]
+  if(five.length===8&&q5.length===5&&fiveAnchors.every(Boolean)&&[[12.068,15.25],[17.633,14.778],[18.28,9.12]].every(([x,y],i)=>near(fiveAnchors[i].x,x)&&near(fiveAnchors[i].y,y))&&q5.some(p=>near(p.x,23.01)&&near(p.y,27.74))){
+    const dogs=[{x:13.2,y:15.25},{x:16.5,y:14.778},{x:16,y:9.12},{x:23.01,y:27.74}]
     for(let i=0;i<3;i++){tracks.push({net:'5V',layer:'F.Cu',start:{x:fiveAnchors[i].x,y:fiveAnchors[i].y},end:dogs[i],width:trackWidth});vias.push({net:'5V',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})}
     vias.push({net:'5V',x:dogs[3].x,y:dogs[3].y,diameter:viaDiameter,drill:.3})
     for(const d of dogs)tracks.push({net:'5V',layer:'In2.Cu',start:d,end:{x:d.x,y:7},width:trackWidth})

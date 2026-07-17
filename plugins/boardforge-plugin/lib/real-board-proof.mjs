@@ -312,6 +312,11 @@ async function generateBoardProof({ board, outputRoot, kicad, liveBindings, cano
   const files = collectKiCadFiles(projectDir)
   const categoryReadiness = await inspectCategoryGenerationReadiness({ projectDir, files, board, categoryPcbEvidence, categorySchematic })
   const validationReports = await runOptionalKiCadReports({ projectDir, files, kicad })
+  const authoritativeRouting=categoryPcbEvidence?.authoritativeRouting
+  if(authoritativeRouting?.status==='CANDIDATE_PROMOTED'&&authoritativeRouting.candidatePcb&&validationReports.drc?.status==='DRC_PASSED'&&validationReports.drc?.errors===0){
+    await copyFile(files.pcb,authoritativeRouting.candidatePcb)
+    authoritativeRouting.candidateSynchronizedAfterFinalDrc=true
+  }
   const assetBinding = await buildSchematicAssetBindingReport({ board, files, validationReports, categorySchematic, liveBindings, canonicalBindingResolver, productionPartResolver })
   const mechanicalConstraints = buildMechanicalConstraints({ board, seed, outlineResult })
   await writeFile(path.join(projectDir, 'BoardForge_Mechanical_Constraints.json'), JSON.stringify(mechanicalConstraints, null, 2), 'utf8')
@@ -871,7 +876,7 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     const copperlessScan=await scanKiCadProject(copperlessFile)
     const routingInput=authoritativePadRoutingInput(copperlessScan)
     const fixed=authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
-    const fixedComplete=routingInput.nets.every(({net})=>fixed.completedNets.includes(net))
+    const fixedComplete=routingInput.nets.every(({net})=>fixed.completedNets.includes(net)||/^GND$/i.test(net))
     // The generic channel search is combinatorial on dense MCU fanout. Preserve
     // a deterministic zero-copper transaction baseline instead of consuming
     // the campaign watchdog or falling back to stale proof-coordinate copper.
@@ -883,7 +888,7 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     const drc=await runDrc({pcbFile:candidateFile,outputFile:path.join(candidateDir,'authoritative-route-drc.json'),kicadCliPath:kicad.path})
     const accepted=drc.status==='DRC_PASSED'&&drc.issueCounts?.errors===0
     if(accepted)await copyFile(candidateFile,pcbFile)
-    return {...routing,status:accepted?'CANDIDATE_PROMOTED':'CANDIDATE_REJECTED',drc:{status:drc.status,exitCode:drc.exitCode,issueCounts:drc.issueCounts,reportFile:drc.reportFile}}
+    return {...routing,sourcePcb:pcbFile,status:accepted?'CANDIDATE_PROMOTED':'CANDIDATE_REJECTED',drc:{status:drc.status,exitCode:drc.exitCode,issueCounts:drc.issueCounts,reportFile:drc.reportFile}}
   }catch(error){return{schema:'boardforge.authoritative-pad-route-candidate.v1',status:'CANDIDATE_REJECTED',code:error.code||'AUTHORITATIVE_ROUTING_FAILED',net:error.net||null,reason:String(error.message||error)}}
 }
 
