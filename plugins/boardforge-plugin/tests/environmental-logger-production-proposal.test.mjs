@@ -1,10 +1,97 @@
-import test from 'node:test'
-import assert from 'node:assert/strict'
-import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
-import {catalogDefinition,validateCatalogSemanticTopology} from '../lib/phase2c/catalog-production-engine.mjs'
-import {environmentalLoggerProductionProposal,validateEnvironmentalLoggerProductionProposal} from '../lib/phase2c/templates/environmental-logger.mjs'
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import {
+  catalogDefinition,
+  validateCatalogSemanticTopology,
+} from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  environmentalLoggerProductionProposal,
+  validateEnvironmentalLoggerProductionProposal,
+} from "../lib/phase2c/templates/environmental-logger.mjs";
 
-test('Board023 generic PD sink shell cannot pass as an environmental logger',()=>{const g=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[22],22));assert.equal(g.ok,false);for(const c of ['environmental-sensors-missing','logger-storage-missing','logger-rtc-missing','logger-backup-power-missing','logger-controller-missing','logger-storage-protection-missing','logger-sensor-power-control-missing','logger-low-power-evidence-missing','logger-watchdog-brownout-missing','logger-sensor-self-heating-evidence-missing','logger-condensation-protection-missing','environmental-logger-category-mapped-to-pd-sink'])assert.ok(g.errors.includes(c),c)})
-test('Board023 reuses approved exact assets and blocks every unresolved physical part',()=>{const p=environmentalLoggerProductionProposal,g=validateEnvironmentalLoggerProductionProposal(p);assert.equal(g.ok,false);assert.ok(g.errors.includes('environmental-logger-exact-assets-unapproved'));assert.deepEqual(g.blockedRefs,['U_RTC','J_SD','P_BACKUP','P_BAT','U_FAIL','P_SENSOR','J_SERVICE','P_VENT']);for(const r of ['U_ENV','U_CTRL','U_FLASH','U_META','U_PWR','C_DEC'])assert.equal(p.bom.find(x=>x.ref===r).status,'APPROVED_EXACT_ASSET',r)})
-test('Board023 requires time storage energy condensation and power-fail evidence',()=>{for(const k of ['rtcDriftSyncBackupVerified','storageCapacityEnduranceRetentionVerified','atomicRecordChecksumRecoveryVerified','powerFailWriteHoldUpVerified','batteryEnergyBudgetTemperatureVerified','sleepMeasurementWriteCurrentVerified','sensorSelfHeatingThermalIsolationVerified','condensationVentEnclosureVerified','productionCalibrationTimeStorageCurrentPowerFailTestVerified'])assert.ok(environmentalLoggerProductionProposal.evidenceRequired.includes(k),k)})
-test('Board023 exposure-nose outline stays inside 3000 mm2',()=>{const p=environmentalLoggerProductionProposal,g=validateEnvironmentalLoggerProductionProposal(p);assert.equal(g.areaMm2,2652);assert.ok(g.areaMm2<=3000);assert.deepEqual(p.outline.purposefulFeatures.sensorExposureNose,{projectionMm:6,spanMm:22});assert.equal(p.outline.purposefulFeatures.membraneVentRequired,true);assert.equal(p.outline.purposefulFeatures.thermalIsolationNeckRequired,true)})
+test("Board023 generic PD sink shell cannot pass as an environmental logger", () => {
+  const g = validateCatalogSemanticTopology(
+    catalogDefinition(manifest.boards[22], 22),
+  );
+  assert.equal(g.ok, false);
+  for (const c of [
+    "environmental-sensors-missing",
+    "logger-storage-missing",
+    "logger-rtc-missing",
+    "logger-backup-power-missing",
+    "logger-controller-missing",
+    "logger-storage-protection-missing",
+    "logger-sensor-power-control-missing",
+    "logger-low-power-evidence-missing",
+    "logger-watchdog-brownout-missing",
+    "logger-sensor-self-heating-evidence-missing",
+    "logger-condensation-protection-missing",
+    "environmental-logger-category-mapped-to-pd-sink",
+  ])
+    assert.ok(g.errors.includes(c), c);
+});
+test("Board023 reuses approved exact assets and blocks every unresolved physical part", () => {
+  const p = environmentalLoggerProductionProposal,
+    g = validateEnvironmentalLoggerProductionProposal(p);
+  assert.equal(g.ok, false);
+  assert.ok(g.errors.includes("environmental-logger-exact-assets-unapproved"));
+  assert.deepEqual(g.blockedRefs, [
+    "U_ENV",
+    "U_CTRL",
+    "U_FLASH",
+    "U_META",
+    "U_PWR",
+    "U_RTC",
+    "J_SD",
+    "P_BACKUP",
+    "P_BAT",
+    "U_FAIL",
+    "P_SENSOR",
+    "J_SERVICE",
+    "P_VENT",
+  ]);
+  assert.equal(
+    p.bom.find((x) => x.ref === "C_DEC").status,
+    "APPROVED_EXACT_ASSET",
+  );
+  for (const code of [
+    "environmental-logger-deployment-envelope-undeclared",
+    "environmental-logger-measurement-envelope-undeclared",
+    "environmental-logger-time-envelope-undeclared",
+    "environmental-logger-storage-envelope-undeclared",
+    "environmental-logger-power-envelope-undeclared",
+    "environmental-logger-environment-envelope-undeclared",
+    "environmental-logger-service-envelope-undeclared",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board023 requires time storage energy condensation and power-fail evidence", () => {
+  for (const k of [
+    "rtcDriftSyncBackupVerified",
+    "storageCapacityEnduranceRetentionVerified",
+    "atomicRecordChecksumRecoveryVerified",
+    "powerFailWriteHoldUpVerified",
+    "batteryEnergyBudgetTemperatureVerified",
+    "sleepMeasurementWriteCurrentVerified",
+    "sensorSelfHeatingThermalIsolationVerified",
+    "condensationVentEnclosureVerified",
+    "productionCalibrationTimeStorageCurrentPowerFailTestVerified",
+  ])
+    assert.ok(
+      environmentalLoggerProductionProposal.evidenceRequired.includes(k),
+      k,
+    );
+});
+test("Board023 exposure-nose outline stays inside 3000 mm2", () => {
+  const p = environmentalLoggerProductionProposal,
+    g = validateEnvironmentalLoggerProductionProposal(p);
+  assert.equal(g.areaMm2, 2652);
+  assert.ok(g.areaMm2 <= 3000);
+  assert.deepEqual(p.outline.purposefulFeatures.sensorExposureNose, {
+    projectionMm: 6,
+    spanMm: 22,
+  });
+  assert.equal(p.outline.purposefulFeatures.membraneVentRequired, true);
+  assert.equal(p.outline.purposefulFeatures.thermalIsolationNeckRequired, true);
+});
