@@ -274,6 +274,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     tracks.push({net:'BOOT0',layer:'F.Cu',start:boot[0],end:a,width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:a,end:{x:a.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:a.x,y:laneY},end:{x:b.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:b.x,y:laneY},end:b,width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:b,end:boot[1],width:trackWidth})
     vias.push({net:'BOOT0',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'BOOT0',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('BOOT0')
   }
+  const term=[at('TERM_LINK','R1','2'),at('TERM_LINK','JP1','1')]
+  if(term.every(Boolean)&&near(term[0].x,49.6)&&near(term[0].y,8.675)&&near(term[1].x,28.52)&&near(term[1].y,26.6)){
+    const dog={x:44.5,y:8.675},turn={x:44.5,y:35.5},jumperX=26
+    tracks.push({net:'TERM_LINK',layer:'F.Cu',start:term[0],end:dog,width:trackWidth},{net:'TERM_LINK',layer:'In1.Cu',start:dog,end:turn,width:trackWidth},{net:'TERM_LINK',layer:'B.Cu',start:turn,end:{x:jumperX,y:turn.y},width:trackWidth},{net:'TERM_LINK',layer:'B.Cu',start:{x:jumperX,y:turn.y},end:{x:jumperX,y:term[1].y},width:trackWidth},{net:'TERM_LINK',layer:'B.Cu',start:{x:jumperX,y:term[1].y},end:term[1],width:trackWidth})
+    vias.push({net:'TERM_LINK',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3},{net:'TERM_LINK',x:turn.x,y:turn.y,diameter:viaDiameter,drill:.3});completedNets.push('TERM_LINK')
+  }
   return{tracks,vias,completedNets,partialNets}
 }
 
