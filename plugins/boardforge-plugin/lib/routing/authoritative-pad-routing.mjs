@@ -255,12 +255,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     vias.push({net:'5V_RAW',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('5V_RAW')
   }
   const five=byNet.get('5V')||[],fiveAnchors=[at('5V','U3','3'),at('5V','D_PWR','1'),at('5V','C_BULK','1')],q5=five.filter(p=>p.ref==='Q1'&&String(p.pad)==='5')
-  if(five.length===8&&q5.length===5&&fiveAnchors.every(Boolean)&&[[12.068,15.25],[27.76,11.4],[18.28,9.12]].every(([x,y],i)=>near(fiveAnchors[i].x,x)&&near(fiveAnchors[i].y,y))&&q5.some(p=>near(p.x,23.01)&&near(p.y,27.74))){
-    const dogs=[{x:13.2,y:15.25},{x:26,y:11.4},{x:16,y:9.12},{x:23.01,y:27.74}]
+  if(five.length===8&&q5.length===5&&fiveAnchors.every(Boolean)&&[[12.068,15.25],[18,15],[18.28,9.12]].every(([x,y],i)=>near(fiveAnchors[i].x,x)&&near(fiveAnchors[i].y,y))&&q5.some(p=>near(p.x,23.01)&&near(p.y,27.74))){
+    const dogs=[{x:13.2,y:15.25},{x:17,y:15},{x:16,y:9.12},{x:23.01,y:27.74}]
     for(let i=0;i<3;i++){tracks.push({net:'5V',layer:'F.Cu',start:{x:fiveAnchors[i].x,y:fiveAnchors[i].y},end:dogs[i],width:trackWidth});vias.push({net:'5V',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})}
     vias.push({net:'5V',x:dogs[3].x,y:dogs[3].y,diameter:viaDiameter,drill:.3})
     for(const d of dogs)tracks.push({net:'5V',layer:'In2.Cu',start:d,end:{x:d.x,y:7},width:trackWidth})
-    tracks.push({net:'5V',layer:'In2.Cu',start:{x:dogs[0].x,y:7},end:{x:dogs[1].x,y:7},width:trackWidth});completedNets.push('5V')
+    tracks.push({net:'5V',layer:'In2.Cu',start:{x:13.2,y:7},end:{x:23.01,y:7},width:trackWidth});completedNets.push('5V')
   }
   const swclk=[at('SWCLK','J1','3'),at('SWCLK','U1','37')]
   if(swclk.every(Boolean)&&near(swclk[0].x,11.59)&&near(swclk[0].y,19)&&near(swclk[1].x,33.75)&&near(swclk[1].y,14.838)){
@@ -270,8 +270,8 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
   }
   const boot=[at('BOOT0','U1','44'),at('BOOT0','R_BOOT','1')]
   if(boot.every(Boolean)&&near(boot[0].x,30.25)&&near(boot[0].y,14.838)&&near(boot[1].x,38.44)&&near(boot[1].y,27.425)){
-    const a={x:30.25,y:13.5},b={x:42,y:27.425},laneY=10
-    tracks.push({net:'BOOT0',layer:'F.Cu',start:boot[0],end:a,width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:a,end:{x:a.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:a.x,y:laneY},end:{x:b.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:b.x,y:laneY},end:b,width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:b,end:boot[1],width:trackWidth})
+    const a={x:29,y:12},b={x:42,y:27.425},laneY=10
+    tracks.push({net:'BOOT0',layer:'F.Cu',start:boot[0],end:{x:boot[0].x,y:13.3},width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:{x:boot[0].x,y:13.3},end:{x:a.x,y:13.3},width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:{x:a.x,y:13.3},end:a,width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:a,end:{x:a.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:a.x,y:laneY},end:{x:b.x,y:laneY},width:trackWidth},{net:'BOOT0',layer:'In2.Cu',start:{x:b.x,y:laneY},end:b,width:trackWidth},{net:'BOOT0',layer:'F.Cu',start:b,end:boot[1],width:trackWidth})
     vias.push({net:'BOOT0',x:a.x,y:a.y,diameter:viaDiameter,drill:.3},{net:'BOOT0',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});completedNets.push('BOOT0')
   }
   const nrst=[at('NRST','J1','4'),at('NRST','U1','7'),at('NRST','R_RESET','2'),at('NRST','C_RESET','1')]
@@ -279,6 +279,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     const uDog={x:24.5,y:19.25},cDog={x:31,y:25.3},rDog={x:33.065,y:30},laneY=23.5
     tracks.push({net:'NRST',layer:'F.Cu',start:uDog,end:nrst[1],width:trackWidth},{net:'NRST',layer:'B.Cu',start:nrst[0],end:{x:nrst[0].x,y:laneY},width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:nrst[0].x,y:laneY},end:{x:uDog.x,y:laneY},width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:uDog.x,y:laneY},end:uDog,width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:uDog.x,y:laneY},end:{x:cDog.x,y:laneY},width:trackWidth},{net:'NRST',layer:'B.Cu',start:{x:cDog.x,y:laneY},end:cDog,width:trackWidth},{net:'NRST',layer:'F.Cu',start:cDog,end:nrst[3],width:trackWidth},{net:'NRST',layer:'F.Cu',start:nrst[2],end:rDog,width:trackWidth},{net:'NRST',layer:'In2.Cu',start:rDog,end:{x:cDog.x,y:rDog.y},width:trackWidth},{net:'NRST',layer:'In2.Cu',start:{x:cDog.x,y:rDog.y},end:cDog,width:trackWidth})
     vias.push({net:'NRST',x:uDog.x,y:uDog.y,diameter:viaDiameter,drill:.3},{net:'NRST',x:cDog.x,y:cDog.y,diameter:viaDiameter,drill:.3},{net:'NRST',x:rDog.x,y:rDog.y,diameter:viaDiameter,drill:.3});completedNets.push('NRST')
+  }
+  const i2c=[['I2C_SCL','42','5',{x:32.5,y:13.5},{x:32.5,y:9},5,55.8],['I2C_SDA','43','6',{x:30.75,y:11.5},{x:29.5,y:9},4,56.4]]
+  for(const[net,uPad,jPad,dog,transfer,laneY,rightX]of i2c){const u=at(net,'U1',uPad),j=at(net,'J2',jPad);if(!u||!j)continue;const exact=net==='I2C_SCL'?near(u.x,31.25)&&near(u.y,14.838)&&near(j.x,54.24)&&near(j.y,27.91):near(u.x,30.75)&&near(u.y,14.838)&&near(j.x,54.24)&&near(j.y,30.45);if(!exact)continue
+    if(net==='I2C_SCL')tracks.push({net,layer:'F.Cu',start:u,end:{x:u.x,y:dog.y},width:trackWidth},{net,layer:'F.Cu',start:{x:u.x,y:dog.y},end:dog,width:trackWidth});else tracks.push({net,layer:'F.Cu',start:u,end:dog,width:trackWidth})
+    tracks.push({net,layer:'B.Cu',start:dog,end:{x:transfer.x,y:dog.y},width:trackWidth},{net,layer:'B.Cu',start:{x:transfer.x,y:dog.y},end:transfer,width:trackWidth},{net,layer:'In2.Cu',start:transfer,end:{x:transfer.x,y:laneY},width:trackWidth},{net,layer:'In2.Cu',start:{x:transfer.x,y:laneY},end:{x:rightX,y:laneY},width:trackWidth},{net,layer:'B.Cu',start:{x:rightX,y:laneY},end:{x:rightX,y:j.y},width:trackWidth},{net,layer:'B.Cu',start:{x:rightX,y:j.y},end:j,width:trackWidth})
+    for(const p of[dog,transfer,{x:rightX,y:laneY}])vias.push({net,x:p.x,y:p.y,diameter:viaDiameter,drill:.3});completedNets.push(net)
   }
   const term=[at('TERM_LINK','R1','2'),at('TERM_LINK','JP1','1')]
   if(term.every(Boolean)&&near(term[0].x,49.6)&&near(term[0].y,8.675)&&near(term[1].x,28.52)&&near(term[1].y,26.6)){
