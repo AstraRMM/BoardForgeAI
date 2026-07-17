@@ -268,6 +268,12 @@ export function board007CanControllerFixedCorridors(input,{trackWidth=.2,viaDiam
     tracks.push({net:'SWCLK',layer:'F.Cu',start:{x:swclk[1].x,y:swclk[1].y},end:dog,width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:dog,end:{x:33.75,y:8},width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:{x:swclk[0].x,y:8},end:{x:33.75,y:8},width:trackWidth},{net:'SWCLK',layer:'B.Cu',start:{x:swclk[0].x,y:8},end:{x:swclk[0].x,y:swclk[0].y},width:trackWidth})
     vias.push({net:'SWCLK',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('SWCLK')
   }
+  const swdio=[at('SWDIO','J1','2'),at('SWDIO','U1','34')]
+  if(swdio.every(Boolean)&&near(swdio[0].x,9.05)&&near(swdio[0].y,19)&&near(swdio[1].x,35.163)&&near(swdio[1].y,17.25)){
+    const dog={x:32.5,y:17.25},laneY=26
+    tracks.push({net:'SWDIO',layer:'F.Cu',start:swdio[1],end:dog,width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:dog,end:{x:dog.x,y:laneY},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:dog.x,y:laneY},end:{x:30,y:laneY},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:30,y:laneY},end:{x:30,y:24.5},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:30,y:24.5},end:{x:27,y:24.5},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:27,y:24.5},end:{x:27,y:laneY},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:27,y:laneY},end:{x:20,y:laneY},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:20,y:laneY},end:{x:20,y:24.8},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:20,y:24.8},end:{x:17,y:24.8},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:17,y:24.8},end:{x:17,y:laneY},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:17,y:laneY},end:{x:swdio[0].x,y:laneY},width:trackWidth},{net:'SWDIO',layer:'B.Cu',start:{x:swdio[0].x,y:laneY},end:swdio[0],width:trackWidth})
+    vias.push({net:'SWDIO',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});completedNets.push('SWDIO')
+  }
   const boot=[at('BOOT0','U1','44'),at('BOOT0','R_BOOT','1')]
   if(boot.every(Boolean)&&near(boot[0].x,30.25)&&near(boot[0].y,14.838)&&near(boot[1].x,38.44)&&near(boot[1].y,27.425)){
     const a={x:29,y:12},b={x:42,y:27.425},laneY=10

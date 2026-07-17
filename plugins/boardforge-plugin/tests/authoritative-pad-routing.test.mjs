@@ -67,8 +67,8 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
     {net:'I2C_SCL',endpoints:[p('U1','42',31.25,14.838),p('J2','5',54.24,27.91)]},{net:'I2C_SDA',endpoints:[p('U1','43',30.75,14.838),p('J2','6',54.24,30.45)]},
   ]}
   const result=board007CanControllerFixedCorridors(input,{trackWidth:.2,viaDiameter:.5})
-  assert.deepEqual(result.completedNets,['CAN_TX','CAN_RX','CANH','CANL','3V3','5V_RAW','5V','SWCLK','BOOT0','NRST','I2C_SCL','I2C_SDA','TERM_LINK'])
-  assert.equal(result.vias.length,44)
+  assert.deepEqual(result.completedNets,['CAN_TX','CAN_RX','CANH','CANL','3V3','5V_RAW','5V','SWCLK','SWDIO','BOOT0','NRST','I2C_SCL','I2C_SDA','TERM_LINK'])
+  assert.equal(result.vias.length,45)
   assert.ok(result.tracks.some(t=>t.net==='CAN_TX'&&t.layer==='B.Cu'&&t.start.y===12&&t.end.y===12))
   assert.ok(result.tracks.some(t=>t.net==='CAN_RX'&&t.layer==='B.Cu'&&t.start.y===13&&t.end.y===13))
   assert.ok(result.tracks.some(t=>t.net==='CANH'&&t.layer==='B.Cu'&&t.start.y===27&&t.end.y===27))
@@ -81,6 +81,7 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
   assert.equal(result.vias.filter(v=>v.net==='5V').length,4)
   assert.ok(result.tracks.some(t=>t.net==='5V'&&t.layer==='In2.Cu'&&t.start.y===7&&t.end.y===7))
   assert.ok(result.tracks.some(t=>t.net==='SWCLK'&&t.layer==='B.Cu'&&t.start.y===8&&t.end.y===8))
+  assert.ok(result.tracks.some(t=>t.net==='SWDIO'&&t.layer==='B.Cu'&&t.start.y===26&&t.end.y===26))
   assert.ok(result.tracks.some(t=>t.net==='BOOT0'&&t.layer==='In2.Cu'&&t.start.y===10&&t.end.y===10))
   assert.ok(result.tracks.some(t=>t.net==='TERM_LINK'&&t.layer==='B.Cu'&&t.start.y===35.5&&t.end.y===35.5))
   assert.ok(result.tracks.some(t=>t.net==='NRST'&&t.layer==='B.Cu'&&t.start.y===23.5&&t.end.y===23.5))
