@@ -1,4 +1,4 @@
-export const AUDIO_DSP_MECHANICAL_CONTRACT=Object.freeze({schema:'boardforge.phase2c.audio-dsp-mechanical-contract.v1',boardId:'035_AUDIO_DSP',outlineFamily:'rack notch-audio-dsp',maximumAreaMm2:1600,rackNotch:Object.freeze({minimumWidthMm:10,minimumDepthMm:5}),mounting:Object.freeze({requiredHoleCount:2,minimumDiameterMm:2.5,minimumKeepoutRadiusMm:2.5})})
+export const AUDIO_DSP_MECHANICAL_CONTRACT=Object.freeze({schema:'boardforge.phase2c.audio-dsp-mechanical-contract.v1',boardId:'035_AUDIO_DSP',outlineFamily:'rack notch-audio-dsp',maximumAreaMm2:1600,rackNotch:Object.freeze({minimumWidthMm:10,minimumDepthMm:5}),mounting:Object.freeze({requiredHoleCount:2,minimumDiameterMm:2.5,minimumKeepoutRadiusMm:2.5}),mixedSignal:Object.freeze({minimumClockToAnalogConnectorMm:8,minimumPowerToAnalogConnectorMm:8})})
 
 export function validateAudioDspMechanicalGeometry(evidence={}){
  const c=AUDIO_DSP_MECHANICAL_CONTRACT,errors=[],outline=evidence.outline||[],area=polygonArea(outline),bounds=polygonBounds(outline),n=evidence.rackNotch||{}
@@ -12,6 +12,7 @@ export function validateAudioDspMechanicalGeometry(evidence={}){
  if(!p.dspCore||p.dspCore.centralEnvelopeVerified!==true)errors.push('audio-dsp-core-placement-unverified')
  const zones=evidence.signalZones||{}
  if(zones.analogDigitalBoundaryVerified!==true||zones.powerKeptOutOfAnalogConnectorZone!==true||zones.connectorShellClearanceVerified!==true)errors.push('audio-mixed-signal-mechanical-zones-unverified')
+ if((zones.clockToAnalogConnectorMm||0)<c.mixedSignal.minimumClockToAnalogConnectorMm||(zones.powerToAnalogConnectorMm||0)<c.mixedSignal.minimumPowerToAnalogConnectorMm||zones.masterClockKeepoutVerified!==true||zones.analogReturnContinuityVerified!==true)errors.push('audio-clock-power-analog-separation-unverified')
  if(evidence.cableExit?.clearOfRackNotchAndFasteners!==true||evidence.assemblyHeight?.rackEnvelopeVerified!==true)errors.push('audio-rack-service-clearance-unverified')
  const holes=evidence.rackMountingHoles||[]
  if(holes.length!==c.mounting.requiredHoleCount)errors.push('audio-rack-mount-count-invalid')
