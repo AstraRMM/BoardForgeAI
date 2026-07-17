@@ -187,8 +187,64 @@ export function authoritativeFixedCorridors(input,options){
   if(rp2040.completedNets.length)return rp2040
   const board007=board007CanControllerFixedCorridors(input,options)
   if(board007.completedNets.length)return board007
+  const board008=board008DualCanGatewayFixedCorridors(input,options)
+  if(board008.completedNets.length)return board008
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/** Exact power backbones for the six-layer Board008 dual-CAN gateway. */
+export function board008DualCanGatewayFixedCorridors(input,{trackWidth=.2,viaDiameter=.5}={}){
+  const byNet=new Map(input.nets.map(row=>[row.net,row.endpoints])),at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const signature=[at('CAN1_TX','U1','48'),at('CAN2_TX','U1','20'),at('CAN1H','J2','3'),at('CAN2H','J3','1'),at('3V3','U3','2')]
+  if(input.bounds?.maxX!==67||input.bounds?.maxY!==43||!signature.every(Boolean)||!near(signature[0].x,31.25)||!near(signature[0].y,17.837)||!near(signature[1].x,34.75)||!near(signature[1].y,26.163))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const tracks=[],vias=[],completedNets=[],partialNets=[],add=(net,layer,a,b)=>tracks.push({net,layer,start:a,end:b,width:trackWidth}),putVia=(net,p)=>vias.push({net,x:p.x,y:p.y,diameter:viaDiameter,drill:.3})
+  const rail=byNet.get('3V3')||[],railDogs=[
+    [at('3V3','U1','4'),{x:28.7,y:20.75}],[at('3V3','U1','5'),{x:28,y:21.25}],[at('3V3','U1','6'),{x:27.3,y:21.75}],
+    [at('3V3','U2','3'),{x:45.5,y:16.335}],[at('3V3','U3','2'),{x:21,y:12.3}],[at('3V3','C1','1'),{x:27.4,y:15.295}],
+    [at('3V3','C2','1'),{x:41.8,y:12.02}],[at('3V3','C3','1'),{x:20.5,y:18.375}],[at('3V3','R_RESET','1'),{x:33.1,y:32.505}],
+    [at('3V3','C4','1'),{x:35.2,y:13.975}],[at('3V3','C5','1'),{x:35.2,y:31.575}],[at('3V3','C6','1'),{x:41.9,y:21.525}],
+    [at('3V3','U4','3'),{x:45.5,y:28.935}],[at('3V3','C7','1'),{x:42.2,y:32.05}],
+  ]
+  if(rail.length===17&&railDogs.every(([p])=>p)){
+    const trunkY=42
+    for(const[p,d]of railDogs){add('3V3','F.Cu',p,d);putVia('3V3',d);add('3V3','In1.Cu',d,{x:d.x,y:trunkY})}
+    add('3V3','In1.Cu',at('3V3','J1','1'),{x:3.62,y:36});add('3V3','In1.Cu',{x:3.62,y:36},{x:7.5,y:36});add('3V3','In1.Cu',{x:7.5,y:36},{x:7.5,y:trunkY});add('3V3','In1.Cu',{x:7.5,y:trunkY},{x:54,y:trunkY})
+    add('3V3','In1.Cu',at('3V3','J3','4'),{x:54,y:33.88});add('3V3','In1.Cu',{x:54,y:33.88},{x:54,y:trunkY});add('3V3','In1.Cu',at('3V3','J3','5'),{x:54,y:33.88});completedNets.push('3V3')
+  }else partialNets.push('3V3')
+  const five=byNet.get('5V')||[],fiveDogs=[[at('5V','U3','3'),{x:25.3,y:11.35}],[at('5V','D_PWR','1'),{x:5,y:22.37}],[at('5V','C_BULK','1'),{x:11.5,y:10.12}]],q=at('5V','Q1','5')
+  if(five.length===8&&q&&fiveDogs.every(([p])=>p)){
+    const qDog={x:25,y:24.2},trunkY=8
+    for(const[p,d]of fiveDogs){add('5V','F.Cu',p,d);putVia('5V',d);add('5V','In2.Cu',d,{x:d.x,y:trunkY})}
+    add('5V','F.Cu',q,qDog);putVia('5V',qDog);add('5V','In2.Cu',qDog,{x:qDog.x,y:trunkY});add('5V','In2.Cu',{x:5,y:trunkY},{x:25.3,y:trunkY});completedNets.push('5V')
+  }else partialNets.push('5V')
+  const raw=[at('5V_RAW','J2','1'),at('5V_RAW','Q1','1')]
+  if(raw.every(Boolean)){const dog={x:18.41,y:20.5};add('5V_RAW','F.Cu',raw[1],dog);putVia('5V_RAW',dog);add('5V_RAW','In3.Cu',dog,{x:18.41,y:7});add('5V_RAW','In3.Cu',{x:18.41,y:7},{x:63.92,y:7});add('5V_RAW','In3.Cu',{x:63.92,y:7},raw[0]);completedNets.push('5V_RAW')}
+  const bus=(net,layer,points,dogs,trunk)=>{if(!points.every(Boolean))return;for(let i=0;i<dogs.length;i++){add(net,'F.Cu',points[i],dogs[i]);putVia(net,dogs[i]);add(net,layer,dogs[i],trunk[i])}for(let i=1;i<trunk.length;i++)add(net,layer,trunk[i-1],trunk[i]);completedNets.push(net)}
+  bus('CAN1H','B.Cu',[at('CAN1H','D1','1'),at('CAN1H','U2','7'),at('CAN1H','R1','1')],[{x:43.5,y:8.22},{x:53.5,y:15.065},{x:58.115,y:8.2}],[{x:43.5,y:19.5},{x:53.5,y:19.5},{x:58.115,y:19.5},at('CAN1H','J2','3')])
+  bus('CAN1L','In4.Cu',[at('CAN1L','D1','2'),at('CAN1L','U2','6')],[{x:44.3,y:10.12},{x:52.5,y:16.335}],[{x:44.3,y:19},{x:49.58,y:19},at('CAN1L','JP1','2'),at('CAN1L','J2','4')])
+  bus('CAN2H','B.Cu',[at('CAN2H','D2','1'),at('CAN2H','U4','7'),at('CAN2H','R2','1')],[{x:43.5,y:33.88},{x:53.5,y:27.665},{x:55,y:37.7}],[{x:43.5,y:25},{x:53.5,y:25},{x:55,y:25},{x:61,y:28},{x:61,y:30},{x:63.92,y:30},at('CAN2H','J3','1')])
+  bus('CAN2L','In4.Cu',[at('CAN2L','D2','2'),at('CAN2L','U4','6')],[{x:44.3,y:35.78},{x:52.5,y:28.935}],[{x:44.3,y:24},{x:49.58,y:24},at('CAN2L','JP2','2'),{x:49.58,y:42.5},{x:61.38,y:42.5},at('CAN2L','J3','2')])
+  const term1=[at('CAN1_TERM_LINK','R1','2'),at('CAN1_TERM_LINK','JP1','1')]
+  if(term1.every(Boolean)){const d={x:60.5,y:6.3};add('CAN1_TERM_LINK','F.Cu',term1[0],d);putVia('CAN1_TERM_LINK',d);add('CAN1_TERM_LINK','In2.Cu',d,{x:60.5,y:1.5});add('CAN1_TERM_LINK','In2.Cu',{x:60.5,y:1.5},{x:52.12,y:1.5});add('CAN1_TERM_LINK','In2.Cu',{x:52.12,y:1.5},term1[1]);completedNets.push('CAN1_TERM_LINK')}
+  const term2=[at('CAN2_TERM_LINK','R2','2'),at('CAN2_TERM_LINK','JP2','1')]
+  if(term2.every(Boolean)){const d={x:60.5,y:37.7};add('CAN2_TERM_LINK','F.Cu',term2[0],d);putVia('CAN2_TERM_LINK',d);add('CAN2_TERM_LINK','In2.Cu',d,{x:60.5,y:42.5});add('CAN2_TERM_LINK','In2.Cu',{x:60.5,y:42.5},{x:52.12,y:42.5});add('CAN2_TERM_LINK','In2.Cu',{x:52.12,y:42.5},term2[1]);completedNets.push('CAN2_TERM_LINK')}
+  const pair=(net,layer,a,b,da,db)=>{if(!a||!b)return;add(net,'F.Cu',a,da);putVia(net,da);if(!b.throughHole){add(net,'F.Cu',b,db);putVia(net,db)}add(net,layer,da,db);completedNets.push(net)}
+  const logicRoute=(net,layer,a,b,front,da,db,laneY)=>{if(!a||!b)return;let p=a;for(const q of front){add(net,'F.Cu',p,q);p=q}add(net,'F.Cu',b,db);putVia(net,da);putVia(net,db);add(net,layer,da,{x:da.x,y:laneY});add(net,layer,{x:da.x,y:laneY},{x:db.x,y:laneY});add(net,layer,{x:db.x,y:laneY},db);completedNets.push(net)}
+  logicRoute('CAN1_TX','In3.Cu',at('CAN1_TX','U1','48'),at('CAN1_TX','U2','1'),[{x:31.25,y:16.8},{x:29.5,y:16.8},{x:29.5,y:15.8}],{x:29.5,y:15.8},{x:46.2,y:13.795},13)
+  logicRoute('CAN1_RX','In2.Cu',at('CAN1_RX','U1','47'),at('CAN1_RX','U2','4'),[{x:31.75,y:16},{x:32.5,y:16}],{x:32.5,y:16},{x:46.2,y:17.605},17)
+  logicRoute('CAN2_TX','In3.Cu',at('CAN2_TX','U1','20'),at('CAN2_TX','U4','1'),[{x:34.75,y:27.3},{x:36.5,y:27.3},{x:36.5,y:28.5}],{x:36.5,y:28.5},{x:46.2,y:26.395},25.5)
+  logicRoute('CAN2_RX','In2.Cu',at('CAN2_RX','U1','19'),at('CAN2_RX','U4','4'),[{x:34.25,y:27.3},{x:24,y:27.3},{x:24,y:29.5}],{x:24,y:29.5},{x:47.2,y:30.205},31)
+  const i2cRoute=(net,layer,pad,jPad,dog,laneY,detourX)=>{const u=at(net,'U1',pad),j=at(net,'J2',jPad);if(!u||!j)return;add(net,'F.Cu',u,dog);putVia(net,dog);add(net,layer,dog,{x:detourX,y:dog.y});add(net,layer,{x:detourX,y:dog.y},{x:detourX,y:laneY});add(net,layer,{x:detourX,y:laneY},{x:j.x,y:laneY});add(net,layer,{x:j.x,y:laneY},j);completedNets.push(net)}
+  {const net='I2C_SCL',u=at(net,'U1','42'),j=at(net,'J2','5'),escape={x:34.25,y:16.5},turn={x:36,y:16.5},dog={x:36,y:15.8};if(u&&j){add(net,'F.Cu',u,escape);add(net,'F.Cu',escape,turn);add(net,'F.Cu',turn,dog);putVia(net,dog);const path=[dog,{x:44.5,y:15.8},{x:44.5,y:20.5},{x:48,y:20.5},{x:48,y:12},{x:j.x,y:12},j];for(let i=1;i<path.length;i++)add(net,'In3.Cu',path[i-1],path[i]);completedNets.push(net)}}
+  i2cRoute('I2C_SDA','In2.Cu','43','6',{x:33.75,y:15.2},10.5,49)
+  const swdio=[at('SWDIO','U1','35'),at('SWDIO','J1','2')]
+  if(swdio.every(Boolean)){const d={x:39.2,y:19.75};add('SWDIO','F.Cu',swdio[0],d);putVia('SWDIO',d);add('SWDIO','B.Cu',d,{x:39.2,y:24.8});add('SWDIO','B.Cu',{x:39.2,y:24.8},{x:6.16,y:24.8});add('SWDIO','B.Cu',{x:6.16,y:24.8},swdio[1]);completedNets.push('SWDIO')}
+  const boot=[at('SWCLK_BOOT0','U1','36'),at('SWCLK_BOOT0','R_BOOT','1'),at('SWCLK_BOOT0','J1','3')]
+  if(boot.every(Boolean)){const a={x:40,y:18.3},b={x:25.8,y:32.505};add('SWCLK_BOOT0','F.Cu',boot[0],a);add('SWCLK_BOOT0','F.Cu',boot[1],b);putVia('SWCLK_BOOT0',a);putVia('SWCLK_BOOT0',b);add('SWCLK_BOOT0','In4.Cu',a,{x:40,y:34});add('SWCLK_BOOT0','In4.Cu',{x:40,y:34},{x:8.7,y:34});add('SWCLK_BOOT0','In4.Cu',{x:8.7,y:34},boot[2]);add('SWCLK_BOOT0','In4.Cu',b,{x:25.8,y:34});completedNets.push('SWCLK_BOOT0')}
+  const nrst=[at('NRST','U1','10'),at('NRST','C_RESET','1'),at('NRST','R_RESET','2'),at('NRST','J1','4')]
+  if(nrst.every(Boolean)){const dogs=[{x:26.2,y:23.75},{x:30,y:28.16},{x:31.96,y:29.7}];for(let i=0;i<3;i++){add('NRST','F.Cu',nrst[i],dogs[i]);putVia('NRST',dogs[i]);add('NRST','In3.Cu',dogs[i],{x:dogs[i].x,y:30.5})}add('NRST','In3.Cu',{x:11.24,y:30.5},{x:31.96,y:30.5});add('NRST','In3.Cu',nrst[3],{x:11.24,y:30.5});completedNets.push('NRST')}
+  return{tracks,vias,completedNets,partialNets}
 }
 
 /** Exact first corridor for the hardened Board007 CAN controller. The two

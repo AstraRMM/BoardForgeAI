@@ -881,7 +881,7 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     // a deterministic zero-copper transaction baseline instead of consuming
     // the campaign watchdog or falling back to stale proof-coordinate copper.
     if((copperlessScan.pads?.length||0)>80&&!fixedComplete)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
-    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile})
+    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile,viaDiameter:.5})
     if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
     const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
     const rules=await readFile(sourceRules,'utf8').catch(()=>null);if(rules)await writeFile(candidateRules,rules,'utf8')
