@@ -1,8 +1,336 @@
-import {approvedAssetFor} from '../../components/approved-production-assets.mjs'
-export const CURRENT_SENSOR_PROPOSAL_SCHEMA='boardforge.phase2c.production-proposal.current-sensor.v1'
-const approved=(ref,role,mpn)=>({ref,role,mpn,status:approvedAssetFor(mpn)?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'})
-const blocked=(ref,role,requirement)=>({ref,role,mpn:null,status:'BLOCKED_MISSING_APPROVED_EXACT_ASSET',requirement})
-export const currentSensorProductionProposal=Object.freeze({schema:CURRENT_SENSOR_PROPOSAL_SCHEMA,status:'BLOCKED_PENDING_CURRENT_CONDUCTOR_ISOLATION_OUTPUT_AND_FAULT_ENERGY',boardId:'046_CURRENT_SENSOR',maximumAreaMm2:2650,architecture:'Galvanically isolated current measurement with fault-rated primary conductor or shunt, declared insulation barrier, protected output/power, thermal/magnetic control and dielectric/functional test',outline:{family:'conductor-window-current-sensor',closed:true,maximumAreaMm2:2650,points:[[0,0],[23,0],[23,16],[37,16],[37,0],[60,0],[60,40],[0,40]],purposefulFeatures:{conductorWindowNotch:{widthMm:14,depthMm:16},primarySecondaryBarrierSlotRequired:true,creepageKeepoutRequired:true,outputConnectorEdge:'right'}},bom:[approved('U_CTRL','exact current telemetry controller candidate','STM32G0B1CBT6'),approved('U_CAL','exact current calibration storage','M24C64-WMN6TP'),approved('U_PWR','secondary quiet regulator candidate','MCP1700T-3302E/TT'),approved('FB_PWR','secondary supply filter candidate','MPZ1608S601ATA00'),approved('C_DEC','secondary decoupling candidate','CL10B104KB8NNNC'),blocked('U_SENSE','exact isolated current sensor or isolated shunt amplifier','Freeze integrated Hall/fluxgate/shunt architecture and exact ordering code/package/pin map from range, bandwidth, isolation, accuracy and lifecycle.'),blocked('P_PRIMARY','exact primary conductor busbar core or fault-rated shunt','Freeze material/geometry/resistance/terminals, continuous/pulse/fault I2t, insertion loss, temperature and electromechanical force.'),blocked('J_PRI_IN','exact primary current input terminal','Freeze connector/fastener/cable/current/voltage/fault/touch/creepage and strain relief.'),blocked('J_PRI_OUT','exact primary current output terminal','Freeze connector/fastener/cable/current/voltage/fault/touch/creepage and strain relief.'),blocked('P_BARRIER','rated primary-secondary insulation barrier creepage clearance slots','Freeze working/transient voltage, basic/reinforced class, category, pollution, material group, altitude and PCB process.'),blocked('P_PRIPROT','primary fuse overcurrent and fault-energy coordination','Freeze upstream/downstream fuse/breaker relationship and prove sensor/conductor/PCB pulse and fusing I2t.'),blocked('P_ISOPWR','exact isolated primary-side power if architecture requires','Freeze converter/barrier/capacitance/regulation/startup/emissions/thermal or prove secondary-powered sensor needs none.'),blocked('P_OUT','measurement output conditioning filter and driver','Freeze analog/differential/PWM/digital scaling, load, common-mode, bandwidth, fault saturation and host compatibility.'),blocked('J_OUT','keyed protected current measurement output connector','Freeze exact connector/pin map/cable/shield/power/ground and absent-domain behavior.'),blocked('D_OUT','current output ESD clamp and protection','Freeze exact low-leakage protection and chassis/secondary return without corrupting bandwidth/accuracy.'),blocked('U_TEMP','primary conductor and sensor temperature monitoring','Freeze exact sensors/placement and thermal compensation/overtemperature response.'),blocked('P_MAG','external magnetic field shielding and conductor-orientation control','Freeze adjacent-conductor/motor/inductor geometry, return path, shield/core and crosstalk requirements.'),blocked('P_TEST','dielectric withstand current calibration fault fixture','Freeze hipot/insulation process plus zero/positive/negative current, bandwidth, saturation, recovery, temperature and load fixture.')],requiredTopology:['Freeze continuous/peak/pulse/fault current, bidirectionality, common-mode, bandwidth, accuracy, insertion loss, recovery and environment.','Choose integrated conductor/window/core or Kelvin shunt architecture from current, thermal, magnetic, fault and insulation requirements.','Size conductor/terminals/copper/fasteners for temperature, skin/proximity and fault force/I2t so PCB is not uncontrolled fuse.','Freeze system insulation class/working/transient/category/pollution/altitude and implement component plus PCB creepage/clearance/slots.','Provide isolated power if required and quiet secondary power with verified barrier capacitance, startup, emissions and thermal.','Implement protected output scaling/load/filter/fault behavior and host ADC/reference/cable compatibility.','Calculate uncertainty over offset/gain/noise/nonlinearity/TCR/self-heating/magnetic fields/filter/reference/calibration.','Production dielectric-test and calibrate zero/bidirectional range, bandwidth, saturation/recovery, temperature and output load.'],mandatoryUnresolved:['Freeze current waveform/range/common-mode/bandwidth/error/fault.','Freeze architecture/conductor/terminals/insulation/safety.','Freeze output/power/grounding/magnetic/calibration.','Select unresolved exact sensor/conductor/barrier/power/output/connectors/test assets after fault/thermal/error/safety analyses.'],evidenceRequired:['exactAssetsApproved','currentRangeWaveformVerified','primaryInsertionLossVerified','primaryContinuousPulseFaultI2tVerified','terminalAmpacityForceVerified','workingTransientInsulationVerified','creepageClearanceSlotVerified','isolatedPowerCmtEmissionsVerified','outputScaleLoadBandwidthVerified','offsetGainNoiseLinearityVerified','thermalDriftTemperatureRiseVerified','externalMagneticCrosstalkVerified','saturationOvercurrentRecoveryVerified','groundShieldEmcVerified','productionDielectricBidirectionalCalibrationVerified']})
-export function validateCurrentSensorArchitecture(definition={}){const roles=(definition.bom||[]).map(x=>String(x.role||'').toLowerCase()),has=p=>roles.some(x=>p.test(x)),errors=[];for(const[p,c]of[[/primary conductor/,'current-sensor-primary-path-missing'],[/isolated current sensor/,'current-sensor-isolated-sensing-missing'],[/insulation barrier/,'current-sensor-isolation-barrier-missing'],[/output conditioning/,'current-sensor-output-conditioning-missing'],[/measurement output connector/,'current-sensor-output-connector-missing'],[/isolated primary-side power|secondary quiet regulator/,'current-sensor-power-domain-missing'],[/temperature monitoring/,'current-sensor-temperature-sensing-missing'],[/output esd/,'current-sensor-output-protection-missing']])if(!has(p))errors.push(c);const e=definition.semanticEvidence?.currentSensor||{};for(const[k,c]of[['currentRangeWaveformVerified','range-unverified'],['conductorShuntFaultEnergyVerified','fault-energy-unverified'],['isolationSafetyVerified','isolation-safety-unverified'],['outputInterfaceVerified','output-interface-unverified'],['powerDomainsVerified','power-domains-unverified'],['bandwidthErrorBudgetVerified','bandwidth-error-unverified'],['thermalVerified','thermal-unverified'],['magneticImmunityVerified','magnetic-immunity-unverified'],['calibrationTraceabilityVerified','calibration-unverified'],['productionDielectricFunctionalTestVerified','production-safety-test-unverified']])if(!e[k])errors.push(`current-sensor-${c}`);return{ok:errors.length===0,errors}}
-export function validateCurrentSensorProductionProposal(proposal={}){const errors=[],bom=Array.isArray(proposal.bom)?proposal.bom:[],roles=bom.map(x=>String(x.role||'').toLowerCase()),has=p=>roles.some(x=>p.test(x));for(const[p,c]of[[/isolated current sensor/,'isolated-current-sensor-missing'],[/primary conductor/,'current-conductor-or-shunt-missing'],[/insulation barrier/,'current-isolation-barrier-missing'],[/working\/transient voltage/,'current-sensor-rated-insulation-missing'],[/primary fuse overcurrent/,'current-sensor-primary-protection-missing'],[/secondary quiet regulator/,'current-sensor-secondary-power-missing'],[/measurement output conditioning/,'current-measurement-output-missing'],[/output esd/,'current-sensor-output-protection-missing'],[/calibration storage/,'current-sensor-offset-calibration-missing'],[/dielectric withstand/,'current-sensor-saturation-fault-test-missing']])if(!has(p))errors.push(c);const blockedParts=bom.filter(x=>x.status!=='APPROVED_EXACT_ASSET');if(blockedParts.length)errors.push('current-sensor-exact-assets-unapproved');const f=proposal.outline?.purposefulFeatures||{},area=polygonArea(proposal.outline?.points);if(proposal.outline?.closed!==true||!Number.isFinite(area)||area>(proposal.maximumAreaMm2||0)||f.conductorWindowNotch?.widthMm<14||f.conductorWindowNotch?.depthMm<16||f.primarySecondaryBarrierSlotRequired!==true||f.creepageKeepoutRequired!==true)errors.push('current-sensor-purposeful-outline-invalid');for(const key of proposal.evidenceRequired||[])if(proposal.semanticEvidence?.[key]!==true)errors.push(`current-sensor-evidence-${key.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}-missing`);return{schema:'boardforge.phase2c.current-sensor-remediation-gate.v1',ok:errors.length===0,errors,areaMm2:area,maximumAreaMm2:proposal.maximumAreaMm2,blockedRefs:blockedParts.map(x=>x.ref)}}
-function polygonArea(points=[]){if(points.length<3)return NaN;let s=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2}
+import { approvedAssetFor } from "../../components/approved-production-assets.mjs";
+export const CURRENT_SENSOR_PROPOSAL_SCHEMA =
+  "boardforge.phase2c.production-proposal.current-sensor.v1";
+const approved = (ref, role, mpn) => ({
+  ref,
+  role,
+  mpn,
+  status: approvedAssetFor(mpn)
+    ? "APPROVED_EXACT_ASSET"
+    : "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+});
+const blocked = (ref, role, requirement) => ({
+  ref,
+  role,
+  mpn: null,
+  status: "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+  requirement,
+});
+export const currentSensorProductionProposal = Object.freeze({
+  schema: CURRENT_SENSOR_PROPOSAL_SCHEMA,
+  status: "BLOCKED_PENDING_CURRENT_CONDUCTOR_ISOLATION_OUTPUT_AND_FAULT_ENERGY",
+  boardId: "046_CURRENT_SENSOR",
+  maximumAreaMm2: 2650,
+  architecture:
+    "Galvanically isolated current measurement with fault-rated primary conductor or shunt, declared insulation barrier, protected output/power, thermal/magnetic control and dielectric/functional test",
+  currentWaveformEnvelope: null,
+  conductorEnvelope: null,
+  faultEnvelope: null,
+  isolationEnvelope: null,
+  outputEnvelope: null,
+  powerEnvelope: null,
+  thermalEnvelope: null,
+  magneticEnvelope: null,
+  calibrationEnvelope: null,
+  candidates: [
+    {
+      role: "MAGNETIC_CURRENT_SENSOR",
+      family: "TI TMCS1101",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_RANGE_WAVEFORM_ISOLATION_FAULT_AND_PACKAGE",
+    },
+    {
+      role: "ISOLATED_SHUNT_AMPLIFIER",
+      family: "TI AMC1300",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_SHUNT_RANGE_COMMON_MODE_ISOLATION_AND_PACKAGE",
+    },
+    {
+      role: "TELEMETRY_CONTROLLER",
+      family: "ST STM32G0",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_OUTPUT_CALIBRATION_DIAGNOSTICS_AND_LIFECYCLE",
+    },
+    {
+      role: "CALIBRATION_STORAGE",
+      family: "ST M24C",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_CALIBRATION_RECORD_ADDRESS_ENDURANCE_AND_RETENTION",
+    },
+    {
+      role: "SECONDARY_REGULATOR",
+      family: "Microchip MCP1700",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_SOURCE_LOAD_NOISE_TRANSIENT_AND_THERMAL_BUDGET",
+    },
+    {
+      role: "SECONDARY_FILTER",
+      family: "TDK MPZ1608",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_IMPEDANCE_CURRENT_DCR_RESONANCE_AND_EMC",
+    },
+  ],
+  outline: {
+    family: "conductor-window-current-sensor",
+    closed: true,
+    maximumAreaMm2: 2650,
+    points: [
+      [0, 0],
+      [23, 0],
+      [23, 16],
+      [37, 16],
+      [37, 0],
+      [60, 0],
+      [60, 40],
+      [0, 40],
+    ],
+    purposefulFeatures: {
+      conductorWindowNotch: { widthMm: 14, depthMm: 16 },
+      primarySecondaryBarrierSlotRequired: true,
+      creepageKeepoutRequired: true,
+      outputConnectorEdge: "right",
+    },
+  },
+  bom: [
+    blocked(
+      "U_CTRL",
+      "exact current telemetry controller",
+      "Freeze exact controller only after output, rate, calibration, diagnostics, protection, firmware and lifecycle requirements are declared.",
+    ),
+    blocked(
+      "U_CAL",
+      "exact current calibration storage",
+      "Freeze exact storage only after calibration record, serialization, address, update count, integrity, endurance and retention are declared.",
+    ),
+    blocked(
+      "U_PWR",
+      "secondary quiet regulator",
+      "Freeze exact regulator only after source, sensor/output loads, dropout, noise, transient, sequencing and thermal budgets are verified.",
+    ),
+    blocked(
+      "FB_PWR",
+      "secondary supply filter",
+      "Freeze exact filter only after rail impedance, current, DCR, resonance, noise spectrum, stability and EMC requirements are verified.",
+    ),
+    approved("C_DEC", "secondary decoupling candidate", "CL10B104KB8NNNC"),
+    blocked(
+      "U_SENSE",
+      "exact isolated current sensor or isolated shunt amplifier",
+      "Freeze integrated Hall/fluxgate/shunt architecture and exact ordering code/package/pin map from range, bandwidth, isolation, accuracy and lifecycle.",
+    ),
+    blocked(
+      "P_PRIMARY",
+      "exact primary conductor busbar core or fault-rated shunt",
+      "Freeze material/geometry/resistance/terminals, continuous/pulse/fault I2t, insertion loss, temperature and electromechanical force.",
+    ),
+    blocked(
+      "J_PRI_IN",
+      "exact primary current input terminal",
+      "Freeze connector/fastener/cable/current/voltage/fault/touch/creepage and strain relief.",
+    ),
+    blocked(
+      "J_PRI_OUT",
+      "exact primary current output terminal",
+      "Freeze connector/fastener/cable/current/voltage/fault/touch/creepage and strain relief.",
+    ),
+    blocked(
+      "P_BARRIER",
+      "rated primary-secondary insulation barrier creepage clearance slots",
+      "Freeze working/transient voltage, basic/reinforced class, category, pollution, material group, altitude and PCB process.",
+    ),
+    blocked(
+      "P_PRIPROT",
+      "primary fuse overcurrent and fault-energy coordination",
+      "Freeze upstream/downstream fuse/breaker relationship and prove sensor/conductor/PCB pulse and fusing I2t.",
+    ),
+    blocked(
+      "P_ISOPWR",
+      "exact isolated primary-side power if architecture requires",
+      "Freeze converter/barrier/capacitance/regulation/startup/emissions/thermal or prove secondary-powered sensor needs none.",
+    ),
+    blocked(
+      "P_OUT",
+      "measurement output conditioning filter and driver",
+      "Freeze analog/differential/PWM/digital scaling, load, common-mode, bandwidth, fault saturation and host compatibility.",
+    ),
+    blocked(
+      "J_OUT",
+      "keyed protected current measurement output connector",
+      "Freeze exact connector/pin map/cable/shield/power/ground and absent-domain behavior.",
+    ),
+    blocked(
+      "D_OUT",
+      "current output ESD clamp and protection",
+      "Freeze exact low-leakage protection and chassis/secondary return without corrupting bandwidth/accuracy.",
+    ),
+    blocked(
+      "U_TEMP",
+      "primary conductor and sensor temperature monitoring",
+      "Freeze exact sensors/placement and thermal compensation/overtemperature response.",
+    ),
+    blocked(
+      "P_MAG",
+      "external magnetic field shielding and conductor-orientation control",
+      "Freeze adjacent-conductor/motor/inductor geometry, return path, shield/core and crosstalk requirements.",
+    ),
+    blocked(
+      "P_TEST",
+      "dielectric withstand current calibration fault fixture",
+      "Freeze hipot/insulation process plus zero/positive/negative current, bandwidth, saturation, recovery, temperature and load fixture.",
+    ),
+  ],
+  requiredTopology: [
+    "Freeze continuous/peak/pulse/fault current, bidirectionality, common-mode, bandwidth, accuracy, insertion loss, recovery and environment.",
+    "Choose integrated conductor/window/core or Kelvin shunt architecture from current, thermal, magnetic, fault and insulation requirements.",
+    "Size conductor/terminals/copper/fasteners for temperature, skin/proximity and fault force/I2t so PCB is not uncontrolled fuse.",
+    "Freeze system insulation class/working/transient/category/pollution/altitude and implement component plus PCB creepage/clearance/slots.",
+    "A component isolation rating alone is not system compliance; verify the complete PCB, terminals, conductor, enclosure and manufacturing process.",
+    "Provide isolated power if required and quiet secondary power with verified barrier capacitance, startup, emissions and thermal.",
+    "Implement protected output scaling/load/filter/fault behavior and host ADC/reference/cable compatibility.",
+    "Calculate uncertainty over offset/gain/noise/nonlinearity/TCR/self-heating/magnetic fields/filter/reference/calibration.",
+    "Production dielectric-test and calibrate zero/bidirectional range, bandwidth, saturation/recovery, temperature and output load.",
+  ],
+  mandatoryUnresolved: [
+    "Freeze current ranges and waveforms, common-mode, bandwidth, error and fault behavior.",
+    "Freeze architecture, conductor, terminals, isolation working/transient voltage, insulation class and safety.",
+    "Freeze output/power/grounding/magnetic/calibration.",
+    "Select unresolved exact sensor/conductor/barrier/power/output/connectors/test assets after fault/thermal/error/safety analyses.",
+  ],
+  evidenceRequired: [
+    "exactAssetsApproved",
+    "currentRangeWaveformVerified",
+    "primaryInsertionLossVerified",
+    "primaryContinuousPulseFaultI2tVerified",
+    "terminalAmpacityForceVerified",
+    "workingTransientInsulationVerified",
+    "creepageClearanceSlotVerified",
+    "isolatedPowerCmtEmissionsVerified",
+    "outputScaleLoadBandwidthVerified",
+    "offsetGainNoiseLinearityVerified",
+    "thermalDriftTemperatureRiseVerified",
+    "externalMagneticCrosstalkVerified",
+    "saturationOvercurrentRecoveryVerified",
+    "groundShieldEmcVerified",
+    "productionDielectricBidirectionalCalibrationVerified",
+  ],
+});
+export function validateCurrentSensorArchitecture(definition = {}) {
+  const roles = (definition.bom || []).map((x) =>
+      String(x.role || "").toLowerCase(),
+    ),
+    has = (p) => roles.some((x) => p.test(x)),
+    errors = [];
+  for (const [p, c] of [
+    [/primary conductor/, "current-sensor-primary-path-missing"],
+    [/isolated current sensor/, "current-sensor-isolated-sensing-missing"],
+    [
+      /(?:insulation|isolation) barrier/,
+      "current-sensor-isolation-barrier-missing",
+    ],
+    [/output conditioning/, "current-sensor-output-conditioning-missing"],
+    [/measurement output connector/, "current-sensor-output-connector-missing"],
+    [
+      /isolated primary-side power|secondary quiet regulator|sensor quiet power/,
+      "current-sensor-power-domain-missing",
+    ],
+    [
+      /temperature monitoring|conductor temperature sensor/,
+      "current-sensor-temperature-sensing-missing",
+    ],
+    [/output esd/, "current-sensor-output-protection-missing"],
+  ])
+    if (!has(p)) errors.push(c);
+  const e = definition.semanticEvidence?.currentSensor || {};
+  for (const [k, c] of [
+    ["currentRangeWaveformVerified", "range-unverified"],
+    ["conductorShuntFaultEnergyVerified", "fault-energy-unverified"],
+    ["isolationSafetyVerified", "isolation-safety-unverified"],
+    ["outputInterfaceVerified", "output-interface-unverified"],
+    ["powerDomainsVerified", "power-domains-unverified"],
+    ["bandwidthErrorBudgetVerified", "bandwidth-error-unverified"],
+    ["thermalVerified", "thermal-unverified"],
+    ["magneticImmunityVerified", "magnetic-immunity-unverified"],
+    ["calibrationTraceabilityVerified", "calibration-unverified"],
+    [
+      "productionDielectricFunctionalTestVerified",
+      "production-safety-test-unverified",
+    ],
+  ])
+    if (!e[k]) errors.push(`current-sensor-${c}`);
+  return { ok: errors.length === 0, errors };
+}
+export function validateCurrentSensorProductionProposal(proposal = {}) {
+  const errors = [],
+    bom = Array.isArray(proposal.bom) ? proposal.bom : [],
+    roles = bom.map((x) => String(x.role || "").toLowerCase()),
+    has = (p) => roles.some((x) => p.test(x));
+  for (const [key, code] of [
+    ["currentWaveformEnvelope", "current-waveform-envelope-undeclared"],
+    ["conductorEnvelope", "conductor-envelope-undeclared"],
+    ["faultEnvelope", "fault-envelope-undeclared"],
+    ["isolationEnvelope", "isolation-envelope-undeclared"],
+    ["outputEnvelope", "output-envelope-undeclared"],
+    ["powerEnvelope", "power-envelope-undeclared"],
+    ["thermalEnvelope", "thermal-envelope-undeclared"],
+    ["magneticEnvelope", "magnetic-envelope-undeclared"],
+    ["calibrationEnvelope", "calibration-envelope-undeclared"],
+  ])
+    if (proposal[key] == null) errors.push(`current-sensor-${code}`);
+  for (const [p, c] of [
+    [/isolated current sensor/, "isolated-current-sensor-missing"],
+    [/primary conductor/, "current-conductor-or-shunt-missing"],
+    [/insulation barrier/, "current-isolation-barrier-missing"],
+    [/working\/transient voltage/, "current-sensor-rated-insulation-missing"],
+    [/primary fuse overcurrent/, "current-sensor-primary-protection-missing"],
+    [/secondary quiet regulator/, "current-sensor-secondary-power-missing"],
+    [/measurement output conditioning/, "current-measurement-output-missing"],
+    [/output esd/, "current-sensor-output-protection-missing"],
+    [/calibration storage/, "current-sensor-offset-calibration-missing"],
+    [/dielectric withstand/, "current-sensor-saturation-fault-test-missing"],
+  ])
+    if (!has(p)) errors.push(c);
+  const blockedParts = bom.filter((x) => x.status !== "APPROVED_EXACT_ASSET");
+  if (blockedParts.length)
+    errors.push("current-sensor-exact-assets-unapproved");
+  const f = proposal.outline?.purposefulFeatures || {},
+    area = polygonArea(proposal.outline?.points);
+  if (
+    proposal.outline?.closed !== true ||
+    !Number.isFinite(area) ||
+    area > (proposal.maximumAreaMm2 || 0) ||
+    f.conductorWindowNotch?.widthMm < 14 ||
+    f.conductorWindowNotch?.depthMm < 16 ||
+    f.primarySecondaryBarrierSlotRequired !== true ||
+    f.creepageKeepoutRequired !== true
+  )
+    errors.push("current-sensor-purposeful-outline-invalid");
+  for (const key of proposal.evidenceRequired || [])
+    if (proposal.semanticEvidence?.[key] !== true)
+      errors.push(
+        `current-sensor-evidence-${key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}-missing`,
+      );
+  return {
+    schema: "boardforge.phase2c.current-sensor-remediation-gate.v1",
+    ok: errors.length === 0,
+    errors,
+    areaMm2: area,
+    maximumAreaMm2: proposal.maximumAreaMm2,
+    blockedRefs: blockedParts.map((x) => x.ref),
+  };
+}
+function polygonArea(points = []) {
+  if (points.length < 3) return NaN;
+  let s = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i],
+      b = points[(i + 1) % points.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}
