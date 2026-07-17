@@ -42,6 +42,48 @@ const entry = (mpn, symbol, footprint, pinMap, packageName, options = {}) => {
 };
 
 export const approvedProductionAssets = Object.freeze({
+  "PCA9685PW,118": entry(
+    "PCA9685PW,118",
+    "Driver_LED:PCA9685PW",
+    "Package_SO:TSSOP-28_4.4x9.7mm_P0.65mm",
+    {
+      1: "PCA_A0",
+      2: "PCA_A1",
+      3: "PCA_A2",
+      4: "PCA_A3",
+      5: "PCA_A4",
+      6: "SERVO_PWM1",
+      7: "SERVO_PWM2",
+      8: "SERVO_PWM3",
+      9: "SERVO_PWM4",
+      10: "SERVO_PWM5",
+      11: "SERVO_PWM6",
+      12: "SERVO_PWM7",
+      13: "SERVO_PWM8",
+      14: "GND",
+      15: "UNUSED_PWM9",
+      16: "UNUSED_PWM10",
+      17: "UNUSED_PWM11",
+      18: "UNUSED_PWM12",
+      19: "UNUSED_PWM13",
+      20: "UNUSED_PWM14",
+      21: "UNUSED_PWM15",
+      22: "UNUSED_PWM16",
+      23: "PWM_OE_N",
+      24: "PCA_A5",
+      25: "PCA_EXTCLK",
+      26: "I2C_SCL",
+      27: "I2C_SDA",
+      28: "3V3",
+    },
+    "SOT361-1 TSSOP-28",
+    {
+      sourceEvidence: "https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf",
+      applicationLimitations: [
+        "PCA9685 outputs are logic PWM signals, not servo power outputs; servo rail current, pulse validity and OE fail-safe behavior require board-level evidence.",
+      ],
+    },
+  ),
   ULN2803CDWR: entry(
     "ULN2803CDWR",
     "BoardForge:ULN2803C",

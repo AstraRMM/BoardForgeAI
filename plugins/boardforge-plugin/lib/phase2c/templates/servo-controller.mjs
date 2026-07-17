@@ -1,34 +1,322 @@
-import {approvedAssetFor} from '../../components/approved-production-assets.mjs'
-export const SERVO_CONTROLLER_PROPOSAL_SCHEMA='boardforge.phase2c.production-proposal.servo-controller.v1'
-const approved=(ref,role,mpn,quantity=1)=>({ref,role,mpn,quantity,status:approvedAssetFor(mpn)?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'})
-const blocked=(ref,role,requirement,quantity=1)=>({ref,role,mpn:null,quantity,status:'BLOCKED_MISSING_APPROVED_EXACT_ASSET',requirement})
+import { approvedAssetFor } from "../../components/approved-production-assets.mjs";
+export const SERVO_CONTROLLER_PROPOSAL_SCHEMA =
+  "boardforge.phase2c.production-proposal.servo-controller.v1";
+const approved = (ref, role, mpn, quantity = 1) => ({
+  ref,
+  role,
+  mpn,
+  quantity,
+  status: approvedAssetFor(mpn)
+    ? "APPROVED_EXACT_ASSET"
+    : "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+});
+const blocked = (ref, role, requirement, quantity = 1) => ({
+  ref,
+  role,
+  mpn: null,
+  quantity,
+  status: "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+  requirement,
+});
 
-export const servoControllerProductionProposal=Object.freeze({
-  schema:SERVO_CONTROLLER_PROPOSAL_SCHEMA,status:'BLOCKED_PENDING_SERVO_POWER_FAILSAFE_AND_EXACT_ASSETS',boardId:'015_SERVO_CONTROLLER',channelCount:8,maximumAreaMm2:3000,
-  architecture:'Eight-channel deterministic pulse generation with separately protected high-current servo power distribution',
-  servoEnvelope:null,railEnvelope:null,pulseEnvelope:null,
-  primarySources:{pwm:'https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf',pwmEvaluation:'https://www.nxp.com/docs/en/user-guide/UM10574.pdf',powerProtection:'https://www.ti.com/product/TPS25200'},
-  candidates:[
-    {role:'MULTICHANNEL_PWM_GENERATOR',family:'PCA9685',exactMpn:'PCA9685PW,118',status:'PRIMARY_SOURCE_AND_INSTALLED_KICAD_IDENTITY_VERIFIED',verified:{channels:16,resolutionBits:12,frequencyRangeHz:[24,1526],supplyV:[2.3,5.5],outputEnable:true,package:'SOT361-1 TSSOP-28',symbol:'Driver_LED:PCA9685PW',footprint:'Package_SO:TSSOP-28_4.4x9.7mm_P0.65mm',pinMap:{1:'A0',2:'A1',3:'A2',4:'A3',5:'A4',6:'LED0',7:'LED1',8:'LED2',9:'LED3',10:'LED4',11:'LED5',12:'LED6',13:'LED7',14:'VSS',15:'LED8',16:'LED9',17:'LED10',18:'LED11',19:'LED12',20:'LED13',21:'LED14',22:'LED15',23:'OE',24:'A5',25:'EXTCLK',26:'SCL',27:'SDA',28:'VDD'}}},
-    {role:'SERVO_RAIL_EFUSE',family:'TPS25200',exactMpn:null,status:'FUNCTION_VERIFIED_CURRENT_CAPABILITY_MAY_BE_INSUFFICIENT',verified:{operatingV:[2.5,6.5],continuousCurrentA:2.6,adjustableCurrentLimitA:[.085,2.9],softStart:true,reverseBlockingWhenDisabled:true}},
+export const servoControllerProductionProposal = Object.freeze({
+  schema: SERVO_CONTROLLER_PROPOSAL_SCHEMA,
+  status: "BLOCKED_PENDING_SERVO_POWER_FAILSAFE_AND_EXACT_ASSETS",
+  boardId: "015_SERVO_CONTROLLER",
+  channelCount: 8,
+  maximumAreaMm2: 3000,
+  architecture:
+    "Eight-channel deterministic pulse generation with separately protected high-current servo power distribution",
+  servoEnvelope: null,
+  railEnvelope: null,
+  pulseEnvelope: null,
+  quantifiedBlockers: {
+    channelCount: 8,
+    aggregateStallCurrentFormula:
+      "8 * declared per-servo stall current when all channels may stall simultaneously",
+    aggregateStallCurrentA: null,
+    tps25200ContinuousCurrentA: 2.6,
+    tps25200MaximumAdjustableLimitA: 2.9,
+    equalShareContinuousCurrentA: 0.325,
+    equalShareMaximumLimitA: 0.3625,
+    railFaultEnergyJ: null,
+    allowedRailDroopV: null,
+    bulkCapacitanceFormula:
+      "C >= aggregate transient current * transient duration / allowed rail droop",
+    requiredBulkCapacitanceF: null,
+    connectorCurrentPerContactA: null,
+    copperTemperatureRiseC: null,
+    pulseMinimumUs: null,
+    pulseMaximumUs: null,
+    pulseFrameRateHz: null,
+    failsafeMaximumPulsePersistenceMs: null,
+    conclusion:
+      "The manifest fixes eight channels but provides no servo population, stall current/duration, simultaneous-stall policy, rail source/fault energy, pulse protocol, connector or thermal envelope; no eFuse, bulk capacitor, connector, shunt or signal network can be exact-approved from channel count alone.",
+  },
+  primarySources: {
+    pwm: "https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf",
+    pwmEvaluation: "https://www.nxp.com/docs/en/user-guide/UM10574.pdf",
+    powerProtection: "https://www.ti.com/product/TPS25200",
+  },
+  candidates: [
+    {
+      role: "MULTICHANNEL_PWM_GENERATOR",
+      family: "PCA9685",
+      exactMpn: "PCA9685PW,118",
+      status: "PRIMARY_SOURCE_AND_INSTALLED_KICAD_IDENTITY_VERIFIED",
+      verified: {
+        channels: 16,
+        resolutionBits: 12,
+        frequencyRangeHz: [24, 1526],
+        supplyV: [2.3, 5.5],
+        outputEnable: true,
+        package: "SOT361-1 TSSOP-28",
+        symbol: "Driver_LED:PCA9685PW",
+        footprint: "Package_SO:TSSOP-28_4.4x9.7mm_P0.65mm",
+        pinMap: {
+          1: "A0",
+          2: "A1",
+          3: "A2",
+          4: "A3",
+          5: "A4",
+          6: "LED0",
+          7: "LED1",
+          8: "LED2",
+          9: "LED3",
+          10: "LED4",
+          11: "LED5",
+          12: "LED6",
+          13: "LED7",
+          14: "VSS",
+          15: "LED8",
+          16: "LED9",
+          17: "LED10",
+          18: "LED11",
+          19: "LED12",
+          20: "LED13",
+          21: "LED14",
+          22: "LED15",
+          23: "OE",
+          24: "A5",
+          25: "EXTCLK",
+          26: "SCL",
+          27: "SDA",
+          28: "VDD",
+        },
+      },
+    },
+    {
+      role: "SERVO_RAIL_EFUSE",
+      family: "TPS25200",
+      exactMpn: null,
+      status: "FUNCTION_VERIFIED_CURRENT_CAPABILITY_MAY_BE_INSUFFICIENT",
+      verified: {
+        operatingV: [2.5, 6.5],
+        continuousCurrentA: 2.6,
+        adjustableCurrentLimitA: [0.085, 2.9],
+        softStart: true,
+        reverseBlockingWhenDisabled: true,
+      },
+    },
   ],
-  outline:{family:'connector-comb-servo-controller',closed:true,maximumAreaMm2:3000,points:connectorCombOutline(),purposefulFeatures:{servoConnectorTeeth:8,powerEntryEdge:'left',logicServiceEdge:'right',mountingHoleCount:4,highCurrentSpineRequired:true}},
-  bom:[
-    blocked('U_PWM','multi-channel servo PWM controller','PCA9685PW,118 symbol, footprint and pin map are exact; address straps, I2C pull-ups, clock policy and OE failsafe still depend on controller and pulse requirements.'),
-    blocked('J_SERVO','servo channel keyed signal power ground connectors','Freeze exact 3-position connector MPN and pin order from servo current, wire gauge, polarity keying and mating-cycle requirements.',8),
-    blocked('R_SIG','servo signal series protection per channel','Freeze exact resistor/ESD MPNs and values from cable length, interface voltage and edge-rate requirements.',8),
-    blocked('U_RAIL','servo rail eFuse current limiter soft-start and fault monitor','Select exact device(s) from aggregate simultaneous-stall current; TPS25200 is not assumed sufficient.'),
-    approved('F1','servo power entry fuse candidate','3413.0218.22'),approved('Q_REV','servo rail reverse-polarity switch candidate','SI7465DP-T1-GE3'),approved('D_TVS','servo rail surge TVS candidate','SMAJ5.0A'),approved('C_BULK','servo rail bulk decoupling candidate','UWT1A151MCL1GS'),approved('C_LOCAL','distributed servo rail local bypass','CC0603KRX7R7BB105',8),
-    blocked('U_MON','servo supply voltage and current monitoring','Freeze exact monitor, shunt and ADC range with fault thresholds and telemetry path.'),
-    blocked('U_LOGIC','servo command controller and hardware failsafe','Freeze exact controller/programming path; OE must default high (outputs disabled) through reset, brownout, communication loss and rail fault.'),
-    blocked('J_PWR','high-current servo rail power entry connector','Freeze exact connector MPN from aggregate current, wire gauge, hot-plug and touch-safety requirements.'),
+  outline: {
+    family: "connector-comb-servo-controller",
+    closed: true,
+    maximumAreaMm2: 3000,
+    points: connectorCombOutline(),
+    purposefulFeatures: {
+      servoConnectorTeeth: 8,
+      powerEntryEdge: "left",
+      logicServiceEdge: "right",
+      mountingHoleCount: 4,
+      highCurrentSpineRequired: true,
+    },
+  },
+  bom: [
+    approved("U_PWM", "multi-channel servo PWM controller", "PCA9685PW,118"),
+    blocked(
+      "J_SERVO",
+      "servo channel keyed signal power ground connectors",
+      "Freeze exact 3-position connector MPN and pin order from servo current, wire gauge, polarity keying and mating-cycle requirements.",
+      8,
+    ),
+    blocked(
+      "R_SIG",
+      "servo signal series protection per channel",
+      "Freeze exact resistor/ESD MPNs and values from cable length, interface voltage and edge-rate requirements.",
+      8,
+    ),
+    blocked(
+      "U_RAIL",
+      "servo rail eFuse current limiter soft-start and fault monitor",
+      "Select exact device(s) from aggregate simultaneous-stall current; TPS25200 is not assumed sufficient.",
+    ),
+    approved("F1", "servo power entry fuse candidate", "3413.0218.22"),
+    approved(
+      "Q_REV",
+      "servo rail reverse-polarity switch candidate",
+      "SI7465DP-T1-GE3",
+    ),
+    approved("D_TVS", "servo rail surge TVS candidate", "SMAJ5.0A"),
+    approved(
+      "C_BULK",
+      "servo rail bulk decoupling candidate",
+      "UWT1A151MCL1GS",
+    ),
+    approved(
+      "C_LOCAL",
+      "distributed servo rail local bypass",
+      "CC0603KRX7R7BB105",
+      8,
+    ),
+    blocked(
+      "U_MON",
+      "servo supply voltage and current monitoring",
+      "Freeze exact monitor, shunt and ADC range with fault thresholds and telemetry path.",
+    ),
+    blocked(
+      "U_LOGIC",
+      "servo command controller and hardware failsafe",
+      "Freeze exact controller/programming path; OE must default high (outputs disabled) through reset, brownout, communication loss and rail fault.",
+    ),
+    blocked(
+      "J_PWR",
+      "high-current servo rail power entry connector",
+      "Freeze exact connector MPN from aggregate current, wire gauge, hot-plug and touch-safety requirements.",
+    ),
   ],
-  requiredTopology:['One signal/power/ground connector per declared servo channel with keyed polarity and connector-current evidence.','Servo rail is separate from logic power, with fuse/eFuse, reverse-polarity protection, soft start, fault reporting, TVS, bulk capacitance, and distributed local bypass.','PWM output-enable has a hardware default that suppresses pulses during reset, configuration, brownout, communication loss, and fault.','I2C pull-ups, address straps, controller decoupling, and optional external-clock behavior are explicitly defined.','Power planes, connectors, copper, and thermal protection are rated for worst-case simultaneous stall current, not average motion current.'],
-  mandatoryUnresolved:['Declare exact servo MPN or voltage range, per-servo idle/moving/stall current and stall duration, number allowed to stall simultaneously, pulse width/rate, connector family/polarity, cable length, hot-plug case, ambient and duty cycle.','Declare rail source range/current limit/impedance, fault energy, allowed droop/ground bounce, logic brownout threshold and whether logic remains powered after servo-rail faults.','Select an eFuse/load-switch architecture from calculated aggregate current; TPS25200 may be far too small for the eight-servo rail.','Freeze controller, I2C pull-ups/address straps, clock policy and a hardware OE pull-up/interlock that disables outputs throughout reset, brownout, communication loss and rail fault.','Calculate bulk capacitance, TVS, fuse/current limit, monitor shunt/range, connector/copper temperature rise and per-channel signal protection from the declared population.'],
-  evidenceRequired:['exactAssetsApproved','channelCountVerified','pulseRangeFrequencyVerified','connectorPolarityCurrentVerified','simultaneousStallCurrentVerified','powerEntryProtectionVerified','railCurrentLimitSoftStartVerified','bulkTransientGroundBounceVerified','distributedBypassVerified','signalProtectionVerified','failsafeOutputsVerified','supplyMonitoringFaultThresholdsVerified','copperConnectorThermalVerified','productionLoadFaultTestVerified'],
-})
+  requiredTopology: [
+    "One signal/power/ground connector per declared servo channel with keyed polarity and connector-current evidence.",
+    "Servo rail is separate from logic power, with fuse/eFuse, reverse-polarity protection, soft start, fault reporting, TVS, bulk capacitance, and distributed local bypass.",
+    "PWM output-enable has a hardware default that suppresses pulses during reset, configuration, brownout, communication loss, and fault.",
+    "I2C pull-ups, address straps, controller decoupling, and optional external-clock behavior are explicitly defined.",
+    "Power planes, connectors, copper, and thermal protection are rated for worst-case simultaneous stall current, not average motion current.",
+  ],
+  mandatoryUnresolved: [
+    "Declare exact servo MPN or voltage range, per-servo idle/moving/stall current and stall duration, number allowed to stall simultaneously, pulse width/rate, connector family/polarity, cable length, hot-plug case, ambient and duty cycle.",
+    "Declare rail source range/current limit/impedance, fault energy, allowed droop/ground bounce, logic brownout threshold and whether logic remains powered after servo-rail faults.",
+    "Select an eFuse/load-switch architecture from calculated aggregate current; TPS25200 may be far too small for the eight-servo rail.",
+    "Freeze controller, I2C pull-ups/address straps, clock policy and a hardware OE pull-up/interlock that disables outputs throughout reset, brownout, communication loss and rail fault.",
+    "Calculate bulk capacitance, TVS, fuse/current limit, monitor shunt/range, connector/copper temperature rise and per-channel signal protection from the declared population.",
+  ],
+  evidenceRequired: [
+    "exactAssetsApproved",
+    "channelCountVerified",
+    "pulseRangeFrequencyVerified",
+    "connectorPolarityCurrentVerified",
+    "simultaneousStallCurrentVerified",
+    "powerEntryProtectionVerified",
+    "railCurrentLimitSoftStartVerified",
+    "bulkTransientGroundBounceVerified",
+    "distributedBypassVerified",
+    "signalProtectionVerified",
+    "failsafeOutputsVerified",
+    "supplyMonitoringFaultThresholdsVerified",
+    "copperConnectorThermalVerified",
+    "productionLoadFaultTestVerified",
+  ],
+});
 
-export function validateServoControllerArchitecture(definition={}){const roles=(definition.bom||[]).map(x=>String(x.role||'').toLowerCase()),has=p=>roles.some(x=>p.test(x)),errors=[];if(!has(/servo.*pwm|multi.*channel.*pwm/))errors.push('servo-pwm-generator-missing');if(!has(/servo.*connector/))errors.push('servo-connectors-missing');if(!has(/servo.*(efuse|power.*protection)|protected.*servo.*rail/))errors.push('servo-rail-protection-missing');if(!has(/servo.*bulk|bulk.*servo/))errors.push('servo-rail-bulk-capacitance-missing');if(!has(/output.*enable.*default|pulse.*suppress.*reset|servo.*safe.*reset/))errors.push('servo-reset-pulse-suppression-missing');if(!has(/i2c.*pull/))errors.push('servo-controller-i2c-pullups-missing');const e=definition.semanticEvidence?.servoController||{};if(!(e.channelCount>0))errors.push('servo-channel-count-undeclared');if(!e.powerEnvelopeVerified)errors.push('servo-power-envelope-unverified');if(!e.connectorCurrentVerified)errors.push('servo-connector-current-unverified');if(!e.simultaneousStallVerified)errors.push('servo-simultaneous-stall-unverified');return{ok:errors.length===0,errors}}
-export function validateServoControllerProductionProposal(proposal={}){const errors=[],bom=Array.isArray(proposal.bom)?proposal.bom:[],count=p=>bom.filter(x=>p.test(String(x.role||'').toLowerCase())).reduce((n,x)=>n+(x.quantity||1),0),channels=proposal.channelCount||0;if(channels<4)errors.push('servo-channel-count-undeclared');if(!proposal.servoEnvelope)errors.push('servo-electrical-envelope-undeclared');if(!proposal.railEnvelope)errors.push('servo-rail-envelope-undeclared');if(!proposal.pulseEnvelope)errors.push('servo-pulse-envelope-undeclared');if(count(/servo channel.*connectors/)!==channels)errors.push('servo-channel-connectors-missing');for(const[p,c]of[[/servo pwm controller/,'servo-pwm-controller-missing'],[/power entry fuse/,'servo-power-entry-protection-missing'],[/rail bulk decoupling/,'servo-rail-bulk-decoupling-missing'],[/rail efuse current limiter/,'servo-rail-current-capability-missing'],[/signal series protection/,'servo-signal-protection-missing'],[/hardware failsafe/,'servo-failsafe-output-state-missing'],[/supply voltage and current monitoring/,'servo-supply-monitoring-missing']])if(!bom.some(x=>p.test(String(x.role||'').toLowerCase())))errors.push(c);const blockedParts=bom.filter(x=>x.status!=='APPROVED_EXACT_ASSET');if(blockedParts.length)errors.push('servo-exact-assets-unapproved');const f=proposal.outline?.purposefulFeatures||{},area=polygonArea(proposal.outline?.points);if(proposal.outline?.closed!==true||!Number.isFinite(area)||area>(proposal.maximumAreaMm2||0)||f.servoConnectorTeeth!==channels||f.highCurrentSpineRequired!==true)errors.push('servo-purposeful-outline-invalid');for(const key of proposal.evidenceRequired||[])if(proposal.semanticEvidence?.[key]!==true)errors.push(`servo-evidence-${key.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}-missing`);return{schema:'boardforge.phase2c.servo-controller-remediation-gate.v1',ok:errors.length===0,errors,areaMm2:area,maximumAreaMm2:proposal.maximumAreaMm2,blockedRefs:blockedParts.map(x=>x.ref)}}
-function connectorCombOutline(){const p=[[0,0],[72,0],[72,40]];for(let i=0;i<8;i++){const right=70-i*8;p.push([right,40],[right,38],[right-4,38],[right-4,40])}p.push([0,40]);return p}
-function polygonArea(points=[]){if(points.length<3)return NaN;let s=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2}
+export function validateServoControllerArchitecture(definition = {}) {
+  const roles = (definition.bom || []).map((x) =>
+      String(x.role || "").toLowerCase(),
+    ),
+    has = (p) => roles.some((x) => p.test(x)),
+    errors = [];
+  if (!has(/servo.*pwm|multi.*channel.*pwm/))
+    errors.push("servo-pwm-generator-missing");
+  if (!has(/servo.*connector/)) errors.push("servo-connectors-missing");
+  if (!has(/servo.*(efuse|power.*protection)|protected.*servo.*rail/))
+    errors.push("servo-rail-protection-missing");
+  if (!has(/servo.*bulk|bulk.*servo/))
+    errors.push("servo-rail-bulk-capacitance-missing");
+  if (!has(/output.*enable.*default|pulse.*suppress.*reset|servo.*safe.*reset/))
+    errors.push("servo-reset-pulse-suppression-missing");
+  if (!has(/i2c.*pull/)) errors.push("servo-controller-i2c-pullups-missing");
+  const e = definition.semanticEvidence?.servoController || {};
+  if (!(e.channelCount > 0)) errors.push("servo-channel-count-undeclared");
+  if (!e.powerEnvelopeVerified) errors.push("servo-power-envelope-unverified");
+  if (!e.connectorCurrentVerified)
+    errors.push("servo-connector-current-unverified");
+  if (!e.simultaneousStallVerified)
+    errors.push("servo-simultaneous-stall-unverified");
+  return { ok: errors.length === 0, errors };
+}
+export function validateServoControllerProductionProposal(proposal = {}) {
+  const errors = [],
+    bom = Array.isArray(proposal.bom) ? proposal.bom : [],
+    count = (p) =>
+      bom
+        .filter((x) => p.test(String(x.role || "").toLowerCase()))
+        .reduce((n, x) => n + (x.quantity || 1), 0),
+    channels = proposal.channelCount || 0;
+  if (channels < 4) errors.push("servo-channel-count-undeclared");
+  if (!proposal.servoEnvelope)
+    errors.push("servo-electrical-envelope-undeclared");
+  if (!proposal.railEnvelope) errors.push("servo-rail-envelope-undeclared");
+  if (!proposal.pulseEnvelope) errors.push("servo-pulse-envelope-undeclared");
+  if (count(/servo channel.*connectors/) !== channels)
+    errors.push("servo-channel-connectors-missing");
+  for (const [p, c] of [
+    [/servo pwm controller/, "servo-pwm-controller-missing"],
+    [/power entry fuse/, "servo-power-entry-protection-missing"],
+    [/rail bulk decoupling/, "servo-rail-bulk-decoupling-missing"],
+    [/rail efuse current limiter/, "servo-rail-current-capability-missing"],
+    [/signal series protection/, "servo-signal-protection-missing"],
+    [/hardware failsafe/, "servo-failsafe-output-state-missing"],
+    [
+      /supply voltage and current monitoring/,
+      "servo-supply-monitoring-missing",
+    ],
+  ])
+    if (!bom.some((x) => p.test(String(x.role || "").toLowerCase())))
+      errors.push(c);
+  const blockedParts = bom.filter((x) => x.status !== "APPROVED_EXACT_ASSET");
+  if (blockedParts.length) errors.push("servo-exact-assets-unapproved");
+  const f = proposal.outline?.purposefulFeatures || {},
+    area = polygonArea(proposal.outline?.points);
+  if (
+    proposal.outline?.closed !== true ||
+    !Number.isFinite(area) ||
+    area > (proposal.maximumAreaMm2 || 0) ||
+    f.servoConnectorTeeth !== channels ||
+    f.highCurrentSpineRequired !== true
+  )
+    errors.push("servo-purposeful-outline-invalid");
+  for (const key of proposal.evidenceRequired || [])
+    if (proposal.semanticEvidence?.[key] !== true)
+      errors.push(
+        `servo-evidence-${key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}-missing`,
+      );
+  return {
+    schema: "boardforge.phase2c.servo-controller-remediation-gate.v1",
+    ok: errors.length === 0,
+    errors,
+    areaMm2: area,
+    maximumAreaMm2: proposal.maximumAreaMm2,
+    blockedRefs: blockedParts.map((x) => x.ref),
+  };
+}
+function connectorCombOutline() {
+  const p = [
+    [0, 0],
+    [72, 0],
+    [72, 40],
+  ];
+  for (let i = 0; i < 8; i++) {
+    const right = 70 - i * 8;
+    p.push([right, 40], [right, 38], [right - 4, 38], [right - 4, 40]);
+  }
+  p.push([0, 40]);
+  return p;
+}
+function polygonArea(points = []) {
+  if (points.length < 3) return NaN;
+  let s = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i],
+      b = points[(i + 1) % points.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}
