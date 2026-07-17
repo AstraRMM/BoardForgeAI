@@ -15,6 +15,7 @@ import {
 import { approvedAssetFor } from "../lib/components/approved-production-assets.mjs";
 import { resolveAuthoritativeKiCadSymbol } from "../lib/components/authoritative-kicad-symbol-resolver.mjs";
 import { resolveAuthoritativeKiCadFootprint } from "../lib/components/authoritative-kicad-footprint-resolver.mjs";
+import { placeAuthoritativeProductionFootprints } from "../lib/placement/authoritative-production-placement.mjs";
 import {
   categorySchematicPinMaps,
   ethernetControllerCategoryPcbEvidence,
@@ -185,6 +186,24 @@ test("Board010 complete exact BOM resolves to authoritative installed symbol and
       `${row.ref} footprint`,
     );
   }
+});
+
+test("Board010's exact MagJack is not silently packed into the current notched envelope", () => {
+  const definition = catalogDefinition(manifest.boards[9], 9);
+  const magJack = approvedAssetFor("7499010121A");
+  assert.throws(
+    () => placeAuthoritativeProductionFootprints({
+      components: [{
+        ref: "J1",
+        value: "7499010121A",
+        mpn: "7499010121A",
+        footprint: magJack.footprint.libId,
+      }],
+      outline: definition.outlinePoints,
+      topology: "ethernet-controller",
+    }),
+    (error) => error?.code === "AUTHORITATIVE_PRODUCTION_PLACEMENT_BLOCKED" && error?.ref === "J1",
+  );
 });
 
 const completeImplementation = () => {
