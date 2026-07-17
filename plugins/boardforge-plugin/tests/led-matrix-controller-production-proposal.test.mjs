@@ -1,9 +1,100 @@
-import test from 'node:test'
-import assert from 'node:assert/strict'
-import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
-import {catalogDefinition,validateCatalogSemanticTopology} from '../lib/phase2c/catalog-production-engine.mjs'
-import {ledMatrixControllerProductionProposal,validateLedMatrixControllerProductionProposal} from '../lib/phase2c/templates/led-matrix-controller.mjs'
-test('Board030 CAN controller shell cannot pass as a matrix controller',()=>{const g=validateCatalogSemanticTopology(catalogDefinition(manifest.boards[29],29));assert.equal(g.ok,false);for(const c of ['led-matrix-panel-interface-missing','led-matrix-row-column-drive-missing','led-matrix-timing-controller-missing','led-matrix-power-input-protection-missing','led-matrix-bulk-decoupling-missing','led-matrix-current-capacity-evidence-missing','led-matrix-safe-blanking-missing','led-matrix-thermal-monitoring-missing','led-matrix-signal-integrity-evidence-missing','led-matrix-category-mapped-to-can-controller'])assert.ok(g.errors.includes(c),c)})
-test('Board030 reuses power timing assets and blocks unresolved drive chain',()=>{const p=ledMatrixControllerProductionProposal,g=validateLedMatrixControllerProductionProposal(p);assert.equal(g.ok,false);assert.ok(g.errors.includes('led-matrix-exact-assets-unapproved'));assert.deepEqual(g.blockedRefs,['U_COL','Q_ROW','U_LEVEL','R_ISET','J_PANEL','J_PWR','P_PWR','U_TEMP','P_BLANK','P_SI','P_TEST']);for(const r of ['U_CTRL','Y_TIME','F_IN','D_IN','C_BULK','C_DEC'])assert.equal(p.bom.find(x=>x.ref===r).status,'APPROVED_EXACT_ASSET',r)})
-test('Board030 requires load thermal EMI flicker and failsafe evidence',()=>{for(const k of ['scanSetupHoldSkewVerified','refreshPwmCameraFlickerVerified','blankingGhostingVerified','worstPatternCurrentAmpacityVerified','decouplingRailTransientVerified','copperConnectorThermalVerified','emiGroundBounceSignalIntegrityVerified','startupResetWatchdogDefaultOffVerified','productionWorstPatternTimingThermalLoadTestVerified'])assert.ok(ledMatrixControllerProductionProposal.evidenceRequired.includes(k),k)})
-test('Board030 panel and thermal wing outline stays inside 2650 mm2',()=>{const p=ledMatrixControllerProductionProposal,g=validateLedMatrixControllerProductionProposal(p);assert.equal(g.areaMm2,2600);assert.ok(g.areaMm2<=2650);assert.equal(p.outline.purposefulFeatures.highCurrentAndLogicEdgesOpposed,true);assert.equal(p.outline.purposefulFeatures.airflowCorridorRequired,true)})
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import {
+  catalogDefinition,
+  validateCatalogSemanticTopology,
+} from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  ledMatrixControllerProductionProposal,
+  validateLedMatrixControllerProductionProposal,
+} from "../lib/phase2c/templates/led-matrix-controller.mjs";
+test("Board030 CAN controller shell cannot pass as a matrix controller", () => {
+  const g = validateCatalogSemanticTopology(
+    catalogDefinition(manifest.boards[29], 29),
+  );
+  assert.equal(g.ok, false);
+  for (const c of [
+    "led-matrix-panel-interface-missing",
+    "led-matrix-row-column-drive-missing",
+    "led-matrix-timing-controller-missing",
+    "led-matrix-power-input-protection-missing",
+    "led-matrix-bulk-decoupling-missing",
+    "led-matrix-current-capacity-evidence-missing",
+    "led-matrix-safe-blanking-missing",
+    "led-matrix-thermal-monitoring-missing",
+    "led-matrix-signal-integrity-evidence-missing",
+    "led-matrix-category-mapped-to-can-controller",
+  ])
+    assert.ok(g.errors.includes(c), c);
+});
+test("Board030 reuses power timing assets and blocks unresolved drive chain", () => {
+  const p = ledMatrixControllerProductionProposal,
+    g = validateLedMatrixControllerProductionProposal(p);
+  assert.equal(g.ok, false);
+  assert.ok(g.errors.includes("led-matrix-exact-assets-unapproved"));
+  assert.deepEqual(g.blockedRefs, [
+    "U_CTRL",
+    "Y_TIME",
+    "F_IN",
+    "D_IN",
+    "C_BULK",
+    "U_COL",
+    "Q_ROW",
+    "U_LEVEL",
+    "R_ISET",
+    "J_PANEL",
+    "J_PWR",
+    "P_PWR",
+    "U_TEMP",
+    "P_BLANK",
+    "P_SI",
+    "P_TEST",
+  ]);
+  assert.equal(
+    p.bom.find((x) => x.ref === "C_DEC").status,
+    "APPROVED_EXACT_ASSET",
+  );
+  for (const code of [
+    "led-matrix-panel-envelope-undeclared",
+    "led-matrix-optical-envelope-undeclared",
+    "led-matrix-timing-envelope-undeclared",
+    "led-matrix-drive-envelope-undeclared",
+    "led-matrix-power-envelope-undeclared",
+    "led-matrix-thermal-envelope-undeclared",
+    "led-matrix-control-envelope-undeclared",
+    "led-matrix-mechanical-envelope-undeclared",
+    "led-matrix-emc-envelope-undeclared",
+    "led-matrix-safety-envelope-undeclared",
+    "led-matrix-service-envelope-undeclared",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board030 requires load thermal EMI flicker and failsafe evidence", () => {
+  for (const k of [
+    "scanSetupHoldSkewVerified",
+    "refreshPwmCameraFlickerVerified",
+    "blankingGhostingVerified",
+    "worstPatternCurrentAmpacityVerified",
+    "decouplingRailTransientVerified",
+    "copperConnectorThermalVerified",
+    "emiGroundBounceSignalIntegrityVerified",
+    "startupResetWatchdogDefaultOffVerified",
+    "productionWorstPatternTimingThermalLoadTestVerified",
+  ])
+    assert.ok(
+      ledMatrixControllerProductionProposal.evidenceRequired.includes(k),
+      k,
+    );
+});
+test("Board030 panel and thermal wing outline stays inside 2650 mm2", () => {
+  const p = ledMatrixControllerProductionProposal,
+    g = validateLedMatrixControllerProductionProposal(p);
+  assert.equal(g.areaMm2, 2600);
+  assert.ok(g.areaMm2 <= 2650);
+  assert.equal(
+    p.outline.purposefulFeatures.highCurrentAndLogicEdgesOpposed,
+    true,
+  );
+  assert.equal(p.outline.purposefulFeatures.airflowCorridorRequired, true);
+});

@@ -1,4 +1,82 @@
-import test from'node:test';import assert from'node:assert/strict';import manifest from'../../../fixtures/phase2c/50-board-challenge-manifest.mjs';import{catalogDefinition}from'../lib/phase2c/catalog-production-engine.mjs';import{ledMatrixControllerProductionProposal as p,validateLedMatrixControllerArchitecture as validate}from'../lib/phase2c/templates/led-matrix-controller.mjs'
-test('Board030 requests high-current matrix control but catalog maps a CAN controller',()=>{const b=manifest.boards[29],d=catalogDefinition(b,29),g=validate(d);assert.equal(b.id,'030_LED_MATRIX_CONTROLLER');assert.equal(b.purpose,'high-current matrix control');assert.equal(d.topologyId,'stm32-controller');assert.equal(g.ok,false);for(const code of['led-matrix-timing-controller-missing','led-matrix-row-drive-missing','led-matrix-column-or-panel-drive-missing','led-matrix-panel-connector-missing','led-matrix-power-input-missing','led-matrix-overcurrent-protection-missing','led-matrix-bulk-decoupling-missing','led-matrix-thermal-monitoring-missing','led-matrix-interface-unverified','led-matrix-current-power-budget-unverified'])assert.ok(g.errors.includes(code),code)})
-test('Board030 proposal preserves raw-matrix and panel-interface alternatives',()=>{assert.match(p.status,/BLOCKED/);assert.deepEqual(p.candidates.map(x=>x.family),['TI TLC5957','TI SN74AHCT245']);assert.ok(p.candidates.every(x=>x.exactMpn===null));assert.equal(p.candidates[1].verified.notAnLedCurrentDriver,true);assert.ok(p.mandatoryUnresolved.some(x=>/raw matrix or panel model\/revision/i.test(x)));assert.ok(p.requiredTopology.some(x=>/folklore connector pinout/i.test(x)))})
-test('LED matrix gate accepts explicit drive timing power and panel evidence',()=>{const roles=['matrix timing controller','row driver','constant current sink','panel matrix connector','high-current panel power input','panel fuse overcurrent protection','panel bulk capacitor decoupling','temperature sense thermal monitor'];const d={bom:roles.map((role,i)=>({ref:`X${i}`,role})),semanticEvidence:{ledMatrixController:{matrixInterfaceVerified:true,driveTopologyVerified:true,refreshBlankingTimingVerified:true,currentPowerBudgetVerified:true,thermalVerified:true,signalEmcVerified:true,faultSafetyVerified:true,mechanicalPanelVerified:true,productionLoadTestVerified:true}}};assert.deepEqual(validate(d),{ok:true,errors:[]})})
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import { catalogDefinition } from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  ledMatrixControllerProductionProposal as p,
+  validateLedMatrixControllerArchitecture as validate,
+} from "../lib/phase2c/templates/led-matrix-controller.mjs";
+test("Board030 requests high-current matrix control but catalog maps a CAN controller", () => {
+  const b = manifest.boards[29],
+    d = catalogDefinition(b, 29),
+    g = validate(d);
+  assert.equal(b.id, "030_LED_MATRIX_CONTROLLER");
+  assert.equal(b.purpose, "high-current matrix control");
+  assert.equal(d.topologyId, "stm32-controller");
+  assert.equal(g.ok, false);
+  for (const code of [
+    "led-matrix-timing-controller-missing",
+    "led-matrix-row-drive-missing",
+    "led-matrix-column-or-panel-drive-missing",
+    "led-matrix-panel-connector-missing",
+    "led-matrix-power-input-missing",
+    "led-matrix-overcurrent-protection-missing",
+    "led-matrix-bulk-decoupling-missing",
+    "led-matrix-thermal-monitoring-missing",
+    "led-matrix-interface-unverified",
+    "led-matrix-current-power-budget-unverified",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board030 proposal preserves raw-matrix and panel-interface alternatives", () => {
+  assert.match(p.status, /BLOCKED/);
+  assert.deepEqual(
+    p.candidates.map((x) => x.family),
+    [
+      "TI TLC5957",
+      "TI SN74AHCT245",
+      "ST STM32G0",
+      "Abracon ABM8",
+      "Schurter 3413 / Littelfuse SMAJ",
+    ],
+  );
+  assert.ok(p.candidates.every((x) => x.exactMpn === null));
+  assert.equal(p.candidates[1].verified.notAnLedCurrentDriver, true);
+  assert.ok(
+    p.mandatoryUnresolved.some((x) =>
+      /raw matrix or panel model\/revision/i.test(x),
+    ),
+  );
+  assert.ok(
+    p.requiredTopology.some((x) => /folklore connector pinout/i.test(x)),
+  );
+});
+test("LED matrix gate accepts explicit drive timing power and panel evidence", () => {
+  const roles = [
+    "matrix timing controller",
+    "row driver",
+    "constant current sink",
+    "panel matrix connector",
+    "high-current panel power input",
+    "panel fuse overcurrent protection",
+    "panel bulk capacitor decoupling",
+    "temperature sense thermal monitor",
+  ];
+  const d = {
+    bom: roles.map((role, i) => ({ ref: `X${i}`, role })),
+    semanticEvidence: {
+      ledMatrixController: {
+        matrixInterfaceVerified: true,
+        driveTopologyVerified: true,
+        refreshBlankingTimingVerified: true,
+        currentPowerBudgetVerified: true,
+        thermalVerified: true,
+        signalEmcVerified: true,
+        faultSafetyVerified: true,
+        mechanicalPanelVerified: true,
+        productionLoadTestVerified: true,
+      },
+    },
+  };
+  assert.deepEqual(validate(d), { ok: true, errors: [] });
+});
