@@ -188,22 +188,22 @@ test("Board010 complete exact BOM resolves to authoritative installed symbol and
   }
 });
 
-test("Board010's exact MagJack is not silently packed into the current notched envelope", () => {
+test("Board010's exact MagJack has a legal authoritative placement in the revised notched envelope", () => {
   const definition = catalogDefinition(manifest.boards[9], 9);
   const magJack = approvedAssetFor("7499010121A");
-  assert.throws(
-    () => placeAuthoritativeProductionFootprints({
+  const placement = placeAuthoritativeProductionFootprints({
       components: [{
         ref: "J1",
         value: "7499010121A",
         mpn: "7499010121A",
         footprint: magJack.footprint.libId,
       }],
-      outline: definition.outlinePoints,
+      outline: definition.outlinePoints.map(([x, y]) => ({ x, y })),
       topology: "ethernet-controller",
-    }),
-    (error) => error?.code === "AUTHORITATIVE_PRODUCTION_PLACEMENT_BLOCKED" && error?.ref === "J1",
-  );
+    });
+  assert.deepEqual(placement.placements[0].at, {
+    x: 23.5, y: 14, rotation: 0, side: "front",
+  });
 });
 
 const completeImplementation = () => {

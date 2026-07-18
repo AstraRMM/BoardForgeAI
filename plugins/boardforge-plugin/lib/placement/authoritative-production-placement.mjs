@@ -35,6 +35,12 @@ const INDUSTRIAL_IO_TOPOLOGY = {
 }
 const BOARD007_CAN_TOPOLOGY=board007PlacementPreferences()
 const BOARD008_CAN_GATEWAY_TOPOLOGY=board008PlacementPreferences()
+const ETHERNET_CONTROLLER_TOPOLOGY = {
+  // 7499010121A is an asymmetric through-hole MagJack.  Its authoritative
+  // courtyard has been checked against the Board010 top-right notch; leaving
+  // this placement to the generic centre search lets it overlap that notch.
+  J1: { x: 23.5, y: 14, rotation: 0, side: 'front' },
+}
 
 export const COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY = Object.freeze({
   mpn: 'ESP32-S3-WROOM-1U-N8R8',
@@ -63,9 +69,9 @@ export function placeAuthoritativeProductionFootprints({
   resolved.sort((a, b) => area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
   const placed = []
   for (const component of resolved) {
-    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'industrial-io-production' ? INDUSTRIAL_IO_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : null
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'industrial-io-production' ? INDUSTRIAL_IO_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : topology === 'ethernet-controller' ? ETHERNET_CONTROLLER_TOPOLOGY[component.ref] : null
     const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
-    const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : candidateTransforms(preference, bounds)
+    const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : basePreference?.x !== undefined ? [basePreference] : candidateTransforms(preference, bounds)
     let winner = null
     for (const transform of candidates) {
       const occupancy = transformRect(component.localOccupancy, transform)

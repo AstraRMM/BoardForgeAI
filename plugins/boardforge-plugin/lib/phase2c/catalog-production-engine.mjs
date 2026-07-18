@@ -54,7 +54,7 @@ function poeSensorBase(){return{id:'poe-sensor',name:'Exact PoE Ethernet sensor 
   {ref:'C_POE',value:'150u',mpn:'UWT1A151MCL1GS',role:'isolated PoE output bulk decoupling'},
 ],semanticEvidence:{poeSensor:{exactAssetsApproved:true,magjackPinMapVerified:true,poeClassificationPowerVerified:false,isolationSafetyVerified:false,ethernetSignalIntegrityVerified:false,powerThermalVerified:false,sensorEnvironmentVerified:false,productionTestVerified:false}}}}
 
-function ethernetControllerBase(){return{id:'ethernet-controller',name:'Exact RP2040 W5500 Ethernet controller projection',widthMm:42,heightMm:28,layers:4,bom:ethernetControllerProductionProposal.bom.map(row=>({ref:row.ref,value:row.mpn,mpn:row.mpn,role:row.role})),semanticEvidence:{ethernetController:{exactAssetsApproved:true,pmodeBits:[1,1,1],pmodeMeaning:'All capable, auto-negotiation enabled',pmodeSource:'W5500 datasheet v1.1.0',resetMinimumLowUs:500,boardLevelEvidenceVerified:false}}}}
+function ethernetControllerBase(){return{id:'ethernet-controller',name:'Exact RP2040 W5500 Ethernet controller projection',widthMm:44,heightMm:28,layers:4,bom:ethernetControllerProductionProposal.bom.map(row=>({ref:row.ref,value:row.mpn,mpn:row.mpn,role:row.role})),semanticEvidence:{ethernetController:{exactAssetsApproved:true,pmodeBits:[1,1,1],pmodeMeaning:'All capable, auto-negotiation enabled',pmodeSource:'W5500 datasheet v1.1.0',resetMinimumLowUs:500,boardLevelEvidenceVerified:false}}}}
 
 function singleCanControllerBase(base){
   const copy=structuredClone(base)

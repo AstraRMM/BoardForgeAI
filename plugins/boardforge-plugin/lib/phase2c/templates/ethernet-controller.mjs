@@ -54,16 +54,17 @@ export const ethernetControllerProductionProposal = Object.freeze({
     maximumAreaMm2: 1250,
     points: [
       [0, 0],
-      [42, 0],
-      [42, 8],
-      [39, 8],
-      [39, 20],
-      [42, 20],
-      [42, 28],
+      // The approved 7499010121A courtyard is 26.38 x 18.55 mm.  Keep the
+      // notch above its edge-mounted body instead of cutting through it.
+      [41, 0],
+      [41, 8],
+      [44, 8],
+      [44, 28],
       [0, 28],
+      [0, 14],
     ],
     purposefulFeatures: {
-      rj45Notch: { edge: "right", depthMm: 3, spanMm: 12 },
+      rj45Notch: { edge: "top-right", depthMm: 3, spanMm: 8 },
       mountingHoleCount: 4,
     },
   },
