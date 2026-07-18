@@ -130,7 +130,10 @@ function signalClass(tree){return /^I2C_/.test(tree.net)?0:/^QSPI_/.test(tree.ne
 function routeClass(tree){if(/^(3V3|5V|VBUS|VUSB)$/i.test(tree.net))return 0;const dense={I2C_SDA:1,UART_TX:2,UART_RX:3,I2C_SCL:4}[tree.net];return dense??(/^GND$/i.test(tree.net)?99:/^QSPI_/.test(tree.net)?6:7)}
 function preferredLayers(tree,layers){
   const preferred=/^GND$/i.test(tree.net)?'In1.Cu':/^(3V3|5V|VBUS)$/i.test(tree.net)?'In2.Cu':null
-  if(preferred&&layers.includes(preferred))return[preferred]
+  // A preferred inner power layer is a first choice, not a one-layer prison.
+  // If its physical lanes are full, a candidate may use another validated
+  // copper layer; KiCad DRC remains the final acceptance authority.
+  if(preferred&&layers.includes(preferred))return[preferred,...layers.filter(layer=>layer!==preferred)]
   const densePreferred={I2C_SCL:'In1.Cu',I2C_SDA:'In2.Cu',UART_TX:'B.Cu',UART_RX:'In1.Cu'}[tree.net]
   if(densePreferred&&layers.includes(densePreferred))return[densePreferred,...layers.filter(layer=>layer!==densePreferred)]
   const outer=layers.filter(x=>x==='F.Cu'||x==='B.Cu'),inner=layers.filter(x=>!outer.includes(x))

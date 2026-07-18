@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
-import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
+import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 test('authoritative ground planes use solid pad connections for dense MCU ground pads',()=>{const source=readFileSync(new URL('../lib/routing/authoritative-pad-routing.mjs',import.meta.url),'utf8');assert.match(source,/connect_pads yes \(clearance \$\{fmt\(clearance\)\}\)/)})
@@ -90,6 +90,25 @@ test('Board007 admits CAN_TX only for its exact reserved logic corridor topology
   assert.ok(result.tracks.some(t=>t.net==='I2C_SDA'&&t.layer==='In2.Cu'&&t.start.y===4&&t.end.y===4))
   const moved=structuredClone(input);moved.nets[0].endpoints[0].x+=.1
   assert.deepEqual(board007CanControllerFixedCorridors(moved,{}).completedNets,[])
+})
+test('Board006 isolates its eight-terminal 3V3 tree on the exact inner-layer backbone',()=>{
+  const p=(ref,pad,x,y)=>({ref,pad,x,y}),input={bounds:{minX:1,minY:1,maxX:61,maxY:37},nets:[
+    {net:'3V3',endpoints:[p('C3','1',37.045,9.5),p('U2','9',37.997,20.25),p('U2','24',44.91,23.163),p('U2','36',46.322,16.25),p('U2','48',39.41,14.838),p('J2','2',55.8,21.54),p('U1','2',26.515,17.413),p('U1','3',26.515,18.047)]},
+    {net:'FIELD_24V_RAW',endpoints:[p('J1','1',6.2,19),p('F1','1',12.24,6.84)]},{net:'FIELD_24V_FUSED',endpoints:[p('F1','2',15.04,6.84),p('D1','1',11.49,30.4)]},
+    {net:'FIELD_IN1',endpoints:[p('J1','3',11.28,19),p('R1','1',14,12.16)]},{net:'FIELD_IN2',endpoints:[p('J1','4',13.82,19),p('R2','1',14,25.84)]},
+    {net:'FIELD_SENSE1',endpoints:[p('R1','2',17,12.16),p('C1','1',19.065,15.96),p('U1','16',31.765,16.777)]},{net:'FIELD_IN1_RSENSE',endpoints:[p('R3','1',23.355,12.16),p('U1','15',31.765,17.413)]},
+    {net:'FIELD_SENSE2',endpoints:[p('R2','2',17,25.84),p('C2','1',19.065,22.04),p('U1','11',31.765,19.953)]},{net:'FIELD_IN2_RSENSE',endpoints:[p('R4','1',23.355,25.84),p('U1','10',31.765,20.587)]},
+    {net:'FIELD_GND',endpoints:[p('D1','2',15.79,30.4),p('C2','2',20.615,22.04),p('R3','2',25.005,12.16),p('R4','2',25.005,25.84),p('C1','2',20.615,15.96),p('J1','2',8.74,19),p('U1','9',31.765,21.223),p('U1','14',31.765,18.047)]},
+    {net:'LOGIC_IN1',endpoints:[p('U1','4',26.515,18.683),p('U2','32',46.322,18.25),p('J2','3',55.8,24.08)]},{net:'LOGIC_IN2',endpoints:[p('U1','5',26.515,19.317),p('U2','33',46.322,17.75),p('J2','4',55.8,26.62)]},
+  ]}
+  const routed=industrialIoFixedCorridors(input,{trackWidth:.2,viaDiameter:.5})
+  assert.ok(routed.completedNets.includes('3V3'))
+  assert.ok(routed.completedNets.includes('LOGIC_IN2'))
+  assert.equal(routed.vias.filter(v=>v.net==='3V3').length,6)
+  assert.ok(routed.tracks.some(t=>t.layer==='In1.Cu'&&t.start.y===34&&t.end.y===34))
+  assert.ok(routed.tracks.some(t=>t.layer==='F.Cu'&&t.start.x===26.515&&t.end.x===25.1))
+  const moved=structuredClone(input);moved.nets[0].endpoints[0].x+=.1
+  assert.deepEqual(industrialIoFixedCorridors(moved,{}).completedNets,[])
 })
 test('STM32 authoritative corridor proof activates only for its exact endpoint topology',()=>{
   const endpoints=(items)=>items.map(value=>{const [ref,pad]=value.split(':');return{ref,pad,x:ref==='U2'&&pad==='1'?27.275:0,y:ref==='U2'&&pad==='1'?8.345:0}})

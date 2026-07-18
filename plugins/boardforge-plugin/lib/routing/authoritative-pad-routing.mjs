@@ -69,7 +69,10 @@ export async function regenerateAuthoritativePadRoutesCandidate({pcbFile,candida
   // Topology-fixed corridors occupy distinct assigned layers and are appended
   // candidate-only after generic channel search; KiCad DRC remains the final
   // collision authority before any promotion.
-  const occupancy=baseOccupancy
+  // A topology-gated fixed corridor is real copper, not merely a post-process
+  // decoration. Reserve it while the general router assigns the remaining
+  // nets so the candidate cannot silently cross an already-proven rail.
+  const occupancy={tracks:[...baseOccupancy.tracks,...fixed.tracks],vias:[...baseOccupancy.vias,...fixed.vias]}
   const routeNets=input.nets.filter(tree=>!fixed.completedNets.includes(tree.net)&&!(fixed.partialNets||[]).includes(tree.net)&&!/^GND$/i.test(tree.net)&&(!selected||selected.has(tree.net)))
   const spanY=input.bounds.maxY-input.bounds.minY
   const groundPlanes=includeGroundPlanes&&(!selected||selected.has('GND'))&&input.nets.some(tree=>/^GND$/i.test(tree.net))&&!fixed.completedNets.some(net=>/^GND$/i.test(net))
@@ -189,8 +192,64 @@ export function authoritativeFixedCorridors(input,options){
   if(board007.completedNets.length)return board007
   const board008=board008DualCanGatewayFixedCorridors(input,options)
   if(board008.completedNets.length)return board008
+  const industrialIo=industrialIoFixedCorridors(input,options)
+  if(industrialIo.completedNets.length)return industrialIo
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/** Board006 has an eight-terminal 3V3 tree spanning the isolated input IC,
+ * MCU and service header.  The generic channel router rightly rejects that
+ * fanout in the narrow central corridor, so reserve the validated In1.Cu
+ * power backbone before routing the lower-fanout field and logic nets. */
+export function industrialIoFixedCorridors(input,{trackWidth=.2,viaDiameter=.5}={}){
+  const byNet=new Map(input.nets.map(row=>[row.net,row.endpoints]))
+  const at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const rail=[at('3V3','C3','1'),at('3V3','U2','9'),at('3V3','U2','24'),at('3V3','U2','36'),at('3V3','U2','48'),at('3V3','J2','2'),at('3V3','U1','2'),at('3V3','U1','3')]
+  const expected=[[37.045,9.5],[37.997,20.25],[44.91,23.163],[46.322,16.25],[39.41,14.838],[55.8,21.54],[26.515,17.413],[26.515,18.047]]
+  if(input.bounds?.maxX!==61||input.bounds?.maxY!==37||rail.length!==8||!rail.every(Boolean)||!rail.every((p,index)=>near(p.x,expected[index][0])&&near(p.y,expected[index][1])))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const signature=[
+    ['FIELD_24V_RAW','J1','1',6.2,19],['FIELD_24V_RAW','F1','1',12.24,6.84],['FIELD_24V_FUSED','F1','2',15.04,6.84],['FIELD_24V_FUSED','D1','1',11.49,30.4],
+    ['FIELD_IN1','J1','3',11.28,19],['FIELD_IN1','R1','1',14,12.16],['FIELD_IN2','J1','4',13.82,19],['FIELD_IN2','R2','1',14,25.84],
+    ['FIELD_SENSE1','R1','2',17,12.16],['FIELD_SENSE1','C1','1',19.065,15.96],['FIELD_SENSE1','U1','16',31.765,16.777],['FIELD_IN1_RSENSE','R3','1',23.355,12.16],['FIELD_IN1_RSENSE','U1','15',31.765,17.413],
+    ['FIELD_SENSE2','R2','2',17,25.84],['FIELD_SENSE2','C2','1',19.065,22.04],['FIELD_SENSE2','U1','11',31.765,19.953],['FIELD_IN2_RSENSE','R4','1',23.355,25.84],['FIELD_IN2_RSENSE','U1','10',31.765,20.587],
+    ['FIELD_GND','D1','2',15.79,30.4],['FIELD_GND','C2','2',20.615,22.04],['FIELD_GND','R3','2',25.005,12.16],['FIELD_GND','R4','2',25.005,25.84],['FIELD_GND','C1','2',20.615,15.96],['FIELD_GND','J1','2',8.74,19],['FIELD_GND','U1','9',31.765,21.223],['FIELD_GND','U1','14',31.765,18.047],
+    ['LOGIC_IN1','U1','4',26.515,18.683],['LOGIC_IN1','U2','32',46.322,18.25],['LOGIC_IN1','J2','3',55.8,24.08],['LOGIC_IN2','U1','5',26.515,19.317],['LOGIC_IN2','U2','33',46.322,17.75],['LOGIC_IN2','J2','4',55.8,26.62],
+  ]
+  if(!signature.every(([net,ref,pad,x,y])=>{const point=at(net,ref,pad);return point&&near(point.x,x)&&near(point.y,y)}))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const tracks=[],vias=[],add=(layer,a,b)=>tracks.push({net:'3V3',layer,start:a,end:b,width:trackWidth}),via=p=>vias.push({net:'3V3',x:p.x,y:p.y,diameter:viaDiameter,drill:.3})
+  const [c3,u2vddA,u2vddB,u2vddC,u2vddD,j2,u1vddA,u1vddB]=rail
+  // The two adjacent ISO1212 supply pads share a single, deliberately offset
+  // dogbone.  Individual vias would violate the canonical pad pitch.
+  const isoDog={x:24.7,y:17.73},trunkY=34,j2Turn={x:52,y:j2.y}
+  for(const [pad,dog] of [[c3,{x:35.95,y:c3.y}],[u2vddA,{x:36.7,y:u2vddA.y}],[u2vddB,{x:u2vddB.x,y:24.45}],[u2vddC,{x:47.55,y:u2vddC.y}],[u2vddD,{x:u2vddD.x,y:13.55}]]){
+    add('F.Cu',pad,dog);via(dog);add('In1.Cu',dog,{x:dog.x,y:trunkY})
+  }
+  add('F.Cu',u1vddA,{x:25.1,y:u1vddA.y});add('F.Cu',{x:25.1,y:u1vddA.y},isoDog)
+  add('F.Cu',u1vddB,{x:25.1,y:u1vddB.y});add('F.Cu',{x:25.1,y:u1vddB.y},isoDog)
+  via(isoDog);add('In1.Cu',isoDog,{x:isoDog.x,y:trunkY})
+  // J2:2 is plated through-hole, so it legitimately joins the inner backbone
+  // without a surface transition.  Its dogleg stays left of the J2 pad column.
+  add('In1.Cu',j2,j2Turn);add('In1.Cu',j2Turn,{x:j2Turn.x,y:trunkY})
+  add('In1.Cu',{x:isoDog.x,y:trunkY},{x:j2Turn.x,y:trunkY})
+  const join=(net,layer,points)=>{for(let i=1;i<points.length;i++)tracks.push({net,layer,start:points[i-1],end:points[i],width:trackWidth})}
+  const dog=(net,point,escape)=>{join(net,'F.Cu',[point,escape]);vias.push({net,x:escape.x,y:escape.y,diameter:viaDiameter,drill:.3})}
+  // Field entry remains on In2.Cu, away from the logic-side 3V3 backbone.
+  {const j=at('FIELD_24V_RAW','J1','1'),f=at('FIELD_24V_RAW','F1','1'),d={x:10.8,y:f.y};dog('FIELD_24V_RAW',f,d);join('FIELD_24V_RAW','In2.Cu',[d,{x:5.1,y:d.y},{x:5.1,y:j.y},j])}
+  {const f=at('FIELD_24V_FUSED','F1','2'),d1=at('FIELD_24V_FUSED','D1','1'),a={x:15.8,y:f.y},b={x:13.1,y:28.55};dog('FIELD_24V_FUSED',f,a);dog('FIELD_24V_FUSED',d1,b);join('FIELD_24V_FUSED','In2.Cu',[a,{x:17,y:a.y},{x:17,y:b.y},b])}
+  {const j=at('FIELD_IN1','J1','3'),r=at('FIELD_IN1','R1','1');join('FIELD_IN1','F.Cu',[j,{x:j.x,y:r.y},r])}
+  {const j=at('FIELD_IN2','J1','4'),r=at('FIELD_IN2','R2','1');join('FIELD_IN2','F.Cu',[j,{x:j.x,y:r.y},r])}
+  const three=(net,a,ad,b,bd,c,cd,laneY,layer='In2.Cu')=>{dog(net,a,ad);dog(net,b,bd);dog(net,c,cd);join(net,layer,[ad,{x:ad.x,y:laneY},{x:cd.x,y:laneY},cd]);join(net,layer,[bd,{x:bd.x,y:laneY}])}
+  three('FIELD_SENSE1',at('FIELD_SENSE1','R1','2'),{x:18.3,y:12.16},at('FIELD_SENSE1','C1','1'),{x:19.065,y:14.6},at('FIELD_SENSE1','U1','16'),{x:36.8,y:16.777},8)
+  {const r=at('FIELD_IN1_RSENSE','R3','1'),u=at('FIELD_IN1_RSENSE','U1','15'),a={x:r.x,y:10.8},b={x:34.15,y:u.y};dog('FIELD_IN1_RSENSE',r,a);dog('FIELD_IN1_RSENSE',u,b);join('FIELD_IN1_RSENSE','In2.Cu',[a,{x:a.x,y:10.5},{x:b.x,y:10.5},b])}
+  three('FIELD_SENSE2',at('FIELD_SENSE2','R2','2'),{x:18.3,y:25.84},at('FIELD_SENSE2','C2','1'),{x:19.065,y:23.4},at('FIELD_SENSE2','U1','11'),{x:33.15,y:19.953},29.4,'B.Cu')
+  {const r=at('FIELD_IN2_RSENSE','R4','1'),u=at('FIELD_IN2_RSENSE','U1','10'),a={x:34.15,y:27.1},b={x:34.15,y:u.y};join('FIELD_IN2_RSENSE','F.Cu',[r,{x:r.x,y:a.y},a]);vias.push({net:'FIELD_IN2_RSENSE',x:a.x,y:a.y,diameter:viaDiameter,drill:.3});dog('FIELD_IN2_RSENSE',u,b);join('FIELD_IN2_RSENSE','B.Cu',[a,{x:a.x,y:31.5},b])}
+  {const d=at('FIELD_GND','D1','2'),c2=at('FIELD_GND','C2','2'),r3=at('FIELD_GND','R3','2'),r4=at('FIELD_GND','R4','2'),c1=at('FIELD_GND','C1','2'),j=at('FIELD_GND','J1','2'),u9=at('FIELD_GND','U1','9'),u14=at('FIELD_GND','U1','14'),laneY=32.2,dogs=[[d,{x:17.2,y:laneY}],[c2,{x:21.9,y:c2.y}],[r3,{x:27.2,y:r3.y}],[r4,{x:27.2,y:r4.y}],[c1,{x:21.9,y:c1.y}],[u9,{x:35.15,y:u9.y}],[u14,{x:35.15,y:u14.y}]];for(const[p,q]of dogs){dog('FIELD_GND',p,q);join('FIELD_GND','In2.Cu',[q,{x:q.x,y:laneY}])}join('FIELD_GND','In2.Cu',[j,{x:j.x,y:laneY},{x:35.15,y:laneY}])}
+  // Logic-channel corridors use separate layers so their QFP escapes do not
+  // consume the same lane while crossing the service-header column.
+  {const u1=at('LOGIC_IN1','U1','4'),u2=at('LOGIC_IN1','U2','32'),j=at('LOGIC_IN1','J2','3'),a={x:23.5,y:u1.y},b={x:49.5,y:19.2},laneY=a.y;dog('LOGIC_IN1',u1,a);join('LOGIC_IN1','F.Cu',[u2,{x:48,y:u2.y},b]);vias.push({net:'LOGIC_IN1',x:b.x,y:b.y,diameter:viaDiameter,drill:.3});join('LOGIC_IN1','B.Cu',[a,{x:b.x,y:laneY},b,{x:53,y:b.y},{x:53,y:j.y},j])}
+  {const u1=at('LOGIC_IN2','U1','5'),u2=at('LOGIC_IN2','U2','33'),j=at('LOGIC_IN2','J2','4'),leftTopX=17.9,leftBottomX=18.9,turnY=24.5,headerX=52,bottomY=34;join('LOGIC_IN2','F.Cu',[u1,{x:leftTopX,y:u1.y},{x:leftTopX,y:turnY},{x:leftBottomX,y:turnY},{x:leftBottomX,y:bottomY},{x:headerX,y:bottomY},{x:headerX,y:j.y},j]);join('LOGIC_IN2','F.Cu',[u2,{x:headerX,y:u2.y},{x:headerX,y:j.y}])}
+  return{tracks,vias,completedNets:['3V3','FIELD_24V_RAW','FIELD_24V_FUSED','FIELD_IN1','FIELD_IN2','FIELD_SENSE1','FIELD_IN1_RSENSE','FIELD_SENSE2','FIELD_IN2_RSENSE','FIELD_GND','LOGIC_IN1','LOGIC_IN2'],partialNets:[]}
 }
 
 /** Exact power backbones for the six-layer Board008 dual-CAN gateway. */
