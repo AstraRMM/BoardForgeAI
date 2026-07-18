@@ -435,7 +435,18 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
     return { status: 'ALREADY_PRESENT', pcbFile: files.pcb }
   }
   const evidence = evidenceFactory(board)
+  // Category writers are versioned independently from their templates. Never
+  // emit an obsolete footprint merely because an older evidence writer still
+  // contains it; reference parity will separately fail closed until every new
+  // BOM ref has a real placed footprint.
+  const expectedBoardRefs = new Set((board.bom || []).map((row) => row.ref))
+  evidence.footprints = evidence.footprints.filter((footprint) => expectedBoardRefs.has(footprint.ref))
   const projected = new Map(categorySchematicComponents(board).map(row => [row.ref, row]))
+  let nextNetNumber = Math.max(0, ...evidence.nets.map((net) => net.number)) + 1
+  for (const component of projected.values()) for (const netName of Object.values(component.pinMap || {})) {
+    if (!evidence.nets.some((net) => net.name === netName)) evidence.nets.push({ number: nextNetNumber++, name: netName })
+  }
+  const placement=authoritativeProductionPlacement(board,projected)
   evidence.footprints = evidence.footprints.map((footprint) => {
     const component=projected.get(footprint.ref)
     const pads=footprint.pads.map(p=>{
@@ -447,8 +458,20 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
     for(const [pad,canonical] of Object.entries(padAliases))if(authoritativeNets[canonical])authoritativeNets[pad]=authoritativeNets[canonical]
     return { ...footprint, mpn:board.bom.find(row=>row.ref===footprint.ref)?.mpn||null, value:component?.value||footprint.value, footprint:component?.footprint||footprint.footprint, pads, authoritativeNets, ...componentLink(board.id, footprint.ref) }
   })
+  if(placement){
+    const existingRefs=new Set(evidence.footprints.map((footprint)=>footprint.ref))
+    for(const placed of placement.placements){
+      if(existingRefs.has(placed.ref))continue
+      const component=projected.get(placed.ref)
+      if(!component)throw new Error(`Authoritative placement has no schematic component for ${placed.ref}`)
+      const authoritativeNets=Object.fromEntries(Object.entries(component.pinMap||{}).map(([pin,netName])=>{
+        const net=evidence.nets.find((row)=>row.name===netName)
+        return [String(pin),{netName,netNumber:net?.number||0}]
+      }))
+      evidence.footprints.push({ref:placed.ref,mpn:component.mpn,value:component.value,footprint:component.footprint,at:{x:placed.at.x,y:placed.at.y},rotation:placed.at.rotation,body:{w:placed.bodyOccupancy.width,h:placed.bodyOccupancy.height},pads:[],authoritativeNets,authoritativePlacement:placed,...componentLink(board.id,placed.ref)})
+    }
+  }
   addAuthoritativeUnconnectedPadNets(evidence,board)
-  const placement=authoritativeProductionPlacement(board,projected)
   if(placement){
     const byRef=new Map(placement.placements.map(row=>[row.ref,row]))
     evidence.footprints=evidence.footprints.map(footprint=>{
@@ -943,6 +966,11 @@ function industrialIoProductionCategoryPcbEvidence(){
   ],evidence={nets,footprints,segments:[],vias:[]}
   const route=(netName,layer,pts)=>{for(let i=1;i<pts.length;i++)evidence.segments.push(segment(...pts[i-1],...pts[i],.28,n[netName],layer));if(layer!=='F.Cu'){const pads=new Set(footprints.flatMap(f=>f.pads.filter(p=>p.netName===netName).map(p=>`${f.at.x+p.x},${f.at.y+p.y}`)));for(const p of pts)if(pads.has(`${p[0]},${p[1]}`))evidence.vias.push(via(...p,n[netName]))}}
   route('FIELD_24V_RAW','F.Cu',[[10,13],[15,11]]);route('FIELD_24V_FUSED','F.Cu',[[19,11],[22,11],[22,17],[14,19],[22,17],[26,17]]);route('FIELD_IN1','F.Cu',[[10,21],[7,21],[7,5],[26,5],[26,15]]);route('FIELD_IN2','F.Cu',[[10,25],[12,29],[23,29],[23,21],[26,21]]);route('FIELD_GND','In2.Cu',[[10,17],[20,19],[26,23],[46.4,31]]);route('LOGIC_IN1','F.Cu',[[32,15],[41,17],[43,7],[59,7],[59,17.8],[57,17.8]]);route('LOGIC_IN2','B.Cu',[[32,21],[49,17],[57,20.2]]);route('3V3','F.Cu',[[32,17],[35,25],[41,19],[47,27],[53,27],[53,15.4],[57,15.4]]);route('GND','B.Cu',[[32,23],[41,21],[43.6,31],[57,25],[60,25],[60,13],[57,13]]);route('5V','F.Cu',[[41,31],[39,34],[55,34],[55,22.6],[57,22.6]])
+  // Board006 v1 tracks were tied to an obsolete four-pin isolator map. The
+  // authoritative router must start from the current ISO1212 endpoints;
+  // carrying these coordinates forward would create real shorts, not proof.
+  evidence.segments=[]
+  evidence.vias=[]
   return evidence
 }
 

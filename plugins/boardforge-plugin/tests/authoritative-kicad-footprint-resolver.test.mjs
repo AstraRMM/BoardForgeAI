@@ -24,6 +24,12 @@ test('0603 passive pads expose transform-ready local geometry',()=>{
   assert.notDeepEqual(placed.map(p=>[p.x,p.y]),fp.pads.map(p=>[p.x,p.y]))
 })
 
+test('installed MiniMELF footprint resolves under the KiCad 10 package identifier',()=>{
+  const fp=resolveAuthoritativeKiCadFootprint('Resistor_SMD:R_MiniMELF_MMA-0204')
+  assert.match(fp.sourceFile,/Resistor_SMD\.pretty[\\/]R_MiniMELF_MMA-0204\.kicad_mod$/)
+  assert.deepEqual(fp.padNumbers,['1','2'])
+})
+
 test('resolver rejects traversal and missing installed footprints explicitly',()=>{
   assert.throws(()=>resolveAuthoritativeKiCadFootprint('../Bad:Thing'),/library is invalid/)
   assert.throws(()=>resolveAuthoritativeKiCadFootprint('NoSuchLibrary:NoSuchFootprint'),/not installed/)

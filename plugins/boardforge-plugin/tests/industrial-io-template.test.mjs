@@ -47,7 +47,7 @@ test("Board006's generated net projection follows the ISO1212 application circui
 });
 
 test("Board006's source-correct input passives have real two-terminal KiCad projections", () => {
-  for (const [mpn, footprint] of Object.entries({ MMA02040C1001FB300: "Resistor_SMD:R_MELF_0204", "RC0603FR-07562RL": "Resistor_SMD:R_0603_1608Metric", CC0603KRX7R9BB103: "Capacitor_SMD:C_0603_1608Metric", CC0603ZRY5V8BB104: "Capacitor_SMD:C_0603_1608Metric" })) {
+  for (const [mpn, footprint] of Object.entries({ MMA02040C1001FB300: "Resistor_SMD:R_MiniMELF_MMA-0204", "RC0603FR-07562RL": "Resistor_SMD:R_0603_1608Metric", CC0603KRX7R9BB103: "Capacitor_SMD:C_0603_1608Metric", CC0603ZRY5V8BB104: "Capacitor_SMD:C_0603_1608Metric" })) {
     const asset = approvedAssetFor(mpn, { requiredPinCount: 2 });
     assert.equal(asset?.symbol.pins.length, 2, mpn);
     assert.equal(asset?.footprint.libId, footprint, mpn);

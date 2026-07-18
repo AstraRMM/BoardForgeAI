@@ -501,7 +501,7 @@ export const approvedProductionAssets = Object.freeze({
   MMA02040C1001FB300: entry(
     "MMA02040C1001FB300",
     "Device:R",
-    "Resistor_SMD:R_MELF_0204",
+    "Resistor_SMD:R_MiniMELF_MMA-0204",
     { 1: "FIELD_INPUT", 2: "FIELD_SENSE" },
     "MELF 0204",
     {
