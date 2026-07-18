@@ -15,6 +15,14 @@ test('schema rejects alias mappings whose logical nets disagree',()=>{
   assert.match(result.errors[0],/logical-net-mismatch/)
 })
 
+test('intentional footprint-only switch contact is explicit rather than invented as a schematic pin',()=>{
+  const asset=approvedAssetFor('PJ-102AH')
+  assert.equal(asset.pinSchema.valid,true,asset.pinSchema.errors.join('\n'))
+  assert.deepEqual(asset.symbolPinMap,{1:'VIN_RAW',2:'GND'})
+  assert.deepEqual(asset.footprintPadMap,{1:'VIN_RAW',3:'GND'})
+  assert.deepEqual(asset.unconnectedFootprintPads,['2'])
+})
+
 test('TPS25750 source policy permits only the TI-mandated VBUS_IN-to-VBUS physical short',()=>{
   const valid={policy:TPS25750_SOURCE_VBUS_EQUIVALENCE,mpn:'TPS25750DRJKR',pad:'23',canonicalNet:'VBUS_IN',physicalNet:'VBUS'}
   assert.equal(productionPhysicalNetEquivalent(valid),true)

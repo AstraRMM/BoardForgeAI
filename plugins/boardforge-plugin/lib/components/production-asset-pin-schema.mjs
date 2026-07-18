@@ -8,18 +8,19 @@ export function productionPhysicalNetEquivalent({policy,mpn,pad,canonicalNet,phy
   return policy===TPS25750_SOURCE_VBUS_EQUIVALENCE && mpn==='TPS25750DRJKR' && pad==='23' && canonicalNet==='VBUS_IN' && physicalNet==='VBUS'
 }
 
-export function productionAssetPinSchema({symbolPinMap,footprintPadMap,pinAliases={},footprintPadAliases={}}={}){
+export function productionAssetPinSchema({symbolPinMap,footprintPadMap,pinAliases={},footprintPadAliases={},unconnectedFootprintPads=[]}={}){
   if(!symbolPinMap||!footprintPadMap)throw new TypeError('symbolPinMap and footprintPadMap are required')
   const aliases=Object.fromEntries(Object.entries(pinAliases).map(([pin,pad])=>[String(pin),String(pad)]))
   const padAliases=Object.fromEntries(Object.entries(footprintPadAliases).map(([pad,canonicalPad])=>[String(pad),String(canonicalPad)]))
+  const intentionallyUnconnectedPads=new Set(unconnectedFootprintPads.map(String))
   const errors=[]
   for(const pin of Object.keys(symbolPinMap)){
     const pad=aliases[pin]||pin
     if(!(pad in footprintPadMap))errors.push(`symbol-pin-without-footprint-pad:${pin}->${pad}`)
     else if(symbolPinMap[pin]!==footprintPadMap[pad])errors.push(`logical-net-mismatch:${pin}->${pad}:${symbolPinMap[pin]}!=${footprintPadMap[pad]}`)
   }
-  for(const pad of Object.keys(footprintPadMap)){const canonicalPad=padAliases[pad]||pad;if(!Object.keys(symbolPinMap).some(pin=>(aliases[pin]||pin)===canonicalPad))errors.push(`footprint-pad-without-symbol-pin:${pad}`);else if(footprintPadMap[pad]!==footprintPadMap[canonicalPad])errors.push(`footprint-pad-alias-logical-net-mismatch:${pad}->${canonicalPad}`)}
-  return {schema:PRODUCTION_ASSET_PIN_SCHEMA,symbolPinMap:Object.freeze({...symbolPinMap}),footprintPadMap:Object.freeze({...footprintPadMap}),pinAliases:Object.freeze(aliases),footprintPadAliases:Object.freeze(padAliases),valid:errors.length===0,errors}
+  for(const pad of Object.keys(footprintPadMap)){if(intentionallyUnconnectedPads.has(pad))errors.push(`unconnected-footprint-pad-must-not-have-logical-net:${pad}`);const canonicalPad=padAliases[pad]||pad;if(!Object.keys(symbolPinMap).some(pin=>(aliases[pin]||pin)===canonicalPad))errors.push(`footprint-pad-without-symbol-pin:${pad}`);else if(footprintPadMap[pad]!==footprintPadMap[canonicalPad])errors.push(`footprint-pad-alias-logical-net-mismatch:${pad}->${canonicalPad}`)}
+  return {schema:PRODUCTION_ASSET_PIN_SCHEMA,symbolPinMap:Object.freeze({...symbolPinMap}),footprintPadMap:Object.freeze({...footprintPadMap}),pinAliases:Object.freeze(aliases),footprintPadAliases:Object.freeze(padAliases),unconnectedFootprintPads:Object.freeze([...intentionallyUnconnectedPads]),valid:errors.length===0,errors}
 }
 
 export function planEsp32TopologyPowerFlags({usbPowerNet='VUSB',groundNet='GND',usbSourceRef='J1'}={}){

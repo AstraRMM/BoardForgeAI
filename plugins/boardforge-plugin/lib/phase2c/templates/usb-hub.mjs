@@ -276,6 +276,103 @@ export const usbHubProductionProposal = Object.freeze({
       integratedPowerSwitch: true,
     },
   },
+  // This is an autonomous training *candidate*, not manufacturing evidence.
+  // It explicitly separates a coherent, source-attributed power selection from
+  // live provider, physical-layout, thermal, and KiCad acceptance evidence.
+  trainingPowerArchitecture: Object.freeze({
+    schema: "boardforge.phase2c.usb-hub-training-power-candidate.v1",
+    status:
+      "CANDIDATE_PENDING_LIVE_PROVIDER_PHYSICAL_LAYOUT_THERMAL_AND_KICAD_VALIDATION",
+    purpose:
+      "Self-powered four-port USB 2.0 hub benchmark with a 12 V SELV wall input and USB-default downstream power.",
+    input: {
+      source: "center-positive SELV Class 2 12 V DC adapter",
+      connectorMpn: "PJ-102AH",
+      nominalVoltageV: 12,
+      continuousVoltageRangeV: [10.8, 13.2],
+      adapterCurrentLimitA: 2.5,
+      upstreamUsbVbusPolicy: "detect only; electrically isolated from the downstream 5 V rail",
+    },
+    output: {
+      voltageV: 5,
+      validAtPortRangeV: [4.75, 5.25],
+      portCount: 4,
+      perPortCurrentLimitA: 0.5,
+      aggregateDesignCurrentA: 2.4,
+      budgetA: {
+        fourUsbDefaultPorts: 2,
+        hubAndPortControllers: 0.18,
+        startupAndCableCapacitanceReserve: 0.22,
+      },
+    },
+    parts: [
+      { ref: "J_PWR", mpn: "PJ-102AH", role: "12 V SELV power entry" },
+      { ref: "F_IN", mpn: "MF-RG300-0", role: "input resettable overcurrent protection" },
+      { ref: "D_IN", mpn: "SMAJ15A", role: "input transient clamp" },
+      { ref: "Q_REV", mpn: "SI7465DP-T1-GE3", role: "reverse-polarity PMOS" },
+      { ref: "D_GS", mpn: "BZT52B12", role: "PMOS gate-source clamp" },
+      { ref: "R_GATE", mpn: "RC0603FR-07100KL", role: "PMOS gate bias" },
+      { ref: "U_5V", mpn: "LMR33640ADDA", role: "4 A synchronous 5 V buck" },
+      { ref: "L_5V", mpn: "SRN6045TA-6R8M", role: "buck power inductor" },
+      { ref: "C_IN", mpn: "UWT1H100MCL1GB", role: "buck input bulk capacitance" },
+      { ref: "C_IN_HF", mpn: "GRM31CR61H106KA12L", quantity: 1, role: "buck input ceramic capacitance" },
+      { ref: "C_IN_HF2", mpn: "GRM188R71H224KA93D", quantity: 1, role: "buck input high-frequency ceramic capacitance" },
+      { ref: "C_OUT", mpn: "GRM31CR61E226KE15L", quantity: 3, role: "buck output ceramic capacitance" },
+      { ref: "C_OUT_BULK", mpn: "UWT1E220MCL1GB", role: "port-bank bulk capacitance" },
+      { ref: "C_BOOT", mpn: "CL10B104KB8NNNC", role: "buck bootstrap capacitor" },
+      { ref: "C_VCC", mpn: "GRM188R61A105KA61D", role: "buck VCC bypass" },
+      { ref: "R_FB_TOP", mpn: "RC0603FR-07100KL", role: "buck feedback upper resistor" },
+      { ref: "R_FB_BOTTOM", mpn: "RC0603FR-0724K9L", role: "buck feedback lower resistor" },
+    ],
+    calculations: {
+      buckRatingA: 4,
+      minimumEfficiency: 0.88,
+      feedbackReferenceV: 1,
+      feedbackTopOhm: 100000,
+      feedbackBottomOhm: 24900,
+      outputDesignCurrentA: 2.4,
+      minimumInputVoltageV: 10.8,
+      outputVoltageFromFeedbackV: 5.01606,
+      worstCaseInputCurrentA: 1.263,
+      inputCurrentWith25PercentMarginA: 1.579,
+      mainBus: {
+        copperWeightOz: 1,
+        layersInParallel: 2,
+        widthMm: 2,
+        maximumLengthMm: 30,
+        computedVoltageDropV: 0.033,
+      },
+      inputProtection: {
+        tpsClampVoltageV: 24.4,
+        PMOSVdsRatingV: 30,
+        requiredPMOSVdsMarginPercent: 10,
+      },
+    },
+    implementationContract: {
+      stackup: "four-layer, 1 oz outer copper; continuous ground reference plane",
+      buckPlacement:
+        "Place input ceramic/bulk, bootstrap capacitor, inductor, output capacitors, and PowerPAD thermal vias to the exact TI layout constraints before routing unrelated signals.",
+      powerDistribution:
+        "Use the two-layer 2 mm 5 V trunk and short per-port branches; each TPS25810 remains the only downstream-port current limiter and fault isolator.",
+      faultPolicy:
+        "A single downstream short must be isolated by its TPS25810 without collapsing hub logic; upstream adapter current limit plus the input PPTC define the input-fault boundary.",
+      environmentalLimit:
+        "Indoor laboratory/office use, 0 to 50 C ambient; no automotive load-dump, wet-location, mains, or safety-certification claim.",
+    },
+    verification: {
+      supplierApiLiveDigiKey: false,
+      supplierApiLiveMouser: false,
+      exactPassiveAndInductorRatingsChecked: false,
+      compensationAndStabilityChecked: false,
+      buckThermalAndCopperSimulationChecked: false,
+      actualPortVoltageDropChecked: false,
+      actualFaultIsolationChecked: false,
+      upstreamVbusIsolationChecked: false,
+      boardLevelKiCadErcDrcAndParityChecked: false,
+    },
+    releaseRule:
+      "This candidate may only replace the blocked U_5V architecture after each verification field is backed by current supplier-provider results, exact-datasheet design calculations, physical KiCad implementation, and the normal manufacturing acceptance pipeline.",
+  }),
   evidenceRequired: [
     "exactAssetsApproved",
     "oneUpstreamFourDownstreamVerified",
@@ -292,6 +389,57 @@ export const usbHubProductionProposal = Object.freeze({
     "productionTestVerified",
   ],
 });
+
+export function validateUsbHubTrainingPowerCandidate(candidate = {}) {
+  const errors = [],
+    output = candidate.output || {},
+    calculations = candidate.calculations || {},
+    input = candidate.input || {},
+    parts = Array.isArray(candidate.parts) ? candidate.parts : [];
+  if (candidate.schema !== "boardforge.phase2c.usb-hub-training-power-candidate.v1")
+    errors.push("usb-hub-training-power-schema-invalid");
+  if (output.portCount !== 4 || output.perPortCurrentLimitA !== 0.5)
+    errors.push("usb-hub-training-port-current-contract-invalid");
+  const budget = output.budgetA || {};
+  const budgetTotal = Object.values(budget).reduce((sum, value) => sum + Number(value || 0), 0);
+  if (Math.abs(budgetTotal - Number(output.aggregateDesignCurrentA)) > 0.001)
+    errors.push("usb-hub-training-current-budget-inconsistent");
+  if (!(Number(output.aggregateDesignCurrentA) >= output.portCount * output.perPortCurrentLimitA + 0.2))
+    errors.push("usb-hub-training-current-margin-insufficient");
+  if (!(Number(calculations.buckRatingA) >= Number(output.aggregateDesignCurrentA) * 1.25))
+    errors.push("usb-hub-training-buck-current-margin-insufficient");
+  const computedVout = Number(calculations.feedbackReferenceV) * (1 + Number(calculations.feedbackTopOhm) / Number(calculations.feedbackBottomOhm));
+  if (Math.abs(computedVout - Number(calculations.outputVoltageFromFeedbackV)) > 0.001)
+    errors.push("usb-hub-training-feedback-calculation-inconsistent");
+  const [minimumPortV, maximumPortV] = output.validAtPortRangeV || [];
+  if (!(computedVout > minimumPortV && computedVout < maximumPortV))
+    errors.push("usb-hub-training-feedback-outside-usb-port-window");
+  const computedInputCurrent = output.voltageV * Number(output.aggregateDesignCurrentA) /
+    (Number(calculations.minimumInputVoltageV) * Number(calculations.minimumEfficiency));
+  if (Math.abs(computedInputCurrent - Number(calculations.worstCaseInputCurrentA)) > 0.002)
+    errors.push("usb-hub-training-input-current-calculation-inconsistent");
+  if (!(Number(input.adapterCurrentLimitA) > Number(calculations.inputCurrentWith25PercentMarginA)))
+    errors.push("usb-hub-training-input-source-margin-insufficient");
+  const protection = calculations.inputProtection || {};
+  if (!(Number(protection.tpsClampVoltageV) < Number(protection.PMOSVdsRatingV) * (1 - Number(protection.requiredPMOSVdsMarginPercent) / 100)))
+    errors.push("usb-hub-training-input-transient-margin-insufficient");
+  if (!(Number(calculations.mainBus?.computedVoltageDropV) < 0.1))
+    errors.push("usb-hub-training-power-distribution-drop-excessive");
+  const requiredMpns = ["PJ-102AH", "MF-RG300-0", "SMAJ15A", "SI7465DP-T1-GE3", "BZT52B12", "LMR33640ADDA", "SRN6045TA-6R8M", "UWT1H100MCL1GB", "GRM31CR61H106KA12L", "GRM188R71H224KA93D", "GRM31CR61E226KE15L", "RC0603FR-0724K9L"];
+  for (const mpn of requiredMpns)
+    if (!parts.some((part) => part.mpn === mpn) || !approvedAssetFor(mpn))
+      errors.push(`usb-hub-training-exact-asset-missing-${mpn}`);
+  const pending = Object.entries(candidate.verification || {})
+    .filter(([, value]) => value !== true)
+    .map(([key]) => `usb-hub-training-verification-pending-${key}`);
+  return {
+    schema: "boardforge.phase2c.usb-hub-training-power-candidate-gate.v1",
+    contractOk: errors.length === 0,
+    ok: errors.length === 0 && pending.length === 0,
+    errors: [...errors, ...pending],
+    pending,
+  };
+}
 
 export function validateUsbHubProductionProposal(proposal = {}) {
   const errors = [],

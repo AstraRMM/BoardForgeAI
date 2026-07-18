@@ -7,6 +7,7 @@ import {
 } from "../lib/phase2c/catalog-production-engine.mjs";
 import {
   usbHubProductionProposal,
+  validateUsbHubTrainingPowerCandidate,
   validateUsbHubProductionProposal,
 } from "../lib/phase2c/templates/usb-hub.mjs";
 import { approvedAssetFor } from "../lib/components/approved-production-assets.mjs";
@@ -183,6 +184,38 @@ test("Board011 5V architecture cannot release at exactly 2A before hub loss and 
     g.errors.includes("usb-hub-aggregate-5v-design-current-undeclared"),
   );
   assert.equal(g.ok, false);
+});
+
+test("Board011 training power candidate is internally coherent but cannot masquerade as released evidence", () => {
+  const candidate = usbHubProductionProposal.trainingPowerArchitecture,
+    gate = validateUsbHubTrainingPowerCandidate(candidate);
+  assert.equal(gate.contractOk, true, gate.errors.join("; "));
+  assert.equal(gate.ok, false);
+  assert.equal(candidate.input.connectorMpn, "PJ-102AH");
+  assert.equal(candidate.output.aggregateDesignCurrentA, 2.4);
+  assert.equal(candidate.calculations.buckRatingA, 4);
+  assert.equal(candidate.calculations.outputVoltageFromFeedbackV, 5.01606);
+  assert.equal(candidate.calculations.mainBus.computedVoltageDropV, 0.033);
+  for (const code of [
+    "usb-hub-training-verification-pending-supplierApiLiveDigiKey",
+    "usb-hub-training-verification-pending-supplierApiLiveMouser",
+    "usb-hub-training-verification-pending-buckThermalAndCopperSimulationChecked",
+    "usb-hub-training-verification-pending-boardLevelKiCadErcDrcAndParityChecked",
+  ])
+    assert.ok(gate.errors.includes(code), code);
+});
+
+test("Board011 training power candidate rejects fabricated release confirmation", () => {
+  const candidate = structuredClone(usbHubProductionProposal.trainingPowerArchitecture);
+  candidate.verification = Object.fromEntries(
+    Object.keys(candidate.verification).map((key) => [key, true]),
+  );
+  candidate.calculations.feedbackTopOhm = 73200;
+  const gate = validateUsbHubTrainingPowerCandidate(candidate);
+  assert.equal(gate.ok, false);
+  assert.ok(
+    gate.errors.includes("usb-hub-training-feedback-calculation-inconsistent"),
+  );
 });
 
 test("Board011 four-scallop mechanics fail closed on open excess-area or wrong-port geometry", () => {
