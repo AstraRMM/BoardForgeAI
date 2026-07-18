@@ -1672,7 +1672,13 @@ async function inspectCategoryGenerationReadiness({ files, board, categoryPcbEvi
   })
   const tracks = scan?.tracks || []
   const vias = scan?.vias || []
-  const nets = (scan?.nets || []).filter((net) => net.name && net.name !== '')
+  // KiCad 10 may canonicalize a promoted board to named pad net records
+  // without retaining legacy top-level numeric declarations.  The pad records
+  // remain the authoritative physical connectivity source, so do not mark a
+  // DRC-clean projected board as electrically empty solely for that serializer
+  // representation change.
+  const declaredNets = (scan?.nets || []).filter((net) => net.name && net.name !== '')
+  const nets = declaredNets.length ? declaredNets : [...new Set((scan?.pads || []).map((pad) => pad.netName).filter(Boolean))].map((name) => ({ name }))
   const expectedRefs = (board.bom || []).map((row) => row.ref)
   const placedRefs = new Set(nonHoleFootprints.map((footprint) => footprint.ref))
   const missingPlacedRefs = expectedRefs.filter((ref) => !placedRefs.has(ref))
@@ -1694,7 +1700,7 @@ async function inspectCategoryGenerationReadiness({ files, board, categoryPcbEvi
   ]
   const blockers = []
   if (!outlineOnly && symbolInstances === 0) blockers.push(categoryGenerationBlocker('schematic_generation', 'SCHEMATIC_SYMBOL_GRAPH_NOT_GENERATED', 'The .kicad_sch contains no real symbol instances for the requested board category.', 'Generate real KiCad symbols and pin-connected nets for the category BOM before ERC can prove electrical intent.'))
-  if (!outlineOnly && categorySchematic?.status !== 'SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED') blockers.push(categoryGenerationBlocker('schematic_generation', 'CATEGORY_SCHEMATIC_WRITE_FAILED', categorySchematic?.reason || 'The category schematic writer did not produce a reviewable symbol graph.', 'Fix the category schematic writer before treating the PCB evidence as a real board workflow.'))
+  if (!outlineOnly && !['SYMBOL_GRAPH_GENERATED_REVIEW_REQUIRED','PRODUCTION_SYMBOL_GRAPH_PROJECTED'].includes(categorySchematic?.status)) blockers.push(categoryGenerationBlocker('schematic_generation', 'CATEGORY_SCHEMATIC_WRITE_FAILED', categorySchematic?.reason || 'The category schematic writer did not produce a reviewable symbol graph.', 'Fix the category schematic writer before treating the PCB evidence as a real board workflow.'))
   if (!outlineOnly && nonHoleFootprints.length === 0) blockers.push(categoryGenerationBlocker('placement_generation', 'CATEGORY_COMPONENTS_NOT_PLACED', 'The .kicad_pcb contains mounting holes/Edge.Cuts but no placed non-hole category components.', 'Bind verified footprints, place expected refs inside the outline, and validate courtyard/edge clearance.'))
   if (!outlineOnly && tracks.length === 0) blockers.push(categoryGenerationBlocker('routing_generation', 'ROUTED_NETS_NOT_GENERATED', 'The .kicad_pcb has no routed copper tracks for requested category nets.', 'Create endpoint-aware routed nets after component placement, then rerun KiCad DRC.'))
   if (!outlineOnly && missingPlacedRefs.length) blockers.push(categoryGenerationBlocker('placement_generation', 'EXPECTED_REFS_MISSING_FROM_PCB', `${missingPlacedRefs.length} expected BOM refs are not present as placed footprints: ${missingPlacedRefs.join(', ')}.`, 'Add category-specific footprint binding and placement for every expected ref.'))
