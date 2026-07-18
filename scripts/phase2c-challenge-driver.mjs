@@ -12,6 +12,7 @@ import { usbCPdSourceTemplate, validateUsbCPdSourceConfigurationEvidence, valida
 import { industrialIoTemplate, validateIndustrialIoTemplate } from '../plugins/boardforge-plugin/lib/phase2c/templates/industrial-io.mjs'
 import { generateIndustrialIoProductionBoard } from '../plugins/boardforge-plugin/lib/phase2c/industrial-io-production-engine.mjs'
 import { generateCatalogProductionBoard } from '../plugins/boardforge-plugin/lib/phase2c/catalog-production-engine.mjs'
+import { analyzeRequirements } from '../plugins/boardforge-plugin/lib/phase2c/requirements-intelligence.mjs'
 
 const execFile=promisify(execFileCallback)
 const defaultRoot=process.env.BOARDFORGE_50_BOARD_ROOT||String.raw`C:\Users\luifi\Downloads\BoardForge_50_Board_Challenge`
@@ -48,7 +49,7 @@ export function createPhase2cChallengeDriver({root=defaultRoot,generateStm32=gen
       if(context.index===4 && board?.slug==='usb-c-pd-source') {
         const contract=validateUsbCPdSourceTemplate(usbCPdSourceTemplate)
         if(!contract.ok) return rejected('USB_C_PD_SOURCE_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
-        return strictPdSourceResult(await generateUsbCPdSource({root,board,template:usbCPdSourceTemplate,context}),board)
+        return strictPdSourceResult(await generateUsbCPdSource({root,board,template:usbCPdSourceTemplate,context}),board,context.requirementsAnswers)
       }
       if(context.index===5 && board?.slug==='industrial-io') {
         const contract=validateIndustrialIoTemplate(industrialIoTemplate)
@@ -177,8 +178,8 @@ export async function loadAcceptedEvidence(projectDir){
 function inside(root,file){const relative=path.relative(root,path.resolve(file));return relative!==''&&!relative.startsWith(`..${path.sep}`)&&relative!=='..'&&!path.isAbsolute(relative)}
 function invalidEvidence(code){const error=new Error(code);error.code=code;return error}
 function strictResult(result,board){if(result?.acceptance?.accepted===true&&result?.manufacturingEvidence?.status==='MANUFACTURING_ACCEPTED')return result;return {...result,acceptance:result?.acceptance||{status:'BOARD_REJECTED',accepted:false,blockers:[{code:'STRICT_MANUFACTURING_ACCEPTANCE_MISSING'}]},failure:{code:result?.failure?.code||'STRICT_MANUFACTURING_ACCEPTANCE_FAILED',boardId:board?.id}}}
-function strictPdSourceResult(result,board){const config=result?.productionConfig,configValid=config?.eepromImageVerified===true&&config?.readbackVerified===true&&config?.noUnadvertisedPdo===true&&/^[a-f0-9]{64}$/i.test(config?.immutableSha256||'');if(!configValid)return rejected('PD_SOURCE_EEPROM_CONFIGURATION_PROOF_MISSING',board);return strictResult(result,board)}
-function rejected(code,board,extra={}){return {acceptance:{status:'BOARD_REJECTED',accepted:false,blockers:[{code,message:`${code}: ${board?.id||board?.slug||'unknown board'}`}]},failure:{code,boardId:board?.id,...extra}}}
+function strictPdSourceResult(result,board,answers={}){const config=result?.productionConfig,configValid=config?.eepromImageVerified===true&&config?.readbackVerified===true&&config?.noUnadvertisedPdo===true&&/^[a-f0-9]{64}$/i.test(config?.immutableSha256||'');if(!configValid){const code='PD_SOURCE_EEPROM_CONFIGURATION_PROOF_MISSING';return rejected(code,board,{requirements:analyzeRequirements({boardId:board?.id,validation:{errors:[code]},answers})})}return strictResult(result,board)}
+function rejected(code,board,extra={}){return {acceptance:{status:'BOARD_REJECTED',accepted:false,blockers:[{code,message:`${code}: ${board?.id||board?.slug||'unknown board'}`}]},requirements:extra.requirements,failure:{code,boardId:board?.id,...extra}}}
 
 const driver=createPhase2cChallengeDriver()
 export const executePilot=driver.executePilot

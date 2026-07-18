@@ -42,13 +42,14 @@ const VETTED_DEFAULTS = Object.freeze([
  * It never converts a missing decision into a buildable assumption. */
 export function analyzeRequirements({ boardId, validation = {}, answers = {} } = {}) {
   const normalizedId = String(boardId || '').toUpperCase()
-  const profile = PROFILES[normalizedId] || []
+  const matchedProfileId = PROFILES[normalizedId] ? normalizedId : Object.keys(PROFILES).find((profileId) => profileId.endsWith(normalizedId))
+  const profile = PROFILES[matchedProfileId] || []
   const generic = genericQuestions(validation.errors || [])
   const all = dedupe([...profile, ...generic])
   const unanswered = all.filter((question) => !hasAnswer(answers, question.id))
   return {
     schema: 'boardforge.phase2c.requirements-intelligence-plan.v1',
-    boardId: normalizedId || null,
+    boardId: matchedProfileId || normalizedId || null,
     status: unanswered.length ? 'REQUIREMENTS_INPUT_REQUIRED' : 'REQUIREMENTS_READY_FOR_REVALIDATION',
     questions: unanswered,
     answered: all.filter((question) => hasAnswer(answers, question.id)).map((question) => ({ ...question, answer: answers[question.id] })),
@@ -84,9 +85,9 @@ export async function writeRequirementAnswers({ projectDir, constraints } = {}) 
 }
 
 function genericQuestions(errors) {
-  return errors.filter((error) => /(?:envelope-undeclared|configuration-proof-missing|exact-assets-unapproved)/.test(error)).map((error) => {
-    if (/exact-assets-unapproved/.test(error)) return ask(`resolve_${error}`, 'Select an exact, sourceable production part for this unresolved function.', 'Part identity, package, ratings, and live availability must be verified before routing.')
-    if (/configuration-proof-missing/.test(error)) return ask(`resolve_${error}`, 'Provide the controller-tool configuration export and independently captured readback.', 'Configuration binaries and readback evidence must remain traceable and immutable.')
+  return errors.filter((error) => /(?:envelope-undeclared|configuration-proof-missing|exact-assets-unapproved)/i.test(error)).map((error) => {
+    if (/exact-assets-unapproved/i.test(error)) return ask(`resolve_${error}`, 'Select an exact, sourceable production part for this unresolved function.', 'Part identity, package, ratings, and live availability must be verified before routing.')
+    if (/configuration-proof-missing/i.test(error)) return ask(`resolve_${error}`, 'Provide the controller-tool configuration export and independently captured readback.', 'Configuration binaries and readback evidence must remain traceable and immutable.')
     const topic = error.replace(/-envelope-undeclared$/, '').replaceAll('-', ' ')
     return ask(`resolve_${error}`, `What is the required ${topic} operating envelope?`, 'This decision changes electrical, safety, thermal, or compliance behavior.')
   })
