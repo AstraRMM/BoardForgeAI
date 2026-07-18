@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
-import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors,w5500MagJackTopologyGate } from '../lib/routing/authoritative-pad-routing.mjs'
+import { allLayerPthClearance, authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors,w5500MagJackTopologyGate } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 test('authoritative ground planes use solid pad connections for dense MCU ground pads',()=>{const source=readFileSync(new URL('../lib/routing/authoritative-pad-routing.mjs',import.meta.url),'utf8');assert.match(source,/connect_pads yes \(clearance \$\{fmt\(clearance\)\}\)/)})
@@ -41,6 +41,17 @@ test('W5500 topology gate rejects unsupported ESD and termination branches on PH
   assert.equal(gate.valid,false)
   assert.ok(gate.errors.some(error=>error.startsWith('ETH_TXP: expected')))
   assert.ok(gate.errors.some(error=>error.includes('unsupported branch ref D_ETH')))
+})
+test('W5500 pair planner rejects an inner-layer corridor through a foreign MagJack PTH annulus',()=>{
+  const input={occupancy:{vias:[
+    {kind:'projected-pad-obstacle',net:'ETH_TXP',ref:'J1',pad:'1',x:20,y:10,diameter:1.6},
+    {kind:'projected-pad-obstacle',net:'ETH_TX_CT',ref:'J1',pad:'2',x:22,y:10,diameter:1.6},
+  ]}}
+  const rejected=allLayerPthClearance(input,[{net:'ETH_TXP',layer:'In1.Cu',start:{x:10,y:10},end:{x:30,y:10},width:.2}],{clearance:.2})
+  assert.equal(rejected.ok,false)
+  assert.deepEqual(rejected.collisions.map(row=>`${row.ref}:${row.pad}`),['J1:2'])
+  const legal=allLayerPthClearance(input,[{net:'ETH_TXP',layer:'In1.Cu',start:{x:10,y:7},end:{x:30,y:7},width:.2}],{clearance:.2})
+  assert.equal(legal.ok,true)
 })
 test('existing foreign occupancy is enforced instead of silently discarded',()=>{
   const base={nets:[{net:'A',endpoints:[{x:5,y:5},{x:45,y:5}]}],bounds:{minX:0,minY:0,maxX:50,maxY:20},layers:['F.Cu'],clearance:.2,trackWidth:.15,viaDiameter:.5}

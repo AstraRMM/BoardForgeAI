@@ -41,6 +41,27 @@ export function authoritativeConnectionInventory(input){
   return{schema:'boardforge.authoritative-connection-inventory.v1',nets,totalEndpoints:nets.reduce((sum,row)=>sum+row.endpointCount,0),requiredConnections:nets.reduce((sum,row)=>sum+row.requiredConnections,0)}
 }
 
+/**
+ * Through-hole pads are copper on every signal layer.  Fixed corridors bypass
+ * the general channel router, so they need the same all-layer annulus guard
+ * explicitly: an inner-layer segment may terminate on its own PTH pad, but
+ * may never pass through a foreign connector pin or shield annulus.
+ */
+export function allLayerPthClearance(input, tracks = [], { clearance = .2 } = {}) {
+  const pth = (input?.occupancy?.vias || []).filter(item => item.kind === 'projected-pad-obstacle')
+  const collisions = []
+  for (const track of tracks || []) for (const obstacle of pth) {
+    if (track.net === obstacle.net) continue
+    const required = clearance + (Number(track.width || 0) + Number(obstacle.diameter || 0)) / 2
+    const actual = pointToSegmentDistance({ x: obstacle.x, y: obstacle.y }, track.start, track.end)
+    if (actual + 1e-9 < required) collisions.push({
+      net: track.net, layer: track.layer, ref: obstacle.ref, pad: String(obstacle.pad),
+      obstacleNet: obstacle.net, actualMm: actual, requiredMm: required,
+    })
+  }
+  return { schema: 'boardforge.all-layer-pth-clearance.v1', ok: collisions.length === 0, collisions }
+}
+
 /** Reject the known-invalid W5500 proof topology before it is handed to a
  * differential-pair router.  This check is deliberately narrow: it applies
  * only when the exact W5500/MagJack pair-net shape is present, and never
@@ -84,6 +105,12 @@ export async function regenerateAuthoritativePadRoutesCandidate({pcbFile,candida
   const selected=includeNets==null?null:new Set(includeNets.map(String))
   const fixed0=authoritativeFixedCorridors(input,{trackWidth,viaDiameter})
   const fixed=selected?{tracks:fixed0.tracks.filter(row=>selected.has(row.net)),vias:fixed0.vias.filter(row=>selected.has(row.net)),completedNets:fixed0.completedNets.filter(net=>selected.has(net)),partialNets:(fixed0.partialNets||[]).filter(net=>selected.has(net))}:fixed0
+  const fixedPthClearance=allLayerPthClearance(input,fixed.tracks,{clearance})
+  if(!fixedPthClearance.ok){
+    const error=new Error(`Fixed corridor intersects all-layer PTH annulus: ${fixedPthClearance.collisions.map(row=>`${row.net}:${row.ref}:${row.pad}`).join(', ')}`)
+    error.code='ALL_LAYER_PTH_CLEARANCE_VIOLATION'; error.collisions=fixedPthClearance.collisions
+    throw error
+  }
   // Topology-fixed corridors occupy distinct assigned layers and are appended
   // candidate-only after generic channel search; KiCad DRC remains the final
   // collision authority before any promotion.
@@ -779,6 +806,7 @@ function fmt(n){return Number(n).toFixed(5).replace(/\.?0+$/,'')}
 function netCode(name,numbers){const code=numbers[name];if(!Number.isInteger(code)||code<=0)throw new Error(`KiCad numeric net code is missing for ${name}`);return code}
 function copperLayers(layers){const values=layers||[];if(values.includes('*.Cu'))return['F.Cu','B.Cu'];const copper=values.filter(layer=>layer.endsWith('.Cu'));return copper.length?copper:['F.Cu']}
 function padObstacleTrack(p,layer,net){const w=p.widthMm||.6,h=p.heightMm||.6,major=Math.max(w,h),minor=Math.min(w,h),base=w>=h?0:90,a=(Number(p.rotation||0)+base)*Math.PI/180,half=Math.max(0,(major-minor)/2),dx=Math.cos(a)*half,dy=Math.sin(a)*half;return{net,layer,start:{x:p.x-dx,y:p.y-dy},end:{x:p.x+dx,y:p.y+dy},width:minor,kind:'projected-pad-obstacle',ref:p.ref,pad:p.pad}}
+function pointToSegmentDistance(point,start,end){const dx=end.x-start.x,dy=end.y-start.y,span=dx*dx+dy*dy;if(span<=1e-15)return Math.hypot(point.x-start.x,point.y-start.y);const t=Math.max(0,Math.min(1,((point.x-start.x)*dx+(point.y-start.y)*dy)/span));return Math.hypot(point.x-(start.x+t*dx),point.y-(start.y+t*dy))}
 function near(a,b){return Math.abs(a-b)<1e-6}
 async function copyDesignRules(sourcePcb,candidatePcb){
   const source=sourcePcb.replace(/\.kicad_pcb$/i,'.kicad_dru'),target=candidatePcb.replace(/\.kicad_pcb$/i,'.kicad_dru')
