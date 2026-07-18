@@ -49,6 +49,12 @@ const ETHERNET_CONTROLLER_TOPOLOGY = {
   R_MODE2:{x:7,y:22.75,rotation:0,side:'front'}, R_EXRES:{x:35.75,y:1.5,rotation:0,side:'front'},
   R_TXP:{x:5.75,y:17.75,rotation:0,side:'front'}, R_TXN:{x:5.75,y:15.25,rotation:0,side:'front'},
   R_RXP:{x:5.75,y:12.75,rotation:0,side:'front'}, R_RXN:{x:38.25,y:2.75,rotation:90,side:'front'},
+  // WIZnet's connected-centre-tap reference network stays at the PHY/MagJack
+  // side of the board while retaining legal full-courtyard separation from
+  // the fixed RP2040/W5500 and connector packages.
+  R_TX_CT:{x:2.75,y:1.5,rotation:0,side:'front'}, C_RXP:{x:2.75,y:4,rotation:0,side:'front'},
+  C_RXN:{x:2.75,y:6.5,rotation:0,side:'front'}, C_RX_MATCH:{x:2.75,y:9,rotation:0,side:'front'},
+  C_AVDD_REF:{x:2.75,y:20.25,rotation:0,side:'front'},
   C_XI:{x:33.25,y:5.25,rotation:0,side:'front'}, C_XO:{x:33.25,y:7.75,rotation:0,side:'front'},
   D_ETH:{x:30.75,y:2.75,rotation:0,side:'front'}, FB_AVDD:{x:9.5,y:22.75,rotation:90,side:'front'},
   C_AVDD:{x:9.5,y:26.5,rotation:0,side:'front'}, C_TOCAP:{x:22,y:1.5,rotation:0,side:'front'},

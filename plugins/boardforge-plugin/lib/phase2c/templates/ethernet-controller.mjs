@@ -102,13 +102,33 @@ export const ethernetControllerProductionProposal = Object.freeze({
         "RC0603FR-0749R9L",
       ),
     ),
+    approved(
+      "R_TX_CT",
+      "10 Ohm W5500 connected-centre-tap TX supply feed",
+      "RC0603FR-0710RL",
+    ),
+    approved(
+      "C_RXP",
+      "6.8 nF W5500 connected-centre-tap RX+ series capacitor",
+      "CC0603KRX7R9BB682",
+    ),
+    approved(
+      "C_RXN",
+      "6.8 nF W5500 connected-centre-tap RX- series capacitor",
+      "CC0603KRX7R9BB682",
+    ),
+    approved(
+      "C_RX_MATCH",
+      "10 nF W5500 RX matching-node bypass",
+      "CC0603KRX7R9BB103",
+    ),
+    approved(
+      "C_AVDD_REF",
+      "100 nF W5500 AVDD local bypass",
+      "CL10B104KB8NNNC",
+    ),
     approved("C_XI", "12 pF C0G crystal load capacitor", "GRM1885C1H120JA01D"),
     approved("C_XO", "12 pF C0G crystal load capacitor", "GRM1885C1H120JA01D"),
-    approved(
-      "D_ETH",
-      "Four-channel 0.5 pF Ethernet cable-line ESD protector",
-      "TPD4E05U06DQAR",
-    ),
     approved(
       "FB_AVDD",
       "600 Ohm at 100 MHz 1 A analog-supply ferrite bead",
@@ -151,11 +171,14 @@ export const ethernetControllerProductionProposal = Object.freeze({
       calculation:
         "CL=(C1*C2)/(C1+C2)+Cstray; equal 12 pF capacitors plus 2 pF parasitic gives 8 pF",
     },
-    esd: {
-      mpn: "TPD4E05U06DQAR",
-      channelCapacitancePf: 0.5,
-      iec61000_4_2ContactKv: 12,
-      dischargeReference: "CHASSIS",
+    connectedCentreTap: {
+      source: "WIZnet W5500 connected-centre-tap reference schematic",
+      txCentreTapFeedOhm: 10,
+      rxSeriesCapacitanceNf: 6.8,
+      rxMatchingResistanceOhm: 49.9,
+      rxMatchingBypassNf: 10,
+      avddBypassNf: 100,
+      limitation: "The integrated MagJack exposes transformer-side pins only; cable-side ESD cannot be claimed without a separately source-backed connector/protection architecture.",
     },
     analogSupply: { ferriteOhmAt100MHz: 600, ratedCurrentA: 1, bulkUf: 4.7 },
   },
@@ -196,7 +219,7 @@ export function validateEthernetControllerProposal(proposal = {}) {
     [/reset/, "ethernet-reset-network-missing"],
     [/strap|pmode/, "ethernet-strap-network-missing"],
     [/termination|exres/, "ethernet-termination-missing"],
-    [/esd|surge|cable.*protection/, "ethernet-line-protection-missing"],
+    [/connected.cent(re|er).tap|line.*termination|rx.*matching/, "ethernet-connected-centre-tap-network-missing"],
     [/supply.*filter|analog.*supply/, "ethernet-phy-supply-filter-missing"],
     [/decoupling/, "ethernet-decoupling-missing"],
   ])

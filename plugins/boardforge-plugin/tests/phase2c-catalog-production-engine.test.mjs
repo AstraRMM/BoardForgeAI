@@ -122,7 +122,7 @@ test('Board010 selects a complete exact Ethernet controller topology',()=>{
   const definition=catalogDefinition(manifest.boards[9],9),gate=validateCatalogSemanticTopology(definition)
   assert.equal(gate.ok,true,gate.errors.join('; '))
   assert.equal(definition.topologyId,'ethernet-controller')
-  for(const ref of['U1','U2','J1','Y1','R_EXRES','D_ETH','FB_AVDD'])assert.ok(definition.bom.some(row=>row.ref===ref),ref)
+  for(const ref of['U1','U2','J1','Y1','R_EXRES','R_TX_CT','C_RXP','C_RXN','C_RX_MATCH','FB_AVDD'])assert.ok(definition.bom.some(row=>row.ref===ref),ref)
 })
 
 test('Board010 stops at its exact production proposal gate before any generic board is emitted',async()=>{
@@ -135,7 +135,7 @@ test('Board010 stops at its exact production proposal gate before any generic bo
 })
 
 test('Ethernet category gate accepts an explicitly complete controller path',()=>{
-  const roles=['Ethernet MAC controller','Ethernet PHY','RJ45 Ethernet connector','Ethernet magnetics transformer','PHY reference clock','PHY reset network','PHY strap network','Ethernet ESD protection','Ethernet line termination','PHY decoupling','PHY supply regulator']
+  const roles=['Ethernet MAC controller','Ethernet PHY','RJ45 Ethernet connector','Ethernet magnetics transformer','PHY reference clock','PHY reset network','PHY strap network','W5500 connected-centre-tap network','Ethernet line termination','PHY decoupling','PHY supply regulator']
   const definition={id:'ethernet-controller',topologyId:'ethernet-controller',name:'Ethernet controller',bom:roles.map((role,index)=>({ref:`X${index}`,role}))}
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })

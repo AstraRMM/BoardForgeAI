@@ -165,7 +165,10 @@ export function validateCatalogSemanticTopology(definition={}){
     if(!hasRole(/phy.*clock|ethernet.*clock|crystal.*phy/))errors.push('ethernet-reference-clock-missing')
     if(!hasRole(/phy.*reset|ethernet.*reset/))errors.push('ethernet-phy-reset-network-missing')
     if(!hasRole(/phy.*strap|ethernet.*strap/))errors.push('ethernet-phy-strap-network-missing')
-    if(!hasRole(/ethernet.*(tvs|esd)|(?:tvs|esd).*ethernet/))errors.push('ethernet-line-protection-missing')
+    // Board010's approved integrated MagJack exposes transformer-side pins.
+    // It must use the source-backed W5500 connected-centre-tap network, not
+    // invent an unverified cable-side TVS branch inside the board model.
+    if(!hasRole(/connected.cent(re|er).tap|rx.*matching|tx.*centre.tap/))errors.push('ethernet-connected-centre-tap-network-missing')
     if(!hasRole(/ethernet.*termination|phy.*termination/))errors.push('ethernet-line-termination-missing')
     if(!hasRole(/phy.*decoupling|ethernet.*decoupling/))errors.push('ethernet-phy-decoupling-missing')
     if(!hasRole(/phy.*(regulator|supply)|ethernet.*power/))errors.push('ethernet-phy-power-missing')

@@ -57,11 +57,36 @@ function endpointSet(endpoints = []) {
  * all intentional three-terminal matching trees. */
 export function validateW5500ConnectedCtTopology(input = {}, reference = W5500_CONNECTED_CT_REFERENCE) {
   const byNet = new Map((input.nets || []).map(row => [row.net, endpointSet(row.endpoints)]))
+  // GND and 3V3A are intentionally shared names across unrelated boards.  A
+  // connected-centre-tap rule is relevant only when an actual W5500/MagJack
+  // PHY-side signature is present; otherwise it must remain transparent to
+  // every other authoritative router.
+  const phyMagJackSignature = [
+    ['ETH_TXP', 'U2', 'J1'], ['ETH_TXN', 'U2', 'J1'],
+    ['ETH_RXP_PHY', 'U2', 'C_RXP'], ['ETH_RXN_PHY', 'U2', 'C_RXN'],
+    ['ETH_RXP_MAG', 'C_RXP', 'J1'], ['ETH_RXN_MAG', 'C_RXN', 'J1'],
+  ]
+  const applicable = phyMagJackSignature.some(([net, first, second]) => {
+    const endpoints = byNet.get(net) || []
+    return endpoints.some(endpoint => endpoint.startsWith(`${first}:`)) && endpoints.some(endpoint => endpoint.startsWith(`${second}:`))
+  })
+  if (!applicable) return {
+    schema: 'boardforge.w5500-connected-centre-tap-topology-gate.v1',
+    applicable: false, valid: true, errors: [], requiredPartCount: reference.parts.length,
+    sourceEvidence: reference.sourceEvidence,
+  }
   const errors = []
   for (const [net, expected] of Object.entries(reference.nets)) {
     const actual = byNet.get(net) || []
     const wanted = [...expected].sort()
-    if (JSON.stringify(actual) !== JSON.stringify(wanted)) {
+    // The reference's two supply nets are local branches of larger board
+    // rails.  Require every source-backed branch endpoint there, while pair
+    // and matching networks remain exact (and thus reject phantom branches).
+    const isSharedSupply = net === '3V3A' || net === 'GND'
+    const matches = isSharedSupply
+      ? wanted.every(endpoint => actual.includes(endpoint))
+      : JSON.stringify(actual) === JSON.stringify(wanted)
+    if (!matches) {
       errors.push(`${net}: expected ${wanted.join(', ') || 'no endpoints'}, got ${actual.join(', ') || 'no endpoints'}`)
     }
   }
@@ -79,7 +104,7 @@ export function validateW5500ConnectedCtTopology(input = {}, reference = W5500_C
   if (missingAssets.length) errors.push(`approved production assets missing: ${[...new Set(missingAssets)].join(', ')}`)
   return {
     schema: 'boardforge.w5500-connected-centre-tap-topology-gate.v1',
-    applicable: Object.keys(reference.nets).some(net => byNet.has(net)),
+    applicable,
     valid: errors.length === 0,
     errors,
     requiredPartCount: reference.parts.length,

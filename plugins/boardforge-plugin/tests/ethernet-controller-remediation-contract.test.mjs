@@ -89,7 +89,9 @@ test("Board010 source values and crystal-load calculation are frozen without cla
     s.crystalLoad.capacitorEachPf / 2 + s.crystalLoad.assumedTotalParasiticPf,
     8,
   );
-  assert.equal(s.esd.channelCapacitancePf, 0.5);
+  assert.equal(s.connectedCentreTap.txCentreTapFeedOhm, 10);
+  assert.equal(s.connectedCentreTap.rxSeriesCapacitanceNf, 6.8);
+  assert.equal(s.connectedCentreTap.rxMatchingBypassNf, 10);
   assert.equal(s.analogSupply.ratedCurrentA, 1);
   assert.match(ethernetControllerProductionProposal.status, /BLOCKED/);
   assert.ok(
@@ -142,7 +144,7 @@ test("Board010 writer clusters W5500 timing, analog and Ethernet support around 
   const distance = (a, b) => Math.hypot(a.at.x - b.at.x, a.at.y - b.at.y);
   for (const ref of ["Y1", "C_XI", "C_XO", "R_EXRES", "FB_AVDD", "C_AVDD", "C_TOCAP", "C_1V2"])
     assert.ok(distance(byRef.U2, byRef[ref]) < 8, `${ref} must stay local to U2`);
-  for (const ref of ["R_TXP", "R_TXN", "R_RXP", "R_RXN", "D_ETH"])
+  for (const ref of ["R_TXP", "R_TXN", "R_RXP", "R_RXN", "R_TX_CT", "C_RXP", "C_RXN", "C_RX_MATCH"])
     assert.ok(distance(byRef.J1, byRef[ref]) < 9, `${ref} must stay local to J1`);
 });
 
