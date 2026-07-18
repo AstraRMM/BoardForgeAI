@@ -142,21 +142,24 @@ test('TPS25750 source raw input corridor activates only for exact transformed to
     {net:'PP5V',endpoints:[p('F1','2',35.212,28.5),p('D1','1',22.25,16.75),p('U1','3',18.5,12.563),p('U2','34',37.5,21.575),p('C_PP5V','1',27.3,16)]},
     {net:'CC1',endpoints:[p('U2','28',40.1,21.575),p('J2','A5',19.75,2.32)]},
     {net:'CC2',endpoints:[p('U2','29',39.7,21.575),p('J2','B5',22.75,2.32)]},
-    {net:'3V3',endpoints:[p('U1','2',19.45,14.438),p('U2','1',35.575,22.5),p('U2','38',36.1,21.575),p('U3','8',33.575,21.595),p('C_3V3','1',29.45,7.25)]},
+    {net:'3V3',endpoints:[p('U1','2',19.45,14.438),p('U2','38',36.1,21.575)]},
+    {net:'LDO_3V3',endpoints:[p('U2','1',35.575,22.5),p('U3','8',33.575,21.595),p('C_3V3','1',29.45,7.25),p('R_EEPROM_SDA','1',20.175,29.75),p('R_EEPROM_SCL','1',16.425,29.75)]},
     {net:'1V5',endpoints:[p('U2','4',35.575,23.7),p('C_1V5','1',19.45,24.75)]},
-    {net:'EEPROM_SDA',endpoints:[p('U2','16',39.7,25.425),p('U3','5',33.575,25.405)]},
-    {net:'EEPROM_SCL',endpoints:[p('U2','17',40.1,25.425),p('U3','6',33.575,24.135)]},
+    {net:'EEPROM_SDA',endpoints:[p('U2','16',39.7,25.425),p('U3','5',33.575,25.405),p('R_EEPROM_SDA','2',21.825,29.75)]},
+    {net:'EEPROM_SCL',endpoints:[p('U2','17',40.1,25.425),p('U3','6',33.575,24.135),p('R_EEPROM_SCL','2',18.075,29.75)]},
     {net:'DRAIN',endpoints:[p('U2','15',39.3,25.425),p('U2','30',39.3,21.575),p('U2','40',40.06,22.425),p('U2','40',40.06,23.5),p('U2','40',40.06,24.575)]},
     {net:'VBUS',endpoints:[p('U2','23',41.425,22.837),p('U2','32',38.3,21.575),p('J2','A4',18.6,2.32),p('J2','A9',23.4,2.32),p('D2','1',39.75,16.75),p('C_VBUS','1',39.75,9.05)]},
     {net:'GND',endpoints:[p('J1','2',41.04,28.5),p('D1','2',22.25,12.75),p('U1','1',17.55,14.438),p('U2','11',37.7,25.425),p('U2','12',38.1,25.425),p('U2','14',38.9,25.425),p('U2','31',38.9,21.575),p('U2','39',36.425,23.5),p('U2','39',37.535,22.425),p('U2','39',37.535,23.5),p('U2','39',37.535,24.575),p('U2','39',38.645,23.5),p('U3','1',28.425,21.595),p('U3','2',28.425,22.865),p('U3','3',28.425,24.135),p('U3','4',28.425,25.405),p('U3','7',33.575,22.865),p('J2','A1',17.8,2.32),p('J2','A12',24.2,2.32),p('J2','SH',16.68,2.895),p('J2','SH',16.68,7.075),p('J2','SH',25.32,2.895),p('J2','SH',25.32,7.075),p('D2','2',39.75,12.75),p('C_PP5V','2',34.7,16),p('C_VBUS','2',39.75,5.45),p('C_3V3','2',35.05,7.25),p('C_1V5','2',25.05,24.75)]},
   ]}
   const result=tps25750SourceFixedCorridors(input,{trackWidth:.2,viaDiameter:.6})
-  assert.deepEqual(result.completedNets,['5V_RAW','3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V','VBUS','GND'])
+  assert.deepEqual(result.completedNets,['5V_RAW','3V3','LDO_3V3','1V5','EEPROM_SDA','EEPROM_SCL','CC1','CC2','DRAIN','PP5V','VBUS','GND'])
   assert.equal(result.tracks[1].layer,'In4.Cu')
   assert.deepEqual([result.vias[0].x,result.vias[0].y],[27.5,28.5])
-  assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='F.Cu').length,5)
-  assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='In3.Cu').length,6)
-  assert.equal(result.vias.filter(x=>x.net==='3V3').length,5)
+  assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='F.Cu').length,2)
+  assert.equal(result.tracks.filter(x=>x.net==='3V3'&&x.layer==='In3.Cu').length,3)
+  assert.equal(result.vias.filter(x=>x.net==='3V3').length,2)
+  assert.equal(result.vias.filter(x=>x.net==='LDO_3V3').length,5)
+  assert.ok(result.tracks.some(x=>x.net==='LDO_3V3'&&x.layer==='B.Cu'&&x.start.y===18.5&&x.end.y===18.5))
   assert.equal(result.tracks.filter(x=>x.net==='1V5').length,3)
   assert.equal(result.tracks.find(x=>x.net==='EEPROM_SDA'&&x.layer!=='F.Cu').layer,'In1.Cu')
   assert.ok(result.tracks.some(x=>x.net==='EEPROM_SCL'&&x.layer==='B.Cu'&&x.start.y===20&&x.end.y===20))

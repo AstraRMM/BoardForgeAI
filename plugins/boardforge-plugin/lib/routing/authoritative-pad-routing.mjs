@@ -464,6 +464,36 @@ export function tps25750SourceFixedCorridors(input,{trackWidth=.2,viaDiameter=.6
     for(let i=0;i<2;i++){tracks.push({net:'3V3',layer:'F.Cu',start:{x:compactRail[i].x,y:compactRail[i].y},end:dogs[i],width:trackWidth});vias.push({net:'3V3',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3});tracks.push({net:'3V3',layer:'In3.Cu',start:dogs[i],end:{x:dogs[i].x,y:10},width:trackWidth})}
     tracks.push({net:'3V3',layer:'In3.Cu',start:{x:dogs[0].x,y:10},end:{x:dogs[1].x,y:10},width:trackWidth});completedNets.push('3V3')
   }
+  // The TPS25750 LDO output is a distinct canonical rail from the regulator
+  // input sense pair above.  Leaving it to the generic channel router made a
+  // complete, known Board005 topology fall back into an exponential search.
+  // Escape each surface endpoint first, then join on B.Cu below the dense
+  // controller; this avoids the PP5V/1V5 front-copper region and keeps the
+  // EEPROM pull-ups on the same verified rail as U2:1 and U3:8.
+  const ldo3v3=[at('LDO_3V3','U2','1'),at('LDO_3V3','U3','8'),at('LDO_3V3','C_3V3','1'),at('LDO_3V3','R_EEPROM_SDA','1'),at('LDO_3V3','R_EEPROM_SCL','1')]
+  if(ldo3v3.every(Boolean)&&[[35.575,22.5],[33.575,21.595],[29.45,7.25],[20.175,29.75],[16.425,29.75]].every(([x,y],i)=>near(ldo3v3[i].x,x)&&near(ldo3v3[i].y,y))){
+    // Keep this B.Cu tree above the EEPROM_SCL return lane (29.2 mm), and
+    // move the two dense-package escapes left of the pre-existing 1V5 and
+    // EEPROM vias.  Those coordinates were verified against the physical
+    // U2/U3 pad map, rather than assumed from the abstract symbol.
+    const dogs=[{x:34.4,y:18.5},{x:32.7,y:18.5},{x:29.45,y:8.5},{x:20.175,y:28.5},{x:16.425,y:28.5}],laneY=28
+    for(let i=0;i<ldo3v3.length;i++){
+      tracks.push({net:'LDO_3V3',layer:'F.Cu',start:{x:ldo3v3[i].x,y:ldo3v3[i].y},end:dogs[i],width:trackWidth})
+      vias.push({net:'LDO_3V3',x:dogs[i].x,y:dogs[i].y,diameter:viaDiameter,drill:.3})
+    }
+    // The EEPROM_SCL B.Cu corridor turns at x=31.5 from y=20 through 29.2.
+    // Keep the dense controller/EEPROM branch above that corridor on B.Cu,
+    // then use C_3V3's via as the only transition into the left-side pull-up
+    // trunk.  In2.Cu is intentionally unavailable here: it is occupied by
+    // the PP5V and VBUS power spines.
+    const add=(a,b)=>tracks.push({net:'LDO_3V3',layer:'B.Cu',start:a,end:b,width:trackWidth})
+    add(dogs[0],{x:dogs[2].x,y:dogs[0].y});add({x:dogs[2].x,y:dogs[0].y},dogs[2])
+    add(dogs[1],{x:dogs[2].x,y:dogs[1].y});add({x:dogs[2].x,y:dogs[1].y},dogs[2])
+    add(dogs[2],{x:dogs[2].x,y:laneY})
+    add(dogs[3],{x:dogs[3].x,y:laneY});add(dogs[4],{x:dogs[4].x,y:laneY})
+    add({x:dogs[4].x,y:laneY},{x:dogs[2].x,y:laneY})
+    completedNets.push('LDO_3V3')
+  }
   const rail1v5=[at('1V5','U2','4'),at('1V5','C_1V5','1')]
   if(rail1v5.every(Boolean)){
     const dogs=[{x:35,y:23.7},{x:22,y:24.75}]
