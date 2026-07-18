@@ -4,6 +4,7 @@ import { mkdtemp, readFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { executeJob } from '../lib/jobs.mjs'
+import { manifest } from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
 
 test('production requirements job asks Board011 only for unresolved engineering decisions', async () => {
   const output = await executeJob({
@@ -31,4 +32,12 @@ test('recorded production requirements stay outside the KiCad delivery folder', 
   assert.match(output.generatedFiles[0], /\\\.boardforge\\requirements\\005_usb_c_pd_source\.json$/i)
   const persisted = JSON.parse(await readFile(output.generatedFiles[0], 'utf8'))
   assert.equal(persisted.constraints.pd_role, 'source')
+})
+
+test('training Design Intent Packages are persisted as process records, never delivery files', async () => {
+  const workspace = await mkdtemp(path.join(os.tmpdir(), 'boardforge-training-intent-'))
+  const output = await executeJob({ id: 'training-board009', type: 'generate_training_design_intent', input: { board: manifest.boards[8] } }, workspace)
+  assert.match(output.status, /DESIGN_INTENT_GENERATED/)
+  assert.match(output.generatedFiles[0], /\\\.boardforge\\training-design-intents\\009_poe_sensor\.json$/i)
+  assert.equal(output.designIntent.mode, 'autonomous_training_benchmark')
 })
