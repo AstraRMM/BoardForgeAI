@@ -24,6 +24,15 @@ const USB_PD_SINK_TOPOLOGY = {
   // nx=.21 makes the contact copper tangent to the notch clearance envelope.
   J1:{nx:.23,ny:.50,rotations:[90]},
 }
+const INDUSTRIAL_IO_TOPOLOGY = {
+  // Keep the field-entry components left of the ISO1212 and the logic domain
+  // right of it. This preserves a usable routing corridor and makes the
+  // isolation review visible in placement before copper is generated.
+  J1:{nx:.10,ny:.50,rotations:[90,270]},F1:{nx:.22,ny:.18,rotations:[0,180]},D1:{nx:.22,ny:.80,rotations:[0,180]},
+  R1:{nx:.25,ny:.32,rotations:[0,180]},R2:{nx:.25,ny:.68,rotations:[0,180]},C1:{nx:.32,ny:.42,rotations:[0,90,180,270]},C2:{nx:.32,ny:.58,rotations:[0,90,180,270]},
+  R3:{nx:.39,ny:.32,rotations:[0,180]},R4:{nx:.39,ny:.68,rotations:[0,180]},U1:{nx:.47,ny:.50,rotations:[0,180]},
+  C3:{nx:.61,ny:.25,rotations:[0,90,180,270]},U2:{nx:.68,ny:.50,rotations:[0,90,180,270]},J2:{nx:.90,ny:.50,rotations:[0,180,90,270]},
+}
 const BOARD007_CAN_TOPOLOGY=board007PlacementPreferences()
 const BOARD008_CAN_GATEWAY_TOPOLOGY=board008PlacementPreferences()
 
@@ -54,7 +63,7 @@ export function placeAuthoritativeProductionFootprints({
   resolved.sort((a, b) => area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
   const placed = []
   for (const component of resolved) {
-    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : null
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'industrial-io-production' ? INDUSTRIAL_IO_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : null
     const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
     const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : candidateTransforms(preference, bounds)
     let winner = null
