@@ -7,6 +7,10 @@ const cache=new Map()
 export function resolveAuthoritativeKiCadFootprint(libId,{roots=DEFAULT_ROOTS}={}){
   const [library,...parts]=String(libId||'').split(':'),name=parts.join(':')
   validateSegment(library,'library');validateSegment(name,'footprint')
+  if(libId==='BoardForge:THI_2-0511M_DIP16_6Lead'){
+    const definition=bundledThi20511mFootprintDefinition(),pads=extractFootprintPads(definition)
+    return {schema:'boardforge.authoritative-kicad-footprint.v1',libId,library,name,sourceFile:'bundled:traco-thi2m-datasheet-rev-2024-06-19-page-4-plus-boardforge-tht-fabrication-rule',definition,pads,padNumbers:[...new Set(pads.map(p=>p.number))]}
+  }
   for(const root of roots){
     const key=`${root}|${libId}`;if(cache.has(key)){const hit=cache.get(key);if(hit)return structuredClone(hit);continue}
     const file=path.join(root,`${library}.pretty`,`${name}.kicad_mod`)
@@ -22,6 +26,30 @@ export function resolveAuthoritativeKiCadFootprint(libId,{roots=DEFAULT_ROOTS}={
   }
   throw new Error(`KiCad footprint is not installed: ${libId}`)
 }
+
+/** Exact THI 2-0511M package geometry from Traco's June 19, 2024 outline.
+ * The source specifies its 0.50 mm leads and 2.54 mm / 10.16 mm pin grid;
+ * BoardForge's documented through-hole rule adds a 0.30 mm finished-hole
+ * allowance (0.80 mm drill) and a 1.60 mm annular-ring pad.  Those latter
+ * values are an explicit fabrication rule, never claimed as a Traco drawing. */
+export function bundledThi20511mFootprintDefinition(){return`(footprint "THI_2-0511M_DIP16_6Lead"
+	(version 20240108)
+	(generator "boardforge")
+	(layer "F.Cu")
+	(attr through_hole)
+	(property "Reference" "REF**" (at 5.08 -4.1 0) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))
+	(property "Value" "THI 2-0511M" (at 5.08 21.88 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))
+	(fp_rect (start -1.62 -3) (end 11.78 20.8) (stroke (width 0.12) (type solid)) (fill none) (layer "F.Fab"))
+	(fp_rect (start -2.12 -3.5) (end 12.28 21.3) (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd"))
+	(fp_rect (start -1.75 -3.13) (end 11.91 20.93) (stroke (width 0.12) (type solid)) (fill none) (layer "F.SilkS"))
+	(fp_line (start -1.75 -1.27) (end -0.48 -1.27) (stroke (width 0.25) (type solid)) (layer "F.SilkS"))
+	(pad "1" thru_hole rect (at 0 0) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask"))
+	(pad "7" thru_hole circle (at 0 15.24) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask"))
+	(pad "8" thru_hole circle (at 0 17.78) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask"))
+	(pad "9" thru_hole circle (at 10.16 17.78) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask"))
+	(pad "10" thru_hole circle (at 10.16 15.24) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask"))
+	(pad "16" thru_hole circle (at 10.16 0) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask"))
+)`}
 
 export function extractFootprintPads(definition){
   const result=[]

@@ -29,6 +29,18 @@ test('resolver rejects traversal and missing installed footprints explicitly',()
   assert.throws(()=>resolveAuthoritativeKiCadFootprint('NoSuchLibrary:NoSuchFootprint'),/not installed/)
 })
 
+test('source-derived THI 2-0511M footprint retains its six exact lead positions and declared fabrication rule',()=>{
+  const fp=resolveAuthoritativeKiCadFootprint('BoardForge:THI_2-0511M_DIP16_6Lead')
+  assert.equal(fp.sourceFile,'bundled:traco-thi2m-datasheet-rev-2024-06-19-page-4-plus-boardforge-tht-fabrication-rule')
+  assert.deepEqual(fp.padNumbers,['1','7','8','9','10','16'])
+  assert.deepEqual(fp.pads.find(p=>p.number==='1')&&[p(fp,'1','x'),p(fp,'1','y')],[0,0])
+  assert.deepEqual(fp.pads.find(p=>p.number==='7')&&[p(fp,'7','x'),p(fp,'7','y')],[0,15.24])
+  assert.deepEqual(fp.pads.find(p=>p.number==='8')&&[p(fp,'8','x'),p(fp,'8','y')],[0,17.78])
+  assert.deepEqual(fp.pads.find(p=>p.number==='9')&&[p(fp,'9','x'),p(fp,'9','y')],[10.16,17.78])
+  assert.ok(fp.pads.every(pad=>pad.type==='thru_hole'&&pad.drill?.widthMm===.8&&pad.widthMm===1.6))
+})
+function p(fp,number,key){return fp.pads.find(pad=>pad.number===number)?.[key]}
+
 test('PCB serialization keeps local coordinates and adds footprint rotation to pad orientation',()=>{
   const fp=resolveAuthoritativeKiCadFootprint('RF_Module:ESP32-S3-WROOM-1U')
   const text=serializeAuthoritativeKiCadFootprint({resolved:fp,ref:'U1',value:'ESP32-S3-WROOM-1U-N8R8',at:{x:21,y:10.5,rotation:90},netByPad:{1:{netNumber:4,netName:'GND'}},uuidFor:key=>`00000000-0000-4000-8000-${String(key.length).padStart(12,'0')}`})

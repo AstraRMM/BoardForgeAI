@@ -47,6 +47,21 @@ export function resolveAuthoritativeKiCadSymbol(
       pinMap: Object.fromEntries(pins.map((pin) => [pin.number, pin.name])),
     };
   }
+  if (libId === "BoardForge:THI_2-0511M") {
+    const definition = bundledThi20511mDefinition(),
+      pins = extractPinCoordinates(definition);
+    return {
+      schema: "boardforge.authoritative-kicad-symbol.v1",
+      libId,
+      library,
+      name,
+      sourceFile: "bundled:traco-thi2m-datasheet-rev-2024-06-19-page-4",
+      dependencyOrder: [libId],
+      definitions: [definition],
+      pins,
+      pinMap: Object.fromEntries(pins.map((pin) => [pin.number, pin.name])),
+    };
+  }
   const source = loadLibrary(library, roots);
   if (!source)
     throw new Error(`KiCad symbol library is not installed: ${library}`);
@@ -259,6 +274,38 @@ export function bundledUln2803cDefinition({
 \t(property "Datasheet" "https://www.ti.com/lit/ds/symlink/uln2803c.pdf" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
 \t(symbol "ULN2803C_0_1"
 \t\t(rectangle (start -10.16 13.97) (end 10.16 -13.97) (stroke (width .254) (type default)) (fill (type background)))
+${pins}
+\t)
+)`;
+}
+
+export function bundledThi20511mDefinition({
+  qualifiedName = "BoardForge:THI_2-0511M",
+} = {}) {
+  const pins = [
+    ["1", "-Vin (GND)", "power_in", -10.16, 7.62, 0],
+    ["7", "NC", "no_connect", -10.16, 2.54, 0],
+    ["8", "NC", "no_connect", -10.16, -2.54, 0],
+    ["9", "+Vout", "power_out", 10.16, -2.54, 180],
+    // The output return is not a driven KiCad power source. Marking it
+    // passive preserves the real pin while avoiding an invented second
+    // source when FIELD_GND is explicitly power-flagged by the design.
+    ["10", "-Vout", "passive", 10.16, 2.54, 180],
+    ["16", "+Vin", "power_in", 10.16, 7.62, 180],
+  ].map(([number, name, type, x, y, rotation]) =>
+    `\t\t(pin ${type} line (at ${x} ${y} ${rotation}) (length 2.54) (name "${name}" (effects (font (size 1 1)))) (number "${number}" (effects (font (size 1 1)))))`,
+  ).join("\n");
+  return `(symbol "${qualifiedName}"
+\t(pin_names (offset 1.016))
+\t(exclude_from_sim no)
+\t(in_bom yes)
+\t(on_board yes)
+\t(property "Reference" "U" (at 0 12.7 0) (effects (font (size 1.27 1.27))))
+\t(property "Value" "THI 2-0511M" (at 0 -7.62 0) (effects (font (size 1.27 1.27))))
+\t(property "Footprint" "BoardForge:THI_2-0511M_DIP16_6Lead" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+\t(property "Datasheet" "https://www.tracopower.com/products/thi2m.pdf" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+\t(symbol "THI_2-0511M_0_1"
+\t\t(rectangle (start -7.62 10.16) (end 7.62 -5.08) (stroke (width .254) (type default)) (fill (type background)))
 ${pins}
 \t)
 )`;

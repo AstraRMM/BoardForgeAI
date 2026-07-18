@@ -1076,6 +1076,19 @@ export const approvedProductionAssets = Object.freeze({
     },
     "SSOP-16",
   ),
+  "THI 2-0511M": entry(
+    "THI 2-0511M",
+    "BoardForge:THI_2-0511M",
+    "BoardForge:THI_2-0511M_DIP16_6Lead",
+    { 1: "GND", 7: "NC", 8: "NC", 9: "FIELD_5V", 10: "FIELD_GND", 16: "5V" },
+    "DIP-16 6-lead isolated DC/DC",
+    {
+      sourceEvidence: "https://www.tracopower.com/products/thi2m.pdf",
+      applicationLimitations: [
+        "The Traco drawing defines the 0.50 mm lead, 2.54 mm pitch, 10.16 mm row pitch and six electrical lead positions. The 0.80 mm drill and 1.60 mm pad are BoardForge's explicit through-hole fabrication rule, not a manufacturer-recommended land pattern.",
+      ],
+    },
+  ),
   // SIP-4 pinout: +Vin, -Vin, -Vout, +Vout.  Pin 4 must not be
   // represented as NC: it is the isolated field-side supply output.
   "RFM-0505S": entry(

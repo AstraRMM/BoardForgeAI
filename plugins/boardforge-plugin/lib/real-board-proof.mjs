@@ -15,7 +15,7 @@ import { projectCanonicalBinding, resolveCanonicalComponentBinding } from './com
 import { verifyReferenceParity } from './components/reference-parity.mjs'
 import { createProductionPartResolver, digikeyProductionProvider, mouserProductionProvider } from './components/production-part-resolver.mjs'
 import { approvedAssetFor } from './components/approved-production-assets.mjs'
-import { resolveAuthoritativeKiCadFootprint, serializeAuthoritativeKiCadFootprint } from './components/authoritative-kicad-footprint-resolver.mjs'
+import { resolveAuthoritativeKiCadFootprint, serializeAuthoritativeKiCadFootprint, bundledThi20511mFootprintDefinition } from './components/authoritative-kicad-footprint-resolver.mjs'
 import { resolveAuthoritativeKiCadSymbol } from './components/authoritative-kicad-symbol-resolver.mjs'
 import { loadBoardForgeEnv } from './config/env-loader.mjs'
 import { createMouserProvider } from './sourcing/mouser-provider.mjs'
@@ -891,10 +891,16 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     const routingInput=authoritativePadRoutingInput(copperlessScan)
     const fixed=authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
     const fixedComplete=routingInput.nets.every(({net})=>fixed.completedNets.includes(net)||/^GND$/i.test(net))
+    // A large QFP has many deliberately unconnected physical pads. They are
+    // not routing trees: authoritativePadRoutingInput has already excluded
+    // singleton nets. Measure the real connection graph, not raw pad count,
+    // so a compact board with a sparse functional topology reaches the
+    // candidate router instead of being rejected as a fictitious dense fanout.
+    const routableEndpointCount=routingInput.nets.reduce((sum,tree)=>sum+tree.endpoints.length,0)
     // The generic channel search is combinatorial on dense MCU fanout. Preserve
     // a deterministic zero-copper transaction baseline instead of consuming
     // the campaign watchdog or falling back to stale proof-coordinate copper.
-    if((copperlessScan.pads?.length||0)>80&&!fixedComplete)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
+    if(routableEndpointCount>80&&!fixedComplete)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
     const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile,viaDiameter:.5})
     if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
     const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
@@ -1532,7 +1538,10 @@ export function categorySchematicPinMaps(board) {
       D1:{1:'FIELD_24V_FUSED',2:'FIELD_GND'},
       U1:{1:'FIELD_IN1',2:'FIELD_GND',3:'FIELD_GND',4:'FIELD_IN1',5:'FIELD_IN2',6:'FIELD_GND',7:'FIELD_GND',8:'FIELD_IN2',9:'GND',10:'LOGIC_IN2',12:'3V3',13:'3V3',14:'LOGIC_IN1',16:'GND'},
       U2:{8:'GND',9:'3V3',23:'GND',24:'3V3',32:'LOGIC_IN1',33:'LOGIC_IN2',35:'GND',36:'3V3',47:'GND',48:'3V3'},
-      U3:{1:'5V',2:'GND',3:'FIELD_GND',4:'FIELD_5V'},
+      // Exact Traco THI 2-0511M single-output pinout. Pins 7/8 are NC and
+      // deliberately omitted here so schematic generation cannot label or
+      // wire them. The canonical asset still records all physical pins.
+      U3:{1:'GND',9:'FIELD_5V',10:'FIELD_GND',16:'5V'},
       J2:{1:'GND',2:'3V3',3:'LOGIC_IN1',4:'LOGIC_IN2',5:'5V',6:'GND'},
     },
     'drone-stack-board': {
@@ -1767,6 +1776,10 @@ async function writeCategoryReviewLibraries(projectDir, symbols) {
   await writeFile(path.join(projectDir, 'sym-lib-table'), '(sym_lib_table\n  (lib (name "BoardForge")(type "KiCad")(uri "${KIPRJMOD}/BoardForge.kicad_sym")(options "")(descr "BoardForge generated review symbols"))\n)\n', 'utf8')
   await writeFile(path.join(projectDir, 'fp-lib-table'), '(fp_lib_table\n  (lib (name "BoardForge")(type "KiCad")(uri "${KIPRJMOD}/BoardForge.pretty")(options "")(descr "BoardForge generated review footprints"))\n)\n', 'utf8')
   for (const count of counts) await writeFile(path.join(footprintDir, `BF_CONN_${count}.kicad_mod`), reviewFootprint(count), 'utf8')
+  // Keep every bundled authoritative footprint available to KiCad's symbol
+  // link resolver. The PCB also embeds its geometry, while this library makes
+  // the project itself open cleanly in KiCad without a missing-footprint ERC.
+  if(symbols.some(symbol=>symbol.footprint==='BoardForge:THI_2-0511M_DIP16_6Lead'))await writeFile(path.join(footprintDir,'THI_2-0511M_DIP16_6Lead.kicad_mod'),bundledThi20511mFootprintDefinition(),'utf8')
 }
 
 function reviewFootprint(count) {
