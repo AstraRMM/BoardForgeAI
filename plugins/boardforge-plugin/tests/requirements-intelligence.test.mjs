@@ -8,6 +8,11 @@ test('Board005 asks only the USB-PD decisions that cannot be safely inferred', (
   assert.deepEqual(plan.questions.slice(0, 4).map((question) => question.id), ['pd_role', 'pdo_profile', 'vbus_current_limit_a', 'dead_battery_behavior'])
   assert.ok(plan.questions.every((question) => question.bucket === 'must_ask_user'))
   assert.ok(plan.safeInferences.some((item) => item.id === 'lifecycle_preference'))
+  assert.equal(plan.requirementsGraph.schema, 'boardforge.phase2c.requirements-graph.v1')
+  assert.equal(plan.requirementsGraph.autoProceedConfidence, 0.95)
+  assert.equal(plan.requirementsGraph.nodes.find((node) => node.id === 'lifecycle_preference').autoProceed, true)
+  assert.equal(plan.requirementsGraph.nodes.find((node) => node.id === 'pd_role').parentId, 'domain:USB-PD policy')
+  assert.deepEqual(plan.questionBatches.map((batch) => batch.domain), ['USB-PD policy', 'Power'])
 })
 
 test('Board011 records answers as reusable constraints but never declares the proposal accepted', () => {
