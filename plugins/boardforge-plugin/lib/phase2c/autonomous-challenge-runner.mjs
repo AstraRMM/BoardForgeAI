@@ -8,6 +8,7 @@ export async function runAutonomousChallenge(options) {
   const {manifest,checkpointPath,executePilot,executeBoard,batchSize=5,maxRetries=2,watchdogMs=90_000,executionContext={}}=options
   if (!manifest?.boards?.length) throw new Error('A non-empty challenge manifest is required')
   let state=options.resume ? await loadCheckpoint(checkpointPath) : freshState(manifest,options.driverModule)
+  await applyExplicitManifestMigration({state,manifest,checkpointPath,migration:options.manifestMigration})
   assertManifest(state,manifest)
   if (state.phase==='complete') return outcome('CHALLENGE_COMPLETE',state,checkpointPath)
 
@@ -53,7 +54,7 @@ export async function runAutonomousChallenge(options) {
       if (state.retries[String(index)]>maxRetries) return outcome('RETRY_LIMIT_ENGINE_IMPROVEMENT_REQUIRED',state,checkpointPath)
       return outcome('BOARD_REJECTED_ENGINE_IMPROVEMENT_REQUIRED',state,checkpointPath)
     }
-    state.accepted.push({index,boardId:board.id||String(index),evidenceDigest:result.acceptance.evidenceDigest,acceptedAt:new Date().toISOString()})
+    state.accepted.push({index,boardId:result.acceptedBoardId||board.id||String(index),evidenceDigest:result.acceptance.evidenceDigest,acceptedAt:new Date().toISOString()})
     state.nextBoardIndex++; state.engineImprovementRequired=false; state.lastFailure=null; processed++
     await saveCheckpoint(checkpointPath,state)
   }
@@ -88,6 +89,14 @@ export async function loadCheckpoint(file){const state=JSON.parse(await readFile
 export function exactResumeCommand(checkpointPath,driverModule){return `npm run boardforge:phase2c-resume -- --checkpoint "${checkpointPath}"${driverModule?` --driver "${driverModule}"`:''}`}
 
 function freshState(manifest,driverModule){return {schema:RUNNER_SCHEMA,manifestDigest:digest(manifest),driverModule:driverModule||null,phase:'awaiting_pilot',nextBoardIndex:0,pilot:null,accepted:[],retries:{},engineImprovementRequired:false,lastFailure:null,createdAt:new Date().toISOString()}}
+async function applyExplicitManifestMigration({state,manifest,checkpointPath,migration}){
+  const targetDigest=digest(manifest)
+  if(state.manifestDigest===targetDigest)return
+  if(!migration?.reason||migration.fromDigest!==state.manifestDigest||migration.toDigest!==targetDigest)throw new Error('Checkpoint manifest digest does not match current challenge manifest')
+  const record={schema:'boardforge.phase2c.manifest-migration.v1',fromDigest:state.manifestDigest,toDigest:targetDigest,reason:migration.reason,migratedAt:new Date().toISOString()}
+  state.manifestDigest=targetDigest;state.manifestMigrations=[...(state.manifestMigrations||[]),record]
+  await saveCheckpoint(checkpointPath,state)
+}
 function assertManifest(state,manifest){if(state.manifestDigest!==digest(manifest))throw new Error('Checkpoint manifest digest does not match current challenge manifest')}
 function outcome(status,state,checkpointPath){return {status,state,checkpointPath,resumeCommand:status==='CHALLENGE_COMPLETE'?null:exactResumeCommand(checkpointPath,state.driverModule)}}
 function summary(result,accepted){return {accepted,status:result?.acceptance?.status||'MISSING_ACCEPTANCE',evidenceDigest:result?.acceptance?.evidenceDigest||null,blockers:result?.acceptance?.blockers||[]}}

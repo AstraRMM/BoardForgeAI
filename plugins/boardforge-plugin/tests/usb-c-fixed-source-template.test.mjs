@@ -26,6 +26,8 @@ test("fixed source refuses a PD claim, wrong 1.5 A straps, or erased pin coverag
   assert.ok(validate(straps).errors.includes("tps25810-1p5a-strap-invalid"));
   const pins = structuredClone(template); delete pins.controllerNetMap[20];
   assert.ok(validate(pins).errors.includes("tps25810-net-map-missing:20"));
+  const openCollector = structuredClone(template); openCollector.controllerNetMap[20] = "GND";
+  assert.ok(validate(openCollector).errors.includes("tps25810-open-collector-must-be-open:20"));
   const functionMap = structuredClone(template); functionMap.controllerPinFunctions[7] = "GND";
   assert.ok(validate(functionMap).errors.includes("tps25810-symbol-function-mismatch:7"));
 });
@@ -37,4 +39,10 @@ test("fixed source cannot turn contract data into a release without fresh dual-p
   assert.ok(gate.errors.includes("live-mouser-coverage-missing"));
   assert.ok(gate.errors.includes("kicad-validation-not-clean:ercErrors"));
   assert.ok(gate.errors.includes("manufacturing-acceptance-missing"));
+});
+
+test("Board005 C_AUX replacement preserves the approved 0603 two-terminal binding", () => {
+  const caux = template.requirements.find((row) => row.ref === "C_AUX");
+  assert.equal(caux.mpn, "CC0603ZRY5V8BB104");
+  assert.equal(caux.pinCount, 2);
 });

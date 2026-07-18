@@ -62,6 +62,18 @@ export function allLayerPthClearance(input, tracks = [], { clearance = .2 } = {}
   return { schema: 'boardforge.all-layer-pth-clearance.v1', ok: collisions.length === 0, collisions }
 }
 
+/** A fixed route is valid only on copper layers declared by the emitted PCB.
+ * This fails before KiCad so a topology proof cannot silently target an absent
+ * inner layer after a board-stackup change. */
+export function declaredCopperLayerGate(input, route = {}) {
+  const declared = new Set((input?.layers || []).map(String))
+  const invalid = [...(route.tracks || []), ...(route.vias || [])].filter(item => {
+    if (item.layer) return !declared.has(String(item.layer))
+    return !declared.has('F.Cu') || !declared.has('B.Cu')
+  })
+  return { schema: 'boardforge.declared-copper-layer-gate.v1', ok: invalid.length === 0, declared: [...declared], invalid }
+}
+
 /** Reject the known-invalid W5500 proof topology before it is handed to a
  * differential-pair router.  This check is deliberately narrow: it applies
  * only when the exact W5500/MagJack pair-net shape is present, and never
@@ -105,6 +117,12 @@ export async function regenerateAuthoritativePadRoutesCandidate({pcbFile,candida
   const selected=includeNets==null?null:new Set(includeNets.map(String))
   const fixed0=authoritativeFixedCorridors(input,{trackWidth,viaDiameter})
   const fixed=selected?{tracks:fixed0.tracks.filter(row=>selected.has(row.net)),vias:fixed0.vias.filter(row=>selected.has(row.net)),completedNets:fixed0.completedNets.filter(net=>selected.has(net)),partialNets:(fixed0.partialNets||[]).filter(net=>selected.has(net))}:fixed0
+  const fixedLayerGate=declaredCopperLayerGate(input,fixed)
+  if(!fixedLayerGate.ok){
+    const error=new Error(`Fixed corridor uses undeclared copper layer: ${[...new Set(fixedLayerGate.invalid.map(item=>item.layer||'via'))].join(', ')}`)
+    error.code='UNDECLARED_COPPER_LAYER'; error.invalid=fixedLayerGate.invalid
+    throw error
+  }
   const fixedPthClearance=allLayerPthClearance(input,fixed.tracks,{clearance})
   if(!fixedPthClearance.ok){
     const error=new Error(`Fixed corridor intersects all-layer PTH annulus: ${fixedPthClearance.collisions.map(row=>`${row.net}:${row.ref}:${row.pad}`).join(', ')}`)
@@ -227,6 +245,12 @@ export function compactEsp32FixedCorridors(input,{trackWidth,viaDiameter}){
  * exact authoritative board it was validated against. Coordinates are part of
  * the proof: a placement change deliberately falls back to the generic router. */
 export function authoritativeFixedCorridors(input,options){
+  const board009Batch=board009W5500SupportBatchCorridors(input,options)
+  if(board009Batch.completedNets.length)return board009Batch
+  const board009=board009PoeLocalSupportFixedCorridors(input,options)
+  if(board009.completedNets.length)return board009
+  const fixedSource=usbCFixedSourceVbusCorridor(input,options)
+  if(fixedSource.completedNets.length)return fixedSource
   const pdSource=tps25750SourceFixedCorridors(input,options)
   if(pdSource.completedNets.length)return pdSource
   const pdSink=usbCPdSinkFixedCorridors(input,options)
@@ -241,6 +265,226 @@ export function authoritativeFixedCorridors(input,options){
   if(industrialIo.completedNets.length)return industrialIo
   const stm32=stm32AuthoritativeFixedCorridors(input,options)
   return stm32.completedNets.length?stm32:compactEsp32FixedCorridors(input,options)
+}
+
+/**
+ * Board009's full 85 x 55 mm placement puts the W5500's timing and analog
+ * support parts in a compact, deliberate fanout island.  These are not
+ * generic point-to-point guesses: the exact resolver-transformed pad centres
+ * below are the production-placement signature.  Keep the five independent
+ * support nets together so the local candidate proves a coherent copper
+ * increment instead of accumulating one-off tracks.
+ *
+ * EXRES / TOCAP / 1V2O are WIZnet's required local reference parts.  The
+ * crystal legs each include the corresponding load capacitor in the same
+ * tree.  Each trace stays in the isolated secondary/right domain and on the
+ * top layer; `allLayerPthClearance` remains mandatory in the caller before
+ * anything is written to a candidate PCB.
+ */
+export function board009W5500SupportBatchCorridors(input,{trackWidth=.2}={}){
+  const byNet=new Map((input?.nets||[]).map(row=>[row.net,row.endpoints||[]]))
+  const at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const exres=[at('W5500_EXRES','U_ETH','10'),at('W5500_EXRES','R_EXRES','1')]
+  const tocap=[at('W5500_TOCAP','U_ETH','20'),at('W5500_TOCAP','C_TOCAP','1')]
+  const oneV2=[at('W5500_1V2','U_ETH','22'),at('W5500_1V2','C_1V2','1')]
+  const xin=[at('XTAL_IN','U_ETH','30'),at('XTAL_IN','Y_ETH','1'),at('XTAL_IN','C_ETH_XIN','1')]
+  const xout=[at('XTAL_OUT','U_ETH','31'),at('XTAL_OUT','Y_ETH','3'),at('XTAL_OUT','C_ETH_XOUT','1')]
+  const near=(value,expected)=>Math.abs(value-expected)<.002
+  const signature=[
+    [exres[0],59.837,19.75],[exres[1],55.175,23],
+    [tocap[0],64.75,22.163],[tocap[1],59.225,24.5],
+    [oneV2[0],65.75,22.163],[oneV2[1],63.225,24.5],
+    [xin[0],68.162,18.25],[xin[1],74.9,18.8],[xin[2],73,14.775],
+    [xout[0],68.162,17.75],[xout[1],77.1,17.2],[xout[2],73,22.775],
+  ]
+  if(input?.bounds?.minX!==1||input?.bounds?.minY!==1||input?.bounds?.maxX!==84||input?.bounds?.maxY!==54||!signature.every(([p,x,y])=>p&&near(p.x,x)&&near(p.y,y)))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const t=(net,start,end)=>({net,layer:'F.Cu',start,end,width:trackWidth})
+  const tracks=[
+    // Pin 10 exits left, then drops outside the adjacent QFP pads.
+    t('W5500_EXRES',exres[0],{x:58.4,y:19.75}),t('W5500_EXRES',{x:58.4,y:19.75},{x:58.4,y:22.1}),t('W5500_EXRES',{x:58.4,y:22.1},exres[1]),
+    // The two bottom-edge analog outputs have dedicated lanes to their local
+    // capacitors; no shared via or interior-plane stub is used.
+    t('W5500_TOCAP',tocap[0],{x:64.75,y:23.2}),t('W5500_TOCAP',{x:64.75,y:23.2},{x:59.225,y:23.2}),t('W5500_TOCAP',{x:59.225,y:23.2},tocap[1]),
+    t('W5500_1V2',oneV2[0],{x:65.75,y:23.85}),t('W5500_1V2',{x:65.75,y:23.85},{x:63.225,y:23.85}),t('W5500_1V2',{x:63.225,y:23.85},oneV2[1]),
+    // Crystal input: branch at x=72.4, with the load capacitor entirely
+    // above the oscillator lane.
+    t('XTAL_IN',xin[0],{x:72.4,y:18.25}),t('XTAL_IN',{x:72.4,y:18.25},{x:74.9,y:18.8}),t('XTAL_IN',{x:72.4,y:18.25},{x:72.4,y:14.775}),t('XTAL_IN',{x:72.4,y:14.775},xin[2]),
+    // Crystal output uses a separate lower branch; its minimum 0.50 mm
+    // spacing from the input lane is enforced by real KiCad DRC.
+    t('XTAL_OUT',xout[0],{x:72.9,y:17.75}),t('XTAL_OUT',{x:72.9,y:17.75},xout[1]),t('XTAL_OUT',{x:72.9,y:17.75},{x:72.9,y:22.775}),t('XTAL_OUT',{x:72.9,y:22.775},xout[2]),
+  ]
+  return{tracks,vias:[],completedNets:['W5500_EXRES','W5500_TOCAP','W5500_1V2','XTAL_IN','XTAL_OUT'],partialNets:[]}
+}
+
+/** The first Board009 copper increment is deliberately tiny: W5500 EXRES is
+ * a source-backed, independent reference branch.  The installed LQFP places
+ * pin 10 immediately above the 3V3A pin 11, so a vertical surface trace would
+ * cross a foreign pad.  This signature-gated corridor exits left, changes to
+ * B.Cu outside the package, then returns below the 12.4 kOhm resistor.  It
+ * does not cross the primary/secondary isolation waist and is rejected if
+ * Board009's exact authoritative placement changes. */
+export function board009PoeLocalSupportFixedCorridors(input,{trackWidth=.2,viaDiameter=.5}={}){
+  const byNet=new Map((input?.nets||[]).map(row=>[row.net,row.endpoints||[]]))
+  const at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const exres=[at('W5500_EXRES','U_ETH','10'),at('W5500_EXRES','R_EXRES','1')]
+  const bmeStrap=[at('BME_SDO_GND','U_SENSOR','5'),at('BME_SDO_GND','R_BME_ADDR','1')]
+  const near=(value,expected)=>Math.abs(value-expected)<.002
+  if(input?.bounds?.maxX!==69||input?.bounds?.maxY!==44||!exres.every(Boolean)||!bmeStrap.every(Boolean)||
+    !near(exres[0].x,17.087)||!near(exres[0].y,38)||!near(exres[1].x,17.925)||!near(exres[1].y,42.5)||
+    !near(bmeStrap[0].x,36.025)||!near(bmeStrap[0].y,37.775)||!near(bmeStrap[1].x,47.925)||!near(bmeStrap[1].y,41.25))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const [phy,resistor]=exres,escape={x:15.5,y:38},returnVia={x:17.925,y:43.5}
+  const [sensor,addressStrap]=bmeStrap,bmeEscape={x:38,y:37.775},bmeReturn={x:46.5,y:42.75}
+  return{
+    tracks:[
+      {net:'W5500_EXRES',layer:'F.Cu',start:{x:phy.x,y:phy.y},end:escape,width:trackWidth},
+      {net:'W5500_EXRES',layer:'B.Cu',start:escape,end:returnVia,width:trackWidth},
+      {net:'W5500_EXRES',layer:'F.Cu',start:returnVia,end:{x:resistor.x,y:resistor.y},width:trackWidth},
+      // Bosch specifies SDO low for the 0x76 I2C address.  The 0-ohm strap
+      // is an explicit serviceable selection, so its sensor-side branch is
+      // proven independently before the common SELV_GND return is poured.
+      {net:'BME_SDO_GND',layer:'F.Cu',start:{x:sensor.x,y:sensor.y},end:bmeEscape,width:trackWidth},
+      {net:'BME_SDO_GND',layer:'B.Cu',start:bmeEscape,end:bmeReturn,width:trackWidth},
+      {net:'BME_SDO_GND',layer:'F.Cu',start:bmeReturn,end:{x:addressStrap.x,y:addressStrap.y},width:trackWidth},
+    ],
+    vias:[
+      {net:'W5500_EXRES',x:escape.x,y:escape.y,diameter:viaDiameter,drill:.3},
+      {net:'W5500_EXRES',x:returnVia.x,y:returnVia.y,diameter:viaDiameter,drill:.3},
+      {net:'BME_SDO_GND',x:bmeEscape.x,y:bmeEscape.y,diameter:viaDiameter,drill:.3},
+      {net:'BME_SDO_GND',x:bmeReturn.x,y:bmeReturn.y,diameter:viaDiameter,drill:.3},
+    ],
+    completedNets:['W5500_EXRES','BME_SDO_GND'],partialNets:[],
+  }
+}
+
+/** Board005's Type-C VBUS pads are separated by intervening CC/data contacts,
+ * so a surface-only tree would cross foreign pads.  This narrow corridor is
+ * enabled only for the exact resolver-placed USB fixed-source signature: tie
+ * the two switch outputs on F.Cu, then join them, both receptacle VBUS pads,
+ * and the output capacitor on In2.Cu. */
+export function usbCFixedSourceVbusCorridor(input,{trackWidth=.2,viaDiameter=.6}={}){
+  const byNet=new Map((input?.nets||[]).map(row=>[row.net,row.endpoints||[]]))
+  const at=(net,ref,pad)=>byNet.get(net)?.find(p=>p.ref===ref&&String(p.pad)===String(pad))
+  const u14=at('VBUS','U1','14'),u15=at('VBUS','U1','15'),cap=at('VBUS','C_OUT','1'),a4=at('VBUS','J2','A4'),a9=at('VBUS','J2','A9')
+  const ref=at('REF','U1','10'),refRtn=at('REF_RTN','U1','9'),rRef=at('REF','R_REF','1'),rRefRtn=at('REF_RTN','R_REF','2')
+  const cc1=at('CC1','U1','11'),cc1Port=at('CC1','J2','A5'),cc2=at('CC2','U1','13'),cc2Port=at('CC2','J2','B5')
+  const f1=at('5V_FUSED','F1','2'),d1=at('5V_FUSED','D1','1'),cin=at('5V_FUSED','C_IN','1'),caux=at('5V_FUSED','C_AUX','1'),rfault=at('5V_FUSED','R_FAULT','1')
+  const rawJ1=at('5V_RAW','J1','1'),rawF1=at('5V_RAW','F1','1')
+  const faultU=at('FAULT_N','U1','1'),faultR=at('FAULT_N','R_FAULT','2')
+  const gnd=byNet.get('GND')||[],gndAt=(ref,pad)=>gnd.find(p=>p.ref===ref&&String(p.pad)===String(pad)),gndAtPoint=(x,y)=>gnd.find(p=>near(p.x,x)&&near(p.y,y))
+  const gD1=gndAt('D1','2'),gCin=gndAt('C_IN','2'),gCaux=gndAt('C_AUX','2'),gCout=gndAt('C_OUT','2'),gA1=gndAt('J2','A1'),gA12=gndAt('J2','A12'),gJ1=gndAt('J1','2'),gU8=gndAt('U1','8'),gU12=gndAt('U1','12'),gU21=gndAt('U1','21')
+  const gShLeftUpper=gndAtPoint(35.08,8.205),gShLeftLower=gndAtPoint(35.08,4.025),gShRightUpper=gndAtPoint(43.72,8.205),gShRightLower=gndAtPoint(43.72,4.025)
+  const inPins=[2,3,4,5,6,7].map(pin=>at('5V_FUSED','U1',String(pin)))
+  const signature=[[u14,27.4,9.75],[u15,27.4,9.25],[cap,31.2,15],[a4,41.8,8.78],[a9,37,8.78],[ref,26.75,11.9],[refRtn,26.25,11.9],[rRef,26.175,16],[rRefRtn,27.825,16],[cc1,27.4,11.25],[cc1Port,40.65,8.78],[cc2,27.4,10.25],[cc2Port,37.65,8.78],[f1,10.4,15],[rawF1,7.6,15],[d1,15,15],[cin,10.2,5],[caux,22.225,15],[rfault,23.175,18],...inPins.map((p,index)=>[p,...([[24.6,9.25],[24.6,9.75],[24.6,10.25],[24.6,10.75],[24.6,11.25],[25.25,11.9]][index])])]
+  if(input?.bounds?.maxX!==44||input?.bounds?.maxY!==19||!signature.every(([p,x,y])=>p&&near(p.x,x)&&near(p.y,y)))return{tracks:[],vias:[],completedNets:[],partialNets:[]}
+  const width=Math.max(trackWidth,.4),layer='In2.Cu',tracks=[],vias=[]
+  const add=(from,to,on='F.Cu')=>tracks.push({net:'VBUS',layer:on,start:from,end:to,width})
+  const via=point=>vias.push({net:'VBUS',x:point.x,y:point.y,diameter:viaDiameter,drill:.3})
+  // The switch's adjacent outputs share one safe escape on the outside of
+  // the QFN.  Keeping that join on F.Cu prevents a via at the 0.5 mm pitch.
+  const switchJoin={x:28.6,y:9.5},switchVia={x:30.2,y:9.5}
+  add(u15,{x:switchJoin.x,y:u15.y});add({x:switchJoin.x,y:u15.y},switchJoin);add(switchJoin,{x:switchJoin.x,y:u14.y});add({x:switchJoin.x,y:u14.y},u14);add(switchJoin,switchVia);via(switchVia)
+  const capVia={x:33.5,y:15};add(cap,capVia);via(capVia)
+  // The receptacle dogbones leave the contact row downwards, clear of the
+  // adjacent CC contacts and shield tabs, before changing layers.
+  const a4Via={x:a4.x,y:10.2},a9Via={x:a9.x,y:10.2};add(a4,a4Via);add(a9,a9Via);via(a4Via);via(a9Via)
+  // Keep VBUS below the CC port transition rather than drawing one long
+  // horizontal backbone through its all-layer via.  The A4 branch drops into
+  // a lower local channel before it rejoins the A9/switch tree.
+  const laneY=11.5,branchY=13.5
+  add(switchVia,{x:switchVia.x,y:laneY},layer);add({x:switchVia.x,y:laneY},{x:a9Via.x,y:laneY},layer);add(a9Via,{x:a9Via.x,y:laneY},layer)
+  add(a4Via,{x:a4Via.x,y:laneY},layer);add({x:a4Via.x,y:laneY},{x:39.5,y:laneY},layer);add({x:39.5,y:laneY},{x:39.5,y:branchY},layer);add({x:39.5,y:branchY},{x:35,y:branchY},layer);add({x:35,y:branchY},{x:35,y:laneY},layer)
+  add(capVia,{x:capVia.x,y:branchY},layer);add({x:capVia.x,y:branchY},{x:35,y:branchY},layer)
+  // The 0.5 mm controller pitch leaves no useful surface channel between the
+  // REF pins and the protected-supply pins.  Escape each reference on its own
+  // short dogbone, then carry it on a separate internal layer to the 100 kΩ
+  // divider.  The paired vias are deliberately staggered so their annuli and
+  // the VBUS escape cannot overlap.
+  const controlWidth=Math.min(trackWidth,.2)
+  const addControl=(net,layer,points)=>{for(let i=1;i<points.length;i++)tracks.push({net,layer,start:points[i-1],end:points[i],width:controlWidth})}
+  const refVia={x:27.8,y:13},refPadVia={x:25,y:16}
+  addControl('REF','F.Cu',[ref,{x:ref.x,y:refVia.y},refVia])
+  vias.push({net:'REF',x:refVia.x,y:refVia.y,diameter:viaDiameter,drill:.3},{net:'REF',x:refPadVia.x,y:refPadVia.y,diameter:viaDiameter,drill:.3})
+  addControl('REF','In2.Cu',[refVia,{x:refPadVia.x,y:13},refPadVia])
+  addControl('REF','F.Cu',[refPadVia,rRef])
+  const refRtnVia={x:28.5,y:14.8},refRtnPadVia={x:29,y:16}
+  // This is the only 0.10 mm neck in the proof: it preserves the real 0.5 mm
+  // QFN pin pitch clearance beside the adjacent GND escape before widening on
+  // the internal route.
+  tracks.push({net:'REF_RTN',layer:'F.Cu',start:refRtn,end:{x:refRtn.x,y:refRtnVia.y},width:.1},{net:'REF_RTN',layer:'F.Cu',start:{x:refRtn.x,y:refRtnVia.y},end:refRtnVia,width:.1})
+  vias.push({net:'REF_RTN',x:refRtnVia.x,y:refRtnVia.y,diameter:viaDiameter,drill:.3},{net:'REF_RTN',x:refRtnPadVia.x,y:refRtnPadVia.y,diameter:viaDiameter,drill:.3})
+  addControl('REF_RTN','B.Cu',[refRtnVia,{x:refRtnVia.x,y:15.5},{x:refRtnPadVia.x,y:15.5},refRtnPadVia])
+  addControl('REF_RTN','F.Cu',[refRtnPadVia,rRefRtn])
+  const addSignal=(net,source,sourceVia,port,portVia,layer,laneY)=>{
+    tracks.push({net,layer:'F.Cu',start:source,end:{x:sourceVia.x-.35,y:source.y},width:controlWidth},{net,layer:'F.Cu',start:{x:sourceVia.x-.35,y:source.y},end:sourceVia,width:controlWidth},{net,layer:'F.Cu',start:port,end:portVia,width:controlWidth})
+    vias.push({net,x:sourceVia.x,y:sourceVia.y,diameter:viaDiameter,drill:.3},{net,x:portVia.x,y:portVia.y,diameter:viaDiameter,drill:.3})
+    tracks.push({net,layer,start:sourceVia,end:{x:sourceVia.x,y:laneY},width:controlWidth},{net,layer,start:{x:sourceVia.x,y:laneY},end:{x:portVia.x,y:laneY},width:controlWidth},{net,layer,start:{x:portVia.x,y:laneY},end:portVia,width:controlWidth})
+  }
+  // CC dogbones descend away from the connector contact row before using
+  // separate inner/back layers, preserving both the VBUS via clearance and
+  // the 0.65 mm Type-C contact pitch.
+  addSignal('CC1',cc1,{x:28.4,y:12},cc1Port,{x:40.65,y:10.2},'In1.Cu',13.25)
+  const cc2Source={x:29.4,y:10.45},cc2Turn={x:29.4,y:14.2},cc2PortTurn={x:cc2Port.x,y:10.2},cc2PortVia={x:38.7,y:10.2}
+  tracks.push({net:'CC2',layer:'F.Cu',start:cc2,end:{x:cc2Source.x,y:cc2.y},width:controlWidth},{net:'CC2',layer:'F.Cu',start:{x:cc2Source.x,y:cc2.y},end:cc2Source,width:controlWidth},{net:'CC2',layer:'F.Cu',start:cc2Port,end:cc2PortTurn,width:controlWidth},{net:'CC2',layer:'F.Cu',start:cc2PortTurn,end:cc2PortVia,width:controlWidth})
+  vias.push({net:'CC2',x:cc2Source.x,y:cc2Source.y,diameter:viaDiameter,drill:.3},{net:'CC2',x:cc2PortVia.x,y:cc2PortVia.y,diameter:viaDiameter,drill:.3})
+  tracks.push({net:'CC2',layer:'B.Cu',start:cc2Source,end:cc2Turn,width:controlWidth},{net:'CC2',layer:'B.Cu',start:cc2Turn,end:{x:cc2PortVia.x,y:cc2Turn.y},width:controlWidth},{net:'CC2',layer:'B.Cu',start:{x:cc2PortVia.x,y:cc2Turn.y},end:cc2PortVia,width:controlWidth})
+  // IN1/IN2/AUX/EN/CHG use the approved single 5 V rail.  Escape the six
+  // adjacent WQFN pins as one local surface tree, then fan the protected
+  // supply around it on In1.Cu so no high-current segment crosses the Type-C
+  // contact or CC corridors.
+  const railWidth=Math.max(trackWidth,.35),railNet='5V_FUSED',railAdd=(layer,start,end)=>tracks.push({net:railNet,layer,start,end,width:railWidth}),railVia=point=>vias.push({net:railNet,x:point.x,y:point.y,diameter:viaDiameter,drill:.3})
+  const [in2,in3,in4,in5,in6,in7]=inPins,localX=23.6,uVia={x:22.8,y:10.25},trunkY=17.2
+  for(const pin of [in2,in3,in4,in5,in6])railAdd('F.Cu',pin,{x:localX,y:pin.y})
+  railAdd('F.Cu',{x:localX,y:in2.y},{x:localX,y:12.7});railAdd('F.Cu',in7,{x:in7.x,y:12.7});railAdd('F.Cu',{x:in7.x,y:12.7},{x:localX,y:12.7});railAdd('F.Cu',{x:localX,y:uVia.y},uVia);railVia(uVia)
+  const dogs=[[cin,{x:9.3,y:5}],[f1,{x:11.4,y:15}],[d1,{x:15,y:16.2}],[caux,{x:21.4,y:15}],[rfault,{x:22,y:18}]]
+  for(const [pin,dog] of dogs){railAdd('F.Cu',pin,dog);railVia(dog);railAdd('In1.Cu',dog,{x:dog.x,y:trunkY})}
+  railAdd('In1.Cu',uVia,{x:uVia.x,y:trunkY});railAdd('In1.Cu',{x:9.3,y:trunkY},{x:uVia.x,y:trunkY})
+  const rawEscape={x:4.5,y:rawJ1.y}
+  tracks.push({net:'5V_RAW',layer:'F.Cu',start:rawJ1,end:rawEscape,width:railWidth},{net:'5V_RAW',layer:'F.Cu',start:rawEscape,end:{x:rawEscape.x,y:rawF1.y},width:railWidth},{net:'5V_RAW',layer:'F.Cu',start:{x:rawEscape.x,y:rawF1.y},end:rawF1,width:railWidth})
+  const completedNets=['VBUS','REF','REF_RTN','CC1','CC2','5V_FUSED','5V_RAW']
+  // FAULT_N is deliberately isolated on B.Cu.  It leaves the controller on
+  // the vacant outside edge, avoiding the six adjacent supply pads, and does
+  // not consume the In1/In2 power and reference lanes.
+  if(faultU&&faultR){
+    const faultSource={x:20.5,y:faultU.y},faultSink={x:29,y:17}
+    tracks.push({net:'FAULT_N',layer:'F.Cu',start:faultU,end:faultSource,width:controlWidth},{net:'FAULT_N',layer:'F.Cu',start:faultR,end:{x:faultSink.x,y:faultR.y},width:controlWidth},{net:'FAULT_N',layer:'F.Cu',start:{x:faultSink.x,y:faultR.y},end:faultSink,width:controlWidth})
+    vias.push({net:'FAULT_N',x:faultSource.x,y:faultSource.y,diameter:viaDiameter,drill:.3},{net:'FAULT_N',x:faultSink.x,y:faultSink.y,diameter:viaDiameter,drill:.3})
+    tracks.push({net:'FAULT_N',layer:'B.Cu',start:faultSource,end:{x:faultSource.x,y:16.6},width:controlWidth},{net:'FAULT_N',layer:'B.Cu',start:{x:faultSource.x,y:16.6},end:{x:faultSink.x,y:16.6},width:controlWidth},{net:'FAULT_N',layer:'B.Cu',start:{x:faultSink.x,y:16.6},end:faultSink,width:controlWidth})
+    completedNets.push('FAULT_N')
+  }
+  // A grounded Type-C shell must not depend on a decorative pour.  This is a
+  // full explicit return tree on Board005's declared F/In1/In2/B stack.  The
+  // B.Cu spine sits below the signal lanes; the two QFN returns and C_AUX use
+  // In1.Cu only long enough to avoid the B.Cu CC2 and FAULT_N corridors.
+  const gndPoints=[gD1,gCin,gCaux,gCout,gA1,gA12,gJ1,gU8,gU12,gU21,gShLeftUpper,gShLeftLower,gShRightUpper,gShRightLower]
+  const gndSignature=[[gD1,19,15],[gCin,15.8,5],[gCaux,23.775,15],[gCout,36.8,15],[gA1,42.6,8.78],[gA12,36.2,8.78],[gJ1,3,12.54],[gU8,25.75,11.9],[gU12,27.4,10.75],[gU21,26,10],[gShLeftUpper,35.08,8.205],[gShLeftLower,35.08,4.025],[gShRightUpper,43.72,8.205],[gShRightLower,43.72,4.025]]
+  const gndReady=gndPoints.every(Boolean)&&gndSignature.every(([p,x,y])=>near(p.x,x)&&near(p.y,y))
+  if(gndReady){
+    const groundWidth=Math.max(trackWidth,.35),groundLane=18.7,groundDog=(pad,dog)=>{tracks.push({net:'GND',layer:'F.Cu',start:pad,end:dog,width:groundWidth});vias.push({net:'GND',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});tracks.push({net:'GND',layer:'B.Cu',start:dog,end:{x:dog.x,y:groundLane},width:groundWidth})}
+    for(const [pad,dog] of [[gCin,{x:15.8,y:6.2}],[gD1,{x:19,y:16}],[gCout,{x:36.8,y:16}]])groundDog(pad,dog)
+    // The exposed pad receives a thermal via; pin 12 is first tied to that
+    // same verified copper island, avoiding an impossible independent escape
+    // through the neighbouring CC and VBUS pads.
+    tracks.push({net:'GND',layer:'F.Cu',start:gU12,end:{x:26.7,y:gU12.y},width:controlWidth})
+    const innerGroundDog=(pad,dog)=>{tracks.push({net:'GND',layer:'F.Cu',start:pad,end:dog,width:controlWidth});vias.push({net:'GND',x:dog.x,y:dog.y,diameter:viaDiameter,drill:.3});tracks.push({net:'GND',layer:'In1.Cu',start:dog,end:{x:dog.x,y:groundLane},width:groundWidth});vias.push({net:'GND',x:dog.x,y:groundLane,diameter:viaDiameter,drill:.3})}
+    innerGroundDog(gCaux,{x:24,y:15})
+    // Merge both controller ground terminals before one transition to the
+    // return spine; independent exit vias would violate the QFN clearance.
+    const qfnDog={x:gU8.x,y:14.5},qfnJoin={x:27.5,y:14.5},qfnExit={x:27.5,y:groundLane}
+    tracks.push({net:'GND',layer:'F.Cu',start:gU8,end:qfnDog,width:controlWidth})
+    vias.push({net:'GND',x:qfnDog.x,y:qfnDog.y,diameter:viaDiameter,drill:.3},{net:'GND',x:gU21.x,y:gU21.y,diameter:viaDiameter,drill:.3},{net:'GND',x:qfnExit.x,y:qfnExit.y,diameter:viaDiameter,drill:.3})
+    tracks.push({net:'GND',layer:'In1.Cu',start:qfnDog,end:qfnJoin,width:groundWidth},{net:'GND',layer:'In1.Cu',start:gU21,end:{x:gU21.x,y:qfnJoin.y},width:groundWidth},{net:'GND',layer:'In1.Cu',start:{x:gU21.x,y:qfnJoin.y},end:qfnJoin,width:groundWidth},{net:'GND',layer:'In1.Cu',start:qfnJoin,end:qfnExit,width:groundWidth})
+    // The two duplicated Type-C contact pads join their nearest shell on the
+    // outer F.Cu side, then the shell tabs follow the clear board perimeter.
+    tracks.push({net:'GND',layer:'F.Cu',start:gA12,end:{x:35.5,y:gA12.y},width:groundWidth},{net:'GND',layer:'F.Cu',start:{x:35.5,y:gA12.y},end:{x:35.5,y:gShLeftUpper.y},width:groundWidth},{net:'GND',layer:'F.Cu',start:{x:35.5,y:gShLeftUpper.y},end:gShLeftUpper,width:groundWidth})
+    tracks.push({net:'GND',layer:'F.Cu',start:gA1,end:{x:43.1,y:gA1.y},width:groundWidth},{net:'GND',layer:'F.Cu',start:{x:43.1,y:gA1.y},end:{x:43.1,y:gShRightUpper.y},width:groundWidth},{net:'GND',layer:'F.Cu',start:{x:43.1,y:gShRightUpper.y},end:gShRightUpper,width:groundWidth})
+    for(const shell of [gShLeftUpper,gShLeftLower])tracks.push({net:'GND',layer:'F.Cu',start:shell,end:{x:34.5,y:shell.y},width:groundWidth},{net:'GND',layer:'F.Cu',start:{x:34.5,y:shell.y},end:{x:34.5,y:groundLane},width:groundWidth})
+    for(const shell of [gShRightUpper,gShRightLower])tracks.push({net:'GND',layer:'F.Cu',start:shell,end:{x:43.72,y:groundLane},width:groundWidth})
+    vias.push({net:'GND',x:34.5,y:groundLane,diameter:viaDiameter,drill:.3},{net:'GND',x:43.72,y:groundLane,diameter:viaDiameter,drill:.3})
+    const inputEscape={x:5.1,y:gJ1.y}
+    tracks.push({net:'GND',layer:'B.Cu',start:gJ1,end:inputEscape,width:groundWidth},{net:'GND',layer:'B.Cu',start:inputEscape,end:{x:inputEscape.x,y:groundLane},width:groundWidth},{net:'GND',layer:'B.Cu',start:{x:inputEscape.x,y:groundLane},end:{x:43.72,y:groundLane},width:groundWidth})
+    completedNets.push('GND')
+  }
+  return{tracks,vias,completedNets,partialNets:[]}
 }
 
 /** Board006 has an eight-terminal 3V3 tree spanning the isolated input IC,

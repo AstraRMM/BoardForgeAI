@@ -49,3 +49,11 @@ test('resume skips an independently accepted later board without duplicating or 
   const second=await runAutonomousChallenge({manifest,checkpointPath:file,resume:true,batchSize:2,executePilot:async()=>{throw Error('pilot replayed')},executeBoard:async board=>{seen.push(board.id);return accepted()}})
   assert.equal(second.status,'CHALLENGE_COMPLETE');assert.deepEqual(seen,['second']);assert.equal(second.state.accepted.filter(row=>row.index===2).length,1)
 })
+test('manifest digest changes require an explicit runner-recorded migration',async()=>{
+  const file=await checkpoint(),old={boards:[{id:'pilot'},{id:'second'}]},next={boards:[{id:'pilot'},{id:'second',replacement:'fixed-source'}]}
+  await runAutonomousChallenge({manifest:old,checkpointPath:file,batchSize:1,executePilot:accepted,executeBoard:accepted})
+  const state=await loadCheckpoint(file),to=createHash('sha256').update(JSON.stringify(next)).digest('hex')
+  await assert.rejects(runAutonomousChallenge({manifest:next,checkpointPath:file,resume:true,executePilot:accepted,executeBoard:accepted}),/manifest digest/)
+  const result=await runAutonomousChallenge({manifest:next,checkpointPath:file,resume:true,executePilot:accepted,executeBoard:accepted,manifestMigration:{fromDigest:state.manifestDigest,toDigest:to,reason:'TEST_EXPLICIT_REPLACEMENT'}})
+  assert.equal(result.state.manifestMigrations.at(-1).reason,'TEST_EXPLICIT_REPLACEMENT')
+})

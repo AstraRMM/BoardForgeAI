@@ -1,10 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
-import { allLayerPthClearance, authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors,w5500MagJackTopologyGate } from '../lib/routing/authoritative-pad-routing.mjs'
+import { allLayerPthClearance, authoritativePadRoutingInput,board007CanControllerFixedCorridors,board009PoeLocalSupportFixedCorridors,board009W5500SupportBatchCorridors,compactEsp32FixedCorridors,declaredCopperLayerGate,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors,usbCFixedSourceVbusCorridor,w5500MagJackTopologyGate } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 test('authoritative ground planes use solid pad connections for dense MCU ground pads',()=>{const source=readFileSync(new URL('../lib/routing/authoritative-pad-routing.mjs',import.meta.url),'utf8');assert.match(source,/connect_pads yes \(clearance \$\{fmt\(clearance\)\}\)/)})
+
+test('fixed route guard rejects copper on a layer absent from the board stackup',()=>{
+  const gate=declaredCopperLayerGate({layers:['F.Cu','In1.Cu','In2.Cu','B.Cu']},{tracks:[{net:'GND',layer:'In3.Cu',start:{x:1,y:1},end:{x:2,y:2},width:.2}],vias:[]})
+  assert.equal(gate.ok,false)
+  assert.equal(gate.invalid[0].layer,'In3.Cu')
+})
 
 const scan={boardSize:{bounds:{minX:0,minY:0,maxX:50,maxY:30}},layers:[{name:'F.Cu',type:'signal'},{name:'In1.Cu',type:'signal'},{name:'In2.Cu',type:'signal'},{name:'B.Cu',type:'signal'}],nets:[{name:'USB_D+',number:1},{name:'USB_D-',number:2},{name:'I2C_SCL',number:3},{name:'I2C_SDA',number:4},{name:'BLOCKER',number:5}],tracks:[],vias:[],pads:[
   {ref:'U1',pad:'1',netName:'USB_D+',x:10,y:10,widthMm:.4,heightMm:1.2},
@@ -53,6 +59,47 @@ test('W5500 pair planner rejects an inner-layer corridor through a foreign MagJa
   const legal=allLayerPthClearance(input,[{net:'ETH_TXP',layer:'In1.Cu',start:{x:10,y:7},end:{x:30,y:7},width:.2}],{clearance:.2})
   assert.equal(legal.ok,true)
 })
+test('Board009 starts with an exact isolated W5500 EXRES branch and rejects placement drift',()=>{
+  const p=(ref,pad,x,y)=>({ref,pad,x,y})
+  const input={
+    bounds:{minX:1,minY:1,maxX:69,maxY:44},
+    nets:[
+      {net:'W5500_EXRES',endpoints:[p('U_ETH','10',17.087,38),p('R_EXRES','1',17.925,42.5)]},
+      {net:'BME_SDO_GND',endpoints:[p('U_SENSOR','5',36.025,37.775),p('R_BME_ADDR','1',47.925,41.25)]},
+    ],
+    occupancy:{vias:[
+      // These are representative primary-domain PTH pads.  The proof must
+      // check them on every copper layer even though it uses B.Cu.
+      {kind:'projected-pad-obstacle',net:'POE_RECT_POS',ref:'J_ETH',pad:'9',x:35,y:12.34,diameter:1.6},
+      {kind:'projected-pad-obstacle',net:'POE_RECT_NEG',ref:'U_POE',pad:'7',x:27.46,y:28.88,diameter:1.6},
+    ]},
+  }
+  const routed=board009PoeLocalSupportFixedCorridors(input,{trackWidth:.2,viaDiameter:.5})
+  assert.deepEqual(routed.completedNets,['W5500_EXRES','BME_SDO_GND'])
+  assert.equal(routed.tracks.length,6)
+  assert.deepEqual(routed.tracks.map(track=>track.layer),['F.Cu','B.Cu','F.Cu','F.Cu','B.Cu','F.Cu'])
+  assert.equal(allLayerPthClearance(input,routed.tracks,{clearance:.2}).ok,true)
+  assert.ok(!routed.tracks.some(track=>Math.min(track.start.x,track.end.x)<28&&Math.max(track.start.x,track.end.x)>38),'no route may bridge the 8 mm primary/secondary isolation waist')
+  const moved=structuredClone(input);moved.nets[0].endpoints[0].x+=.1
+  assert.deepEqual(board009PoeLocalSupportFixedCorridors(moved,{}).completedNets,[])
+})
+test('Board009 routes its exact W5500 reference and crystal support batch together',()=>{
+  const p=(ref,pad,x,y)=>({ref,pad,x,y})
+  const input={bounds:{minX:1,minY:1,maxX:84,maxY:54},nets:[
+    {net:'W5500_EXRES',endpoints:[p('U_ETH','10',59.837,19.75),p('R_EXRES','1',55.175,23)]},
+    {net:'W5500_TOCAP',endpoints:[p('U_ETH','20',64.75,22.163),p('C_TOCAP','1',59.225,24.5)]},
+    {net:'W5500_1V2',endpoints:[p('U_ETH','22',65.75,22.163),p('C_1V2','1',63.225,24.5)]},
+    {net:'XTAL_IN',endpoints:[p('U_ETH','30',68.162,18.25),p('Y_ETH','1',74.9,18.8),p('C_ETH_XIN','1',73,14.775)]},
+    {net:'XTAL_OUT',endpoints:[p('U_ETH','31',68.162,17.75),p('Y_ETH','3',77.1,17.2),p('C_ETH_XOUT','1',73,22.775)]},
+  ],occupancy:{vias:[{kind:'projected-pad-obstacle',net:'POE_RECT_POS',ref:'J_ETH',pad:'9',x:25,y:47,diameter:1.6}]}}
+  const routed=board009W5500SupportBatchCorridors(input,{trackWidth:.2})
+  assert.deepEqual(routed.completedNets,['W5500_EXRES','W5500_TOCAP','W5500_1V2','XTAL_IN','XTAL_OUT'])
+  assert.equal(routed.vias.length,0)
+  assert.equal(routed.tracks.length,17)
+  assert.equal(allLayerPthClearance(input,routed.tracks,{clearance:.2}).ok,true)
+  const moved=structuredClone(input);moved.nets[0].endpoints[0].x+=.1
+  assert.deepEqual(board009W5500SupportBatchCorridors(moved,{}).completedNets,[])
+})
 test('existing foreign occupancy is enforced instead of silently discarded',()=>{
   const base={nets:[{net:'A',endpoints:[{x:5,y:5},{x:45,y:5}]}],bounds:{minX:0,minY:0,maxX:50,maxY:20},layers:['F.Cu'],clearance:.2,trackWidth:.15,viaDiameter:.5}
   const clear=routeCollisionAwareChannelsV2(base)
@@ -74,6 +121,23 @@ test('compact authoritative USB fanout uses manufacturable drills and staggered 
   for(let i=0;i<usb.length;i++)for(let j=i+1;j<usb.length;j++)if(usb[i].net!==usb[j].net)assert.ok(Math.hypot(usb[i].x-usb[j].x,usb[i].y-usb[j].y)>=.7-1e-9)
   assert.deepEqual(result.vias.filter(v=>v.net==='USB_DN').slice(0,2).map(v=>[v.x,v.y]),[[8.5,6],[8,7]])
   assert.ok(result.tracks.some(t=>t.net==='USB_DN'&&t.layer==='In2.Cu'&&t.start.y===19&&t.end.y===19))
+})
+test('Board005 fixed source reserves only its resolver-placed VBUS, CC, and reference corridors',()=>{
+  const p=(net,ref,pad,x,y)=>({net,endpoints:[{ref,pad,x,y}]})
+  const rows=[p('VBUS','U1','14',27.4,9.75),p('VBUS','U1','15',27.4,9.25),p('VBUS','C_OUT','1',31.2,15),p('VBUS','J2','A4',41.8,8.78),p('VBUS','J2','A9',37,8.78),p('REF','U1','10',26.75,11.9),p('REF','R_REF','1',26.175,16),p('REF_RTN','U1','9',26.25,11.9),p('REF_RTN','R_REF','2',27.825,16),p('CC1','U1','11',27.4,11.25),p('CC1','J2','A5',40.65,8.78),p('CC2','U1','13',27.4,10.25),p('CC2','J2','B5',37.65,8.78),p('5V_RAW','J1','1',3,10),p('5V_RAW','F1','1',7.6,15),p('5V_FUSED','F1','2',10.4,15),p('5V_FUSED','D1','1',15,15),p('5V_FUSED','C_IN','1',10.2,5),p('5V_FUSED','C_AUX','1',22.225,15),p('5V_FUSED','R_FAULT','1',23.175,18),p('5V_FUSED','U1','2',24.6,9.25),p('5V_FUSED','U1','3',24.6,9.75),p('5V_FUSED','U1','4',24.6,10.25),p('5V_FUSED','U1','5',24.6,10.75),p('5V_FUSED','U1','6',24.6,11.25),p('5V_FUSED','U1','7',25.25,11.9)]
+  const grouped=Object.values(rows.reduce((all,row)=>{const target=all[row.net]||{net:row.net,endpoints:[]};target.endpoints.push(...row.endpoints);all[row.net]=target;return all},{}))
+  const routed=usbCFixedSourceVbusCorridor({bounds:{minX:1,minY:1,maxX:44,maxY:19},nets:grouped},{trackWidth:.2,viaDiameter:.6})
+  assert.deepEqual(routed.completedNets,['VBUS','REF','REF_RTN','CC1','CC2','5V_FUSED','5V_RAW'])
+  assert.ok(routed.tracks.some(track=>track.net==='VBUS'&&track.layer==='In2.Cu'&&track.width===.4))
+  assert.ok(routed.tracks.some(track=>track.net==='CC1'&&track.layer==='In1.Cu'))
+  assert.ok(routed.tracks.some(track=>track.net==='CC2'&&track.layer==='B.Cu'))
+  assert.ok(routed.tracks.some(track=>track.net==='5V_FUSED'&&track.layer==='In1.Cu'&&track.width===.35))
+  const fineNeck=routed.tracks.filter(track=>track.width===.1)
+  assert.equal(fineNeck.length,2)
+  assert.ok(fineNeck.every(track=>track.net==='REF_RTN'&&track.layer==='F.Cu'))
+  assert.ok(routed.vias.every(via=>via.drill===.3))
+  const changed=structuredClone({bounds:{minX:1,minY:1,maxX:44,maxY:19},nets:grouped});changed.nets.find(row=>row.net==='VBUS').endpoints[0].x+=.1
+  assert.deepEqual(usbCFixedSourceVbusCorridor(changed,{}).completedNets,[])
 })
 test('Board007 admits CAN_TX only for its exact reserved logic corridor topology',()=>{
   const p=(ref,pad,x,y)=>({ref,pad,x,y}),input={bounds:{maxX:61,maxY:37},nets:[

@@ -70,3 +70,13 @@ test('PCB serialization repeats logical pin numbers for physically grouped packa
   assert.equal([...text.matchAll(/\(pad "3"/g)].length,5)
   assert.doesNotMatch(text,/\(pad "[4-8]"/)
 })
+
+test('mixed SMD and plated-thermal-via footprints omit only contradictory SMD classification metadata',()=>{
+  const fp=resolveAuthoritativeKiCadFootprint('Package_SO:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias')
+  assert.ok(fp.pads.some(pad=>pad.type==='smd'))
+  assert.ok(fp.pads.some(pad=>pad.type==='thru_hole'&&pad.drill?.widthMm===.3))
+  const text=serializeAuthoritativeKiCadFootprint({resolved:fp,ref:'U1',value:'LMR33640ADDA',at:{x:10,y:10}})
+  assert.doesNotMatch(text,/\(attr smd\)/)
+  assert.match(text,/\(pad "9" thru_hole circle[\s\S]*?\(drill 0\.3\)/)
+  assert.match(text,/\(pad "9" smd rect/)
+})

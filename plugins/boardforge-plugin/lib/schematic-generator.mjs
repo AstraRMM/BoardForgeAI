@@ -37,6 +37,7 @@ export function generateSchematicModel(board, components = [], input = {}) {
       sourceSymbol: component.symbol?.libId || component.symbol || fallback.symbol || null,
       originalPinMap: pinMap,
       pinMap: schematicPinMap,
+      at: component.at || null,
       pinCount: Object.keys(schematicPinMap || {}).filter((pin) => schematicPinMap[pin]).length,
       uuid: component.schematicUuid || crypto.randomUUID(),
       componentUuid: component.componentUuid || null,
@@ -84,7 +85,10 @@ export function generateSchematicModel(board, components = [], input = {}) {
     warnings,
     // The writer only emits named-net labels when an explicit generation caller
     // requests them. This avoids recreating the old unsafe free-form wire output.
-    input: { emitConnectivityLabels: input.emitConnectivityLabels === true },
+    input: {
+      emitConnectivityLabels: input.emitConnectivityLabels === true,
+      globalConnectivityLabels: input.globalConnectivityLabels !== false,
+    },
     humanReviewRequired: true,
   }
 }
@@ -203,7 +207,7 @@ export function kicadSchematicFromModel(board, schematicModel) {
   const libSymbols = embeddedLibSymbols(allSymbols)
   const symbolText = allSymbols.map((symbol) => symbolObject(symbol, 'BoardForge')).join('\n')
   const connectivity = schematicModel.input?.emitConnectivityLabels === true
-    ? netLabelConnectivityObjects(allSymbols)
+    ? netLabelConnectivityObjects(allSymbols, { global: schematicModel.input?.globalConnectivityLabels !== false })
     : []
   const netLabels = schematicModel.nets.map((net, index) => noteObject(`net ${net.name}`, 25, 176 + index * 4))
   const reviewText = reviewObjects(schematicModel)
@@ -416,7 +420,7 @@ function netConnectivityObjects(symbols = []) {
   return objects
 }
 
-function netLabelConnectivityObjects(symbols = []) {
+function netLabelConnectivityObjects(symbols = [], { global = true } = {}) {
   const objects = []
   const emittedLabels = new Set()
   for (const symbol of symbols) {
@@ -428,19 +432,23 @@ function netLabelConnectivityObjects(symbols = []) {
       emittedLabels.add(labelKey)
       if(symbol.group==='POWER_FLAG'){
         objects.push(wireObject(pinAt.x,pinAt.y,pinAt.x,round(pinAt.y-5.08)))
-        objects.push(labelObject(net,pinAt.x,round(pinAt.y-5.08),true,90))
+        objects.push(labelObject(net,pinAt.x,round(pinAt.y-5.08),global,90))
       }else{
         const labelAt=labelCoordinateForPin(pinAt)
         objects.push(wireObject(pinAt.x,pinAt.y,labelAt.x,labelAt.y))
         // Global labels preserve the same bare net identity in the PCB. Local
         // root-sheet labels are exported by KiCad as /NET and break parity.
-        objects.push(labelObject(net,labelAt.x,labelAt.y,true,labelAt.rotation))
+        objects.push(labelObject(net,labelAt.x,labelAt.y,global,labelAt.rotation))
       }
     })
     for(const pin of Object.keys(symbol.pinGeometry||{})){
-      if(Object.prototype.hasOwnProperty.call(symbol.pinMap||{},pin))continue
+      const hasMap=Object.prototype.hasOwnProperty.call(symbol.pinMap||{},pin)
+      // An explicit null is a deliberate electrically-open canonical pin,
+      // not an omitted mapping. Emit a KiCad no-connect marker for it unless
+      // a different mapped pin shares the physical symbol endpoint.
+      if(hasMap&&symbol.pinMap[pin])continue
       const at=schematicPinCoordinate(symbol,pin,0)
-      if(Object.keys(symbol.pinMap||{}).some(mapped=>{const other=schematicPinCoordinate(symbol,mapped,0);return other.x===at.x&&other.y===at.y}))continue
+      if(Object.entries(symbol.pinMap||{}).some(([mapped,net])=>{if(!net)return false;const other=schematicPinCoordinate(symbol,mapped,0);return other.x===at.x&&other.y===at.y}))continue
       objects.push(noConnectObject(at.x,at.y))
     }
   }
@@ -569,6 +577,11 @@ function placeSymbols(symbols) {
     generic: { x: 122, y: 112, count: 0 },
   }
   return symbols.map((symbol) => {
+    // Dense native symbols may provide topology-owned coordinates.  Preserve
+    // them so the generic lane pitch cannot merge separate symbol endpoints.
+    if (symbol.at && Number.isFinite(symbol.at.x) && Number.isFinite(symbol.at.y)) {
+      return { ...symbol, at: { x:snapGrid(symbol.at.x), y:snapGrid(symbol.at.y) } }
+    }
     const lane = lanes[laneForSymbol(symbol)]
     const at = { x: snapGrid(lane.x + (lane.count % 2) * 33.02), y: snapGrid(lane.y + Math.floor(lane.count / 2) * 25.4) }
     lane.count += 1

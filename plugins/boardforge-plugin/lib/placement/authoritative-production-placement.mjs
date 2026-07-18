@@ -24,6 +24,19 @@ const USB_PD_SINK_TOPOLOGY = {
   // nx=.21 makes the contact copper tangent to the notch clearance envelope.
   J1:{nx:.23,ny:.50,rotations:[90]},
 }
+// Board005 is a compact single-port 5 V source.  Its Type-C contact row is
+// held on the recessed top edge, with the switch and output bulk capacitor
+// directly behind it.  This avoids the generic packer's left-edge congestion
+// that made the four VBUS contacts physically unroutable.
+const USB_FIXED_SOURCE_TOPOLOGY = {
+  // The contact row faces the board interior.  Its VBUS pads can then escape
+  // below the row without passing through the USB4105 alignment holes.
+  J2:{x:39.4,y:5.1,rotation:180,side:'front'}, U1:{x:26,y:10,rotation:0,side:'front'},
+  C_OUT:{x:34,y:15,rotation:0,side:'front'}, C_IN:{x:13,y:5,rotation:0,side:'front'},
+  J1:{x:3,y:10,rotation:0,side:'front'}, F1:{x:9,y:15,rotation:0,side:'front'},
+  D1:{x:17,y:15,rotation:0,side:'front'}, C_AUX:{x:23,y:15,rotation:0,side:'front'},
+  R_REF:{x:27,y:16,rotation:0,side:'front'}, R_FAULT:{x:24,y:18,rotation:0,side:'front'},
+}
 const INDUSTRIAL_IO_TOPOLOGY = {
   // Keep the field-entry components left of the ISO1212 and the logic domain
   // right of it. This preserves a usable routing corridor and makes the
@@ -85,19 +98,24 @@ export function placeAuthoritativeProductionFootprints({
     return { ...component, libId, authoritative, localOccupancy: footprintOccupancy(authoritative) }
   })
   // Largest packages are committed first so small passives fill remaining legal sites.
-  resolved.sort((a, b) => area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
+  // A topology contract reserves its exact local-support cluster before the
+  // generic packer fills the remaining envelope.  Otherwise a large generic
+  // package can consume a declared analog/clock site and make a valid
+  // contract appear mechanically impossible merely because of sort order.
+  resolved.sort((a, b) => Number(Boolean(b.fixedAt)) - Number(Boolean(a.fixedAt)) || area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
   const placed = []
   for (const component of resolved) {
-    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'industrial-io-production' ? INDUSTRIAL_IO_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : topology === 'ethernet-controller' ? ETHERNET_CONTROLLER_TOPOLOGY[component.ref] : null
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'usb-c-fixed-source' ? USB_FIXED_SOURCE_TOPOLOGY[component.ref] : topology === 'industrial-io-production' ? INDUSTRIAL_IO_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : topology === 'ethernet-controller' ? ETHERNET_CONTROLLER_TOPOLOGY[component.ref] : null
     const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
     const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : basePreference?.x !== undefined ? [basePreference] : candidateTransforms(preference, bounds)
-    let winner = null
+    let winner = null, lastFailure = null
     for (const transform of candidates) {
       const occupancy = transformRect(component.localOccupancy, transform)
       const pads = transformAuthoritativePads(component.authoritative.pads, transform)
       const bodyOccupancy = transformRect(footprintBodyOccupancy(component.authoritative), transform)
       const rfPolicy = component.rfAntennaEdge ? { edge: component.rfAntennaEdge } : null
-      if (!legalPlacement(occupancy, bodyOccupancy, pads, outline, holes, placed, { edgeClearanceMm, holeClearanceMm, courtyardClearanceMm }, rfPolicy, bounds, transform.rotation)) continue
+      const legality=placementLegality(occupancy, bodyOccupancy, pads, outline, holes, placed, { edgeClearanceMm, holeClearanceMm, courtyardClearanceMm }, rfPolicy, bounds, transform.rotation)
+      if (!legality.ok) { lastFailure=legality; continue }
       winner = {
         ref: component.ref, value: component.value, mpn: component.mpn, libId: component.libId,
         sourceFile: component.authoritative.sourceFile, at: transform, occupancy, bodyOccupancy, rfAntennaPolicy: rfPolicy, pads,
@@ -105,7 +123,7 @@ export function placeAuthoritativeProductionFootprints({
       }
       break
     }
-    if (!winner) throw placementError(component.ref, component.libId)
+    if (!winner) throw placementError(component.ref, component.libId,lastFailure)
     placed.push(winner)
   }
   const byInputOrder = placed.sort((a, b) => components.findIndex(c => c.ref === a.ref) - components.findIndex(c => c.ref === b.ref))
@@ -143,20 +161,22 @@ function candidateTransforms(preference, bounds) {
   return offsets.flatMap(offset => pref.rotations.map(rotation => ({ x: origin.x + offset.x, y: origin.y + offset.y, rotation, side: 'front' })))
 }
 
-function legalPlacement(rect, body, pads, outline, holes, placed, rules, rfPolicy, boardBounds, rotation) {
+function legalPlacement(rect, body, pads, outline, holes, placed, rules, rfPolicy, boardBounds, rotation) { return placementLegality(rect,body,pads,outline,holes,placed,rules,rfPolicy,boardBounds,rotation).ok }
+export function placementLegality(rect, body, pads, outline, holes, placed, rules, rfPolicy, boardBounds, rotation) {
   if (rfPolicy) {
-    if (!['top','right','bottom','left'].includes(rfPolicy.edge) || rotationEdge(rotation) !== rfPolicy.edge) return false
-    if (!singleEdgeRfCourtyard(rect, boardBounds, rfPolicy.edge, rules.edgeClearanceMm)) return false
-    // RF exception never applies to copper, mask, drills, or the physical module envelope.
-    if (rectCorners(expand(body, rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline))) return false
-    if (pads.some(pad => rectCorners(expand(padRect(pad), rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline)))) return false
-  } else if (rectCorners(expand(rect, rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline))) return false
+    if (!['top','right','bottom','left'].includes(rfPolicy.edge) || rotationEdge(rotation) !== rfPolicy.edge) return {ok:false,code:'RF_EDGE_OR_ROTATION',edge:rfPolicy.edge,rotation}
+    if (!singleEdgeRfCourtyard(rect, boardBounds, rfPolicy.edge, rules.edgeClearanceMm)) return {ok:false,code:'RF_EDGE_COURTYARD',rect}
+    if (rectCorners(expand(body, rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline))) return {ok:false,code:'OUTLINE_BODY',rect:body,clearance:rules.edgeClearanceMm}
+    if (pads.some(pad => rectCorners(expand(padRect(pad), rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline)))) return {ok:false,code:'OUTLINE_PAD',clearance:rules.edgeClearanceMm}
+  } else if (rectCorners(expand(rect, rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline))) return {ok:false,code:'OUTLINE_COURTYARD',rect,clearance:rules.edgeClearanceMm}
   for (const hole of holes) {
     const radius = Number(hole.radiusMm ?? hole.diameterMm / 2 ?? hole.drillMm / 2 ?? 0) + rules.holeClearanceMm
-    if (circleRectDistance({ x: hole.x, y: hole.y }, rfPolicy ? body : rect) < radius) return false
+    const distance=circleRectDistance({ x: hole.x, y: hole.y }, rfPolicy ? body : rect)
+    if (distance < radius) return {ok:false,code:'MOUNTING_HOLE_CLEARANCE',hole:{x:hole.x,y:hole.y},actualMm:distance,requiredMm:radius}
   }
-  // Full courtyard intersection is retained, including the in-board portion of an RF keepout.
-  return !placed.some(other => boundsOverlap(rect, other.occupancy, rules.courtyardClearanceMm))
+  const other=placed.find(other => boundsOverlap(rect, other.occupancy, rules.courtyardClearanceMm))
+  if(other)return {ok:false,code:'COURTYARD_COLLISION',ref:other.ref,rect,otherRect:other.occupancy,clearance:rules.courtyardClearanceMm}
+  return {ok:true}
 }
 
 function transformRect(rect, { x, y, rotation }) {
@@ -188,6 +208,6 @@ function padRect(p) { return { minX:p.x-p.widthMm/2,minY:p.y-p.heightMm/2,maxX:p
 function rotationEdge(rotation) { return ['top','right','bottom','left'][((Math.round(rotation/90)%4)+4)%4] }
 function singleEdgeRfCourtyard(r,b,edge,c) { const outside={top:r.minY < b.minY+c,right:r.maxX > b.maxX-c,bottom:r.maxY > b.maxY-c,left:r.minX < b.minX+c}; return outside[edge] && Object.entries(outside).every(([name,value])=>name===edge||!value) }
 function circleRectDistance(p, r) { const dx = Math.max(r.minX - p.x, 0, p.x - r.maxX), dy = Math.max(r.minY - p.y, 0, p.y - r.maxY); return Math.hypot(dx, dy) }
-function placementError(ref, libId) { const error = new Error(`No legal authoritative production placement for ${ref} (${libId})`); error.code = 'AUTHORITATIVE_PRODUCTION_PLACEMENT_BLOCKED'; error.ref = ref; error.libId = libId; return error }
+function placementError(ref, libId, detail=null) { const suffix=detail?`: ${detail.code}${detail.ref?` with ${detail.ref}`:''}`:''; const error = new Error(`No legal authoritative production placement for ${ref} (${libId})${suffix}`); error.code = 'AUTHORITATIVE_PRODUCTION_PLACEMENT_BLOCKED'; error.ref = ref; error.libId = libId; error.placementDetail=detail; return error }
 function escapeRegex(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 function balanced(text, start) { let depth = 0, quoted = false, escaped = false; for (let i = start; i < text.length; i++) { const ch = text[i]; if (quoted) { if (escaped) escaped = false; else if (ch === '\\') escaped = true; else if (ch === '"') quoted = false; continue } if (ch === '"') quoted = true; else if (ch === '(') depth++; else if (ch === ')' && --depth === 0) return text.slice(start, i + 1) } return null }

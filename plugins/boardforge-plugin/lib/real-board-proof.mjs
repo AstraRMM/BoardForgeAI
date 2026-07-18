@@ -22,7 +22,11 @@ import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
 import { COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY, placeAuthoritativeProductionFootprints } from './placement/authoritative-production-placement.mjs'
 import { generateTps25750GlobalHandoff, generateTps25750LocalBreakoutV4 } from './routing/dense-qfn-power-breakout-planner.mjs'
-import { authoritativeFixedCorridors, authoritativePadRoutingInput, createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate, w5500MagJackTopologyGate } from './routing/authoritative-pad-routing.mjs'
+import { authoritativeFixedCorridors, authoritativePadRoutingInput, createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
+import { ethernetControllerProductionProposal } from './phase2c/templates/ethernet-controller.mjs'
+import { validateW5500ConnectedCtTopology } from './phase2c/w5500-connected-ct-reference.mjs'
+import { board009LocalSupportPlacement } from './phase2c/board009-placement-contract.mjs'
+import { board011UsbHubConnectorShieldPadStitches, board011UsbHubDfpGroundPadStitches, board011UsbHubLocalPadStitches, board011UsbHubPcbPlacements, board011UsbHubPinMaps, board011UsbHubPowerPadStitches, board011UsbHubProductionDefinition, board011UsbHubSupportNetStitches, board011UsbHubUsbEsdPassThroughStitches, validateBoard011UsbHubLocalCopper } from './phase2c/board011-usb-hub-production.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -443,7 +447,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
   evidence.footprints = evidence.footprints.filter((footprint) => expectedBoardRefs.has(footprint.ref))
   const projected = new Map(categorySchematicComponents(board).map(row => [row.ref, row]))
   let nextNetNumber = Math.max(0, ...evidence.nets.map((net) => net.number)) + 1
-  for (const component of projected.values()) for (const netName of Object.values(component.pinMap || {})) {
+  for (const component of projected.values()) for (const netName of assignedNetNames([component])) {
     if (!evidence.nets.some((net) => net.name === netName)) evidence.nets.push({ number: nextNetNumber++, name: netName })
   }
   const placement=authoritativeProductionPlacement(board,projected)
@@ -454,7 +458,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
       return component?.pinMap?.[symbolPin] ? {...p,netName:component.pinMap[symbolPin]} : p
     })
     const asset=approvedAssetFor(board.bom.find(row=>row.ref===footprint.ref)?.mpn),aliases=asset?.pinAliases||{},padAliases=asset?.footprintPadAliases||{}
-    const authoritativeNets=Object.fromEntries(Object.entries(component?.pinMap||{}).map(([pin,netName])=>{const net=evidence.nets.find(row=>row.name===netName);return[aliases[pin]||pin,{netName,netNumber:net?.number||0}]}))
+    const authoritativeNets=Object.fromEntries(assignedPinNetEntries(component?.pinMap).map(([pin,netName])=>{const net=evidence.nets.find(row=>row.name===netName);return[aliases[pin]||pin,{netName,netNumber:net?.number||0}]}))
     for(const [pad,canonical] of Object.entries(padAliases))if(authoritativeNets[canonical])authoritativeNets[pad]=authoritativeNets[canonical]
     return { ...footprint, mpn:board.bom.find(row=>row.ref===footprint.ref)?.mpn||null, value:component?.value||footprint.value, footprint:component?.footprint||footprint.footprint, pads, authoritativeNets, ...componentLink(board.id, footprint.ref) }
   })
@@ -464,7 +468,7 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
       if(existingRefs.has(placed.ref))continue
       const component=projected.get(placed.ref)
       if(!component)throw new Error(`Authoritative placement has no schematic component for ${placed.ref}`)
-      const authoritativeNets=Object.fromEntries(Object.entries(component.pinMap||{}).map(([pin,netName])=>{
+      const authoritativeNets=Object.fromEntries(assignedPinNetEntries(component.pinMap).map(([pin,netName])=>{
         const net=evidence.nets.find((row)=>row.name===netName)
         return [String(pin),{netName,netNumber:net?.number||0}]
       }))
@@ -491,6 +495,10 @@ async function applyCategoryPcbEvidence({ board, projectDir, categorySchematic, 
   // copperless candidate so its copied companion .kicad_dru is the rule set
   // KiCad actually validates, rather than the generic 0.20 mm default.
   if(board.id==='usb-c-pd-source') await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge TPS25750 fine pitch clearance" (constraint clearance (min 0.09mm)))\n(rule "BoardForge TPS25750 fine pitch track" (constraint track_width (min 0.1mm)))\n(rule "BoardForge TPS25750 micro drill" (constraint hole_size (min 0.2mm)))\n(rule "BoardForge TPS25750 micro via" (constraint via_diameter (min 0.4mm)))\n','utf8')
+  // Board005 retains the generic 0.20 mm rule.  Only its TPS25810 REF_RTN
+  // escape is allowed to use the source-backed 4 mil (0.10 mm) capability;
+  // the routing regression proves no other Board005 net consumes that waiver.
+  if(board.id==='usb-c-fixed-source') await writeFile(path.join(projectDir,`${path.basename(files.pcb,'.kicad_pcb')}.kicad_dru`),'(version 1)\n(rule "BoardForge Board005 source-backed 4mil REF_RTN neck" (condition "A.NetName == \'REF_RTN\'") (constraint track_width (min 0.1mm)))\n(rule "BoardForge Board005 conservative default clearance" (constraint clearance (min 0.2mm)))\n(rule "BoardForge Board005 micro drill" (constraint hole_size (min 0.2mm)))\n','utf8')
   const authoritativeRouting=placement?await routeAuthoritativeCandidate({pcbFile:files.pcb,projectDir,kicad}):null
   if(authoritativeRouting?.routingDeferred){
     const error=new Error(`Authoritative routing deferred: ${authoritativeRouting.reason}. Stale final-PCB validation is forbidden; validate ${authoritativeRouting.candidatePcb} only.`)
@@ -525,10 +533,15 @@ const CATEGORY_PCB_EVIDENCE_WRITERS = {
   'rp2040-instrument': rp2040InstrumentCategoryPcbEvidence,
   'usb-c-pd-sink': usbCPdSinkCategoryPcbEvidence,
   'usb-c-pd-source': usbCPdSourceCategoryPcbEvidence,
+  // Candidate-only Board005 replacement.  It deliberately uses a TPS25810
+  // fixed-current Type-C source; it must never inherit the PD-source writer.
+  'usb-c-fixed-source': usbCFixedSourceCategoryPcbEvidence,
+  'poe-sensor-production': poeSensorProductionCategoryPcbEvidence,
   'can-sensor-node': canSensorNodeCategoryPcbEvidence,
   'poe-ethernet-sensor': poeEthernetSensorCategoryPcbEvidence,
   'poe-sensor': poeEthernetSensorCategoryPcbEvidence,
   'ethernet-controller': ethernetControllerCategoryPcbEvidence,
+  'usb-hub': usbHubCategoryPcbEvidence,
   'odd-shaped-robotics-controller': roboticsControllerCategoryPcbEvidence,
   'tiny-wearable-sensor-puck': wearableSensorPuckCategoryPcbEvidence,
   'industrial-io-board': industrialIoCategoryPcbEvidence,
@@ -624,6 +637,19 @@ export function poeEthernetSensorCategoryPcbEvidence() {
   ]}
 }
 
+// A separate, candidate-only Board009 path.  The historical `poe-sensor`
+// fixture remains untouched because it documents an earlier six-reference
+// projection.  This factory consumes only the per-board authoritative map
+// supplied by the production definition and emits every requested exact ref.
+export function poeSensorProductionCategoryPcbEvidence(board={}){
+ const maps=board.categorySchematicPinMaps||{},rows=board.bom||[]
+ const names=['',...new Set(Object.values(maps).flatMap(map=>Object.values(map||{})).filter(Boolean))]
+ const nets=names.map((name,number)=>({name,number})),net=Object.fromEntries(nets.map(row=>[row.name,row.number]))
+ const position={J_ETH:[11,22,0],U_POE:[29,12,0],C_OUT:[46,36,0],C_OUT_HF:[43,36,0],U_3V3:[48,28,0],U_ETH:[48,14,0],Y_ETH:[42,8,0],U_HOST:[57,26,0],U_FLASH:[60,35,0],U_SENSOR:[64,12,0],J_PROG:[64,30,90]}
+ const footprints=rows.map((row,index)=>{const asset=approvedAssetFor(row.mpn);if(!asset)throw new Error(`Board009 production writer lacks approved asset ${row.ref}:${row.mpn}`);const [x,y,rotation]=position[row.ref]||[40+(index%4)*6,5+Math.floor(index/4)*6,0],map=maps[row.ref]||{};return{ref:row.ref,value:row.value||row.mpn,footprint:asset.footprint.libId,at:{x,y},rotation,body:{w:2,h:2},pads:Object.entries(map).filter(([,name])=>name).map(([number,name],pinIndex)=>pad(number,(pinIndex%4)-1.5,Math.floor(pinIndex/4)-1,.6,.6,net[name],name))}})
+ return{nets,footprints,segments:[],vias:[]}
+}
+
 function poeSensorPinMaps(){return{
  U_ETH:{1:'ETH_TXN',2:'ETH_TXP',3:'SELV_GND',4:'3V3',5:'ETH_RXN',6:'ETH_RXP',8:'3V3',9:'SELV_GND',10:'W5500_EXRES',11:'3V3',14:'SELV_GND',15:'3V3',16:'SELV_GND',17:'3V3',18:'W5500_VBG_FLOAT',19:'SELV_GND',20:'W5500_TOCAP',21:'3V3',22:'W5500_1V2',28:'3V3',29:'SELV_GND',30:'XTAL_IN',31:'XTAL_OUT',32:'ETH_CS_N',33:'SPI_SCLK',34:'SPI_MISO',35:'SPI_MOSI',36:'ETH_INT_N',37:'ETH_RESET_N',48:'SELV_GND'},
  J_ETH:{1:'ETH_TXP',2:'ETH_TXN',3:'ETH_RXP',4:'ETH_TX_CT',5:'ETH_RX_CT',6:'ETH_RXN',7:'POE_AUX',9:'POE_RECT_POS',10:'POE_RECT_NEG',11:'LED_YELLOW_A',12:'LED_YELLOW_K',13:'LED_GREEN_A',14:'LED_GREEN_K',SH:'CHASSIS'},
@@ -637,7 +663,7 @@ function poeSensorPinMaps(){return{
 
 export function ethernetControllerCategoryPcbEvidence(){
  const maps=ethernetControllerPinMaps(),names=['',...new Set(Object.values(maps).flatMap(Object.values))],nets=names.map((name,number)=>({name,number})),net=Object.fromEntries(nets.map(x=>[x.name,x.number]))
- const bom=[['U1','SC0914(13)','Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm'],['U2','W5500','Package_QFP:LQFP-48_7x7mm_P0.5mm'],['Y1','Q22FA2380184517','Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm'],['J1','7499010121A','Connector_RJ:RJ45_Wuerth_7499010121A_Horizontal'],['U3','MCP1700T-3302E/TT','Package_TO_SOT_SMD:SOT-23'],['U4','W25Q128JVSIQ','Package_SO:SOIC-8_3.9x4.9mm_P1.27mm'],['J_PWR','M20-9990245','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical'],['C_DEC','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric'],['R_RST','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['C_RST','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric'],['R_MODE0','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_MODE1','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_MODE2','RC0603FR-0710KL','Resistor_SMD:R_0603_1608Metric'],['R_EXRES','RC0603FR-0712K4L','Resistor_SMD:R_0603_1608Metric'],...['R_TXP','R_TXN','R_RXP','R_RXN'].map(ref=>[ref,'RC0603FR-0749R9L','Resistor_SMD:R_0603_1608Metric']),['C_XI','GRM1885C1H120JA01D','Capacitor_SMD:C_0603_1608Metric'],['C_XO','GRM1885C1H120JA01D','Capacitor_SMD:C_0603_1608Metric'],['D_ETH','TPD4E05U06DQAR','Package_SON:USON-10_2.5x1.0mm_P0.5mm'],['FB_AVDD','MPZ1608S601ATA00','Inductor_SMD:L_0603_1608Metric'],['C_AVDD','GRM188R60J475KE19D','Capacitor_SMD:C_0603_1608Metric'],['C_TOCAP','GRM188R60J475KE19D','Capacitor_SMD:C_0603_1608Metric'],['C_1V2','GRM188R71H103KA01D','Capacitor_SMD:C_0603_1608Metric']]
+ const bom=ethernetControllerProductionProposal.bom.map(({ref,mpn})=>[ref,mpn,approvedAssetFor(mpn).footprint.libId])
  // The W5500 analog/RMII support is deliberately clustered around the PHY.
  // A generic BOM grid made the 25 MHz crystal, EXRES and decoupling tens of
  // millimetres away and was physically unroutable on this compact board.
@@ -645,7 +671,8 @@ export function ethernetControllerCategoryPcbEvidence(){
   U1:[10,14],U2:[23,14],J1:[35,14],U3:[4,5],U4:[7,22],J_PWR:[3,4],
   Y1:[18.5,10.5],C_XI:[19,9],C_XO:[20,9],R_EXRES:[18,17],
   FB_AVDD:[27,14],C_AVDD:[28,14],C_TOCAP:[27,17],C_1V2:[28,17],
-  R_TXP:[29,11],R_TXN:[29,12],R_RXP:[29,16],R_RXN:[29,17],D_ETH:[32,14],
+  R_TXP:[29,11],R_TXN:[29,12],R_RXP:[29,16],R_RXN:[29,17],R_TX_CT:[31,10],
+  C_RXP:[31,16],C_RXN:[31,18],C_RX_MATCH:[33,17],C_AVDD_REF:[29,19],
   R_RST:[18,19],C_RST:[19,19],R_MODE0:[18,21],R_MODE1:[19,21],R_MODE2:[20,21],C_DEC:[13,20],
  }
  const footprints=bom.map(([ref,value,footprint],index)=>{const [x,y]=placement[ref]||[5+(index%6)*6,5+Math.floor(index/6)*6];return{ref,value,footprint,at:{x,y},body:{w:2,h:2},pads:Object.entries(maps[ref]).map(([number,netName],i)=>pad(number,(i%4)-1.5,Math.floor(i/4)-1,.6,.6,net[netName],netName))}})
@@ -654,10 +681,93 @@ export function ethernetControllerCategoryPcbEvidence(){
 
 function ethernetControllerPinMaps(){return{
  U1:{1:'3V3',6:'SPI_SCLK',7:'SPI_MOSI',8:'SPI_MISO',9:'ETH_CS_N',10:'3V3',11:'ETH_RESET_N',12:'ETH_INT_N',48:'3V3',49:'3V3',50:'3V3',51:'QSPI_SD3',52:'QSPI_SCLK',53:'QSPI_SD0',54:'QSPI_SD2',55:'QSPI_SD1',56:'QSPI_CS',57:'GND'},
- U2:{1:'ETH_TXN',2:'ETH_TXP',3:'GND',4:'3V3A',5:'ETH_RXN',6:'ETH_RXP',8:'3V3A',9:'GND',10:'EXRES1',11:'3V3A',14:'GND',15:'3V3A',16:'GND',17:'3V3A',19:'GND',20:'TOCAP',21:'3V3A',22:'1V2O',28:'3V3',29:'GND',30:'XTAL_IN',31:'XTAL_OUT',32:'ETH_CS_N',33:'SPI_SCLK',34:'SPI_MISO',35:'SPI_MOSI',36:'ETH_INT_N',37:'ETH_RESET_N',43:'PMODE2',44:'PMODE1',45:'PMODE0',48:'GND'},
- Y1:{1:'XTAL_IN',2:'GND',3:'XTAL_OUT',4:'GND'},J1:{1:'ETH_TXP',2:'3V3A',3:'ETH_TXN',4:'ETH_RXP',5:'3V3A',6:'ETH_RXN',8:'CHASSIS',SH:'CHASSIS'},
- U3:{1:'GND',2:'3V3',3:'5V'},U4:{1:'QSPI_CS',2:'QSPI_SD1',3:'QSPI_SD2',4:'GND',5:'QSPI_SD0',6:'QSPI_SCLK',7:'QSPI_SD3',8:'3V3'},J_PWR:{1:'5V',2:'GND'},C_DEC:{1:'3V3',2:'GND'},R_RST:{1:'3V3',2:'ETH_RESET_N'},C_RST:{1:'ETH_RESET_N',2:'GND'},R_MODE0:{1:'3V3',2:'PMODE0'},R_MODE1:{1:'3V3',2:'PMODE1'},R_MODE2:{1:'3V3',2:'PMODE2'},R_EXRES:{1:'EXRES1',2:'GND'},R_TXP:{1:'ETH_TXP',2:'3V3A'},R_TXN:{1:'ETH_TXN',2:'3V3A'},R_RXP:{1:'ETH_RXP',2:'3V3A'},R_RXN:{1:'ETH_RXN',2:'3V3A'},C_XI:{1:'XTAL_IN',2:'GND'},C_XO:{1:'XTAL_OUT',2:'GND'},D_ETH:{1:'ETH_TXP',2:'ETH_TXN',3:'CHASSIS',4:'ETH_RXP',5:'ETH_RXN',8:'CHASSIS'},FB_AVDD:{1:'3V3',2:'3V3A'},C_AVDD:{1:'3V3A',2:'GND'},C_TOCAP:{1:'TOCAP',2:'GND'},C_1V2:{1:'1V2O',2:'GND'},
+ U2:{1:'ETH_TXN',2:'ETH_TXP',3:'GND',4:'3V3A',5:'ETH_RXN_PHY',6:'ETH_RXP_PHY',8:'3V3A',9:'GND',10:'EXRES1',11:'3V3A',14:'GND',15:'3V3A',16:'GND',17:'3V3A',19:'GND',20:'TOCAP',21:'3V3A',22:'1V2O',28:'3V3',29:'GND',30:'XTAL_IN',31:'XTAL_OUT',32:'ETH_CS_N',33:'SPI_SCLK',34:'SPI_MISO',35:'SPI_MOSI',36:'ETH_INT_N',37:'ETH_RESET_N',43:'PMODE2',44:'PMODE1',45:'PMODE0',48:'GND'},
+ // 7499010121A pin 5 is intentionally left open by the published W5500
+ // connected-centre-tap reference.  Do not manufacture an isolated global
+ // label merely to make every connector pad appear electrically active.
+ Y1:{1:'XTAL_IN',2:'GND',3:'XTAL_OUT',4:'GND'},J1:{1:'ETH_TXP',2:'ETH_TX_CT',3:'ETH_TXN',4:'ETH_RXP_MAG',6:'ETH_RXN_MAG',8:'CHASSIS',SH:'CHASSIS'},
+ U3:{1:'GND',2:'3V3',3:'5V'},U4:{1:'QSPI_CS',2:'QSPI_SD1',3:'QSPI_SD2',4:'GND',5:'QSPI_SD0',6:'QSPI_SCLK',7:'QSPI_SD3',8:'3V3'},J_PWR:{1:'5V',2:'GND'},C_DEC:{1:'3V3',2:'GND'},R_RST:{1:'3V3',2:'ETH_RESET_N'},C_RST:{1:'ETH_RESET_N',2:'GND'},R_MODE0:{1:'3V3',2:'PMODE0'},R_MODE1:{1:'3V3',2:'PMODE1'},R_MODE2:{1:'3V3',2:'PMODE2'},R_EXRES:{1:'EXRES1',2:'GND'},R_TXP:{1:'ETH_TXP',2:'3V3A'},R_TXN:{1:'ETH_TXN',2:'3V3A'},R_RXP:{1:'ETH_RXP_PHY',2:'ETH_RX_MATCH'},R_RXN:{1:'ETH_RXN_PHY',2:'ETH_RX_MATCH'},R_TX_CT:{1:'ETH_TX_CT',2:'3V3A'},C_RXP:{1:'ETH_RXP_PHY',2:'ETH_RXP_MAG'},C_RXN:{1:'ETH_RXN_PHY',2:'ETH_RXN_MAG'},C_RX_MATCH:{1:'ETH_RX_MATCH',2:'GND'},C_AVDD_REF:{1:'3V3A',2:'GND'},C_XI:{1:'XTAL_IN',2:'GND'},C_XO:{1:'XTAL_OUT',2:'GND'},FB_AVDD:{1:'3V3',2:'3V3A'},C_AVDD:{1:'3V3A',2:'GND'},C_TOCAP:{1:'TOCAP',2:'GND'},C_1V2:{1:'1V2O',2:'GND'},
  }}
+
+// Board011 is a concrete training candidate.  The symbol maps are the exact
+// approved assets and the physical footprints are resolved from those assets;
+// this writer deliberately contains no invented copper.  Its final status is
+// therefore still gated by real placement, routing, thermal, sourcing and
+// KiCad evidence rather than by this projected candidate alone.
+export function usbHubCategoryPcbEvidence(){
+ const definition=board011UsbHubProductionDefinition(),maps=board011UsbHubPinMaps()
+ const names=['',...new Set(Object.values(maps).flatMap(Object.values).filter(Boolean))]
+ const nets=names.map((name,number)=>({name,number})),net=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+ const positions=board011UsbHubPcbPlacements()
+ const footprints=definition.bom.map((row)=>{
+   const [x,y]=positions[row.ref]||[]
+   if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error(`Board011 physical candidate is missing an exact placement for ${row.ref}`)
+   const asset=approvedAssetFor(row.mpn),map=maps[row.ref]
+   return {ref:row.ref,value:row.mpn,footprint:asset.footprint.libId,at:{x,y},body:{w:2,h:2},pads:Object.entries(map).map(([number,netName],pinIndex)=>pad(number,(pinIndex%4)-1.5,Math.floor(pinIndex/4)-1,.6,.6,net[netName],netName))}
+ })
+ const localPadStitches=board011UsbHubLocalPadStitches(),dfpGroundPadStitches=board011UsbHubDfpGroundPadStitches(),connectorShieldPadStitches=board011UsbHubConnectorShieldPadStitches(),supportNetStitches=board011UsbHubSupportNetStitches(),usbEsdPassThroughStitches=board011UsbHubUsbEsdPassThroughStitches(),powerPadStitches=board011UsbHubPowerPadStitches()
+ const localCopperGuard=validateBoard011UsbHubLocalCopper([...localPadStitches,...dfpGroundPadStitches,...connectorShieldPadStitches,...supportNetStitches,...usbEsdPassThroughStitches,...powerPadStitches])
+ if(!localCopperGuard.ok)throw new Error(`Board011 rejected local copper shortcut: ${localCopperGuard.rejected.join(', ')}`)
+ // USB2514B RBIAS is an isolated two-terminal control net.  Its route starts
+ // from the resolver-projected QFN pad 35, dogbones perpendicular to the top
+ // pad row, and uses In1.Cu until the dedicated 12 kOhm resistor.  This is a
+ // scoped physical route contract, not an inferred all-board autoroute: the
+ // route is deliberately retained only while the exact Board011 placement
+ // signature and real KiCad DRC keep it legal.
+ const segments=[
+   segment(42.5,15.063,42.5,14.2,.2,net.RBIAS),
+   segment(42.5,14.2,41.3,14.2,.2,net.RBIAS),
+   segment(41.3,14.2,41.3,3.5,.2,net.RBIAS,'In1.Cu'),
+   segment(41.3,3.5,15.175,3.5,.2,net.RBIAS,'In1.Cu'),
+   segment(15.175,3.5,15.175,2,.2,net.RBIAS),
+   // Keep the two PLLFILT capacitors as a paired local branch.  Their 0603
+   // pads are separated by the opposite GND pads on F.Cu, so the short
+   // shared branch deliberately changes to In1.Cu rather than crossing a
+   // foreign pad.  The hub-pin escape remains independently unrouted.
+   segment(35.225,12.8,35.225,14.5,.2,net.PLLFILT),
+   segment(35.225,14.5,38.725,14.5,.2,net.PLLFILT,'In1.Cu'),
+   segment(38.725,14.5,38.725,12.8,.2,net.PLLFILT),
+   // CRFILT is intentionally a separate USB2514B analog filter network;
+   // never merge it with PLLFILT.  Its paired capacitors use their own
+   // lower-row In1.Cu branch for the same no-foreign-pad escape rationale.
+   segment(28.225,12.8,28.225,14.5,.2,net.CRFILT),
+   segment(28.225,14.5,31.725,14.5,.2,net.CRFILT,'In1.Cu'),
+   segment(31.725,14.5,31.725,12.8,.2,net.CRFILT),
+   // The USB2514B reset RC parts are adjacent on the dedicated top support
+   // row.  Their RESET_N pads have an unobstructed direct F.Cu connection;
+   // retain that source-backed local link before attempting the long U1.26
+   // escape, rather than asking a general router to invent a reset route.
+   segment(8.825,2,11.225,2,.2,net.RESET_N),
+   // U1.26 exits to the controller's right before changing layers.  RESET_N
+   // owns y=4.6 on In2.Cu, distinct from the RBIAS In1.Cu corridor, then
+   // returns to the already-proven RC pair through C_RESET.1.
+   segment(46.938,16.5,48.5,16.5,.2,net.RESET_N),
+   segment(48.5,16.5,48.5,4.6,.2,net.RESET_N,'In2.Cu'),
+   segment(48.5,4.6,11.225,4.6,.2,net.RESET_N,'In2.Cu'),
+   segment(11.225,4.6,11.225,2,.2,net.RESET_N),
+   // TPS25810 IN1/IN1/IN2 and OUT/OUT are duplicated adjacent pads.  The
+   // reusable contract below joins each controller's local cluster only; the
+   // wider 5 V and connector trees remain explicitly unrouted.
+   ...localPadStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // These are only the adjacent TPS25810 CHG ground lands.  They neither
+   // fabricate a plane nor imply a completed port-return topology.
+   ...dfpGroundPadStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // Each retained USB-C shield stitch joins only its paired mechanical tabs.
+   // It does not represent a ground network or connector return path.
+   ...connectorShieldPadStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // The feedback-divider midpoint is a completed local regulator support
+   // connection, not a claim that the surrounding buck power loop is routed.
+   ...supportNetStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // The ESD arrays retain matched local D+/D- pass-through links only. The
+   // external differential-pair corridors remain pending and are never
+   // represented by these short package-local stitches.
+   ...usbEsdPassThroughStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // Package-local PowerPAK/HSOP conductivity links are not board rails.
+   ...powerPadStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+ ]
+ const vias=[via(41.3,14.2,net.RBIAS),via(15.175,3.5,net.RBIAS),via(35.225,14.5,net.PLLFILT),via(38.725,14.5,net.PLLFILT),via(28.225,14.5,net.CRFILT),via(31.725,14.5,net.CRFILT),via(48.5,16.5,net.RESET_N),via(11.225,4.6,net.RESET_N)]
+ return {nets,footprints,segments,vias}
+}
 
 function roboticsControllerCategoryPcbEvidence() {
   const evidence = canSensorNodeCategoryPcbEvidence()
@@ -912,10 +1022,10 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     const copperless=await createCopperlessAuthoritativeCandidate({pcbFile,candidateFile:copperlessFile})
     const copperlessScan=await scanKiCadProject(copperlessFile)
     const routingInput=authoritativePadRoutingInput(copperlessScan)
-    const ethernetTopology=w5500MagJackTopologyGate(routingInput)
+    const ethernetTopology=validateW5500ConnectedCtTopology(routingInput)
     if(ethernetTopology.applicable&&!ethernetTopology.valid)return{
-      ...copperless,status:'COPPERLESS_CANDIDATE_READY',code:'W5500_MAGJACK_TOPOLOGY_UNVERIFIED',
-      reason:`W5500/MagJack topology is not source-backed: ${ethernetTopology.errors.join('; ')}`,
+      ...copperless,status:'COPPERLESS_CANDIDATE_READY',code:'W5500_CONNECTED_CENTRE_TAP_TOPOLOGY_UNVERIFIED',
+      reason:`W5500 connected-centre-tap topology is not source-backed: ${ethernetTopology.errors.join('; ')}`,
       routingDeferred:true,topologyGate:ethernetTopology,
     }
     const fixed=authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
@@ -929,7 +1039,21 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     // The generic channel search is combinatorial on dense MCU fanout. Preserve
     // a deterministic zero-copper transaction baseline instead of consuming
     // the campaign watchdog or falling back to stale proof-coordinate copper.
-    if(routableEndpointCount>80&&!fixedComplete)return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
+    if(routableEndpointCount>80&&!fixedComplete){
+      // Preserve each verified local routing increment as its own immutable
+      // candidate.  This lets dense designs prove exact copper and real KiCad
+      // DRC progress without pretending that a first support branch is a
+      // complete board route.
+      if(fixed.completedNets.length){
+        const localCandidate=path.join(candidateDir,`${stem}.authoritative-local-support.kicad_pcb`)
+        const localRouting=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile:localCandidate,includeNets:fixed.completedNets,includeGroundPlanes:false,trackWidth:.2,viaDiameter:.5})
+        const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=localCandidate.replace(/\.kicad_pcb$/i,'.kicad_dru')
+        const rules=await readFile(sourceRules,'utf8').catch(()=>null);if(rules)await writeFile(candidateRules,rules,'utf8')
+        const localDrc=kicad?.available?await runDrc({pcbFile:localCandidate,outputFile:path.join(candidateDir,'authoritative-local-support-drc.json'),kicadCliPath:kicad.path}):null
+        return{...copperless,status:'LOCAL_ROUTING_CANDIDATE_READY',candidatePcb:localCandidate,reason:'Dense authoritative fanout requires further topology-specific routing after the verified local-support increment',routingDeferred:true,localRouting,localDrc}
+      }
+      return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
+    }
     const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile,viaDiameter:.5})
     if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
     const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
@@ -942,12 +1066,18 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
 }
 
 function authoritativeProductionPlacement(board,projected){
+  // Board011 deliberately has no accepted physical placement yet.  Its
+  // canonical-footprint candidate must remain emit-able for KiCad review, but
+  // may not invoke the generic placement solver and turn an absent placement
+  // proof into an invented authoritative one.
+  if((board.topologyId||board.id)==='usb-hub')return null
   const outline=(board.outlinePoints?.length?board.outlinePoints:[[0,0],[board.widthMm,0],[board.widthMm,board.heightMm],[0,board.heightMm]]).map(([x,y])=>({x,y}))
   const topologyPinMaps=categorySchematicPinMaps(board)
   const components=board.bom.map(row=>{
     const component=projected.get(row.ref),asset=approvedAssetFor(row.mpn)
     if(!asset||!component)throw new Error(`Approved authoritative placement asset is missing for ${row.ref}`)
-    return {ref:row.ref,value:row.value,mpn:row.mpn,footprint:asset.footprint.libId,pinMap:topologyPinMaps[row.ref]||asset.footprintPadMap}
+    const fixedAt=board.id==='board009-poe-production'?board009LocalSupportPlacement(row.ref):null
+    return {ref:row.ref,value:row.value,mpn:row.mpn,footprint:asset.footprint.libId,pinMap:topologyPinMaps[row.ref]||asset.footprintPadMap,...(fixedAt?{fixedAt}: {})}
   })
   return placeAuthoritativeProductionFootprints({components,outline,holes:board.holes||[],topology:board.placementTopologyId||board.topologyId||board.id||'generic'})
 }
@@ -1040,6 +1170,33 @@ export function usbCPdSourceCategoryPcbEvidence(){
   chain([[58,16],[60,16]],n.CC2,'F.Cu',.1)
   evidence.vias.push({...via(35.5,14.2,n.CC2),size:.4,drill:.2},{...via(58,16,n.CC2),size:.4,drill:.2})
   return evidence
+}
+
+/**
+ * Candidate-only physical evidence for the non-PD Board005 replacement.
+ * The proof pipeline replaces these seed locations with resolved authoritative
+ * packages before routing, so no hand-drawn pad geometry is ever emitted as
+ * the final package definition.
+ */
+export function usbCFixedSourceCategoryPcbEvidence(){
+  const names=['','GND','5V_RAW','5V_FUSED','VBUS','CC1','CC2','FAULT_N','REF','REF_RTN']
+  const nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(row=>[row.name,row.number]))
+  const fp=(ref,value,footprint,x,y,w,h,pads)=>({ref,value,footprint,at:{x,y},body:{w,h},pads})
+  const footprints=[
+    fp('J1','M20-9990245','Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',4,9,3,6,[pad('1',0,-1.3,1,1,n['5V_RAW'],'5V_RAW'),pad('2',0,1.3,1,1,n.GND,'GND')]),
+    fp('F1','3413.0218.22','Resistor_SMD:R_2512_6332Metric',11,7,6.3,3.2,[pad('1',-3.5,0,1.5,1.5,n['5V_RAW'],'5V_RAW'),pad('2',3.5,0,1.5,1.5,n['5V_FUSED'],'5V_FUSED')]),
+    fp('D1','SMAJ5.0A','Diode_SMD:D_SMA',13,14,4.5,2.5,[pad('1',0,-2.8,1.5,1.5,n['5V_FUSED'],'5V_FUSED'),pad('2',0,2.8,1.5,1.5,n.GND,'GND')]),
+    fp('U1','TPS25810RVCR','Package_DFN_QFN:Texas_RVC0020A_WQFN-20-1EP_3x4mm_P0.5mm_EP1.6x2.6mm',25,10,4,5,[pad('1',-2,-1.5,.4,.4,n.FAULT_N,'FAULT_N'),pad('2',-2,-1,.4,.4,n['5V_FUSED'],'5V_FUSED'),pad('3',-2,-.5,.4,.4,n['5V_FUSED'],'5V_FUSED'),pad('4',-2,0,.4,.4,n['5V_FUSED'],'5V_FUSED'),pad('5',-2,.5,.4,.4,n['5V_FUSED'],'5V_FUSED'),pad('6',-2,1,.4,.4,n['5V_FUSED'],'5V_FUSED'),pad('7',-2,1.5,.4,.4,n['5V_FUSED'],'5V_FUSED'),pad('8',2,1.5,.4,.4,n.GND,'GND'),pad('9',2,1,.4,.4,n.REF_RTN,'REF_RTN'),pad('10',2,.5,.4,.4,n.REF,'REF'),pad('11',2,0,.4,.4,n.CC1,'CC1'),pad('12',2,-.5,.4,.4,n.GND,'GND'),pad('13',2,-1,.4,.4,n.CC2,'CC2'),pad('14',2,-1.5,.4,.4,n.VBUS,'VBUS'),pad('15',0,0,1.6,2.6,n.GND,'GND')]),
+    fp('J2','USB4105-GF-A','Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal',40,10,5,12,[pad('A1',2,-5,.7,.7,n.GND,'GND'),pad('B12',2,-4,.7,.7,n.GND,'GND'),pad('A4',2,-3,.8,.8,n.VBUS,'VBUS'),pad('B9',2,-2,.8,.8,n.VBUS,'VBUS'),pad('A5',2,-1,.7,.7,n.CC1,'CC1'),pad('B5',2,0,.7,.7,n.CC2,'CC2'),pad('S1',2,5,.8,.8,n.GND,'GND')]),
+    fp('C_IN','UWT1E220MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',17,7,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n['5V_FUSED'],'5V_FUSED'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
+    fp('C_OUT','UWT1E220MCL1GB','Capacitor_SMD:CP_Elec_6.3x5.4',33,7,5.4,6.3,[pad('1',0,-3.5,1.5,1.5,n.VBUS,'VBUS'),pad('2',0,3.5,1.5,1.5,n.GND,'GND')]),
+    verticalPassive('C_AUX','100n',21,16,n['5V_FUSED'],'5V_FUSED',n.GND,'GND',1),
+    passiveFootprint('R_REF','100k',25,16,n.REF,'REF',n.REF_RTN,'REF_RTN'),
+    passiveFootprint('R_FAULT','100k',30,16,n['5V_FUSED'],'5V_FUSED',n.FAULT_N,'FAULT_N'),
+  ]
+  // The authoritative router starts copperless and regenerates every route
+  // from the exact resolved pad locations. Seed tracks are therefore empty.
+  return {nets,footprints,segments:[],vias:[]}
 }
 
 export function usbCPdSinkCategoryPcbEvidence(){
@@ -1420,7 +1577,7 @@ async function writeCategorySchematic({ board, projectDir }) {
   // The Board009 custom-outline seed is intentionally PCB-first. Once its
   // exact production assets are present, create the sibling schematic rather
   // than falling back to a generic category or reporting an undefined model.
-  if(!schFile&&['poe-sensor','ethernet-controller'].includes(board.topologyId||board.id)){
+  if(!schFile&&['poe-sensor','poe-sensor-production','ethernet-controller','usb-hub'].includes(board.topologyId||board.id)){
     const pcbFile=findFirstExisting(projectDir,'.kicad_pcb')
     if(pcbFile)schFile=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_sch')
   }
@@ -1433,12 +1590,12 @@ async function writeCategorySchematic({ board, projectDir }) {
   }
 
   const components = categorySchematicComponents(board)
-  const nets = [...new Set(components.flatMap((component) => Object.values(component.pinMap || {}).filter(Boolean)))]
+  const nets = assignedNetNames(components)
     .map((name) => ({ name }))
   const model = generateSchematicModel(
     { name: board.name },
     components,
-    { nets, emitConnectivityLabels: true, powerFlags: categoryPowerFlags(board) },
+    { nets, emitConnectivityLabels: true, globalConnectivityLabels: board.globalConnectivityLabels !== false, powerFlags: categoryPowerFlags(board) },
   )
   await writeFile(schFile, kicadSchematicFromModel({ name: board.name }, model), 'utf8')
   await writeCategoryReviewLibraries(projectDir, model.symbols)
@@ -1477,6 +1634,7 @@ function categorySchematicComponents(board) {
       assetConfidence: approved ? 'APPROVED_PRODUCTION' : 'BLOCKED',
       forceProductionProjection: Boolean(approved),
       reviewNotes: approved ? 'Approved production symbol, footprint, and board-specific pin map projected.' : 'Approved production asset missing.',
+      at: board.schematicPlacements?.[row.ref] || null,
       ...componentLink(board.id, row.ref),
       schematicUuid: stableUuid(`${board.id}-schematic-${row.ref}`),
     }
@@ -1484,6 +1642,7 @@ function categorySchematicComponents(board) {
 }
 
 export function categorySchematicPinMaps(board) {
+  if(board.topologyId==='poe-sensor-production'&&board.categorySchematicPinMaps)return structuredClone(board.categorySchematicPinMaps)
   const maps = {
     'stm32-controller': {
       U1: approvedAssetFor('STM32F103C8T6').pinMap,
@@ -1506,6 +1665,7 @@ export function categorySchematicPinMaps(board) {
     },
     'poe-sensor':poeSensorPinMaps(),
     'ethernet-controller':ethernetControllerPinMaps(),
+    'usb-hub':board011UsbHubPinMaps(),
     'rp2040-instrument': {
       U1: approvedAssetFor('SC0914(13)').pinMap, U2: approvedAssetFor('W25Q128JVSIQ').pinMap,
       U3: { 1:'GND', 2:'3V3', 3:'VBUS' }, J1: { A1:'GND', A12:'GND', B1:'GND', B12:'GND', A4:'VBUS', A9:'VBUS', B4:'VBUS', B9:'VBUS', A5:'CC1', B5:'CC2', A6:'USB_DP_CONN', B6:'USB_DP_CONN', A7:'USB_DN_CONN', B7:'USB_DN_CONN', SH:'GND' },
@@ -1527,6 +1687,16 @@ export function categorySchematicPinMaps(board) {
       U3:{1:'GND',2:'GND',3:'GND',4:'GND',5:'EEPROM_SDA',6:'EEPROM_SCL',7:'GND',8:'LDO_3V3'},
       J2:{A1:'GND',A12:'GND',B1:'GND',B12:'GND',A4:'VBUS',A9:'VBUS',B4:'VBUS',B9:'VBUS',A5:'CC1',B5:'CC2',SH:'GND'},D2:{1:'VBUS',2:'GND'},C_PP5V:{1:'PP5V',2:'GND'},C_VBUS:{1:'VBUS',2:'GND'},C_3V3:{1:'LDO_3V3',2:'GND'},C_1V5:{1:'1V5',2:'GND'},
       R_EEPROM_SDA:{1:'LDO_3V3',2:'EEPROM_SDA'},R_EEPROM_SCL:{1:'LDO_3V3',2:'EEPROM_SCL'},
+    },
+    'usb-c-fixed-source': {
+      J1:{1:'5V_RAW',2:'GND'}, F1:{1:'5V_RAW',2:'5V_FUSED'}, D1:{1:'5V_FUSED',2:'GND'},
+      // TPS25810 pin functions are resolved from Interface_USB:TPS25810RVC.
+      // CHG is high and CHG_HI is low: that is the reviewed 1.5-A Type-C
+      // advertisement strap, not a synthetic PD policy.
+      U1:{1:'FAULT_N',2:'5V_FUSED',3:'5V_FUSED',4:'5V_FUSED',5:'5V_FUSED',6:'5V_FUSED',7:'5V_FUSED',8:'GND',9:'REF_RTN',10:'REF',11:'CC1',12:'GND',13:'CC2',14:'VBUS',15:'VBUS',16:null,17:null,18:null,19:null,20:null,21:'GND'},
+      J2:{A1:'GND',A12:'GND',B1:'GND',B12:'GND',A4:'VBUS',A9:'VBUS',B4:'VBUS',B9:'VBUS',A5:'CC1',B5:'CC2',SH:'GND'},
+      C_IN:{1:'5V_FUSED',2:'GND'}, C_OUT:{1:'VBUS',2:'GND'}, C_AUX:{1:'5V_FUSED',2:'GND'},
+      R_REF:{1:'REF',2:'REF_RTN'}, R_FAULT:{1:'5V_FUSED',2:'FAULT_N'},
     },
     'usb-c-esp32-sensor': {
       U1: approvedAssetFor(COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY.mpn).pinMap,
@@ -1592,6 +1762,17 @@ export function categorySchematicPinMaps(board) {
   return maps[board.topologyId || board.id] || {}
 }
 
+// A null or empty map entry means the physical pin is intentionally not
+// assigned by this topology.  It must not become a literal `null` KiCad net
+// (nor suppress the later explicit unconnected-pad accounting).
+export function assignedPinNetEntries(pinMap = {}) {
+  return Object.entries(pinMap).filter(([, netName]) => typeof netName === 'string' && netName.trim().length > 0)
+}
+
+export function assignedNetNames(components = []) {
+  return [...new Set(components.flatMap((component) => assignedPinNetEntries(component?.pinMap).map(([, netName]) => netName)))]
+}
+
 export function categoryPowerFlags(board){
   const topology=board.topologyId||board.id
   if(topology==='usb-c-esp32-sensor')return planEsp32TopologyPowerFlags()
@@ -1602,8 +1783,22 @@ export function categoryPowerFlags(board){
     {ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'3V3A',source:{ref:'FB_AVDD',kind:'filtered-analog-supply'},reason:'FB_AVDD is the physical filtered analog-supply source.'},
     {ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'CHASSIS',source:{ref:'J1',kind:'ethernet-shield-chassis-entry'},reason:'J1 shield pins are the explicit chassis discharge entry.'},
   ]
+  if(topology==='poe-sensor-production')return [
+    {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'3V3A',source:{ref:'FB_AVDD',kind:'filtered-analog-supply'},reason:'FB_AVDD is the physical 3V3-to-AVDD ferrite path documented by the W5500 reference schematic.'},
+  ]
   if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',source:{ref:'F1',kind:'fused-external-power'},reason:'The input fuse is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'The protected MOSFET output is the physical source for the downstream buck VIN rail.'}]
   if(topology==='usb-c-pd-source')return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceKind:'selv-input-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'PP5V',source:{ref:'F1',kind:'fused-selv-power'},reason:'The input fuse is the physical source path for the protected PP5V rail.'}]
+  if(topology==='usb-hub')return [
+    {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'VIN_RAW',source:{ref:'J_PWR',kind:'external-selv-input'},reason:'J_PWR is the declared center-positive 12 V SELV input.'},
+    {ref:'#FLG02',symbolLibId:'power:PWR_FLAG',rail:'GND',source:{ref:'J_PWR',kind:'external-selv-return'},reason:'J_PWR establishes the board input return.'},
+    {ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VIN_PROTECTED',source:{ref:'Q_REV',kind:'reverse-polarity-protected-input'},reason:'Q_REV is the protected input path feeding the buck regulator.'},
+    {ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'5V',source:{ref:'L_5V',kind:'regulated-buck-output-filter'},reason:'L_5V is the buck-output filter element supplying the 5 V hub and port-controller rail.'},
+    // U_3V3 exposes a native KiCad power-output pin.  A PWR_FLAG here would
+    // assert a second source and mask a real regulator-output conflict.
+  ]
+  // TPS25810 OUT is a native KiCad power-output pin.  Adding a PWR_FLAG on
+  // VBUS would create a false power-output-to-power-output ERC conflict.
+  if(topology==='usb-c-fixed-source')return [{ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'5V_RAW',source:{ref:'J1',kind:'external-selv-power'},reason:'J1 pin 1 is the explicit regulated SELV input source.'},{ref:'#FLG02',symbolLibId:'power:PWR_FLAG',rail:'GND',source:{ref:'J1',kind:'external-selv-return'},reason:'J1 pin 2 is the explicit SELV input return; this drives the TPS25810 CHG_HI low strap in KiCad ERC.'},{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'5V_FUSED',source:{ref:'F1',kind:'fused-selv-power'},reason:'The input fuse is the physical source path for the protected TPS25810 supply rail.'}]
   if(topology==='industrial-io-production')return [
     {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'3V3',source:{ref:'J2',kind:'external-logic-supply'},reason:'The service header is the explicit 3.3 V logic-domain supply input.'},
     {ref:'#FLG02',symbolLibId:'power:PWR_FLAG',rail:'GND',source:{ref:'J2',kind:'external-logic-return'},reason:'The service header is the explicit logic-domain supply return.'},

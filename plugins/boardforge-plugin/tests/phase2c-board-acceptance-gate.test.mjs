@@ -31,8 +31,8 @@ async function fixture() {
   const sha = 'a'.repeat(64)
   return {
     project: { schematic, pcb },
-    erc: { tool: 'kicad-cli', exitCode: 0, errors: 0, violations: 0, reportPath: 'erc.rpt', executedAt: '2026-07-15T00:00:00Z' },
-    drc: { tool: 'kicad-cli', exitCode: 0, errors: 0, violations: 0, unconnectedItems: 0, reportPath: 'drc.rpt', executedAt: '2026-07-15T00:00:00Z' },
+    erc: { tool: 'kicad-cli', exitCode: 0, errors: 0, violations: 0, ignoredChecks: [], reportPath: 'erc.rpt', executedAt: '2026-07-15T00:00:00Z' },
+    drc: { tool: 'kicad-cli', exitCode: 0, errors: 0, violations: 0, ignoredChecks: [], unconnectedItems: 0, reportPath: 'drc.rpt', executedAt: '2026-07-15T00:00:00Z' },
     manufacturing: { gerbers: [gerber], drill: [drill], bom, cpl, zip },
     sourcing: { rows: [{ mpn: 'REAL-1', providers: {
       digikey: { live: true, queriedAt: '2026-07-15T00:00:00Z', requestId: 'dk-1', stockStatus: 'IN_STOCK', quantityAvailable: 100 },
@@ -66,6 +66,13 @@ test('rejects claimed clean DRC without real CLI execution', async () => {
   assert.ok(result.blockers.some(({ code }) => code === 'DRC_KICAD_CLI_EXECUTED'))
 })
 
+test('rejects clean-count KiCad reports that disabled an ignored check', async () => {
+  const evidence = await fixture()
+  evidence.erc.ignoredChecks = [{ key: 'footprint_filter', description: 'Assigned footprint does not match filters' }]
+  const result = await evaluateBoardAcceptance(evidence)
+  assert.ok(result.blockers.some(({ code }) => code === 'ERC_NO_IGNORED_CHECKS'))
+})
+
 test('rejects a large placeholder package and mismatched source hashes', async () => {
   const evidence = await fixture()
   await writeFile(evidence.manufacturing.zip, 'placeholder'.repeat(100))
@@ -89,6 +96,26 @@ test('projection gate does not borrow a later pad net for an unnetted required p
       (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu"))
       (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu") (net "GND")))
   )`)
+  const result=await evaluateBoardAcceptance(evidence)
+  assert.ok(result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
+})
+
+test('projection gate rejects a literal null net instead of treating it as an NC assertion',async()=>{
+  const evidence=await fixture()
+  await writeFile(evidence.project.schematic,`(kicad_sch (symbol (lib_id "MCU_Test:REAL_MCU") (property "Reference" "U1") (pin "1" (uuid 00000000-0000-0000-0000-000000000001)) (pin "2" (uuid 00000000-0000-0000-0000-000000000002))))`)
+  await writeFile(evidence.project.pcb,`(kicad_pcb (footprint "Package_Test:REAL_QFN" (property "Reference" "U1") (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net "GND")) (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu"))))`)
+  evidence.assetBindings.components[0].symbolPinMap={1:'GND',2:null}
+  evidence.assetBindings.components[0].footprintPadMap={1:'GND',2:null}
+  const result=await evaluateBoardAcceptance(evidence)
+  assert.ok(result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
+})
+
+test('projection gate rejects a silently connected expected NC pad',async()=>{
+  const evidence=await fixture()
+  await writeFile(evidence.project.schematic,`(kicad_sch (symbol (lib_id "MCU_Test:REAL_MCU") (property "Reference" "U1") (pin "1" (uuid 00000000-0000-0000-0000-000000000001)) (pin "2" (uuid 00000000-0000-0000-0000-000000000002))))`)
+  await writeFile(evidence.project.pcb,`(kicad_pcb (footprint "Package_Test:REAL_QFN" (property "Reference" "U1") (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net "GND")) (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu") (net "VCC"))))`)
+  evidence.assetBindings.components[0].expectedUnconnectedSymbolPins=['2']
+  evidence.assetBindings.components[0].expectedUnconnectedFootprintPads=['2']
   const result=await evaluateBoardAcceptance(evidence)
   assert.ok(result.blockers.some(({code})=>code==='BINDINGS_PROJECTED_INTO_KICAD'))
 })

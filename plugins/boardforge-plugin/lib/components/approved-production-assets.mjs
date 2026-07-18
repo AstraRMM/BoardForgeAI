@@ -175,24 +175,34 @@ export const approvedProductionAssets = Object.freeze({
     "Package_DFN_QFN:Texas_RVC0020A_WQFN-20-1EP_3x4mm_P0.5mm_EP1.6x2.6mm",
     {
       1: "FAULT_N",
-      2: "5V_PROTECTED",
-      3: "5V_PROTECTED",
-      4: "5V_PROTECTED",
-      5: "3V3",
-      6: "PORT_ENABLE",
-      7: "GND",
-      8: "GND",
-      9: "GND",
+      2: "IN1",
+      3: "IN1",
+      4: "IN2",
+      5: "AUX",
+      6: "EN",
+      7: "CHG",
+      8: "CHG_HI",
+      9: "REF_RTN",
       10: "REF",
       11: "CC1",
       12: "GND",
       13: "CC2",
-      14: "PORT_VBUS",
-      15: "PORT_VBUS",
+      14: "OUT",
+      15: "OUT",
+      16: "DEBUG_N",
+      17: "AUDIO_N",
+      18: "POL_N",
+      19: "UFP_N",
+      20: "LD_DET_N",
       21: "GND",
     },
     "WQFN-20-EP",
-    { sourceEvidence: "https://www.ti.com/lit/ds/symlink/tps25810.pdf" },
+    {
+      sourceEvidence: "https://www.ti.com/lit/ds/symlink/tps25810.pdf",
+      applicationLimitations: [
+        "The canonical pin names follow the TPS25810RVC datasheet pinout. IN1/IN2/AUX/EN and CHG straps remain board-specific engineering connections; open-drain FAULT requires a pull-up to AUX when used.",
+      ],
+    },
   ),
   Q22FA2380119417: entry(
     "Q22FA2380119417",
@@ -519,6 +529,42 @@ export const approvedProductionAssets = Object.freeze({
     { 1: "SIGNAL", 2: "GND" },
     "0603",
   ),
+  "RC0603FR-074K7L": entry(
+    "RC0603FR-074K7L",
+    "Device:R",
+    "Resistor_SMD:R_0603_1608Metric",
+    { 1: "I2C", 2: "3V3" },
+    "0603",
+    {
+      sourceEvidence:
+        "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf",
+    },
+  ),
+  "RC0603JR-070RL": entry(
+    "RC0603JR-070RL",
+    "Device:R",
+    "Resistor_SMD:R_0603_1608Metric",
+    { 1: "STRAP", 2: "GND" },
+    "0603",
+    {
+      sourceEvidence:
+        "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf",
+      applicationLimitations: [
+        "Zero-ohm address strap preserves the BME280 datasheet's GND-selected I2C address while separating the native bidirectional SDO ERC pin from the supply-source pin type.",
+      ],
+    },
+  ),
+  "RC0603FR-07330RL": entry(
+    "RC0603FR-07330RL",
+    "Device:R",
+    "Resistor_SMD:R_0603_1608Metric",
+    { 1: "3V3", 2: "LED" },
+    "0603",
+    {
+      sourceEvidence:
+        "https://docs.wiznet.io/img/products/w5500/w5500_sch_v110_use_mag_.pdf",
+    },
+  ),
   "RC0603FR-07562RL": entry(
     "RC0603FR-07562RL",
     "Device:R",
@@ -636,6 +682,17 @@ export const approvedProductionAssets = Object.freeze({
     {
       sourceEvidence:
         "https://docs.wiznet.io/Product/Chip/Ethernet/W5500/ref-schematic",
+    },
+  ),
+  CC0603KRX7R9BB223: entry(
+    "CC0603KRX7R9BB223",
+    "Device:C",
+    "Capacitor_SMD:C_0603_1608Metric",
+    { 1: "ETH_RX_CT", 2: "GND" },
+    "0603",
+    {
+      sourceEvidence:
+        "https://docs.wiznet.io/img/products/w5500/w5500_sch_v110_use_mag_.pdf",
     },
   ),
   CC0603KRX7R9BB103: entry(
@@ -761,7 +818,7 @@ export const approvedProductionAssets = Object.freeze({
   W25Q128JVSIQ: entry(
     "W25Q128JVSIQ",
     "Memory_Flash:W25Q128JVS",
-    "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+    "Package_SO:SOIC-8_5.3x5.3mm_P1.27mm",
     {
       1: "QSPI_CS",
       2: "QSPI_SD1",

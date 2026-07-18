@@ -69,8 +69,10 @@ async function validateProductionAssets(evidence, add) {
       if (!sameAsset(symbol, row.symbol) || !sameAsset(footprint, row.footprint)) return false
       const symbolPinMap=row.symbolPinMap||row.pinMap,footprintPadMap=row.footprintPadMap||row.pinMap
       if(!Object.entries(symbolPinMap).every(([pin])=>schBlock.includes(`(pin "${pin}"`)))return false
+      const unconnectedSymbolPins = Array.isArray(row.expectedUnconnectedSymbolPins) ? row.expectedUnconnectedSymbolPins : []
+      if(!unconnectedSymbolPins.every((pin)=>schBlock.includes(`(pin "${pin}"`)))return false
       const padRows=indexedPads(pcbBlock)
-      return Object.entries(footprintPadMap).every(([pad, net]) => {
+      const connectedPads = Object.entries(footprintPadMap).every(([pad, net]) => {
         const padBlock=padRows.get(String(pad)),expected=String(net)
         if(!padBlock)return false
         // KiCad 10 saved boards use `(net "NAME")`; generated sources may
@@ -79,6 +81,20 @@ async function validateProductionAssets(evidence, add) {
         const physicalNet=match?.[1]
         return physicalNet === expected || productionPhysicalNetEquivalent({policy:row.physicalNetEquivalencePolicy,mpn:row.mpn,pad:String(pad),canonicalNet:expected,physicalNet})
       })
+      // A canonical null is a deliberate no-connect assertion, never a
+      // string-valued "null" net.  Require the actual physical pad to exist
+      // and to remain netless so an unintended connection cannot be omitted
+      // from the projection proof.
+      const unconnectedPads = Array.isArray(row.expectedUnconnectedFootprintPads) ? row.expectedUnconnectedFootprintPads : []
+      const expectedNcPads = unconnectedPads.every((pad) => {
+        const padBlock = padRows.get(String(pad))
+        const actualNet = capture(padBlock || '', /\(net\s+(?:\d+\s+)?"([^"]+)"\)/)
+        // KiCad may serialize an isolated NC pad as its own generated
+        // `unconnected-(...)` net.  Accept that encoding, but reject every
+        // named electrical net (including a literal `null`).
+        return Boolean(padBlock) && (!actualNet || actualNet.startsWith('unconnected-('))
+      })
+      return connectedPads && expectedNcPads
     })
   } catch {}
   add('BINDINGS_PROJECTED_INTO_KICAD', projected, 'Actual schematic symbols, PCB footprints, and pad-net maps must match the verified production bindings for every reference.')
@@ -120,6 +136,9 @@ function validateKiCadRun(run, label, add) {
   const real = run?.tool === 'kicad-cli' && Number.isInteger(run?.exitCode) && run?.reportPath && run?.executedAt
   add(`${label}_KICAD_CLI_EXECUTED`, Boolean(real), `${label} must include timestamped kicad-cli execution evidence and a report path.`)
   add(`${label}_ZERO_ERRORS`, real && run.exitCode === 0 && run.errors === 0 && run.violations === 0, `${label} must exit zero with zero errors and zero violations.`)
+  // KiCad's JSON explicitly lists checks disabled by rule severity.  A clean
+  // count with even one ignored check is not a full validation run.
+  add(`${label}_NO_IGNORED_CHECKS`, real && Array.isArray(run.ignoredChecks) && run.ignoredChecks.length === 0, `${label} must run with no ignored or disabled KiCad checks.`)
 }
 
 function validateSourcing(sourcing, add, options) {

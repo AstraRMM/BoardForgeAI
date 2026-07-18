@@ -82,6 +82,13 @@ export function serializeAuthoritativeKiCadFootprint({resolved,ref,value='',at,n
     .replace(/(\(layer\s+"F\.Cu"\))/,`$1\n\t(at ${format(at?.x)} ${format(at?.y)} ${format(rotation)})${uuidFor('footprint')?`\n\t(uuid "${uuidFor('footprint')}")`:''}`)
     .replace(/\(property\s+"Reference"\s+"[^"]+"/,`(property "Reference" "${escapeText(ref)}"`)
     .replace(/\(property\s+"Value"\s+"[^"]+"/,`(property "Value" "${escapeText(value)}"`)
+  // KiCad's official thermal-via footprints intentionally combine SMD lands
+  // with plated thermal vias.  Keeping their source `attr smd` makes KiCad
+  // 10 flag the otherwise exact instance as a component-type mismatch.  The
+  // footprint attribute is optional metadata; omit only that contradictory
+  // classification for a mixed-technology authoritative footprint, while
+  // preserving every sourced pad, drill, layer, shape and geometry verbatim.
+  if(resolved.pads.some(pad=>pad.type==='smd')&&resolved.pads.some(pad=>pad.type==='thru_hole'))text=text.replace(/^\s*\(attr\s+smd\)\s*$/m,'')
   const extraProperties=Object.entries(properties).filter(([,propertyValue])=>propertyValue!=null).map(([name,propertyValue],index)=>`\n\t(property "${escapeText(name)}" "${escapeText(propertyValue)}"\n\t\t(at 0 0 0)\n\t\t(layer "F.Fab")\n\t\t(hide yes)\n\t\t(uuid "${uuidFor(`property-${index}-${name}`)}")\n\t\t(effects (font (size 1 1) (thickness 0.15)))\n\t)`).join('')
   if(extraProperties)text=text.replace(/(\(property\s+"Value"[\s\S]*?\n\t\))/,(match)=>match+extraProperties)
   if(silkscreen==='fabrication')text=text.replace(/\(layer\s+"F\.SilkS"\)/g,'(layer "F.Fab")')

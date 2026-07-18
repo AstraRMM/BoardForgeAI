@@ -55,8 +55,12 @@ export const usbCFixedSourceTemplate = Object.freeze({
     1: "FAULT_N", 2: "5V_FUSED", 3: "5V_FUSED", 4: "5V_FUSED",
     5: "5V_FUSED", 6: "5V_FUSED", 7: "5V_FUSED", 8: "GND",
     9: "REF_RTN", 10: "REF", 11: "CC1", 12: "GND", 13: "CC2",
-    14: "VBUS", 15: "VBUS", 16: "GND", 17: "GND", 18: "GND",
-    19: "GND", 20: "GND", 21: "GND",
+    14: "VBUS", 15: "VBUS",
+    // These are open-collector status/test outputs, not grounds.  A fixed
+    // source with no host/status interface must leave them electrically open
+    // and emit actual KiCad no-connect markers.
+    16: null, 17: null, 18: null, 19: null, 20: null,
+    21: "GND",
   }),
   fixedConfiguration: {
     en: "HIGH_TO_AUX",
@@ -69,13 +73,15 @@ export const usbCFixedSourceTemplate = Object.freeze({
   },
   requirements: [
     { ref: "J1", role: "SELV_5V_INPUT", mpn: "M20-9990245", pinCount: 2 },
-    { ref: "F1", role: "INPUT_FUSE", mpn: "3413.0218.22", pinCount: 2 },
+    // 2 A 1206 fuse candidate.  The board must re-resolve its authoritative
+    // pads and pass fresh dual-provider evidence before this can be released.
+    { ref: "F1", role: "INPUT_FUSE", mpn: "0451002.MRL", pinCount: 2 },
     { ref: "D1", role: "INPUT_TVS", mpn: "SMAJ5.0A", pinCount: 2 },
     { ref: "U1", role: "TYPE_C_DFP_CONTROLLER_AND_POWER_SWITCH", mpn: "TPS25810RVCR", pinCount: 21 },
     { ref: "J2", role: "USB_C_DFP_OUTPUT", mpn: "USB4105-GF-A", pinCount: 16 },
     { ref: "C_IN", role: "INPUT_BULK", mpn: "UWT1E220MCL1GB", pinCount: 2 },
     { ref: "C_OUT", role: "OUTPUT_BYPASS", mpn: "UWT1E220MCL1GB", pinCount: 2 },
-    { ref: "C_AUX", role: "CONTROLLER_BYPASS", mpn: "CL10B104KB8NNNC", pinCount: 2 },
+    { ref: "C_AUX", role: "CONTROLLER_BYPASS", mpn: "CC0603ZRY5V8BB104", pinCount: 2 },
     { ref: "R_REF", role: "CURRENT_LIMIT_REFERENCE", mpn: "RC0603FR-07100KL", pinCount: 2 },
     { ref: "R_FAULT", role: "FAULT_PULLUP", mpn: "RC0603FR-07100KL", pinCount: 2 },
   ],
@@ -98,6 +104,81 @@ export const usbCFixedSourceTemplate = Object.freeze({
     manufacturingAccepted: false,
   },
 });
+
+/**
+ * Converts the reviewed training intent into the narrow real-board-proof
+ * input shape.  This is deliberately a candidate definition: the runner
+ * creates KiCad files and validation evidence but never promotes this into a
+ * delivery or manufacturing acceptance by itself.
+ */
+export function usbCFixedSourceRealBoardDefinition(template = usbCFixedSourceTemplate) {
+  const contract = validateUsbCFixedSourceTemplate(template);
+  if (!contract.ok) throw new Error(`USB-C fixed-source contract is invalid: ${contract.errors.join("; ")}`);
+  return {
+    id: "usb-c-fixed-source",
+    topologyId: "usb-c-fixed-source",
+    name: "USB-C Fixed 5 V / 1.5 A Source",
+    preset: "blank-custom",
+    // 892 mm²: the recessed output edge and the opposite input shoulder are
+    // intentional mechanical constraints, not a rectangular fallback.
+    outlinePoints: [[0, 0], [45, 0], [45, 20], [4, 20], [4, 18], [0, 18]],
+    widthMm: 45,
+    heightMm: 20,
+    layers: template.mechanical.layers,
+    // Native KiCad symbol bodies (especially the USB-C receptacle) have
+    // meaningful physical extents.  Keep their labelled pin stubs in distinct
+    // schematic lanes: the earlier generic grid put U1 GND directly through
+    // C_OUT VBUS and created a real, silent GND/VBUS short in the netlist.
+    schematicPlacements: {
+      J1: { x: 22.86, y: 25.4 }, F1: { x: 60.96, y: 25.4 }, D1: { x: 99.06, y: 25.4 },
+      U1: { x: 127, y: 63.5 }, J2: { x: 22.86, y: 86.36 },
+      C_IN: { x: 71.12, y: 88.9 }, C_OUT: { x: 177.8, y: 96.52 },
+      C_AUX: { x: 101.6, y: 101.6 }, R_REF: { x: 132.08, y: 116.84 },
+      R_FAULT: { x: 165.1, y: 132.08 },
+    },
+    // The source is a single-sheet board. Root-sheet labels preserve the
+    // bare canonical net names without the global-label collision mode that
+    // KiCad reports for the duplicated USB-C power contacts.
+    globalConnectivityLabels: false,
+    // Explicit symbol locations are part of the generated project contract.
+    // Without them, authoritative symbol pins from independently resolved
+    // packages can land on the same default sheet location and KiCad quite
+    // correctly reports two distinct net labels on one connection point.
+    schematicPlacements: {
+      J2: { x: 38.1, y: 101.6 }, U1: { x: 127.0, y: 101.6 },
+      J1: { x: 38.1, y: 152.4 }, F1: { x: 63.5, y: 152.4 },
+      D1: { x: 88.9, y: 152.4 }, C_IN: { x: 63.5, y: 127.0 },
+      C_OUT: { x: 152.4, y: 127.0 }, C_AUX: { x: 114.3, y: 127.0 },
+      R_REF: { x: 101.6, y: 76.2 }, R_FAULT: { x: 139.7, y: 152.4 },
+    },
+    prompt: "Generate the reviewed fixed 5 V / 1.5 A Type-C DFP. USB-PD and configuration EEPROM are explicitly absent.",
+    intent: [
+      "regulated SELV 5 V input",
+      "fuse and TVS protection",
+      "TPS25810 fixed 1.5 A Type-C current advertisement",
+      "recessed USB-C output edge",
+      "no USB-PD and no configuration EEPROM",
+      "Board005 fabrication intent: standard 0.20 mm routing, with one source-backed 0.10 mm REF_RTN WQFN escape only",
+    ],
+    bom: template.requirements.map((part) => ({
+      ref: part.ref,
+      value: part.mpn,
+      mpn: part.mpn,
+      role: part.role,
+      verificationStatus: "APPROVED_MAPPING",
+    })),
+    semanticEvidence: {
+      usbCFixedSource: {
+        contract: template.schema,
+        noUsbPowerDelivery: true,
+        noConfigurationEeprom: true,
+        advertisedCurrentA: template.electrical.output.advertisedCurrentA,
+        worstConnectorVbus: contract.worstConnectorVbus,
+        fabricationCapability: { provider: "PCBWay", source: "https://www.pcbway.com/capabilities.html", stackup: "4-layer", minTraceWidthMm: 0.1, restrictedNet: "REF_RTN", restrictedPurpose: "TPS25810 0.5 mm-pitch reference-return escape" },
+      },
+    },
+  };
+}
 
 export function validateUsbCFixedSourceTemplate(template = usbCFixedSourceTemplate) {
   const errors = [];
@@ -127,7 +208,14 @@ export function validateUsbCFixedSourceTemplate(template = usbCFixedSourceTempla
       if (!symbolPin) errors.push(`tps25810-symbol-pin-missing:${pin}`);
       else if (normalPinName(symbolPin.name) !== normalPinName(template.controllerPinFunctions[pin])) errors.push(`tps25810-symbol-function-mismatch:${pin}`);
       if (!footprint.pads.some((row) => String(row.number) === pin)) errors.push(`tps25810-footprint-pad-missing:${pin}`);
-      if (!template.controllerNetMap?.[pin]) errors.push(`tps25810-net-map-missing:${pin}`);
+      if (!Object.prototype.hasOwnProperty.call(template.controllerNetMap || {}, pin)) {
+        errors.push(`tps25810-net-map-missing:${pin}`);
+        continue;
+      }
+      const net = template.controllerNetMap[pin];
+      if (["16", "17", "18", "19", "20"].includes(pin)) {
+        if (net != null) errors.push(`tps25810-open-collector-must-be-open:${pin}`);
+      } else if (!net) errors.push(`tps25810-net-map-missing:${pin}`);
     }
   }
   return { schema: "boardforge.phase2c.usb-c-fixed-source-contract-gate.v1", ok: errors.length === 0, errors, worstConnectorVbus };
