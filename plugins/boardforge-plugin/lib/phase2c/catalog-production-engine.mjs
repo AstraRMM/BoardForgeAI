@@ -7,7 +7,7 @@ import { REAL_BOARD_PROOF_BOARDS, runRealBoardProof } from '../real-board-proof.
 import { productionAssetBindings, runPhase2cManufacturingPipeline } from './manufacturing-pipeline.mjs'
 import {createConnectorEarMechanicalFixture,validateConnectorEarMechanicalFixture} from './connector-ear-mechanical-contract.mjs'
 import {createBoard008MechanicalPlacementFixture,validateBoard008MechanicalPlacementFixture} from './board008-mechanical-placement-contract.mjs'
-import {createBoard009IsolationWaistFixture,validateBoard009IsolationWaistFixture} from './board009-isolation-waist-contract.mjs'
+import {createBoard009IsolationWaistFixture,validateBoard009IsolationWaistFixture,validateBoard009ExactPoeEnvelope} from './board009-isolation-waist-contract.mjs'
 import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
 import {validatePoeSensorArchitecture} from './templates/poe-sensor.mjs'
 import {ethernetControllerProductionProposal,validateEthernetControllerProposal} from './templates/ethernet-controller.mjs'
@@ -117,7 +117,10 @@ export function validateCatalogSemanticTopology(definition={}){
   const requireCapabilities=requirements=>{for(const [code,pattern,minimum=1]of requirements)if(roles.filter(role=>pattern.test(role)).length<minimum)errors.push(code)}
   const outlineArea=Array.isArray(definition.outlinePoints)&&definition.outlinePoints.length>=3?polygonArea(definition.outlinePoints):null,maximumAreaMm2=definition.catalog?.maximumAreaMm2
   if(Number.isFinite(maximumAreaMm2)&&(!Number.isFinite(outlineArea)||outlineArea>maximumAreaMm2))errors.push('custom-outline-exceeds-maximum-area')
-  if(/ethernet powered sensing|poe-edge|poe sensor/.test(semanticText))errors.push(...validatePoeSensorArchitecture(definition).errors)
+  if(/ethernet powered sensing|poe-edge|poe sensor/.test(semanticText)){
+    errors.push(...validatePoeSensorArchitecture(definition).errors)
+    if(definition.catalog?.boardId==='009_POE_SENSOR')errors.push(...validateBoard009ExactPoeEnvelope().errors)
+  }
   if(topology==='stm32-controller'||topology==='can-gateway'){
     if(!hasRole(/boot.*(bias|strap)|(?:bias|strap).*boot/))errors.push('mcu-boot-bias-network-missing')
     if(!hasRole(/reset.*(bias|rc)|(?:bias|rc).*reset/))errors.push('mcu-reset-network-missing')

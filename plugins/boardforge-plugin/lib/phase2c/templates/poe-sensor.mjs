@@ -44,6 +44,9 @@ export function validatePoeSensorArchitecture(definition={}){
   need(/ethernet.*decoupling|phy.*decoupling|mac.*phy.*decoupling/,'poe-sensor-decoupling-missing')
   need(/environmental.*sensor|temperature.*humidity.*sensor/,'poe-sensor-sensor-missing')
   need(/isolation.*barrier|primary.*secondary.*keepout/,'poe-sensor-isolation-barrier-missing')
+  // A data-only MagJack is not a PoE input, even if it happens to satisfy the
+  // generic role words "MagJack" and "Ethernet magnetics".
+  if(roles.some(role=>/\bnon[- ]?poe\b|data[- ]?only/.test(role)))errors.push('poe-sensor-magjack-not-poe-capable')
   const e=definition.semanticEvidence?.poeSensor||{}
   for(const [key,code] of [['exactAssetsApproved','poe-sensor-exact-assets-unapproved'],['magjackPinMapVerified','poe-sensor-magjack-pin-map-unverified'],['poeClassificationPowerVerified','poe-sensor-classification-power-unverified'],['isolationSafetyVerified','poe-sensor-isolation-safety-unverified'],['ethernetSignalIntegrityVerified','poe-sensor-signal-integrity-unverified'],['powerThermalVerified','poe-sensor-power-thermal-unverified'],['sensorEnvironmentVerified','poe-sensor-environment-unverified'],['productionTestVerified','poe-sensor-production-test-unverified']])if(e[key]!==true)errors.push(code)
   if(definition.topologyId==='usb-c-esp32-sensor'||definition.topologyId==='stm32-controller')errors.push('poe-sensor-category-mapped-to-generic-controller')
