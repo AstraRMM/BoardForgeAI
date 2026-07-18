@@ -587,6 +587,20 @@ export const approvedProductionAssets = Object.freeze({
         "https://docs.wiznet.io/img/products/w5500/w5500_evb/w5500_evb_v1.0_140527.pdf",
     },
   ),
+  // W5500's connected-centre-tap reference circuit uses a 10 ohm feed to
+  // the MagJack TX centre tap.  This is intentionally distinct from the
+  // 10 kOhm reset/strap part used elsewhere in the catalog.
+  "RC0603FR-0710RL": entry(
+    "RC0603FR-0710RL",
+    "Device:R",
+    "Resistor_SMD:R_0603_1608Metric",
+    { 1: "ETH_TX_CT", 2: "3V3A" },
+    "0603",
+    {
+      sourceEvidence:
+        "https://docs.wiznet.io/Product/Chip/Ethernet/W5500/ref-schematic",
+    },
+  ),
   GRM1885C1H120JA01D: entry(
     "GRM1885C1H120JA01D",
     "Device:C",
@@ -607,6 +621,21 @@ export const approvedProductionAssets = Object.freeze({
     {
       sourceEvidence:
         "https://docs.wiznet.io/img/products/w5500/W5500_ds_v110e.pdf",
+    },
+  ),
+  // The W5500 connected-centre-tap reference explicitly places 6.8 nF
+  // capacitors in series with RX+ and RX-.  Keep an active dual-distributor
+  // 0603 identity rather than substituting the obsolete Murata part shown in
+  // an older EVB drawing.
+  CC0603KRX7R9BB682: entry(
+    "CC0603KRX7R9BB682",
+    "Device:C",
+    "Capacitor_SMD:C_0603_1608Metric",
+    { 1: "ETH_RX_PHY", 2: "ETH_RX_MAG" },
+    "0603",
+    {
+      sourceEvidence:
+        "https://docs.wiznet.io/Product/Chip/Ethernet/W5500/ref-schematic",
     },
   ),
   CC0603KRX7R9BB103: entry(
