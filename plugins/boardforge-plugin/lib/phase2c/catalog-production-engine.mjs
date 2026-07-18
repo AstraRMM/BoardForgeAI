@@ -11,6 +11,7 @@ import {createBoard009IsolationWaistFixture,validateBoard009IsolationWaistFixtur
 import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
 import {validatePoeSensorArchitecture} from './templates/poe-sensor.mjs'
 import {ethernetControllerProductionProposal,validateEthernetControllerProposal} from './templates/ethernet-controller.mjs'
+import {usbHubProductionProposal,validateUsbHubProductionProposal} from './templates/usb-hub.mjs'
 
 const execFile=promisify(execFileCallback)
 const repo=path.resolve(import.meta.dirname,'../../../..')
@@ -19,7 +20,7 @@ const topologyIds=['stm32-controller','rp2040-instrument','usb-c-pd-sink','usb-c
 export function catalogDefinition(board,index=0) {
   if(!board || typeof board!=='object') throw new TypeError('Catalog board specification is required')
   const topologyId=topologyFor(board,index)
-  const base=topologyId==='poe-sensor'?poeSensorBase():topologyId==='ethernet-controller'?ethernetControllerBase():REAL_BOARD_PROOF_BOARDS.find(row=>row.id===topologyId)
+  const base=topologyId==='poe-sensor'?poeSensorBase():topologyId==='ethernet-controller'?ethernetControllerBase():topologyId==='usb-hub'?usbHubBase():REAL_BOARD_PROOF_BOARDS.find(row=>row.id===topologyId)
   if(!base) throw new Error(`Catalog topology is unavailable: ${topologyId}`)
   if(!Array.isArray(base.bom) || base.bom.length===0) throw new Error(`Catalog topology has no production BOM: ${topologyId}`)
   if(!base.bom.every(row=>row && typeof row==='object' && typeof row.ref==='string')) throw new Error(`Catalog topology has an invalid production BOM: ${topologyId}`)
@@ -37,7 +38,7 @@ export function catalogDefinition(board,index=0) {
     name:`${board.id} ${title(board.slug)}`,
     prompt:`Build ${board.purpose}. Architecture: ${board.architectureClass}. Required distinguishing behavior: ${(board.distinguishingFeatures||[]).join('; ')}. Preserve the ${family} mechanical intent.`,
     intent:[board.purpose,board.architectureClass,...(board.distinguishingFeatures||[]),`${family} custom mechanical envelope`],
-    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||gatewayFixture?.outline||poeFixture?.outline||(topologyId==='ethernet-controller'?structuredClone(ethernetControllerProductionProposal.outline.points):outlineFor(family,width,height,index)), holes:connectorEarFixture?.holes||gatewayFixture?.holes||poeFixture?.holes||[],
+    preset:'blank-custom', outlinePoints:connectorEarFixture?.outline||gatewayFixture?.outline||poeFixture?.outline||(topologyId==='ethernet-controller'?structuredClone(ethernetControllerProductionProposal.outline.points):topologyId==='usb-hub'?structuredClone(usbHubProductionProposal.outline.points):outlineFor(family,width,height,index)), holes:connectorEarFixture?.holes||gatewayFixture?.holes||poeFixture?.holes||[],
     ...(connectorEarFixture?{placementTopologyId:'can-controller-connector-ears'}:{}),
     ...(gatewayFixture?{placementTopologyId:'can-gateway-asymmetric-dual-port',mechanicalPlacementContract:gatewayFixture}:{}),
     ...(poeFixture?{widthMm:poeFixture.widthMm,heightMm:poeFixture.heightMm,placementTopologyId:'poe-sensor-isolation-waist',mechanicalPlacementContract:poeFixture}:{}),
@@ -55,6 +56,14 @@ function poeSensorBase(){return{id:'poe-sensor',name:'Exact PoE Ethernet sensor 
 ],semanticEvidence:{poeSensor:{exactAssetsApproved:true,magjackPinMapVerified:true,poeClassificationPowerVerified:false,isolationSafetyVerified:false,ethernetSignalIntegrityVerified:false,powerThermalVerified:false,sensorEnvironmentVerified:false,productionTestVerified:false}}}}
 
 function ethernetControllerBase(){return{id:'ethernet-controller',name:'Exact RP2040 W5500 Ethernet controller projection',widthMm:44,heightMm:28,layers:4,bom:ethernetControllerProductionProposal.bom.map(row=>({ref:row.ref,value:row.mpn,mpn:row.mpn,role:row.role})),semanticEvidence:{ethernetController:{exactAssetsApproved:true,pmodeBits:[1,1,1],pmodeMeaning:'All capable, auto-negotiation enabled',pmodeSource:'W5500 datasheet v1.1.0',resetMinimumLowUs:500,boardLevelEvidenceVerified:false}}}}
+
+function usbHubBase(){
+  const bom=usbHubProductionProposal.bom.flatMap(row=>Array.from({length:row.quantity||1},(_,index)=>({
+    ref:(row.quantity||1)>1?`${row.ref}${index+1}`:row.ref,value:row.mpn||row.ref,mpn:row.mpn,
+    role:row.ref==='J_UP'?'USB hub upstream USB-C UFP connector':row.ref==='U_DFP'?'downstream USB-C DFP controller with integrated port power switch and overcurrent fault reporting':row.ref==='D_USB'?'five-port USB ESD protection population':row.ref==='R_CC_UP'?'two USB-C UFP 5.1 kOhm Rd resistors':row.role,
+  })))
+  return{id:'usb-hub',name:'Exact USB2514B four-port hub projection',widthMm:48,heightMm:30,layers:4,bom,semanticEvidence:{usbHub:{exactAssetsApproved:true,boardLevelEvidenceVerified:false}}}
+}
 
 function singleCanControllerBase(base){
   const copy=structuredClone(base)
@@ -88,6 +97,10 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
   if(definition.topologyId==='ethernet-controller'){
     const proposalGate=validateEthernetControllerProposal(ethernetControllerProductionProposal)
     if(!proposalGate.ok){const error=new Error(`Ethernet controller production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;throw error}
+  }
+  if(definition.topologyId==='usb-hub'){
+    const proposalGate=validateUsbHubProductionProposal(usbHubProductionProposal)
+    if(!proposalGate.ok){const error=new Error(`USB hub production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;throw error}
   }
   const boardRoot=path.join(root,board.id)
   const summary=await runRealBoardProof({outputRoot:boardRoot,fresh:true,board:definition.id,boardDefinitions:[definition],liveBindings:true})
@@ -602,7 +615,7 @@ export async function verifyCatalogAuthoritativePcbSelection({pcbFile,routing}={
   return{schema:'boardforge.phase2c.catalog-authoritative-pcb-gate.v1',ok:errors.length===0,errors,pcbFile,routingStatus:routing?.status||null,sourceSha256,candidateSha256}
 }
 
-function topologyFor(board,index){const a=String(board.architectureClass||'').toLowerCase();if(board.id==='009_POE_SENSOR'||/poe-edge/.test(a))return'poe-sensor';if(board.id==='010_ETHERNET_CONTROLLER'||/ethernet-mcu/.test(a))return'ethernet-controller';if(/fieldbus|can|industrial|control/.test(a))return'stm32-controller';if(/usb-c-power|battery|power/.test(a))return'usb-c-pd-sink';if(/usb|test|digital/.test(a))return'rp2040-instrument';if(/wireless|radio|sensor/.test(a))return'usb-c-esp32-sensor';return topologyIds[index%topologyIds.length]}
+function topologyFor(board,index){const a=String(board.architectureClass||'').toLowerCase();if(board.id==='009_POE_SENSOR'||/poe-edge/.test(a))return'poe-sensor';if(board.id==='010_ETHERNET_CONTROLLER'||/ethernet-mcu/.test(a))return'ethernet-controller';if(board.id==='011_USB_HUB'||/usb-hub/.test(a))return'usb-hub';if(/fieldbus|can|industrial|control/.test(a))return'stm32-controller';if(/usb-c-power|battery|power/.test(a))return'usb-c-pd-sink';if(/usb|test|digital/.test(a))return'rp2040-instrument';if(/wireless|radio|sensor/.test(a))return'usb-c-esp32-sensor';return topologyIds[index%topologyIds.length]}
 // Custom mechanics decorate an expanded envelope. Cutting into the base
 // topology envelope can put otherwise-valid connector copper on Edge.Cuts.
 function outlineFor(family,w,h,index){const d=2+(index%3),c=.75,x0=-c,y0=-c,x1=w+c,y1=h+c,key=String(family);if(/circular|encoder|capsule|organic|curved/.test(key))return[[x0,y0-d],[x1,y0-d],[x1+d,y0],[x1+d,y1],[x1,y1+d],[x0,y1+d],[x0-d,y1],[x0-d,y0]];if(/notch|window|tongue|neck|waist/.test(key))return[[x0,y0],[x1,y0],[x1+d,y0+d],[x1+d,y1-d],[x1,y1],[w*.62,y1],[w*.62,y1+d],[w*.38,y1+d],[w*.38,y1],[x0,y1]];if(/wing|ear|thermal|heatsink/.test(key))return[[x0-d,y0],[x0,y0-d],[x1,y0-d],[x1+d,y0],[x1+d,y1],[x1,y1+d],[x0,y1+d],[x0-d,y1]];if(/comb|scallop|probe|port/.test(key))return[[x0,y0],[x1,y0],[x1+d,h*.25],[x1,h*.34],[x1+d,h*.43],[x1,h*.52],[x1+d,h*.61],[x1,h*.70],[x1+d,h*.79],[x1,y1],[x0,y1]];return[[x0-d,y0],[x0,y0-d],[w*.58,y0-d],[w*.64,y0],[x1+d,y0],[x1+d,y1],[x1,y1+d],[w*.35,y1+d],[w*.29,y1],[x0-d,y1]]}

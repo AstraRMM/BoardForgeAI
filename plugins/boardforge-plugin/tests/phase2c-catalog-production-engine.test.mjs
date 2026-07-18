@@ -79,12 +79,13 @@ test('dual CAN semantic gate requires explicit controller capability and support
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
-test('Board011 USB hub cannot masquerade as an RP2040 instrument with decorative port scallops',()=>{
+test('Board011 selects its exact USB hub topology and stops at its real power-architecture proposal gate',async()=>{
   const definition=catalogDefinition(manifest.boards[10],10),gate=validateCatalogSemanticTopology(definition)
-  assert.equal(definition.topologyId,'rp2040-instrument');assert.equal(gate.ok,false)
-  for(const code of['custom-outline-exceeds-maximum-area','usb-hub-controller-missing','usb-hub-upstream-port-missing','usb-hub-four-downstream-ports-missing','usb-hub-port-power-control-missing','usb-hub-overcurrent-evidence-missing','usb-hub-clock-evidence-missing','usb-hub-category-mapped-to-mcu-instrument'])assert.ok(gate.errors.includes(code),code)
-  assert.ok(gate.outlineAreaMm2>gate.maximumAreaMm2)
-  assert.equal(definition.bom.filter(row=>/usb4105/i.test(row.mpn)).length,1)
+  assert.equal(definition.topologyId,'usb-hub');assert.equal(gate.ok,true,gate.errors.join('; '))
+  assert.equal(definition.bom.filter(row=>/usb4105/i.test(row.mpn)).length,5)
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-board011-proposal-'))
+  await assert.rejects(generateCatalogProductionBoard({root,board:manifest.boards[10],context:{index:10}}),error=>error?.code==='CATALOG_PRODUCTION_PROPOSAL_BLOCKED'&&error?.gate?.errors.includes('usb-hub-exact-assets-unapproved'))
+  await assert.rejects(fs.access(path.join(root,manifest.boards[10].id)),/ENOENT/)
 })
 
 test('USB hub semantic gate requires one upstream and at least four downstream ports',()=>{
@@ -100,9 +101,9 @@ test('remaining catalog clones cannot pass without their advertised architecture
   for(const [index,code]of expected){const definition=catalogDefinition(manifest.boards[index],index),gate=validateCatalogSemanticTopology(definition);assert.equal(gate.ok,false,manifest.boards[index].id);assert.ok(gate.errors.includes(code),`${manifest.boards[index].id}: ${code}`)}
 })
 
-test('only remediated Board010 passes among unsupported catalog clones 009-050',()=>{
+test('only Boards010 and 011 reach their exact semantic topology before their separate production proposal gates',()=>{
   const passing=[];for(let index=8;index<manifest.boards.length;index++){const definition=catalogDefinition(manifest.boards[index],index);if(validateCatalogSemanticTopology(definition).ok)passing.push(manifest.boards[index].id)}
-  assert.deepEqual(passing,['010_ETHERNET_CONTROLLER'])
+  assert.deepEqual(passing,['010_ETHERNET_CONTROLLER','011_USB_HUB'])
 })
 
 test('Board012 ESP32 shell cannot masquerade as a USB isolator',()=>{
@@ -139,7 +140,7 @@ test('Ethernet category gate accepts an explicitly complete controller path',()=
   assert.deepEqual(validateCatalogSemanticTopology(definition).errors,[])
 })
 
-test('catalog mechanics preserve topology clearance or an explicit coherent mechanical envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);if(['connector ears-can-controller','asymmetric ports-can-gateway','isolation waist-poe-sensor','magnetics notch-ethernet-controller'].includes(d.catalog.outlineFamily)){assert.equal(Math.min(...xs),0);assert.equal(Math.min(...ys),0);assert.equal(Math.max(...xs),d.widthMm);assert.equal(Math.max(...ys),d.heightMm);if(d.topologyId!=='ethernet-controller')assert.equal(d.holes.length,4);continue}assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
+test('catalog mechanics preserve topology clearance or an explicit coherent mechanical envelope',()=>{for(let i=6;i<manifest.boards.length;i++){const d=catalogDefinition(manifest.boards[i],i),xs=d.outlinePoints.map(p=>p[0]),ys=d.outlinePoints.map(p=>p[1]);if(['connector ears-can-controller','asymmetric ports-can-gateway','isolation waist-poe-sensor','magnetics notch-ethernet-controller','port scallops-usb-hub'].includes(d.catalog.outlineFamily)){assert.equal(Math.min(...xs),0);assert.equal(Math.min(...ys),0);assert.equal(Math.max(...xs),d.widthMm);assert.equal(Math.max(...ys),d.heightMm);if(!['ethernet-controller','usb-hub'].includes(d.topologyId))assert.equal(d.holes.length,4);continue}assert.ok(Math.min(...xs)<=-.75,`${d.id}: left clearance`);assert.ok(Math.min(...ys)<=-.75,`${d.id}: top clearance`);assert.ok(Math.max(...xs)>=d.widthMm+.75,`${d.id}: right clearance`);assert.ok(Math.max(...ys)>=d.heightMm+.75,`${d.id}: bottom clearance`)}})
 
 test('Board013 relay controller cannot masquerade as the generic CAN controller',()=>{
   const definition=catalogDefinition(manifest.boards[12],12),gate=validateCatalogSemanticTopology(definition)

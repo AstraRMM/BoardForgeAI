@@ -13,21 +13,12 @@ import { approvedAssetFor } from "../lib/components/approved-production-assets.m
 import { resolveAuthoritativeKiCadSymbol } from "../lib/components/authoritative-kicad-symbol-resolver.mjs";
 import { resolveAuthoritativeKiCadFootprint } from "../lib/components/authoritative-kicad-footprint-resolver.mjs";
 
-test("Board011 legacy RP2040 instrument cannot pass as a four-port hub", () => {
+test("Board011 selects its exact hub topology but its proposal remains fail-closed", () => {
   const d = catalogDefinition(manifest.boards[10], 10),
     g = validateCatalogSemanticTopology(d);
-  assert.equal(d.topologyId, "rp2040-instrument");
-  assert.equal(g.ok, false);
-  for (const code of [
-    "usb-hub-controller-missing",
-    "usb-hub-upstream-port-missing",
-    "usb-hub-four-downstream-ports-missing",
-    "usb-hub-port-power-control-missing",
-    "usb-hub-overcurrent-evidence-missing",
-    "usb-hub-clock-evidence-missing",
-    "usb-hub-category-mapped-to-mcu-instrument",
-  ])
-    assert.ok(g.errors.includes(code), code);
+  assert.equal(d.topologyId, "usb-hub");
+  assert.equal(g.ok, true, g.errors.join('; '));
+  assert.equal(validateUsbHubProductionProposal(usbHubProductionProposal).ok, false);
 });
 
 test("USB2514B installed identity freezes the authoritative 36-QFN plus exposed-pad map", () => {
