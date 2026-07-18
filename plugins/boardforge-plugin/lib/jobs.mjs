@@ -45,6 +45,7 @@ import { createProjectSnapshot, diffProjectSnapshot, listProjectSnapshots, resto
 import { auditComponentLibraryCoverage } from './component-audit.mjs'
 import { buildProjectPreflight } from './project-preflight.mjs'
 import { planRequirements } from './requirements-planner.mjs'
+import { analyzeRequirements, recordRequirementAnswers } from './phase2c/requirements-intelligence.mjs'
 import { planMissionRequirements } from './mission-planner.mjs'
 import { auditUserBom, intakeUserBom } from './user-bom.mjs'
 import { compareManufacturerCapabilities, planStackup, scoreBoardComplexity } from './stackup-planner.mjs'
@@ -124,6 +125,8 @@ export const allowedJobTypes = new Set(['generate_custom_outline', 'create_outli
 for (const type of productionReadinessJobTypes) allowedJobTypes.add(type)
 for (const type of advancedBoardJobTypes) allowedJobTypes.add(type)
 for (const type of autotracerJobTypes) allowedJobTypes.add(type)
+allowedJobTypes.add('analyze_production_requirements')
+allowedJobTypes.add('record_production_requirements')
 export const sanitizeName = (name) => (String(name || 'boardforge-project').trim().replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').slice(0, 64).toLowerCase() || 'boardforge-project')
 export function resolveInsideWorkspace(workspace, target) {
   const root = path.resolve(workspace)
@@ -212,6 +215,8 @@ export async function executeJob(job, workspace) {
   if (advancedBoardJobTypes.includes(job.type)) return advancedBoardSuiteJob(job, workspace, profile)
   if (autotracerJobTypes.includes(job.type)) return autotracerJob(job, workspace, profile)
   if (job.type === 'plan_requirements') return planRequirementsJob(job, workspace)
+  if (job.type === 'analyze_production_requirements') return productionRequirementsJob(job)
+  if (job.type === 'record_production_requirements') return recordProductionRequirementsJob(job, workspace)
   if (job.type === 'plan_pin_assignments') return pinAssignmentsJob(job, workspace)
   if (job.type === 'plan_power_tree') return powerTreePlanJob(job, workspace)
   if (job.type === 'plan_stackup') return stackupPlanJob(job, workspace, profile)
@@ -1967,6 +1972,43 @@ async function planRequirementsJob(job, workspace) {
     }))
   }
   return result(job, output.status, [], [], { ...output, generatedFiles: outputFile ? [outputFile] : [] })
+}
+
+function productionRequirementsJob(job) {
+  const input = job.input || {}
+  const requirements = analyzeRequirements({
+    boardId: input.boardId,
+    validation: { errors: input.blockerCodes || input.errors || [] },
+    answers: input.answers || {},
+  })
+  return result(job, requirements.status, [], [], {
+    requirements,
+    questions: requirements.questions,
+    humanReviewRequired: requirements.status === 'REQUIREMENTS_INPUT_REQUIRED',
+  })
+}
+
+async function recordProductionRequirementsJob(job, workspace) {
+  const input = job.input || {}
+  const plan = analyzeRequirements({
+    boardId: input.boardId,
+    validation: { errors: input.blockerCodes || input.errors || [] },
+    answers: input.existingAnswers || {},
+  })
+  const constraints = recordRequirementAnswers({ plan, answers: input.answers || {}, actor: input.actor || 'user' })
+  // Constraints are process metadata, not release artifacts.  Keeping them outside a
+  // KiCad delivery folder preserves the user's "KiCad files only" handoff contract.
+  const constraintsDir = path.join(path.resolve(workspace), '.boardforge', 'requirements')
+  await mkdir(constraintsDir, { recursive: true })
+  const outputFile = path.join(constraintsDir, `${sanitizeName(constraints.boardId)}.json`)
+  await writeFile(outputFile, JSON.stringify(constraints, null, 2), 'utf8')
+  return result(job, constraints.status, [], [], {
+    requirements: constraints.plan,
+    constraints,
+    questions: constraints.plan.questions,
+    generatedFiles: [outputFile],
+    humanReviewRequired: constraints.status === 'REQUIREMENTS_INPUT_REQUIRED',
+  })
 }
 
 async function pinAssignmentsJob(job, workspace) {
