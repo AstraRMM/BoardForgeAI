@@ -84,7 +84,7 @@ test('Board011 selects its exact USB hub topology and stops at its real power-ar
   assert.equal(definition.topologyId,'usb-hub');assert.equal(gate.ok,true,gate.errors.join('; '))
   assert.equal(definition.bom.filter(row=>/usb4105/i.test(row.mpn)).length,5)
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-board011-proposal-'))
-  await assert.rejects(generateCatalogProductionBoard({root,board:manifest.boards[10],context:{index:10}}),error=>error?.code==='CATALOG_PRODUCTION_PROPOSAL_BLOCKED'&&error?.gate?.errors.includes('usb-hub-exact-assets-unapproved'))
+  await assert.rejects(generateCatalogProductionBoard({root,board:manifest.boards[10],context:{index:10}}),error=>error?.code==='CATALOG_PRODUCTION_PROPOSAL_BLOCKED'&&error?.gate?.errors.includes('usb-hub-exact-assets-unapproved')&&error?.requirements?.questions.some(question=>question.id==='five_v_input_source'))
   await assert.rejects(fs.access(path.join(root,manifest.boards[10].id)),/ENOENT/)
 })
 

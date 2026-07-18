@@ -12,6 +12,7 @@ import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
 import {validatePoeSensorArchitecture} from './templates/poe-sensor.mjs'
 import {ethernetControllerProductionProposal,validateEthernetControllerProposal} from './templates/ethernet-controller.mjs'
 import {usbHubProductionProposal,validateUsbHubProductionProposal} from './templates/usb-hub.mjs'
+import {analyzeRequirements} from './requirements-intelligence.mjs'
 
 const execFile=promisify(execFileCallback)
 const repo=path.resolve(import.meta.dirname,'../../../..')
@@ -96,11 +97,11 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
   // PCB that could be mistaken for an authoritative production candidate.
   if(definition.topologyId==='ethernet-controller'){
     const proposalGate=validateEthernetControllerProposal(ethernetControllerProductionProposal)
-    if(!proposalGate.ok){const error=new Error(`Ethernet controller production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;throw error}
+    if(!proposalGate.ok){const error=new Error(`Ethernet controller production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;error.requirements=analyzeRequirements({boardId:board.id,validation:proposalGate});throw error}
   }
   if(definition.topologyId==='usb-hub'){
     const proposalGate=validateUsbHubProductionProposal(usbHubProductionProposal)
-    if(!proposalGate.ok){const error=new Error(`USB hub production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;throw error}
+    if(!proposalGate.ok){const error=new Error(`USB hub production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;error.requirements=analyzeRequirements({boardId:board.id,validation:proposalGate});throw error}
   }
   const boardRoot=path.join(root,board.id)
   const summary=await runRealBoardProof({outputRoot:boardRoot,fresh:true,board:definition.id,boardDefinitions:[definition],liveBindings:true})
