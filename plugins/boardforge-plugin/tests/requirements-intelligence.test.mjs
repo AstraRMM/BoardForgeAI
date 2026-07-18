@@ -25,3 +25,11 @@ test('Board011 records answers as reusable constraints but never declares the pr
   assert.equal(constraints.constraints.five_v_input_source, 'regulated 12 V DC input')
   assert.ok(constraints.plan.questions.some((question) => question.id === 'resolve_usb-hub-exact-assets-unapproved'))
 })
+
+test('training mode resolves benchmark inputs internally but still requires validation', () => {
+  const plan = analyzeRequirements({ boardId: '005_USB_C_PD_SOURCE', validation: { errors: ['PD_SOURCE_EEPROM_CONFIGURATION_PROOF_MISSING'] }, trainingMode: true, trainingIntent: { boardId: '005_USB_C_PD_SOURCE' } })
+  assert.equal(plan.status, 'TRAINING_REQUIREMENTS_GENERATED_REQUIRES_VALIDATION')
+  assert.deepEqual(plan.questions, [])
+  assert.equal(plan.internallyResolved.length, 4)
+  assert.equal(plan.internallyResolved[0].verificationRequired, true)
+})

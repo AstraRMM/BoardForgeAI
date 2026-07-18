@@ -41,20 +41,21 @@ const VETTED_DEFAULTS = Object.freeze([
 
 /** Turn a fail-closed production proposal into the minimum user conversation.
  * It never converts a missing decision into a buildable assumption. */
-export function analyzeRequirements({ boardId, validation = {}, answers = {} } = {}) {
+export function analyzeRequirements({ boardId, validation = {}, answers = {}, trainingMode = false, trainingIntent = null } = {}) {
   const normalizedId = String(boardId || '').toUpperCase()
   const matchedProfileId = PROFILES[normalizedId] ? normalizedId : Object.keys(PROFILES).find((profileId) => profileId.endsWith(normalizedId))
   const profile = PROFILES[matchedProfileId] || []
   const generic = genericQuestions(validation.errors || [])
   const all = dedupe([...profile, ...generic])
-  const unanswered = all.filter((question) => !hasAnswer(answers, question.id))
+  const unanswered = trainingMode ? [] : all.filter((question) => !hasAnswer(answers, question.id))
   const graph = buildRequirementsGraph({ boardId: matchedProfileId || normalizedId || null, questions: all, answers })
   return {
     schema: 'boardforge.phase2c.requirements-intelligence-plan.v1',
     boardId: matchedProfileId || normalizedId || null,
-    status: unanswered.length ? 'REQUIREMENTS_INPUT_REQUIRED' : 'REQUIREMENTS_READY_FOR_REVALIDATION',
+    status: trainingMode ? 'TRAINING_REQUIREMENTS_GENERATED_REQUIRES_VALIDATION' : unanswered.length ? 'REQUIREMENTS_INPUT_REQUIRED' : 'REQUIREMENTS_READY_FOR_REVALIDATION',
     questions: unanswered,
     answered: all.filter((question) => hasAnswer(answers, question.id)).map((question) => ({ ...question, answer: answers[question.id] })),
+    internallyResolved: trainingMode ? all.map((question) => ({ ...question, resolution: 'training_design_intent', designIntentBoardId: trainingIntent?.boardId || matchedProfileId || normalizedId || null, verificationRequired: true })) : [],
     safeInferences: SAFE_DEFAULTS,
     vettedDefaults: VETTED_DEFAULTS,
     requirementsGraph: graph,
@@ -62,7 +63,7 @@ export function analyzeRequirements({ boardId, validation = {}, answers = {} } =
     confidence: graph.confidence,
     blockerCodes: [...new Set(validation.errors || [])],
     answers: { ...answers },
-    nextAction: unanswered.length ? 'ask_minimum_engineering_questions' : 'revalidate_proposal_with_recorded_constraints',
+    nextAction: trainingMode ? 'apply_generated_training_spec_then_revalidate' : unanswered.length ? 'ask_minimum_engineering_questions' : 'revalidate_proposal_with_recorded_constraints',
   }
 }
 
