@@ -62,6 +62,24 @@ export function resolveAuthoritativeKiCadSymbol(
       pinMap: Object.fromEntries(pins.map((pin) => [pin.number, pin.name])),
     };
   }
+  if (libId === "BoardForge:Bourns_MF-RG300") {
+    const definition = bundledBournsMfRg300Definition(), pins = extractPinCoordinates(definition);
+    return { schema:"boardforge.authoritative-kicad-symbol.v1", libId, library, name,
+      sourceFile:"bundled:bourns-mf-rg-series-datasheet-mf-rg300-two-terminal-ptc-plus-installed-kicad-footprint",
+      dependencyOrder:[libId], definitions:[definition], pins, pinMap:Object.fromEntries(pins.map(pin=>[pin.number,pin.name])) };
+  }
+  if (libId === "BoardForge:Schurter_3413_0218_22") {
+    const definition = bundledSchurter3413021822Definition(), pins = extractPinCoordinates(definition);
+    return { schema:"boardforge.authoritative-kicad-symbol.v1", libId, library, name,
+      sourceFile:"bundled:schurter-3413-0218-22-datasheet-plus-installed-r2512-footprint",
+      dependencyOrder:[libId], definitions:[definition], pins, pinMap:Object.fromEntries(pins.map(pin=>[pin.number,pin.name])) };
+  }
+  if (libId === "BoardForge:Winbond_W25Q128JVS_SOIC8_3P9X4P9") {
+    const definition = bundledWinbondW25Q128JvsDefinition(), pins = extractPinCoordinates(definition);
+    return { schema:"boardforge.authoritative-kicad-symbol.v1", libId, library, name,
+      sourceFile:"bundled:winbond-w25q128jv-rev-g-2021-03-08-pinout-plus-installed-soic-8-3.9x4.9mm-footprint",
+      dependencyOrder:[libId], definitions:[definition], pins, pinMap:Object.fromEntries(pins.map(pin=>[pin.number,pin.name])) };
+  }
   const source = loadLibrary(library, roots);
   if (!source)
     throw new Error(`KiCad symbol library is not installed: ${library}`);
@@ -310,6 +328,45 @@ ${pins}
 \t)
 )`;
 }
+
+function bundledBournsMfRg300Definition(){return`(symbol "BoardForge:Bourns_MF-RG300"
+	(property "Reference" "F" (at 0 3.81 0) (effects (font (size 1.27 1.27))))
+	(property "Value" "MF-RG300-0" (at 0 -3.81 0) (effects (font (size 1.27 1.27))))
+	(property "Footprint" "Fuse:Fuse_Bourns_MF-RG300" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(property "Datasheet" "https://www.bourns.com/docs/product-datasheets/mf-rg.pdf" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(property "ki_fp_filters" "Fuse_Bourns_MF-RG300" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(symbol "Bourns_MF-RG300_0_1" (rectangle (start -5.08 2.54) (end 5.08 -2.54) (stroke (width 0.254) (type default)) (fill (type background))))
+	(symbol "Bourns_MF-RG300_1_1" (pin passive line (at -7.62 0 0) (length 2.54) (name "1" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27))))) (pin passive line (at 7.62 0 180) (length 2.54) (name "2" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))))`}
+
+function bundledSchurter3413021822Definition(){return`(symbol "BoardForge:Schurter_3413_0218_22"
+	(property "Reference" "F" (at 0 2.54 0) (effects (font (size 1.27 1.27))))
+	(property "Value" "3413.0218.22" (at 0 -2.54 0) (effects (font (size 1.27 1.27))))
+	(property "Footprint" "Resistor_SMD:R_2512_6332Metric" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(property "Datasheet" "https://www.schurter.com/en/datasheet/3413" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(property "ki_fp_filters" "R_2512_6332Metric" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(symbol "Schurter_3413_0218_22_0_1" (rectangle (start -2.54 1.27) (end 2.54 -1.27) (stroke (width 0.254) (type default)) (fill (type background))))
+	(symbol "Schurter_3413_0218_22_1_1" (pin passive line (at -5.08 0 0) (length 2.54) (name "1" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27))))) (pin passive line (at 5.08 0 180) (length 2.54) (name "2" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))))`}
+
+// The legacy KiCad W25Q128JVS filter names a 5.3 x 5.3 mm package, while
+// W25Q128JVSIQ is the 3.9 x 4.9 mm SOIC-8 variant used by this binding.
+function bundledWinbondW25Q128JvsDefinition(){return`(symbol "BoardForge:Winbond_W25Q128JVS_SOIC8_3P9X4P9"
+	(property "Reference" "U" (at 0 7.62 0) (effects (font (size 1.27 1.27))))
+	(property "Value" "W25Q128JVSIQ" (at 0 -7.62 0) (effects (font (size 1.27 1.27))))
+	(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(property "Datasheet" "https://www.winbond.com/resource-files/w25q128jv%20rev%20g%2003212021%20plus.pdf" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(property "ki_fp_filters" "SOIC-8_3.9x4.9mm_P1.27mm" (at 0 0 0) (hide yes) (effects (font (size 1.27 1.27))))
+	(symbol "Winbond_W25Q128JVS_SOIC8_3P9X4P9_0_1" (rectangle (start -5.08 6.35) (end 5.08 -6.35) (stroke (width 0.254) (type default)) (fill (type background))))
+	(symbol "Winbond_W25Q128JVS_SOIC8_3P9X4P9_1_1"
+		(pin bidirectional line (at -7.62 3.81 0) (length 2.54) (name "~CS" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27)))))
+		(pin bidirectional line (at -7.62 1.27 0) (length 2.54) (name "DO/IO1" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27)))))
+		(pin bidirectional line (at -7.62 -1.27 0) (length 2.54) (name "~WP/IO2" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27)))))
+		(pin power_in line (at -7.62 -3.81 0) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))
+		(pin bidirectional line (at 7.62 -3.81 180) (length 2.54) (name "DI/IO0" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27)))))
+		(pin input line (at 7.62 -1.27 180) (length 2.54) (name "CLK" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27)))))
+		(pin bidirectional line (at 7.62 1.27 180) (length 2.54) (name "~HOLD/IO3" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27)))))
+		(pin power_in line (at 7.62 3.81 180) (length 2.54) (name "VCC" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27)))))
+	)
+)`}
 
 export function flattenForSchematicCache(
   resolved,

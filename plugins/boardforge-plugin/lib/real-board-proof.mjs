@@ -25,8 +25,9 @@ import { generateTps25750GlobalHandoff, generateTps25750LocalBreakoutV4 } from '
 import { authoritativeFixedCorridors, authoritativePadRoutingInput, createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
 import { ethernetControllerProductionProposal } from './phase2c/templates/ethernet-controller.mjs'
 import { validateW5500ConnectedCtTopology } from './phase2c/w5500-connected-ct-reference.mjs'
+import { board010W5500MagJackBatchRouting } from './phase2c/w5500-magjack-batch-routing.mjs'
 import { board009LocalSupportPlacement } from './phase2c/board009-placement-contract.mjs'
-import { board011UsbHubConnectorShieldPadStitches, board011UsbHubDfpGroundPadStitches, board011UsbHubLocalPadStitches, board011UsbHubPcbPlacements, board011UsbHubPinMaps, board011UsbHubPowerPadStitches, board011UsbHubProductionDefinition, board011UsbHubSupportNetStitches, board011UsbHubUsbEsdPassThroughStitches, validateBoard011UsbHubLocalCopper } from './phase2c/board011-usb-hub-production.mjs'
+import { board011UsbHubConnectorShieldPadStitches, board011UsbHubDfpGroundPadStitches, board011UsbHubLocalPadStitches, board011UsbHubPcbPlacements, board011UsbHubPinMaps, board011UsbHubPowerPadStitches, board011UsbHubPowerWingForwardTopology, board011UsbHubPowerWingReturnTopology, board011UsbHubProductionDefinition, board011UsbHubSupportNetStitches, board011UsbHubUsbEsdPassThroughStitches, validateBoard011UsbHubLocalCopper } from './phase2c/board011-usb-hub-production.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -75,6 +76,10 @@ export const REAL_BOARD_PROOF_BOARDS = [
   },
   {
     id: 'rp2040-instrument', name: 'RP2040 USB Bench Instrument', preset: 'mounting-ears', widthMm: 64, heightMm: 40, layers: 4,
+    // The authoritative RP2040 symbol extends 25.4 mm to its GPIO endpoints.
+    // Keep the service header beyond that envelope; the generic placement
+    // column overlapped GPIO23/24 after canonical-symbol projection.
+    schematicPlacements: { J2: { x: 185.42, y: 137.16 } },
     holes: [{x:7,y:7,diameterMm:2.4},{x:57,y:7,diameterMm:2.4},{x:57,y:33,diameterMm:2.4},{x:7,y:33,diameterMm:2.4}],
     prompt: 'Make a compact rounded USB-C RP2040 bench instrument with protected USB, QSPI flash, SWD and measurement IO.',
     intent: ['RP2040 control', 'protected USB device', 'QSPI flash', '3V3 regulator', 'SWD and measurement expansion'],
@@ -89,6 +94,10 @@ export const REAL_BOARD_PROOF_BOARDS = [
   },
   {
     id:'usb-c-pd-sink',name:'USB-C PD Sink',preset:'notched',widthMm:58,heightMm:38,layers:4,
+    // STUSB4500 pin 18's left-facing label stub overlapped J1.A6 at the
+    // generic first-row spacing. Leave a full symbol corridor between the
+    // USB-C receptacle and the PD controller.
+    schematicPlacements:{U1:{x:76.2,y:35.56}},
     prompt:'Make a compact protected USB-C PD sink requesting at most 9V/2A and producing a regulated 5V/2A output.',
     intent:['USB-C recessed input','STUSB4500 PD negotiation','normally-off protected VBUS switch','fused and TVS-protected input','5V/2A buck output'],
     bom:[
@@ -700,12 +709,12 @@ export function usbHubCategoryPcbEvidence(){
  const nets=names.map((name,number)=>({name,number})),net=Object.fromEntries(nets.map(x=>[x.name,x.number]))
  const positions=board011UsbHubPcbPlacements()
  const footprints=definition.bom.map((row)=>{
-   const [x,y]=positions[row.ref]||[]
+   const [x,y,rotation=0]=positions[row.ref]||[]
    if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error(`Board011 physical candidate is missing an exact placement for ${row.ref}`)
    const asset=approvedAssetFor(row.mpn),map=maps[row.ref]
-   return {ref:row.ref,value:row.mpn,footprint:asset.footprint.libId,at:{x,y},body:{w:2,h:2},pads:Object.entries(map).map(([number,netName],pinIndex)=>pad(number,(pinIndex%4)-1.5,Math.floor(pinIndex/4)-1,.6,.6,net[netName],netName))}
+   return {ref:row.ref,value:row.mpn,footprint:asset.footprint.libId,at:{x,y,rotation},body:{w:2,h:2},pads:Object.entries(map).map(([number,netName],pinIndex)=>pad(number,(pinIndex%4)-1.5,Math.floor(pinIndex/4)-1,.6,.6,net[netName],netName))}
  })
- const localPadStitches=board011UsbHubLocalPadStitches(),dfpGroundPadStitches=board011UsbHubDfpGroundPadStitches(),connectorShieldPadStitches=board011UsbHubConnectorShieldPadStitches(),supportNetStitches=board011UsbHubSupportNetStitches(),usbEsdPassThroughStitches=board011UsbHubUsbEsdPassThroughStitches(),powerPadStitches=board011UsbHubPowerPadStitches()
+ const localPadStitches=board011UsbHubLocalPadStitches(),dfpGroundPadStitches=board011UsbHubDfpGroundPadStitches(),connectorShieldPadStitches=board011UsbHubConnectorShieldPadStitches(),supportNetStitches=board011UsbHubSupportNetStitches(),usbEsdPassThroughStitches=board011UsbHubUsbEsdPassThroughStitches(),powerPadStitches=board011UsbHubPowerPadStitches(),powerWingForward=board011UsbHubPowerWingForwardTopology(),powerWingReturn=board011UsbHubPowerWingReturnTopology()
  const localCopperGuard=validateBoard011UsbHubLocalCopper([...localPadStitches,...dfpGroundPadStitches,...connectorShieldPadStitches,...supportNetStitches,...usbEsdPassThroughStitches,...powerPadStitches])
  if(!localCopperGuard.ok)throw new Error(`Board011 rejected local copper shortcut: ${localCopperGuard.rejected.join(', ')}`)
  // USB2514B RBIAS is an isolated two-terminal control net.  Its route starts
@@ -764,8 +773,15 @@ export function usbHubCategoryPcbEvidence(){
    ...usbEsdPassThroughStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
    // Package-local PowerPAK/HSOP conductivity links are not board rails.
    ...powerPadStitches.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // The power wing is always emitted as one forward-and-return batch.  A
+   // partial power trunk is not useful evidence and must never be promoted.
+   ...powerWingForward.tracks.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
+   // Candidate-only complete power-wing return tree.  Its source-projected
+   // dogbones and thermal-pad anchor are retained only while real DRC stays
+   // clean; Board011 remains blocked until all broader release gates pass.
+   ...powerWingReturn.tracks.map(({ start, end, widthMm, netName, layer }) => segment(start.x,start.y,end.x,end.y,widthMm,net[netName],layer)),
  ]
- const vias=[via(41.3,14.2,net.RBIAS),via(15.175,3.5,net.RBIAS),via(35.225,14.5,net.PLLFILT),via(38.725,14.5,net.PLLFILT),via(28.225,14.5,net.CRFILT),via(31.725,14.5,net.CRFILT),via(48.5,16.5,net.RESET_N),via(11.225,4.6,net.RESET_N)]
+ const vias=[via(41.3,14.2,net.RBIAS),via(15.175,3.5,net.RBIAS),via(35.225,14.5,net.PLLFILT),via(38.725,14.5,net.PLLFILT),via(28.225,14.5,net.CRFILT),via(31.725,14.5,net.CRFILT),via(48.5,16.5,net.RESET_N),via(11.225,4.6,net.RESET_N),...powerWingForward.vias.map(({ x, y, netName, diameterMm, drillMm }) => via(x,y,net[netName],diameterMm,drillMm)),...powerWingReturn.vias.map(({ x, y, netName }) => via(x,y,net[netName]))]
  return {nets,footprints,segments,vias}
 }
 
@@ -1028,7 +1044,10 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
       reason:`W5500 connected-centre-tap topology is not source-backed: ${ethernetTopology.errors.join('; ')}`,
       routingDeferred:true,topologyGate:ethernetTopology,
     }
-    const fixed=authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
+    const board010Batch=board010W5500MagJackBatchRouting(routingInput,{trackWidth:.2,viaDiameter:.5})
+    const fixed=board010Batch.status==='CANDIDATE_REQUIRES_FRESH_KICAD_DRC'
+      ? board010Batch
+      : authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
     const fixedComplete=routingInput.nets.every(({net})=>fixed.completedNets.includes(net)||/^GND$/i.test(net))
     // A large QFP has many deliberately unconnected physical pads. They are
     // not routing trees: authoritativePadRoutingInput has already excluded
@@ -1046,7 +1065,7 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
       // complete board route.
       if(fixed.completedNets.length){
         const localCandidate=path.join(candidateDir,`${stem}.authoritative-local-support.kicad_pcb`)
-        const localRouting=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile:localCandidate,includeNets:fixed.completedNets,includeGroundPlanes:false,trackWidth:.2,viaDiameter:.5})
+        const localRouting=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile:localCandidate,includeNets:fixed.completedNets,includeGroundPlanes:false,trackWidth:.2,viaDiameter:.5,fixedRoute:fixed})
         const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=localCandidate.replace(/\.kicad_pcb$/i,'.kicad_dru')
         const rules=await readFile(sourceRules,'utf8').catch(()=>null);if(rules)await writeFile(candidateRules,rules,'utf8')
         const localDrc=kicad?.available?await runDrc({pcbFile:localCandidate,outputFile:path.join(candidateDir,'authoritative-local-support-drc.json'),kicadCliPath:kicad.path}):null
@@ -1054,7 +1073,7 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
       }
       return{...copperless,status:'COPPERLESS_CANDIDATE_READY',candidatePcb:copperlessFile,reason:'Dense authoritative fanout requires a topology-specific routing strategy',routingDeferred:true}
     }
-    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile,viaDiameter:.5})
+    const routing=await regenerateAuthoritativePadRoutesCandidate({pcbFile:copperlessFile,candidateFile,viaDiameter:.5,fixedRoute:fixed})
     if(!kicad?.available)return {...routing,status:'CANDIDATE_NOT_PROMOTED',reason:kicad?.reason||'KiCad CLI unavailable'}
     const sourceRules=pcbFile.replace(/\.kicad_pcb$/i,'.kicad_dru'),candidateRules=candidateFile.replace(/\.kicad_pcb$/i,'.kicad_dru')
     const rules=await readFile(sourceRules,'utf8').catch(()=>null);if(rules)await writeFile(candidateRules,rules,'utf8')
@@ -1493,8 +1512,8 @@ function segment(x1, y1, x2, y2, width, netNumber, layer = 'F.Cu') {
   return { start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, width, layer, netNumber }
 }
 
-function via(x, y, net) {
-  return { x, y, size: 0.8, drill: 0.35, net }
+function via(x, y, net, size = .8, drill = .35) {
+  return { x, y, size, drill, net }
 }
 
 function renderCategoryPcbEvidence(evidence) {
@@ -1595,7 +1614,13 @@ async function writeCategorySchematic({ board, projectDir }) {
   const model = generateSchematicModel(
     { name: board.name },
     components,
-    { nets, emitConnectivityLabels: true, globalConnectivityLabels: board.globalConnectivityLabels !== false, powerFlags: categoryPowerFlags(board) },
+    {
+      nets,
+      emitConnectivityLabels: true,
+      globalConnectivityLabels: board.globalConnectivityLabels !== false,
+      directConnectionNets: board.directConnectionNets || [],
+      powerFlags: categoryPowerFlags(board),
+    },
   )
   await writeFile(schFile, kicadSchematicFromModel({ name: board.name }, model), 'utf8')
   await writeCategoryReviewLibraries(projectDir, model.symbols)
@@ -1676,7 +1701,10 @@ export function categorySchematicPinMaps(board) {
     },
     'usb-c-pd-sink': {
       J1:{A1:'GND',A12:'GND',B1:'GND',B12:'GND',A4:'VBUS_RAW',A9:'VBUS_RAW',B4:'VBUS_RAW',B9:'VBUS_RAW',A5:'CC1',B5:'CC2',SH:'GND'},
-      U1:{2:'CC1',4:'CC2',10:'GND',16:'VBUS_EN_SNK',18:'VBUS_PROTECTED',22:'VBUS_PROTECTED',24:'VBUS_PROTECTED',25:'GND'},
+      // CC1DB is tied to CC1 for the reviewed dead-battery input path. This
+      // is not a no-connect: leaving it open contradicts the selected sink
+      // mode and also mismatches the physical pad-1 CC1 topology.
+      U1:{1:'CC1',2:'CC1',4:'CC2',10:'GND',16:'VBUS_EN_SNK',18:'VBUS_PROTECTED',22:'VBUS_PROTECTED',24:'VBUS_PROTECTED',25:'GND'},
       Q1:{1:'VBUS_EN_SNK',2:'VBUS_PROTECTED',3:'VBUS_SWITCHED'},
       U2:{1:'GND',2:'SW',3:'VBUS_SWITCHED',4:'FB',5:'VBUS_SWITCHED',6:'BOOT'},
       D1:{1:'VBUS_PROTECTED',2:'GND'},F1:{1:'VBUS_RAW',2:'VBUS_PROTECTED'},L1:{1:'SW',2:'5V'},C1:{1:'VBUS_PROTECTED',2:'GND'},C2:{1:'5V',2:'GND'},R_FB_TOP:{1:'5V',2:'FB'},R_FB_BOTTOM:{1:'FB',2:'GND'},R_GATE_PULLUP:{1:'VBUS_PROTECTED',2:'VBUS_EN_SNK'},C_BOOT:{1:'BOOT',2:'SW'},J2:{1:'5V',2:'GND'},
@@ -1786,7 +1814,10 @@ export function categoryPowerFlags(board){
   if(topology==='poe-sensor-production')return [
     {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'3V3A',source:{ref:'FB_AVDD',kind:'filtered-analog-supply'},reason:'FB_AVDD is the physical 3V3-to-AVDD ferrite path documented by the W5500 reference schematic.'},
   ]
-  if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',source:{ref:'F1',kind:'fused-external-power'},reason:'The input fuse is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'The protected MOSFET output is the physical source for the downstream buck VIN rail.'}]
+  // The downstream rails are physically sourced through F1 and Q1. Keep their
+  // assertions away from the dense USB-C symbol; the default flag corridor
+  // was close enough to merge a label with J1's unassigned D+ endpoint.
+  if(topology==='usb-c-pd-sink')return [...planExternalConnectorPowerFlags({powerNet:'VBUS_RAW',sourceKind:'external-usb-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'VBUS_PROTECTED',at:{x:185.42,y:165.1},source:{ref:'F1',kind:'fused-external-power'},reason:'F1 is the physical source path for protected VBUS.'},{ref:'#FLG04',symbolLibId:'power:PWR_FLAG',rail:'VBUS_SWITCHED',at:{x:195.58,y:165.1},source:{ref:'Q1',kind:'reviewed-protected-mosfet-output'},reason:'Q1 is the physical source path for the downstream buck VIN rail.'}]
   if(topology==='usb-c-pd-source')return [...planExternalConnectorPowerFlags({powerNet:'5V_RAW',sourceKind:'selv-input-power'}),{ref:'#FLG03',symbolLibId:'power:PWR_FLAG',rail:'PP5V',source:{ref:'F1',kind:'fused-selv-power'},reason:'The input fuse is the physical source path for the protected PP5V rail.'}]
   if(topology==='usb-hub')return [
     {ref:'#FLG01',symbolLibId:'power:PWR_FLAG',rail:'VIN_RAW',source:{ref:'J_PWR',kind:'external-selv-input'},reason:'J_PWR is the declared center-positive 12 V SELV input.'},
@@ -1818,7 +1849,11 @@ function renderAuthoritativeFootprint(footprint){
   // numbers are forbidden inputs. Only the verified production pad map may
   // assign nets to the authoritative footprint.
   const netByPad=new Map(Object.entries(footprint.authoritativeNets||{}).map(([pad,net])=>[String(pad),net]))
-  const asset=approvedAssetFor(footprint.mpn),text=serializeAuthoritativeKiCadFootprint({resolved,ref:footprint.ref,value:footprint.value,at:{...footprint.at,rotation:footprint.rotation||0},netByPad,padNumberAliases:logicalKiCadPadNumbers(asset),properties:{BoardForgeComponentUuid:footprint.componentUuid,BoardForgeBindingId:footprint.bindingId},silkscreen:'fabrication',uuidFor:key=>stableUuid(`${footprint.ref}-authoritative-${key}`)})
+  // Evidence writers may carry the placement angle either next to the board
+  // coordinates or as the legacy top-level field.  Preserve both forms so an
+  // authoritative footprint instance cannot silently fall back to 0 degrees.
+  const rotation=Number(footprint.rotation??footprint.at?.rotation??0)
+  const asset=approvedAssetFor(footprint.mpn),text=serializeAuthoritativeKiCadFootprint({resolved,ref:footprint.ref,value:footprint.value,at:{...footprint.at,rotation},netByPad,padNumberAliases:logicalKiCadPadNumbers(asset),properties:{BoardForgeComponentUuid:footprint.componentUuid,BoardForgeBindingId:footprint.bindingId},silkscreen:'fabrication',uuidFor:key=>stableUuid(`${footprint.ref}-authoritative-${key}`)})
   return text.split('\n').map(line=>`  ${line}`).join('\n')
 }
 
@@ -1843,10 +1878,24 @@ function addAuthoritativeUnconnectedPadNets(evidence,board){
   }
 }
 
-function markMountingHolesBoardOnly(text){
+export function markMountingHolesBoardOnly(text){
   let cursor=0,out=''
   while(true){const start=text.indexOf('(footprint ',cursor);if(start<0)return out+text.slice(cursor);out+=text.slice(cursor,start);const block=balancedSexpr(text,start);if(!block)return out+text.slice(start)
-    const isHole=/\(property\s+"Reference"\s+"H\d+"/.test(block),next=isHole&&!/\(attr\s+[^)]*board_only/.test(block)?block.replace(/(\(layer\s+"[^"]+"\))/,`$1\n\t(attr board_only)`):block
+    const isHole=/\(property\s+"Reference"\s+"H\d+"/.test(block)
+    let next=isHole&&!/\(attr\s+[^)]*board_only/.test(block)?block.replace(/(\(layer\s+"[^"]+"\))/,`$1\n\t(attr board_only)`):block
+    // KiCad treats a mechanical NPTH as a footprint like any other.  A
+    // board-only attribute keeps it out of BOM/POS, but is not a courtyard:
+    // with the global missing-courtyard check enabled that used to make every
+    // mounting hole a real DRC error.  Emit a local F.CrtYd circle around the
+    // actual pad envelope (plus the conventional 0.25 mm allowance).  Do not
+    // suppress or exclude the check; generated projects must pass it.
+    if(isHole&&!/\(layer\s+"F\.CrtYd"/.test(next)){
+      const ref=next.match(/\(property\s+"Reference"\s+"([^"]+)"/)?.[1]||'mounting-hole'
+      const size=next.match(/\(pad\s+""\s+np_thru_hole\s+\w+\s*\(at[^)]*\)\s*\(size\s+([0-9.]+)\s+([0-9.]+)\)/)
+      const radius=Math.max(Number(size?.[1]||3.8),Number(size?.[2]||3.8))/2+0.25
+      const courtyard=`\n\t\t(fp_circle (center 0 0) (end ${mm(radius)} 0) (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (uuid "${stableUuid(`${ref}-mounting-hole-courtyard`)}"))`
+      next=`${next.slice(0,-1)}${courtyard}\n\t)`
+    }
     out+=next;cursor=start+block.length
   }
 }

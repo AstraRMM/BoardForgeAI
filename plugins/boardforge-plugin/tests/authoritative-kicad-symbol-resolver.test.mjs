@@ -40,3 +40,18 @@ test('MCP1700 inherited symbol flattens to one qualified concrete cache definiti
   assert.match(flattened,/\(symbol "MCP1700x-330xxTT_0_1"/)
   assert.deepEqual(extractPinCoordinates(flattened).map(pin=>[pin.number,pin.x,pin.y,pin.rotation]),resolved.pins.map(pin=>[pin.number,pin.x,pin.y,pin.rotation]))
 })
+
+test('Schurter 3413 exact fuse symbol binds only the approved R_2512 footprint',()=>{
+  const resolved=resolveAuthoritativeKiCadSymbol('BoardForge:Schurter_3413_0218_22')
+  assert.deepEqual(resolved.pinMap,{1:'1',2:'2'})
+  assert.match(resolved.definitions[0],/\(property "Footprint" "Resistor_SMD:R_2512_6332Metric"/)
+  assert.match(resolved.definitions[0],/\(property "ki_fp_filters" "R_2512_6332Metric"/)
+})
+
+test('Winbond W25Q128JVS canonical symbol binds the approved 3.9 x 4.9 mm SOIC-8',()=>{
+  const resolved=resolveAuthoritativeKiCadSymbol('BoardForge:Winbond_W25Q128JVS_SOIC8_3P9X4P9')
+  assert.equal(resolved.sourceFile.includes('winbond-w25q128jv'),true)
+  assert.match(resolved.definitions[0],/Package_SO:SOIC-8_3.9x4.9mm_P1.27mm/)
+  assert.match(resolved.definitions[0],/ki_fp_filters" "SOIC-8_3.9x4.9mm_P1.27mm/)
+  assert.deepEqual(resolved.pinMap,{1:'~CS',2:'DO/IO1',3:'~WP/IO2',4:'GND',5:'DI/IO0',6:'CLK',7:'~HOLD/IO3',8:'VCC'})
+})

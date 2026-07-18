@@ -522,6 +522,20 @@ export const approvedProductionAssets = Object.freeze({
     },
     "1x6 2.54mm vertical",
   ),
+  "B3S-1000": entry(
+    "B3S-1000",
+    "Switch:SW_Push",
+    "Button_Switch_SMD:SW_SPST_B3S-1000",
+    { 1: "QSPI_CS", 2: "SELV_GND" },
+    "SW_SPST",
+    {
+      sourceEvidence:
+        "https://components.omron.com/sites/components.omron.com.us/files/datasheet_pdf/A204-E1.pdf",
+      applicationLimitations: [
+        "Momentary BOOTSEL switch only: connect QSPI_CS to SELV_GND only while pressed; it is not a power-control or safety switch.",
+      ],
+    },
+  ),
   "RC0603FR-075K1L": entry(
     "RC0603FR-075K1L",
     "Device:R",
@@ -817,8 +831,8 @@ export const approvedProductionAssets = Object.freeze({
   ),
   W25Q128JVSIQ: entry(
     "W25Q128JVSIQ",
-    "Memory_Flash:W25Q128JVS",
-    "Package_SO:SOIC-8_5.3x5.3mm_P1.27mm",
+    "BoardForge:Winbond_W25Q128JVS_SOIC8_3P9X4P9",
+    "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
     {
       1: "QSPI_CS",
       2: "QSPI_SD1",
@@ -1053,7 +1067,7 @@ export const approvedProductionAssets = Object.freeze({
   ),
   "MF-RG300-0": entry(
     "MF-RG300-0",
-    "Device:Polyfuse",
+    "BoardForge:Bourns_MF-RG300",
     "Fuse:Fuse_Bourns_MF-RG300",
     { 1: "VIN_RAW", 2: "VIN_FUSED" },
     "Bourns MF-RG radial PTC",
@@ -1154,7 +1168,7 @@ export const approvedProductionAssets = Object.freeze({
   ),
   "3413.0218.22": entry(
     "3413.0218.22",
-    "Device:Fuse",
+    "BoardForge:Schurter_3413_0218_22",
     "Resistor_SMD:R_2512_6332Metric",
     { 1: "VBUS_RAW", 2: "VBUS_FUSED" },
     "2410-2",

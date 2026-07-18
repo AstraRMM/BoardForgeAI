@@ -88,6 +88,10 @@ export function generateSchematicModel(board, components = [], input = {}) {
     input: {
       emitConnectivityLabels: input.emitConnectivityLabels === true,
       globalConnectivityLabels: input.globalConnectivityLabels !== false,
+      // Some source-authored two-pin support networks are intentionally
+      // isolated returns.  Their exact two endpoints are safer as a direct
+      // schematic wire than as long named-label stubs in a dense pin column.
+      directConnectionNets: normalizeDirectConnectionNets(input.directConnectionNets),
     },
     humanReviewRequired: true,
   }
@@ -207,7 +211,10 @@ export function kicadSchematicFromModel(board, schematicModel) {
   const libSymbols = embeddedLibSymbols(allSymbols)
   const symbolText = allSymbols.map((symbol) => symbolObject(symbol, 'BoardForge')).join('\n')
   const connectivity = schematicModel.input?.emitConnectivityLabels === true
-    ? netLabelConnectivityObjects(allSymbols, { global: schematicModel.input?.globalConnectivityLabels !== false })
+    ? netLabelConnectivityObjects(allSymbols, {
+      global: schematicModel.input?.globalConnectivityLabels !== false,
+      directConnectionNets: schematicModel.input?.directConnectionNets,
+    })
     : []
   const netLabels = schematicModel.nets.map((net, index) => noteObject(`net ${net.name}`, 25, 176 + index * 4))
   const reviewText = reviewObjects(schematicModel)
@@ -253,7 +260,7 @@ function embeddedLibSymbols(symbols = []) {
   return definitions.join('\n')
 }
 
-function powerFlagSymbols(flags=[]){return flags.map((flag,index)=>{const installed=authoritativeSymbol('power:PWR_FLAG');return{ref:flag.ref||`#FLG0${index+1}`,value:'PWR_FLAG',group:'POWER_FLAG',symbol:'power:PWR_FLAG',footprint:'',pinMap:{1:flag.rail},pinGeometry:installed?.pinGeometry||null,at:{x:25.4+index*7.62,y:165.1},uuid:crypto.randomUUID(),componentUuid:null,bindingId:null,powerSource:flag.source,reason:flag.reason}})}
+function powerFlagSymbols(flags=[]){return flags.map((flag,index)=>{const installed=authoritativeSymbol('power:PWR_FLAG'),at=flag.at||{x:25.4+index*7.62,y:165.1};return{ref:flag.ref||`#FLG0${index+1}`,value:'PWR_FLAG',group:'POWER_FLAG',symbol:'power:PWR_FLAG',footprint:'',pinMap:{1:flag.rail},pinGeometry:installed?.pinGeometry||null,at,uuid:crypto.randomUUID(),componentUuid:null,bindingId:null,powerSource:flag.source,reason:flag.reason}})}
 
 /**
  * PWR_FLAG is an electrical source assertion, not a cosmetic ERC suppressor.
@@ -420,21 +427,33 @@ function netConnectivityObjects(symbols = []) {
   return objects
 }
 
-function netLabelConnectivityObjects(symbols = [], { global = true } = {}) {
+function netLabelConnectivityObjects(symbols = [], { global = true, directConnectionNets = [] } = {}) {
   const objects = []
   const emittedLabels = new Set()
+  const directNets = new Set(normalizeDirectConnectionNets(directConnectionNets))
+  const directPinsByNet = new Map()
   for (const symbol of symbols) {
     Object.entries(symbol.pinMap || {}).forEach(([pin, net], index) => {
       if (!net) return
       const pinAt = schematicPinCoordinate(symbol, pin, index)
+      if (directNets.has(net)) {
+        const pins = directPinsByNet.get(net) || []
+        pins.push({ ...pinAt, ref: symbol.ref, pin })
+        directPinsByNet.set(net, pins)
+        return
+      }
       const labelKey=`${net}@${pinAt.x},${pinAt.y}`
       if(emittedLabels.has(labelKey))return
       emittedLabels.add(labelKey)
       if(symbol.group==='POWER_FLAG'){
-        objects.push(wireObject(pinAt.x,pinAt.y,pinAt.x,round(pinAt.y-5.08)))
-        objects.push(labelObject(net,pinAt.x,round(pinAt.y-5.08),global,90))
+        const labelY=schematicGrid(pinAt.y-5.08)
+        objects.push(wireObject(pinAt.x,pinAt.y,pinAt.x,labelY))
+        objects.push(labelObject(net,pinAt.x,labelY,global,90))
       }else{
-        const labelAt=labelCoordinateForPin(pinAt)
+        // TPS25810 REF_RTN is deliberately isolated from GND.  Its left-side
+        // pin sits in a dense control-pin column, so use a two-grid local
+        // escape rather than the generic one-grid label corridor.
+        const labelAt=/_REF_RTN$/.test(net) ? labelCoordinateForPin(pinAt,5.08) : labelCoordinateForPin(pinAt)
         objects.push(wireObject(pinAt.x,pinAt.y,labelAt.x,labelAt.y))
         // Global labels preserve the same bare net identity in the PCB. Local
         // root-sheet labels are exported by KiCad as /NET and break parity.
@@ -452,7 +471,34 @@ function netLabelConnectivityObjects(symbols = [], { global = true } = {}) {
       objects.push(noConnectObject(at.x,at.y))
     }
   }
+  for (const net of directNets) {
+    const pins = directPinsByNet.get(net) || []
+    if (pins.length !== 2) throw new Error(`Direct schematic net ${net} requires exactly two mapped symbol pins; found ${pins.length}`)
+    // These are exact pin endpoints, not inferred geometry.  Emit a Manhattan
+    // dogleg: KiCad treats arbitrary-angle source text as a dangling segment,
+    // while a cardinal pair terminates reliably on both authoritative pins.
+    objects.push(...directWireObjects(pins[0], pins[1]))
+    // Terminate the direct pair at the passive support component's exact pin.
+    // The controller-side label is intentionally absent: it was the dense
+    // attachment that KiCad previously merged with GND.
+    objects.push(labelObject(net, pins[1].x, pins[1].y, global, pins[1].rotation))
+  }
   return objects
+}
+
+function directWireObjects (first, second) {
+  if (first.x === second.x || first.y === second.y) return [wireObject(first.x, first.y, second.x, second.y)]
+  const corner = { x: second.x, y: first.y }
+  return [
+    wireObject(first.x, first.y, corner.x, corner.y),
+    wireObject(corner.x, corner.y, second.x, second.y),
+  ]
+}
+
+function normalizeDirectConnectionNets (nets = []) {
+  if (nets == null) return []
+  if (!Array.isArray(nets)) throw new TypeError('directConnectionNets must be an array of named nets')
+  return [...new Set(nets.map((net) => String(net || '').trim()).filter(Boolean))]
 }
 
 function wireObject(x1, y1, x2, y2) {
@@ -465,23 +511,22 @@ function noConnectObject(x, y) {
 
 function schematicPinCoordinate(symbol, pin, index) {
   const actual=symbol.pinGeometry?.[String(pin)]
-  if(actual)return {x:round(symbol.at.x+actual.x),y:round(symbol.at.y-actual.y),rotation:actual.rotation||0}
+  if(actual)return {x:schematicGrid(symbol.at.x+actual.x),y:schematicGrid(symbol.at.y-actual.y),rotation:actual.rotation||0}
   const offsets = pinOffsetsForSymbol(symbol)
   const offset = offsets[String(pin)] || { x: 18, y: index * 3, rotation: 0 }
-  return { x: round(symbol.at.x + offset.x), y: round(symbol.at.y + offset.y), rotation: offset.rotation || 0 }
+  return { x: schematicGrid(symbol.at.x + offset.x), y: schematicGrid(symbol.at.y + offset.y), rotation: offset.rotation || 0 }
 }
 
-function labelCoordinateForPin(pinAt) {
+function labelCoordinateForPin(pinAt, length = 2.54) {
   // Keep the label stub within one 2.54 mm grid step. Longer stubs can cross
   // adjacent authoritative pins on dense symbols and silently merge nets.
-  const length = 2.54
   const rotation=Number(pinAt.rotation||0)%360
-  if(rotation===90)return{x:round(pinAt.x),y:round(pinAt.y+length),rotation:90}
-  if(rotation===270)return{x:round(pinAt.x),y:round(pinAt.y-length),rotation:90}
+  if(rotation===90)return{x:schematicGrid(pinAt.x),y:schematicGrid(pinAt.y+length),rotation:90}
+  if(rotation===270)return{x:schematicGrid(pinAt.x),y:schematicGrid(pinAt.y-length),rotation:90}
   const pointsRight = rotation === 180
   return {
-    x: round(pinAt.x + (pointsRight ? length : -length)),
-    y: round(pinAt.y),
+    x: schematicGrid(pinAt.x + (pointsRight ? length : -length)),
+    y: schematicGrid(pinAt.y),
     rotation: pointsRight ? 0 : 180,
   }
 }
@@ -670,6 +715,13 @@ function gate(name, pass, message) {
 
 function round(value) {
   return Math.round(Number(value || 0) * 1000) / 1000
+}
+
+// Installed KiCad symbol pins use the 1-mil (0.0254 mm) schematic grid.
+// Rounding native coordinates to three decimals creates tiny wire stubs that
+// look connected but trigger ERC's off-grid/unconnected-endpoint checks.
+function schematicGrid(value) {
+  return round(Math.round(Number(value || 0) / .0254) * .0254)
 }
 
 function snapGrid(value, grid = 2.54) {
