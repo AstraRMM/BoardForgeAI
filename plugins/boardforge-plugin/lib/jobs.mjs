@@ -46,6 +46,7 @@ import { auditComponentLibraryCoverage } from './component-audit.mjs'
 import { buildProjectPreflight } from './project-preflight.mjs'
 import { planRequirements } from './requirements-planner.mjs'
 import { analyzeRequirements, recordRequirementAnswers } from './phase2c/requirements-intelligence.mjs'
+import { buildEngineeringKnowledgeGraph, createKnowledgeRecord, measureRequirementsIntelligence } from './phase2c/engineering-knowledge-graph.mjs'
 import { planMissionRequirements } from './mission-planner.mjs'
 import { auditUserBom, intakeUserBom } from './user-bom.mjs'
 import { compareManufacturerCapabilities, planStackup, scoreBoardComplexity } from './stackup-planner.mjs'
@@ -127,6 +128,9 @@ for (const type of advancedBoardJobTypes) allowedJobTypes.add(type)
 for (const type of autotracerJobTypes) allowedJobTypes.add(type)
 allowedJobTypes.add('analyze_production_requirements')
 allowedJobTypes.add('record_production_requirements')
+allowedJobTypes.add('record_accepted_engineering_knowledge')
+allowedJobTypes.add('build_engineering_knowledge_graph')
+allowedJobTypes.add('measure_requirements_intelligence')
 export const sanitizeName = (name) => (String(name || 'boardforge-project').trim().replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').slice(0, 64).toLowerCase() || 'boardforge-project')
 export function resolveInsideWorkspace(workspace, target) {
   const root = path.resolve(workspace)
@@ -217,6 +221,9 @@ export async function executeJob(job, workspace) {
   if (job.type === 'plan_requirements') return planRequirementsJob(job, workspace)
   if (job.type === 'analyze_production_requirements') return productionRequirementsJob(job)
   if (job.type === 'record_production_requirements') return recordProductionRequirementsJob(job, workspace)
+  if (job.type === 'record_accepted_engineering_knowledge') return recordAcceptedEngineeringKnowledgeJob(job, workspace)
+  if (job.type === 'build_engineering_knowledge_graph') return buildEngineeringKnowledgeGraphJob(job, workspace)
+  if (job.type === 'measure_requirements_intelligence') return requirementsIntelligenceMetricsJob(job, workspace)
   if (job.type === 'plan_pin_assignments') return pinAssignmentsJob(job, workspace)
   if (job.type === 'plan_power_tree') return powerTreePlanJob(job, workspace)
   if (job.type === 'plan_stackup') return stackupPlanJob(job, workspace, profile)
@@ -2009,6 +2016,34 @@ async function recordProductionRequirementsJob(job, workspace) {
     generatedFiles: [outputFile],
     humanReviewRequired: constraints.status === 'REQUIREMENTS_INPUT_REQUIRED',
   })
+}
+
+async function recordAcceptedEngineeringKnowledgeJob(job, workspace) {
+  const record = createKnowledgeRecord(job.input || {})
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'engineering-knowledge')
+  await mkdir(outputDir, { recursive: true })
+  const outputFile = path.join(outputDir, `${sanitizeName(record.id)}.json`)
+  await writeFile(outputFile, JSON.stringify(record, null, 2), 'utf8')
+  return result(job, 'ENGINEERING_KNOWLEDGE_RECORDED', [], [], { record, generatedFiles: [outputFile], humanReviewRequired: false })
+}
+
+async function buildEngineeringKnowledgeGraphJob(job, workspace) {
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'engineering-knowledge')
+  const records = job.input?.records || await readEngineeringKnowledgeRecords(outputDir)
+  const graph = buildEngineeringKnowledgeGraph({ records })
+  return result(job, 'ENGINEERING_KNOWLEDGE_GRAPH_BUILT', [], [], { graph, humanReviewRequired: false })
+}
+
+async function requirementsIntelligenceMetricsJob(job, workspace) {
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'engineering-knowledge')
+  const knowledgeGraph = job.input?.knowledgeGraph || buildEngineeringKnowledgeGraph({ records: await readEngineeringKnowledgeRecords(outputDir) })
+  const metrics = measureRequirementsIntelligence({ plans: job.input?.plans || [], attempts: job.input?.attempts || [], knowledgeGraph })
+  return result(job, 'REQUIREMENTS_INTELLIGENCE_METRICS_MEASURED', [], [], { metrics, humanReviewRequired: false })
+}
+
+async function readEngineeringKnowledgeRecords(directory) {
+  if (!existsSync(directory)) return []
+  return Promise.all((await readdir(directory)).filter((file) => file.endsWith('.json')).map(async (file) => JSON.parse(await readFile(path.join(directory, file), 'utf8'))))
 }
 
 async function pinAssignmentsJob(job, workspace) {
