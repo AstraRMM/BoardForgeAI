@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { industrialIoTemplate as template, validateIndustrialIoProductionTopology as topologyGate, validateIndustrialIoTemplate as validate } from "../lib/phase2c/templates/industrial-io.mjs";
 import { approvedAssetFor } from "../lib/components/approved-production-assets.mjs";
 import { industrialIoImplementationGate, industrialIoProductionAssetGate } from "../lib/phase2c/industrial-io-production-engine.mjs";
+import { categorySchematicPinMaps } from "../lib/real-board-proof.mjs";
 
 const expectedPinMap = { 1: "GND", 2: "3V3", 3: "EN", 4: "LOGIC_IN1", 5: "LOGIC_IN2", 6: "NC", 7: "NC", 8: "GND", 9: "FIELD_GND2", 10: "FIELD_IN2", 11: "FIELD_SENSE2", 12: "NC", 13: "NC", 14: "FIELD_GND1", 15: "FIELD_IN1", 16: "FIELD_SENSE1" };
 
@@ -34,6 +35,15 @@ test("Board006 requires both channels' RTHR, RSENSE, CIN, and logic bypass", () 
 
 test("ISO1212DBQR binding follows the TI DBQ pinout and leaves substrate pins unconnected", () => {
   assert.deepEqual(approvedAssetFor("ISO1212DBQR", { requiredPinCount: 16 })?.pinMap, expectedPinMap);
+});
+
+test("Board006's generated net projection follows the ISO1212 application circuit", () => {
+  const maps = categorySchematicPinMaps({ topologyId: "industrial-io-production" });
+  assert.deepEqual(maps.U1, { 1: "GND", 2: "3V3", 3: "3V3", 4: "LOGIC_IN1", 5: "LOGIC_IN2", 8: "GND", 9: "FIELD_GND", 10: "FIELD_IN2_RSENSE", 11: "FIELD_SENSE2", 14: "FIELD_GND", 15: "FIELD_IN1_RSENSE", 16: "FIELD_SENSE1" });
+  assert.deepEqual(maps.R1, { 1: "FIELD_IN1", 2: "FIELD_SENSE1" });
+  assert.deepEqual(maps.R3, { 1: "FIELD_IN1_RSENSE", 2: "FIELD_GND" });
+  assert.deepEqual(maps.C2, { 1: "FIELD_SENSE2", 2: "FIELD_GND" });
+  assert.equal(maps.U3, undefined);
 });
 
 test("Board006's source-correct input passives have real two-terminal KiCad projections", () => {
