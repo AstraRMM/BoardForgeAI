@@ -36,10 +36,23 @@ const INDUSTRIAL_IO_TOPOLOGY = {
 const BOARD007_CAN_TOPOLOGY=board007PlacementPreferences()
 const BOARD008_CAN_GATEWAY_TOPOLOGY=board008PlacementPreferences()
 const ETHERNET_CONTROLLER_TOPOLOGY = {
-  // 7499010121A is an asymmetric through-hole MagJack.  Its authoritative
-  // courtyard has been checked against the Board010 top-right notch; leaving
-  // this placement to the generic centre search lets it overlap that notch.
-  J1: { x: 23.5, y: 14, rotation: 0, side: 'front' },
+  // Board010's 1208 mm² notched envelope is only legal when every real
+  // courtyard is placed as a contract.  Generic packing scattered the PHY
+  // support and produced non-routable long Ethernet stubs.  These are a
+  // resolver-validated mechanical baseline, not a routing/acceptance claim.
+  U1:{x:12,y:16.5,rotation:0,side:'front'}, U2:{x:10.75,y:6.5,rotation:0,side:'front'},
+  Y1:{x:13.25,y:22.75,rotation:0,side:'front'}, J1:{x:23.5,y:14,rotation:0,side:'front'},
+  U3:{x:27,y:2.75,rotation:0,side:'front'}, U4:{x:20.75,y:5.25,rotation:0,side:'front'},
+  J_PWR:{x:27,y:6.5,rotation:90,side:'front'}, C_DEC:{x:13.25,y:26.5,rotation:0,side:'front'},
+  R_RST:{x:7,y:25.25,rotation:90,side:'front'}, C_RST:{x:18.25,y:1.5,rotation:0,side:'front'},
+  R_MODE0:{x:35.75,y:4,rotation:90,side:'front'}, R_MODE1:{x:37,y:6.5,rotation:0,side:'front'},
+  R_MODE2:{x:7,y:22.75,rotation:0,side:'front'}, R_EXRES:{x:35.75,y:1.5,rotation:0,side:'front'},
+  R_TXP:{x:5.75,y:17.75,rotation:0,side:'front'}, R_TXN:{x:5.75,y:15.25,rotation:0,side:'front'},
+  R_RXP:{x:5.75,y:12.75,rotation:0,side:'front'}, R_RXN:{x:38.25,y:2.75,rotation:90,side:'front'},
+  C_XI:{x:33.25,y:5.25,rotation:0,side:'front'}, C_XO:{x:33.25,y:7.75,rotation:0,side:'front'},
+  D_ETH:{x:30.75,y:2.75,rotation:0,side:'front'}, FB_AVDD:{x:9.5,y:22.75,rotation:90,side:'front'},
+  C_AVDD:{x:9.5,y:26.5,rotation:0,side:'front'}, C_TOCAP:{x:22,y:1.5,rotation:0,side:'front'},
+  C_1V2:{x:33.25,y:2.75,rotation:90,side:'front'},
 }
 
 export const COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY = Object.freeze({

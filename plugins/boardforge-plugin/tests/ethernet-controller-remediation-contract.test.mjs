@@ -200,9 +200,26 @@ test("Board010's exact MagJack has a legal authoritative placement in the revise
       }],
       outline: definition.outlinePoints.map(([x, y]) => ({ x, y })),
       topology: "ethernet-controller",
-    });
+  });
   assert.deepEqual(placement.placements[0].at, {
     x: 23.5, y: 14, rotation: 0, side: "front",
+  });
+});
+
+test("Board010 resolver-validates the complete fixed-coordinate Ethernet placement baseline", () => {
+  const definition = catalogDefinition(manifest.boards[9], 9);
+  const components = definition.bom.map((row) => ({
+    ref: row.ref, value: row.value, mpn: row.mpn,
+    footprint: approvedAssetFor(row.mpn).footprint.libId,
+  }));
+  const placement = placeAuthoritativeProductionFootprints({
+    components,
+    outline: definition.outlinePoints.map(([x, y]) => ({ x, y })),
+    topology: "ethernet-controller",
+  });
+  assert.equal(placement.placements.length, definition.bom.length);
+  assert.deepEqual(placement.placements.find((row) => row.ref === "U2").at, {
+    x: 10.75, y: 6.5, rotation: 0, side: "front",
   });
 });
 
