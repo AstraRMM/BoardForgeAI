@@ -30,12 +30,11 @@ export function industrialIoProductionAssetGate(template){const errors=[];for(co
  * Do not create a KiCad candidate until each safety-critical item is present
  * as a bound component, net, and geometry record. */
 export function industrialIoImplementationGate(template){
-  const converter=approvedAssetFor(template.requirements?.find(part=>part.ref==='U3')?.mpn)
+  const iso1212=approvedAssetFor(template.requirements?.find(part=>part.ref==='U1')?.mpn)
   return validateIndustrialIoProductionTopology({
-    isolatedConverter:{mpn:converter?.mpn,ratingUnit:'VACrms',isolationVrms:3000,pinMap:converter?.pinMap},
-    iso1212:{channels:(template.iso1212Networks||[]).map(network=>({RTHR:{...network.RTHR,primarySourceVerified:false,designCalculationVerified:false},RSENSE:{...network.RSENSE,primarySourceVerified:false,designCalculationVerified:false},CIN:{...network.CIN,primarySourceVerified:false,designCalculationVerified:false}})),noConnectPins:[]},
+    iso1212:{primarySourceVerified:false,pinMap:iso1212?.pinMap,channels:(template.iso1212Networks||[]).map(network=>({RTHR:{...network.RTHR,primarySourceVerified:false,designCalculationVerified:false,liveDigiKeyVerified:false,liveMouserVerified:false},RSENSE:{...network.RSENSE,primarySourceVerified:false,designCalculationVerified:false,liveDigiKeyVerified:false,liveMouserVerified:false},CIN:{...network.CIN,primarySourceVerified:false,designCalculationVerified:false,liveDigiKeyVerified:false,liveMouserVerified:false}})),noConnectPins:[],inputPathVerified:false,logicDecouplingVerified:false},
     isolationCorridor:{keepoutVerified:false,clearanceMm:0,creepageMm:0},
     stm32:{connectedPowerPins:[]},
-    assetBinding:{isolatedConverterExactMpnVerified:Boolean(converter),isolatedConverterSymbolFootprintPinMapVerified:Boolean(converter)},
+    assetBinding:{iso1212ExactMpnVerified:Boolean(iso1212),networkSymbolFootprintPinMapVerified:false},
   })
 }

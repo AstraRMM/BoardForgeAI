@@ -1,15 +1,64 @@
-import test from'node:test';import assert from'node:assert/strict';import{industrialIoTemplate as t,validateIndustrialIoTemplate as validate,validateIndustrialIoProductionTopology as topologyGate}from'../lib/phase2c/templates/industrial-io.mjs'
-import{approvedAssetFor}from'../lib/components/approved-production-assets.mjs'
-import{industrialIoImplementationGate,industrialIoProductionAssetGate}from'../lib/phase2c/industrial-io-production-engine.mjs'
-test('Board006 binds the exact manifest envelope',()=>{assert.deepEqual(validate(t),{ok:true,errors:[]});assert.equal(t.id,'006_INDUSTRIAL_IO');assert.equal(t.outline.maximumAreaMm2,2650);assert.equal(t.outline.family,'din rail');assert.ok(t.acceptance.minimumFunctionalBlocks>=4)})
-test('Board006 forbids mains and fails closed without galvanic isolation',()=>{const x=structuredClone(t);x.electrical.noMains=false;x.electrical.galvanicallyIsolated=false;assert.ok(validate(x).errors.includes('mains-input-forbidden'));assert.ok(validate(x).errors.includes('field-isolation-required'))})
-test('Board006 enforces conservative isolation geometry',()=>{const x=structuredClone(t);x.electrical.minimumCreepageMm=3.9;x.electrical.minimumClearanceMm=3;assert.ok(validate(x).errors.includes('creepage-too-small'));assert.ok(validate(x).errors.includes('clearance-too-small'))})
-test('Board006 cannot lose field protection or isolated power',()=>{for(const role of['FIELD_INPUT_FUSE','FIELD_TVS','ISOLATED_POWER']){const x=structuredClone(t);x.requirements=x.requirements.filter(p=>p.role!==role);assert.ok(validate(x).errors.includes(`missing-role:${role}`))}})
-test('Board006 does not claim live sourcing without runtime proof',()=>{const x=structuredClone(t);x.sourcing.liveClaim=true;assert.ok(validate(x).errors.includes('false-live-claim'))})
-test('Board006 accepts only the source-derived exact six-lead THI binding',()=>{for(const p of t.requirements.filter(x=>x.ref!=='U3'))assert.equal(approvedAssetFor(p.mpn,{requiredPinCount:p.pinCount})?.mpn,p.mpn,p.ref);const thi=approvedAssetFor('THI 2-0511M',{requiredPinCount:6});assert.equal(thi?.symbol.libId,'BoardForge:THI_2-0511M');assert.equal(thi?.footprint.libId,'BoardForge:THI_2-0511M_DIP16_6Lead');assert.deepEqual(thi?.pinMap,{1:'GND',7:'NC',8:'NC',9:'FIELD_5V',10:'FIELD_GND',16:'5V'});assert.deepEqual(industrialIoProductionAssetGate(t),{ok:true,errors:[]})})
-test('ISO1212DBQR binding follows the TI DBQ pinout and leaves substrate pins unconnected',()=>{const map=approvedAssetFor('ISO1212DBQR',{requiredPinCount:16})?.pinMap;assert.deepEqual(map,{1:'GND',2:'3V3',3:'EN',4:'LOGIC_IN1',5:'LOGIC_IN2',6:'NC',7:'NC',8:'GND',9:'FIELD_GND2',10:'FIELD_IN2',11:'FIELD_SENSE2',12:'NC',13:'NC',14:'FIELD_GND1',15:'FIELD_IN1',16:'FIELD_SENSE1'})})
-test('Board006 source-correct ISO1212 network assets have real two-terminal KiCad projections',()=>{for(const [mpn,footprint]of Object.entries({'MMA02040C1001FB300':'Resistor_SMD:R_MELF_0204','RC0603FR-07562RL':'Resistor_SMD:R_0603_1608Metric','CC0603KRX7R9BB103':'Capacitor_SMD:C_0603_1608Metric','CC0603ZRY5V8BB104':'Capacitor_SMD:C_0603_1608Metric'})){const asset=approvedAssetFor(mpn,{requiredPinCount:2});assert.equal(asset?.symbol.pins.length,2,mpn);assert.equal(asset?.footprint.libId,footprint,mpn)}})
-test('Board006 refuses candidate generation until its required network and isolation evidence are implemented',()=>{const result=industrialIoImplementationGate(t);assert.equal(result.ok,false);for(const code of['iso1212-channel-1-rthr-unproven','iso1212-channel-2-cin-unproven','iso1212-sub-pin-3-must-be-nc','isolation-keepout-unverified','stm32-power-pin-48-unconnected'])assert.ok(result.errors.includes(code),code)})
-test('Board006 template carries explicit value-bearing ISO1212 networks',()=>{assert.equal(t.iso1212Networks.length,2);for(const [index,ch]of t.iso1212Networks.entries()){assert.equal(ch.channel,index+1);assert.equal(ch.RSENSE.ohms,562);assert.ok(ch.RTHR.ohms>0&&ch.RTHR.ratedPowerW>0);assert.ok(ch.CIN.farads>0&&ch.CIN.ratedVoltageV>0)}})
-test('Board006 production topology fails closed on the audited incomplete implementation',()=>{const result=topologyGate({isolatedConverter:{mpn:'RFM-0505S',isolationVdc:1000,pinMap:{1:'5V',2:'GND',3:'FIELD_GND',4:'NC'}},iso1212:{channels:[{},{}],noConnectPins:[]},isolationCorridor:{keepoutVerified:false,clearanceMm:0.2,creepageMm:0.2},stm32:{connectedPowerPins:['23','24']}});assert.equal(result.ok,false);for(const code of['isolated-converter-identity-unproven','isolated-converter-rating-unit-must-be-vacrms','isolated-converter-rating-below-system-gate','isolated-converter-pin-1-must-be-GND','isolated-converter-pin-9-must-be-FIELD_5V','iso1212-channel-1-rthr-unproven','iso1212-channel-2-cin-unproven','iso1212-sub-pin-3-must-be-nc','isolation-keepout-unverified','stm32-power-pin-48-unconnected','isolated-converter-production-asset-binding-unverified'])assert.ok(result.errors.includes(code),code)})
-test('Board006 topology gate accepts only explicit primary-source geometry and bound-asset evidence',()=>{const network=i=>({RTHR:{ref:`R${i}1`,ohms:1000,ratedPowerW:.25,primarySourceVerified:true,designCalculationVerified:true},RSENSE:{ref:`R${i}2`,ohms:562,ratedPowerW:.125,primarySourceVerified:true,designCalculationVerified:true},CIN:{ref:`C${i}1`,farads:10e-9,ratedVoltageV:100,primarySourceVerified:true,designCalculationVerified:true}});const verified={isolatedConverter:{mpn:'THI 2-0511M',ratingUnit:'VACrms',isolationVrms:3000,pinMap:{1:'GND',7:'NC',8:'NC',9:'FIELD_5V',10:'FIELD_GND',16:'5V'}},iso1212:{channels:[network(1),network(2)],noConnectPins:['3','12']},isolationCorridor:{keepoutVerified:true,clearanceMm:3.2,creepageMm:4},stm32:{connectedPowerPins:['1','8','9','23','24','35','36','47','48']},assetBinding:{isolatedConverterExactMpnVerified:true,isolatedConverterSymbolFootprintPinMapVerified:true}};assert.equal(topologyGate(verified).ok,true)})
+import test from "node:test";
+import assert from "node:assert/strict";
+import { industrialIoTemplate as template, validateIndustrialIoProductionTopology as topologyGate, validateIndustrialIoTemplate as validate } from "../lib/phase2c/templates/industrial-io.mjs";
+import { approvedAssetFor } from "../lib/components/approved-production-assets.mjs";
+import { industrialIoImplementationGate, industrialIoProductionAssetGate } from "../lib/phase2c/industrial-io-production-engine.mjs";
+
+const expectedPinMap = { 1: "GND", 2: "3V3", 3: "EN", 4: "LOGIC_IN1", 5: "LOGIC_IN2", 6: "NC", 7: "NC", 8: "GND", 9: "FIELD_GND2", 10: "FIELD_IN2", 11: "FIELD_SENSE2", 12: "NC", 13: "NC", 14: "FIELD_GND1", 15: "FIELD_IN1", 16: "FIELD_SENSE1" };
+
+test("Board006 binds a source-correct isolated 24 V input envelope", () => {
+  assert.deepEqual(validate(template), { ok: true, errors: [] });
+  assert.equal(template.id, "006_INDUSTRIAL_IO");
+  assert.equal(template.outline.family, "din rail");
+  assert.match(template.purpose, /24 V digital-input/i);
+  assert.ok(!template.requirements.some((part) => part.role === "ISOLATED_POWER"));
+});
+
+test("Board006 retains its no-mains, isolation, and conservative spacing constraints", () => {
+  const altered = structuredClone(template);
+  altered.electrical.noMains = false;
+  altered.electrical.galvanicallyIsolated = false;
+  altered.electrical.minimumCreepageMm = 3.9;
+  altered.electrical.minimumClearanceMm = 3;
+  const errors = validate(altered).errors;
+  for (const code of ["mains-input-forbidden", "field-isolation-required", "creepage-too-small", "clearance-too-small"]) assert.ok(errors.includes(code), code);
+});
+
+test("Board006 requires both channels' RTHR, RSENSE, CIN, and logic bypass", () => {
+  for (const role of ["ISO1212_RTHR_CH1", "ISO1212_RTHR_CH2", "ISO1212_RSENSE_CH1", "ISO1212_RSENSE_CH2", "ISO1212_CIN_CH1", "ISO1212_CIN_CH2", "ISO1212_LOGIC_DECOUPLING"]) {
+    const altered = structuredClone(template);
+    altered.requirements = altered.requirements.filter((part) => part.role !== role);
+    assert.ok(validate(altered).errors.includes(`missing-role:${role}`), role);
+  }
+});
+
+test("ISO1212DBQR binding follows the TI DBQ pinout and leaves substrate pins unconnected", () => {
+  assert.deepEqual(approvedAssetFor("ISO1212DBQR", { requiredPinCount: 16 })?.pinMap, expectedPinMap);
+});
+
+test("Board006's source-correct input passives have real two-terminal KiCad projections", () => {
+  for (const [mpn, footprint] of Object.entries({ MMA02040C1001FB300: "Resistor_SMD:R_MELF_0204", "RC0603FR-07562RL": "Resistor_SMD:R_0603_1608Metric", CC0603KRX7R9BB103: "Capacitor_SMD:C_0603_1608Metric", CC0603ZRY5V8BB104: "Capacitor_SMD:C_0603_1608Metric" })) {
+    const asset = approvedAssetFor(mpn, { requiredPinCount: 2 });
+    assert.equal(asset?.symbol.pins.length, 2, mpn);
+    assert.equal(asset?.footprint.libId, footprint, mpn);
+  }
+  assert.deepEqual(industrialIoProductionAssetGate(template), { ok: true, errors: [] });
+});
+
+test("Board006 refuses candidate generation until actual wiring and geometry evidence exist", () => {
+  const result = industrialIoImplementationGate(template);
+  assert.equal(result.ok, false);
+  for (const code of ["iso1212-primary-source-unverified", "iso1212-channel-1-rthr-unproven", "iso1212-channel-2-cin-unproven", "iso1212-pin-6-must-be-nc", "iso1212-input-path-unverified", "isolation-keepout-unverified", "stm32-power-pin-48-unconnected"]) assert.ok(result.errors.includes(code), code);
+});
+
+test("Board006 topology gate accepts only live-sourced, electrically complete evidence", () => {
+  const component = (ref, values) => ({ ref, ...values, primarySourceVerified: true, designCalculationVerified: true, liveDigiKeyVerified: true, liveMouserVerified: true });
+  const channel = (index) => ({ RTHR: component(`R${index}`, { ohms: 1000, ratedPowerW: 0.4 }), RSENSE: component(`R${index + 2}`, { ohms: 562, ratedPowerW: 0.1 }), CIN: component(`C${index}`, { farads: 10e-9, ratedVoltageV: 50 }) });
+  const result = topologyGate({
+    iso1212: { primarySourceVerified: true, pinMap: expectedPinMap, channels: [channel(1), channel(2)], noConnectPins: ["6", "7", "12", "13"], inputPathVerified: true, logicDecouplingVerified: true },
+    isolationCorridor: { keepoutVerified: true, clearanceMm: 3.2, creepageMm: 4 },
+    stm32: { connectedPowerPins: ["1", "8", "9", "23", "24", "35", "36", "47", "48"] },
+    assetBinding: { iso1212ExactMpnVerified: true, networkSymbolFootprintPinMapVerified: true },
+  });
+  assert.equal(result.ok, true, result.errors.join("; "));
+});
