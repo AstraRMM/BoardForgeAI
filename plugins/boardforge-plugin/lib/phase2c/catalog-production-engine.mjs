@@ -10,7 +10,7 @@ import {createBoard008MechanicalPlacementFixture,validateBoard008MechanicalPlace
 import {createBoard009IsolationWaistFixture,validateBoard009IsolationWaistFixture} from './board009-isolation-waist-contract.mjs'
 import {stm32ControllerTemplate} from './templates/stm32-controller.mjs'
 import {validatePoeSensorArchitecture} from './templates/poe-sensor.mjs'
-import {ethernetControllerProductionProposal} from './templates/ethernet-controller.mjs'
+import {ethernetControllerProductionProposal,validateEthernetControllerProposal} from './templates/ethernet-controller.mjs'
 
 const execFile=promisify(execFileCallback)
 const repo=path.resolve(import.meta.dirname,'../../../..')
@@ -81,6 +81,14 @@ export async function generateCatalogProductionBoard({root,board,context={}}) {
   const definition=catalogDefinition(board,context.index||0)
   const semanticGate=validateCatalogSemanticTopology(definition)
   if(!semanticGate.ok){const error=new Error(`Catalog semantic topology is incomplete: ${semanticGate.errors.join('; ')}`);error.code='CATALOG_SEMANTIC_TOPOLOGY_INCOMPLETE';error.gate=semanticGate;throw error}
+  // A catalog semantic match is only the first gate. Board010 has a complete
+  // functional BOM but its exact MagJack still cannot fit the approved notch
+  // and board-level Ethernet proof is absent. Stop before emitting a generic
+  // PCB that could be mistaken for an authoritative production candidate.
+  if(definition.topologyId==='ethernet-controller'){
+    const proposalGate=validateEthernetControllerProposal(ethernetControllerProductionProposal)
+    if(!proposalGate.ok){const error=new Error(`Ethernet controller production proposal is blocked: ${proposalGate.errors.join('; ')}`);error.code='CATALOG_PRODUCTION_PROPOSAL_BLOCKED';error.gate=proposalGate;throw error}
+  }
   const boardRoot=path.join(root,board.id)
   const summary=await runRealBoardProof({outputRoot:boardRoot,fresh:true,board:definition.id,boardDefinitions:[definition],liveBindings:true})
   const generated=summary.boards[0],projectDir=generated.outputFolder,files=await readdir(projectDir)

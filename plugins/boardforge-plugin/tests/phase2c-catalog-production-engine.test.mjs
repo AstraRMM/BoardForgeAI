@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import manifest from '../../../fixtures/phase2c/50-board-challenge-manifest.mjs'
-import { catalogDefinition, validateCatalogSemanticTopology, verifyCatalogAuthoritativePcbSelection } from '../lib/phase2c/catalog-production-engine.mjs'
+import { catalogDefinition, generateCatalogProductionBoard, validateCatalogSemanticTopology, verifyCatalogAuthoritativePcbSelection } from '../lib/phase2c/catalog-production-engine.mjs'
 import {stm32ControllerTemplate} from '../lib/phase2c/templates/stm32-controller.mjs'
 import {canGatewayCategoryPcbEvidence,categoryPowerFlags,categorySchematicPinMaps,stm32ControllerCategoryPcbEvidence} from '../lib/real-board-proof.mjs'
 import { validateChallengeManifest } from '../lib/challenge/phase2c-challenge.mjs'
@@ -122,6 +122,15 @@ test('Board010 selects a complete exact Ethernet controller topology',()=>{
   assert.equal(gate.ok,true,gate.errors.join('; '))
   assert.equal(definition.topologyId,'ethernet-controller')
   for(const ref of['U1','U2','J1','Y1','R_EXRES','D_ETH','FB_AVDD'])assert.ok(definition.bom.some(row=>row.ref===ref),ref)
+})
+
+test('Board010 stops at its exact production proposal gate before any generic board is emitted',async()=>{
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'boardforge-board010-proposal-'))
+  await assert.rejects(
+    generateCatalogProductionBoard({root,board:manifest.boards[9],context:{index:9}}),
+    error=>error?.code==='CATALOG_PRODUCTION_PROPOSAL_BLOCKED'&&error?.gate?.errors.includes('ethernet-evidence-exact-assets-approved-missing'),
+  )
+  await assert.rejects(fs.access(path.join(root,manifest.boards[9].id)),/ENOENT/)
 })
 
 test('Ethernet category gate accepts an explicitly complete controller path',()=>{
