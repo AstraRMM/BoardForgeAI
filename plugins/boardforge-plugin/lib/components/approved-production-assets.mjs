@@ -486,6 +486,30 @@ export const approvedProductionAssets = Object.freeze({
     { 1: "SIGNAL", 2: "GND" },
     "0603",
   ),
+  "RC0603FR-07562RL": entry(
+    "RC0603FR-07562RL",
+    "Device:R",
+    "Resistor_SMD:R_0603_1608Metric",
+    { 1: "FIELD_IN", 2: "FIELD_GND" },
+    "0603",
+    {
+      applicationLimitations: [
+        "ISO1212 Type 1/3 current-limit resistor. TI recommends 562 ohm with 1% tolerance; the actual channel wiring and thermal evidence remain board-level gates.",
+      ],
+    },
+  ),
+  MMA02040C1001FB300: entry(
+    "MMA02040C1001FB300",
+    "Device:R",
+    "Resistor_SMD:R_MELF_0204",
+    { 1: "FIELD_INPUT", 2: "FIELD_SENSE" },
+    "MELF 0204",
+    {
+      applicationLimitations: [
+        "ISO1212 Type 3 1 kilohm surge-limiting threshold resistor. Its voltage, pulse, and dissipation margins must be checked for the declared field installation.",
+      ],
+    },
+  ),
   "RC0603FR-0712K4L": entry(
     "RC0603FR-0712K4L",
     "Device:R",
@@ -550,6 +574,30 @@ export const approvedProductionAssets = Object.freeze({
     {
       sourceEvidence:
         "https://docs.wiznet.io/img/products/w5500/W5500_ds_v110e.pdf",
+    },
+  ),
+  CC0603KRX7R9BB103: entry(
+    "CC0603KRX7R9BB103",
+    "Device:C",
+    "Capacitor_SMD:C_0603_1608Metric",
+    { 1: "FIELD_SENSE", 2: "FIELD_GND" },
+    "0603",
+    {
+      applicationLimitations: [
+        "10 nF ISO1212 field-input filter capacitor. The selected 50 V rating is not a substitute for the board-level surge and creepage review.",
+      ],
+    },
+  ),
+  CC0603ZRY5V8BB104: entry(
+    "CC0603ZRY5V8BB104",
+    "Device:C",
+    "Capacitor_SMD:C_0603_1608Metric",
+    { 1: "3V3", 2: "GND" },
+    "0603",
+    {
+      applicationLimitations: [
+        "0.1 uF logic-side ISO1212 bypass capacitor; place close to VCC1/GND1 in the actual layout.",
+      ],
     },
   ),
   GRM188R60J475KE19D: entry(
