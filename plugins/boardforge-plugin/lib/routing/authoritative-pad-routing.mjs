@@ -41,6 +41,24 @@ export function authoritativeConnectionInventory(input){
   return{schema:'boardforge.authoritative-connection-inventory.v1',nets,totalEndpoints:nets.reduce((sum,row)=>sum+row.endpointCount,0),requiredConnections:nets.reduce((sum,row)=>sum+row.requiredConnections,0)}
 }
 
+/** Reject the known-invalid W5500 proof topology before it is handed to a
+ * differential-pair router.  This check is deliberately narrow: it applies
+ * only when the exact W5500/MagJack pair-net shape is present, and never
+ * guesses that an arbitrary multi-terminal Ethernet network is invalid. */
+export function w5500MagJackTopologyGate(input){
+  const byNet=new Map((input?.nets||[]).map(row=>[row.net,row.endpoints||[]]))
+  const pairNames=['ETH_TXP','ETH_TXN','ETH_RXP','ETH_RXN']
+  const pairRows=pairNames.map(net=>[net,byNet.get(net)||[]])
+  const applicable=pairRows.every(([,endpoints])=>endpoints.some(p=>p.ref==='U2')&&endpoints.some(p=>p.ref==='J1'))
+  if(!applicable)return{schema:'boardforge.w5500-magjack-topology-gate.v1',applicable:false,valid:true,errors:[]}
+  const errors=[]
+  for(const [net,endpoints] of pairRows){
+    if(endpoints.length!==2)errors.push(`${net}: expected a source-backed two-endpoint PHY-to-MagJack pair, got ${endpoints.length}`)
+    if(endpoints.some(p=>!['U2','J1'].includes(p.ref)))errors.push(`${net}: unsupported branch ref ${endpoints.filter(p=>!['U2','J1'].includes(p.ref)).map(p=>p.ref).join(',')}`)
+  }
+  return{schema:'boardforge.w5500-magjack-topology-gate.v1',applicable:true,valid:errors.length===0,errors}
+}
+
 /** Fail-closed topology contract for the 4-layer RP2040 instrument. The
  * power topology is fixed before signal routing: B.Cu GND plane/tree, In1.Cu
  * regulated 3V3 tree rooted at U3.2, and a short VBUS source tree from J1. */

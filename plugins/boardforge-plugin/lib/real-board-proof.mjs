@@ -22,7 +22,7 @@ import { createMouserProvider } from './sourcing/mouser-provider.mjs'
 import { chooseFootprintTransform } from './placement/footprint-transform-scoring.mjs'
 import { COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY, placeAuthoritativeProductionFootprints } from './placement/authoritative-production-placement.mjs'
 import { generateTps25750GlobalHandoff, generateTps25750LocalBreakoutV4 } from './routing/dense-qfn-power-breakout-planner.mjs'
-import { authoritativeFixedCorridors, authoritativePadRoutingInput, createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate } from './routing/authoritative-pad-routing.mjs'
+import { authoritativeFixedCorridors, authoritativePadRoutingInput, createCopperlessAuthoritativeCandidate, regenerateAuthoritativePadRoutesCandidate, w5500MagJackTopologyGate } from './routing/authoritative-pad-routing.mjs'
 
 export const REAL_BOARD_PROOF_ROOT = 'C:\\Users\\luifi\\Desktop\\BoardForge_Real_Board_Proofs'
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url))
@@ -912,6 +912,12 @@ async function routeAuthoritativeCandidate({pcbFile,projectDir,kicad}){
     const copperless=await createCopperlessAuthoritativeCandidate({pcbFile,candidateFile:copperlessFile})
     const copperlessScan=await scanKiCadProject(copperlessFile)
     const routingInput=authoritativePadRoutingInput(copperlessScan)
+    const ethernetTopology=w5500MagJackTopologyGate(routingInput)
+    if(ethernetTopology.applicable&&!ethernetTopology.valid)return{
+      ...copperless,status:'COPPERLESS_CANDIDATE_READY',code:'W5500_MAGJACK_TOPOLOGY_UNVERIFIED',
+      reason:`W5500/MagJack topology is not source-backed: ${ethernetTopology.errors.join('; ')}`,
+      routingDeferred:true,topologyGate:ethernetTopology,
+    }
     const fixed=authoritativeFixedCorridors(routingInput,{trackWidth:.2,viaDiameter:.5})
     const fixedComplete=routingInput.nets.every(({net})=>fixed.completedNets.includes(net)||/^GND$/i.test(net))
     // A large QFP has many deliberately unconnected physical pads. They are

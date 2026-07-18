@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
-import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors } from '../lib/routing/authoritative-pad-routing.mjs'
+import { authoritativePadRoutingInput,board007CanControllerFixedCorridors,compactEsp32FixedCorridors,industrialIoFixedCorridors,rp2040InstrumentFixedCorridors,stm32AuthoritativeFixedCorridors,tps25750SourceFixedCorridors,w5500MagJackTopologyGate } from '../lib/routing/authoritative-pad-routing.mjs'
 import { routeCollisionAwareChannelsV2 } from '../lib/routing/collision-aware-channel-router-v2.mjs'
 
 test('authoritative ground planes use solid pad connections for dense MCU ground pads',()=>{const source=readFileSync(new URL('../lib/routing/authoritative-pad-routing.mjs',import.meta.url),'utf8');assert.match(source,/connect_pads yes \(clearance \$\{fmt\(clearance\)\}\)/)})
@@ -27,6 +27,20 @@ test('derives ESP32-class topology and obstacles from transformed placed pads',(
   const routed=routeCollisionAwareChannelsV2({...input,trackWidth:.12,viaDiameter:.4})
   assert.equal(routed.diagnostics.netsRouted,4)
   assert.deepEqual(routed.diagnostics.crossNetCollisions,[])
+})
+test('W5500 topology gate rejects unsupported ESD and termination branches on PHY pairs',()=>{
+  const endpoint=(ref)=>({ref,pad:'1',x:0,y:0})
+  const input={nets:[
+    {net:'ETH_TXP',endpoints:[endpoint('U2'),endpoint('J1'),endpoint('D_ETH'),endpoint('R_TXP')]},
+    {net:'ETH_TXN',endpoints:[endpoint('U2'),endpoint('J1'),endpoint('D_ETH'),endpoint('R_TXN')]},
+    {net:'ETH_RXP',endpoints:[endpoint('U2'),endpoint('J1'),endpoint('D_ETH'),endpoint('R_RXP')]},
+    {net:'ETH_RXN',endpoints:[endpoint('U2'),endpoint('J1'),endpoint('D_ETH'),endpoint('R_RXN')]},
+  ]}
+  const gate=w5500MagJackTopologyGate(input)
+  assert.equal(gate.applicable,true)
+  assert.equal(gate.valid,false)
+  assert.ok(gate.errors.some(error=>error.startsWith('ETH_TXP: expected')))
+  assert.ok(gate.errors.some(error=>error.includes('unsupported branch ref D_ETH')))
 })
 test('existing foreign occupancy is enforced instead of silently discarded',()=>{
   const base={nets:[{net:'A',endpoints:[{x:5,y:5},{x:45,y:5}]}],bounds:{minX:0,minY:0,maxX:50,maxY:20},layers:['F.Cu'],clearance:.2,trackWidth:.15,viaDiameter:.5}
