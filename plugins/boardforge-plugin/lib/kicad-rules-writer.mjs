@@ -73,6 +73,10 @@ function inferDiffPairs(nets) {
   return nets.flatMap((net) => {
     const mate = net.name?.endsWith('_DP') ? net.name.replace(/_DP$/, '_DN')
       : net.name?.endsWith('_P') ? net.name.replace(/_P$/, '_N')
+        // W5500/MagJack designs conventionally spell the pair members TXP /
+        // TXN and RXP / RXN.  They are still differential pairs, not generic
+        // single-ended Ethernet nets.
+        : /(?:TX|RX)P$/i.test(net.name || '') ? net.name.replace(/P$/i, 'N')
         : net.name?.endsWith('TX_P') ? net.name.replace(/TX_P$/, 'TX_N')
           : net.name?.endsWith('RX_P') ? net.name.replace(/RX_P$/, 'RX_N')
             : null
