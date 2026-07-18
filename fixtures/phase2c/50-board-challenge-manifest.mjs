@@ -62,7 +62,10 @@ export const manifest = {
    id: `${String(index + 1).padStart(3, '0')}_${name}`,
    slug, purpose, architectureClass,
    minimumFunctionalBlocks: index % 4 + 3,
-   maximumAreaMm2: 900 + (index % 8) * 350,
+   // Board009 uses the exact live-sourceable through-hole PoE front end. Its
+   // 42 x 20 mm predecessor was physically impossible, so the autonomous
+   // training brief deliberately grants a still-compact 70 x 45 mm envelope.
+   maximumAreaMm2: index === 8 ? 3500 : 900 + (index % 8) * 350,
    outline: { kind: 'custom', family: `${shape}-${slug}`, purpose: `${shape} supports mechanical, connector, RF, thermal, or human-interface constraints` },
    distinguishingFeatures: [`${architectureClass} architecture`, `${purpose} validation profile`],
    acceptanceProfile: 'strict-production-v1',

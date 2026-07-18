@@ -611,12 +611,12 @@ function wearableSensorPuckCategoryPcbEvidence() {
 }
 
 export function poeEthernetSensorCategoryPcbEvidence() {
-  const names=['','SELV_GND','3V3','ETH_TXP','ETH_TXN','ETH_RXP','ETH_RXN','ETH_TX_CT','ETH_RX_CT','XTAL_IN','XTAL_OUT','POE_5V','POE_RECT_POS','POE_RECT_NEG','CHASSIS','I2C_SDA','I2C_SCL','BME_CSB_STRAP','BME_SDO_STRAP','W5500_EXRES','W5500_TOCAP','W5500_1V2','W5500_VBG_FLOAT','SPI_SCLK','SPI_MISO','SPI_MOSI','ETH_CS_N','ETH_INT_N','ETH_RESET_N'],nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
+  const names=['','SELV_GND','3V3','ETH_TXP','ETH_TXN','ETH_RXP','ETH_RXN','ETH_TX_CT','ETH_RX_CT','XTAL_IN','XTAL_OUT','POE_5V','POE_RECT_POS','POE_RECT_NEG','CHASSIS','I2C_SDA','I2C_SCL','BME_CSB_STRAP','BME_SDO_STRAP','W5500_EXRES','W5500_TOCAP','W5500_1V2','W5500_VBG_FLOAT','SPI_SCLK','SPI_MISO','SPI_MOSI','ETH_CS_N','ETH_INT_N','ETH_RESET_N','POE_AUX','LED_YELLOW_A','LED_YELLOW_K','LED_GREEN_A','LED_GREEN_K'],nets=names.map((name,number)=>({number,name})),n=Object.fromEntries(nets.map(x=>[x.name,x.number]))
   const fp=(ref,value,footprint,x,y,w,h,pins)=>({ref,value,footprint,at:{x,y},body:{w,h},pads:Object.entries(pins).map(([number,netName],i)=>pad(number,(i%4)-1.5,Math.floor(i/4)-1,.6,.6,n[netName],netName))})
   const maps=poeSensorPinMaps()
   return{nets,segments:[],vias:[],footprints:[
     fp('U_ETH','W5500','Package_QFP:LQFP-48_7x7mm_P0.5mm',13,10,7,7,maps.U_ETH),
-    fp('J_ETH','7499010121A','Connector_RJ:RJ45_Wuerth_7499010121A_Horizontal',7,10,25.4,16.1,maps.J_ETH),
+    fp('J_ETH','ARJP11A-MASA-B-A-EMU2','Connector_RJ:RJ45_Abracon_ARJP11A-MA_Horizontal',11,20,22.59,19.5,maps.J_ETH),
     fp('U_POE','Ag9905LP','Converter_DCDC:Converter_DCDC_Silvertel_Ag99xxLP_THT',30,10,21,14,maps.U_POE),
     fp('Y_ETH','Q22FA2380184517','Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm',18,5,3.2,2.5,maps.Y_ETH),
     fp('U_SENSOR','BME280','Package_LGA:Bosch_LGA-8_2.5x2.5mm_P0.65mm_ClockwisePinNumbering',39,10,2.5,2.5,maps.U_SENSOR),
@@ -626,7 +626,7 @@ export function poeEthernetSensorCategoryPcbEvidence() {
 
 function poeSensorPinMaps(){return{
  U_ETH:{1:'ETH_TXN',2:'ETH_TXP',3:'SELV_GND',4:'3V3',5:'ETH_RXN',6:'ETH_RXP',8:'3V3',9:'SELV_GND',10:'W5500_EXRES',11:'3V3',14:'SELV_GND',15:'3V3',16:'SELV_GND',17:'3V3',18:'W5500_VBG_FLOAT',19:'SELV_GND',20:'W5500_TOCAP',21:'3V3',22:'W5500_1V2',28:'3V3',29:'SELV_GND',30:'XTAL_IN',31:'XTAL_OUT',32:'ETH_CS_N',33:'SPI_SCLK',34:'SPI_MISO',35:'SPI_MOSI',36:'ETH_INT_N',37:'ETH_RESET_N',48:'SELV_GND'},
- J_ETH:{1:'ETH_TXP',2:'ETH_TX_CT',3:'ETH_TXN',4:'ETH_RXP',5:'ETH_RX_CT',6:'ETH_RXN',8:'CHASSIS',SH:'CHASSIS'},
+ J_ETH:{1:'ETH_TXP',2:'ETH_TXN',3:'ETH_RXP',4:'ETH_TX_CT',5:'ETH_RX_CT',6:'ETH_RXN',7:'POE_AUX',9:'POE_RECT_POS',10:'POE_RECT_NEG',11:'LED_YELLOW_A',12:'LED_YELLOW_K',13:'LED_GREEN_A',14:'LED_GREEN_K',SH:'CHASSIS'},
  U_POE:{1:'POE_5V',2:'POE_5V',3:'SELV_GND',5:'POE_RECT_POS',6:'POE_RECT_POS',7:'POE_RECT_NEG',8:'POE_RECT_NEG'},
  Y_ETH:{1:'XTAL_IN',2:'SELV_GND',3:'XTAL_OUT',4:'SELV_GND'},
  // Bosch BST-BME280-DS001 Table 35: CSB=2, SDI/SDA=3, SCK/SCL=4,

@@ -47,9 +47,9 @@ export function catalogDefinition(board,index=0) {
   }
 }
 
-function poeSensorBase(){return{id:'poe-sensor',name:'Exact PoE Ethernet sensor projection',widthMm:42,heightMm:20,layers:4,bom:[
+function poeSensorBase(){return{id:'poe-sensor',name:'Exact PoE Ethernet sensor projection',widthMm:70,heightMm:45,layers:4,bom:[
   {ref:'U_ETH',value:'W5500',mpn:'W5500',role:'ethernet MAC PHY controller'},
-  {ref:'J_ETH',value:'7499010121A',mpn:'7499010121A',role:'non-PoE 100BASE-TX data MagJack magnetics connector'},
+  {ref:'J_ETH',value:'ARJP11A-MASA-B-A-EMU2',mpn:'ARJP11A-MASA-B-A-EMU2',role:'PoE-capable 10/100 802.3af MagJack magnetics connector'},
   {ref:'U_POE',value:'Ag9905LP',mpn:'Ag9905LP',role:'PoE PD isolated converter'},
   {ref:'Y_ETH',value:'25MHz',mpn:'Q22FA2380184517',role:'25 MHz ethernet reference clock crystal'},
   {ref:'U_SENSOR',value:'BME280',mpn:'BME280',role:'environmental temperature humidity sensor'},

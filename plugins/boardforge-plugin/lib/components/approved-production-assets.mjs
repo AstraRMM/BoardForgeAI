@@ -274,6 +274,37 @@ export const approvedProductionAssets = Object.freeze({
         "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf",
     },
   ),
+  // The ARJP11A is the actual PoE-capable MagJack selected for the autonomous
+  // Board009 training design.  Do not substitute the superficially similar
+  // data-only Wurth connector below: its pinout and PoE capability differ.
+  "ARJP11A-MASA-B-A-EMU2": entry(
+    "ARJP11A-MASA-B-A-EMU2",
+    "Connector:RJ45_Abracon_ARJP11A-MASA-B-A-EMU2",
+    "Connector_RJ:RJ45_Abracon_ARJP11A-MA_Horizontal",
+    {
+      1: "ETH_TXP",
+      2: "ETH_TXN",
+      3: "ETH_RXP",
+      4: "ETH_TX_CT",
+      5: "ETH_RX_CT",
+      6: "ETH_RXN",
+      7: "POE_AUX",
+      9: "POE_RECT_POS",
+      10: "POE_RECT_NEG",
+      11: "LED_YELLOW_A",
+      12: "LED_YELLOW_K",
+      13: "LED_GREEN_A",
+      14: "LED_GREEN_K",
+      SH: "CHASSIS",
+    },
+    "RJ45 PoE 10/100 1x1 THT",
+    {
+      sourceEvidence: "https://abracon.com/Magnetics/lan/ARJP11A.pdf",
+      applicationLimitations: [
+        "Use only with the Board009 source-backed PoE pin-map and isolation topology; physical presence of this MagJack is not PoE compliance evidence.",
+      ],
+    },
+  ),
   "7499010121A": entry(
     "7499010121A",
     "Connector:RJ45_Wuerth_7499010121A",
