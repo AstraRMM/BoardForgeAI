@@ -4,6 +4,20 @@ import path from 'node:path'
 
 export const RUNNER_SCHEMA='boardforge.phase2c.autonomous-runner.v1'
 
+/** Read-only resume audit for operators: accepted out-of-order indices are
+ * advanced in memory only, so a preview can never rewrite a checkpoint. */
+export async function previewAutonomousResume({manifest,checkpointPath}) {
+  if (!manifest?.boards?.length) throw new Error('A non-empty challenge manifest is required')
+  const state=await loadCheckpoint(checkpointPath)
+  assertManifest(state,manifest)
+  const skippedAcceptedIndices=[],accepted=new Set(state.accepted.map(row=>row.index))
+  let nextBoardIndex=state.nextBoardIndex
+  while(nextBoardIndex<manifest.boards.length&&accepted.has(nextBoardIndex)){
+    skippedAcceptedIndices.push(nextBoardIndex++)
+  }
+  return {schema:'boardforge.phase2c.autonomous-resume-preview.v1',status:nextBoardIndex<manifest.boards.length?'RESUME_DRY_RUN_READY':'RESUME_DRY_RUN_COMPLETE',acceptedCount:state.accepted.length,checkpointNextBoardIndex:state.nextBoardIndex,nextBoardIndex,skippedAcceptedIndices,nextBoard:manifest.boards[nextBoardIndex]||null}
+}
+
 export async function runAutonomousChallenge(options) {
   const {manifest,checkpointPath,executePilot,executeBoard,batchSize=5,maxRetries=2,watchdogMs=90_000,executionContext={}}=options
   if (!manifest?.boards?.length) throw new Error('A non-empty challenge manifest is required')
@@ -39,7 +53,9 @@ export async function runAutonomousChallenge(options) {
     // blocked. Preserve that durable acceptance and skip it when the
     // sequential runner eventually reaches the same manifest index.
     if(state.accepted.some(row=>row.index===index)){
-      state.nextBoardIndex++;state.engineImprovementRequired=false;state.lastFailure=null;processed++
+      // Skips are bookkeeping, not generated work. Do not spend the execution
+      // batch on Boards006–008 when resuming Board005's successor.
+      state.nextBoardIndex++;state.engineImprovementRequired=false;state.lastFailure=null
       await saveCheckpoint(checkpointPath,state);continue
     }
     const prior=state.retries[String(index)]||0

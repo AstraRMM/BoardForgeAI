@@ -1,10 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
-import { authenticAccepted, loadCheckpoint, runAutonomousChallenge } from '../lib/phase2c/autonomous-challenge-runner.mjs'
+import { authenticAccepted, loadCheckpoint, previewAutonomousResume, runAutonomousChallenge } from '../lib/phase2c/autonomous-challenge-runner.mjs'
 
 const manifest={boards:[{id:'pilot'},{id:'second'},{id:'third'}]}
 const accepted=async()=>{const root=await mkdtemp(path.join(os.tmpdir(),'bf-authentic-output-')),artifacts=[];for(let i=0;i<5;i++){const file=path.join(root,`f${i}`),data=Buffer.from(`authentic-${i}`);await writeFile(file,data);artifacts.push({path:file,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')})}return {acceptance:{accepted:true,status:'BOARD_ACCEPTED',evidenceDigest:'a'.repeat(64)},manufacturingEvidence:{status:'MANUFACTURING_ACCEPTED',sourceProtection:{unchanged:true},artifacts}}}
@@ -48,6 +48,17 @@ test('resume skips an independently accepted later board without duplicating or 
   const state=await loadCheckpoint(file);state.accepted.push({index:2,boardId:'third',evidenceDigest:'b'.repeat(64),acceptedAt:new Date().toISOString()});await writeFile(file,JSON.stringify(state))
   const second=await runAutonomousChallenge({manifest,checkpointPath:file,resume:true,batchSize:2,executePilot:async()=>{throw Error('pilot replayed')},executeBoard:async board=>{seen.push(board.id);return accepted()}})
   assert.equal(second.status,'CHALLENGE_COMPLETE');assert.deepEqual(seen,['second']);assert.equal(second.state.accepted.filter(row=>row.index===2).length,1)
+})
+test('resume dry-run skips accepted Boards006–008 and one execution batch reaches Board009',async()=>{
+  const file=await checkpoint(),boards=Array.from({length:10},(_,index)=>({id:`board-${index}`})),resumeManifest={boards}
+  const digest=createHash('sha256').update(JSON.stringify(resumeManifest)).digest('hex')
+  const acceptedRows=[0,5,6,7].map(index=>({index,boardId:boards[index].id,evidenceDigest:'a'.repeat(64),acceptedAt:'2026-07-18T00:00:00Z'}))
+  await writeFile(file,JSON.stringify({schema:'boardforge.phase2c.autonomous-runner.v1',manifestDigest:digest,phase:'board_batches',nextBoardIndex:5,pilot:{accepted:true},accepted:acceptedRows,retries:{},engineImprovementRequired:false,lastFailure:null}))
+  const before=await readFile(file,'utf8'),preview=await previewAutonomousResume({manifest:resumeManifest,checkpointPath:file})
+  assert.equal(await readFile(file,'utf8'),before,'dry-run must not rewrite checkpoint')
+  assert.deepEqual(preview.skippedAcceptedIndices,[5,6,7]);assert.equal(preview.nextBoardIndex,8);assert.equal(preview.nextBoard.id,'board-8');assert.equal(preview.acceptedCount,4)
+  const seen=[];const result=await runAutonomousChallenge({manifest:resumeManifest,checkpointPath:file,resume:true,batchSize:1,executePilot:async()=>{throw Error('pilot replayed')},executeBoard:async board=>{seen.push(board.id);return accepted()}})
+  assert.deepEqual(seen,['board-8']);assert.equal(result.state.nextBoardIndex,9);assert.equal(result.state.accepted.filter(row=>[5,6,7].includes(row.index)).length,3)
 })
 test('manifest digest changes require an explicit runner-recorded migration',async()=>{
   const file=await checkpoint(),old={boards:[{id:'pilot'},{id:'second'}]},next={boards:[{id:'pilot'},{id:'second',replacement:'fixed-source'}]}
