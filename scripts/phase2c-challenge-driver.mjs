@@ -13,6 +13,7 @@ import { industrialIoTemplate, validateIndustrialIoTemplate } from '../plugins/b
 import { generateIndustrialIoProductionBoard } from '../plugins/boardforge-plugin/lib/phase2c/industrial-io-production-engine.mjs'
 import { generateCatalogProductionBoard } from '../plugins/boardforge-plugin/lib/phase2c/catalog-production-engine.mjs'
 import { analyzeRequirements } from '../plugins/boardforge-plugin/lib/phase2c/requirements-intelligence.mjs'
+import { createTrainingDesignIntent } from '../plugins/boardforge-plugin/lib/phase2c/training-design-intent.mjs'
 
 const execFile=promisify(execFileCallback)
 const defaultRoot=process.env.BOARDFORGE_50_BOARD_ROOT||String.raw`C:\Users\luifi\Downloads\BoardForge_50_Board_Challenge`
@@ -25,39 +26,41 @@ export function createPhase2cChallengeDriver({root=defaultRoot,generateStm32=gen
     async executeBoard(board,context={}) {
       // Index zero is owned exclusively by executePilot and must never be replayed.
       if(context.index===0 || board?.slug==='esp32-sensor-hub') return rejected('PILOT_INDEX_REPLAY_FORBIDDEN',board)
+      const designIntent=context.trainingMode===true?createTrainingDesignIntent({board}):null
+      const complete=result=>designIntent?{...result,designIntent}:result
       if(context.index===1 && board?.slug==='stm32-controller') {
         const contract=validateStm32ControllerTemplate(stm32ControllerTemplate)
-        if(!contract.ok) return rejected('STM32_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
+        if(!contract.ok) return complete(rejected('STM32_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors}))
         const acceptedProject=path.join(root,board.id||stm32ControllerTemplate.id,board.slug)
-        try { return strictResult(await loadAcceptedEvidence(acceptedProject),board) }
+        try { return complete(strictResult(await loadAcceptedEvidence(acceptedProject),board)) }
         catch(error) { if(error?.code!=='ENOENT') throw error }
         const result=await generateStm32({root,board,template:stm32ControllerTemplate,context})
-        return strictResult(result,board)
+        return complete(strictResult(result,board))
       }
       if(context.index===2 && board?.slug==='rp2040-instrument') {
         const contract=validateRp2040InstrumentTemplate(rp2040InstrumentTemplate)
-        if(!contract.ok) return rejected('RP2040_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
+        if(!contract.ok) return complete(rejected('RP2040_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors}))
         const result=await generateRp2040({root,board,template:rp2040InstrumentTemplate,context})
-        return strictResult(result,board)
+        return complete(strictResult(result,board))
       }
       if(context.index===3 && board?.slug==='usb-c-pd-sink') {
         const contract=validateUsbCPdSinkTemplate(usbCPdSinkTemplate)
-        if(!contract.ok) return rejected('USB_C_PD_SINK_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
+        if(!contract.ok) return complete(rejected('USB_C_PD_SINK_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors}))
         const result=await generateUsbCPdSink({root,board,template:usbCPdSinkTemplate,context})
-        return strictResult(result,board)
+        return complete(strictResult(result,board))
       }
       if(context.index===4 && board?.slug==='usb-c-pd-source') {
         const contract=validateUsbCPdSourceTemplate(usbCPdSourceTemplate)
-        if(!contract.ok) return rejected('USB_C_PD_SOURCE_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
-        return strictPdSourceResult(await generateUsbCPdSource({root,board,template:usbCPdSourceTemplate,context}),board,context.requirementsAnswers)
+        if(!contract.ok) return complete(rejected('USB_C_PD_SOURCE_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors}))
+        return complete(strictPdSourceResult(await generateUsbCPdSource({root,board,template:usbCPdSourceTemplate,context}),board,context.requirementsAnswers))
       }
       if(context.index===5 && board?.slug==='industrial-io') {
         const contract=validateIndustrialIoTemplate(industrialIoTemplate)
-        if(!contract.ok)return rejected('INDUSTRIAL_IO_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors})
-        return strictResult(await generateIndustrialIo({root,board,template:industrialIoTemplate,context}),board)
+        if(!contract.ok)return complete(rejected('INDUSTRIAL_IO_PRODUCTION_TEMPLATE_INVALID',board,{errors:contract.errors}))
+        return complete(strictResult(await generateIndustrialIo({root,board,template:industrialIoTemplate,context}),board))
       }
-      if(context.index>=6 && Number.parseInt(board?.id,10)>=7) return strictResult(await generateCatalog({root,board,context}),board)
-      return rejected('BOARD_CLASS_ENGINE_NOT_IMPLEMENTED',board,{architectureClass:board?.architectureClass})
+      if(context.index>=6 && Number.parseInt(board?.id,10)>=7) return complete(strictResult(await generateCatalog({root,board,context:{...context,trainingIntent:designIntent}}),board))
+      return complete(rejected('BOARD_CLASS_ENGINE_NOT_IMPLEMENTED',board,{architectureClass:board?.architectureClass}))
     },
   }
 }

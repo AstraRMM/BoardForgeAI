@@ -5,7 +5,7 @@ import path from 'node:path'
 export const RUNNER_SCHEMA='boardforge.phase2c.autonomous-runner.v1'
 
 export async function runAutonomousChallenge(options) {
-  const {manifest,checkpointPath,executePilot,executeBoard,batchSize=5,maxRetries=2,watchdogMs=90_000}=options
+  const {manifest,checkpointPath,executePilot,executeBoard,batchSize=5,maxRetries=2,watchdogMs=90_000,executionContext={}}=options
   if (!manifest?.boards?.length) throw new Error('A non-empty challenge manifest is required')
   let state=options.resume ? await loadCheckpoint(checkpointPath) : freshState(manifest,options.driverModule)
   assertManifest(state,manifest)
@@ -43,7 +43,7 @@ export async function runAutonomousChallenge(options) {
     }
     const prior=state.retries[String(index)]||0
     let result
-    try { result=await watched(()=>executeBoard(board,{...state,index}),watchdogMs) }
+    try { result=await watched(()=>executeBoard(board,{...state,...executionContext,index}),watchdogMs) }
     catch(error) { result={acceptance:{accepted:false},failure:{code:error.code||'WATCHDOG_OR_EXECUTION_FAILURE',message:error.message}} }
     if (!await verifyAuthenticAccepted(result)) {
       state.retries[String(index)]=prior+1

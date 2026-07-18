@@ -32,7 +32,7 @@ if(full.status!=='READY_TO_GENERATE'){
 } else {
   const checkpointPath=path.join(outputRoot,'BoardForge_Phase2C_Autonomous_Checkpoint.json')
   const resume=process.argv.includes('--resume') || process.argv.includes('--resume-from') || existsSync(checkpointPath)
-  const outcome=await runAutonomousChallenge({manifest,checkpointPath,executePilot,executeBoard,resume,batchSize:50,maxRetries:2,watchdogMs:180_000,driverModule:'./scripts/phase2c-challenge-driver.mjs'})
+  const outcome=await runAutonomousChallenge({manifest,checkpointPath,executePilot,executeBoard,resume,batchSize:50,maxRetries:2,watchdogMs:180_000,driverModule:'./scripts/phase2c-challenge-driver.mjs',executionContext:{trainingMode:true}})
   console.log(JSON.stringify({status:outcome.status,acceptedBoards:outcome.state.accepted.length,nextBoardIndex:outcome.state.nextBoardIndex,lastFailure:outcome.state.lastFailure,resumeCommand:outcome.resumeCommand,outputRoot},null,2))
   if(outcome.status!=='CHALLENGE_COMPLETE')process.exitCode=2
 }
