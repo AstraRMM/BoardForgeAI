@@ -1,18 +1,33 @@
 import Link from 'next/link'
+import { ArrowRight, CheckCircle2, ClipboardList, FilePlus2, FolderOpen, MoreHorizontal, PlugZap, Upload } from 'lucide-react'
 import { getAuthEnvironment } from '../../lib/auth'
+import { AppShell, StatusIcon } from '../../components/workspace/AppShell'
+import styles from './dashboard.module.css'
 
-const workspaceCards = [
-  ['Projects', 'Local projects appear after you pair the desktop engine.', 'Open projects', '/projects'],
-  ['New board', 'Capture a board brief or create an Edge.Cuts outline.', 'Start a board', '/new-board'],
-  ['Plugin pairing', 'Pair Codex and the local engine with a short-lived code.', 'Connect plugin', '/plugin/connect'],
-  ['Evidence', 'Review local checks, reports, sourcing state, and export gates.', 'View evidence', '/evidence'],
+const quickActions = [
+  { title: 'AI Board Generator', body: 'Turn requirements into a reviewable board brief.', href: '/new-board', icon: <FilePlus2 />, tone: 'blue' },
+  { title: 'Schematic Editor', body: 'Inspect and edit verified schematic candidates.', href: '/schematic-workspace', icon: <ClipboardList />, tone: 'violet' },
+  { title: 'PCB Editor', body: 'Open a local candidate for browser-based review.', href: '/pcb-workspace', icon: <PlugZap />, tone: 'green' },
+  { title: 'Import KiCad', body: 'Copy an existing project into a protected sandbox.', href: '/upload-kicad', icon: <FolderOpen />, tone: 'slate' },
 ]
 
 export default function DashboardPage() {
   const auth = getAuthEnvironment()
-  return <main className="min-h-screen bg-[#050a12] text-slate-100"><header className="border-b border-slate-800 bg-[#070e18]"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5"><div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">BoardForge workspace</p><h1 className="mt-1 text-2xl font-semibold">Engineering command center</h1></div><Link href="/settings/plugin" className="rounded-md border border-cyan-400/40 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10">Plugin settings</Link></div></header><div className="mx-auto max-w-7xl px-6 py-10">
-    {!auth.ready && <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-5"><div><p className="font-semibold text-amber-100">Account services need configuration before this workspace can be used by testers.</p><p className="mt-1 text-sm text-amber-100/80">Missing: {auth.missing.join(', ')}. The local engine remains local; this page does not expose project files.</p></div><Link href="/setup" className="rounded-md bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950">Complete setup</Link></section>}
-    <section className="grid gap-6 lg:grid-cols-[1.35fr_.65fr]"><div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-900 to-[#08101c] p-7"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">Safe starting point</p><h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-tight">Create a board brief before anything touches KiCad.</h2><p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">BoardForge turns requirements into a reviewable local plan. Project creation, validation, repair, and export stay behind explicit approvals and local evidence.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/new-board" className="rounded-md bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950">New board</Link><Link href="/upload-kicad" className="rounded-md border border-slate-700 px-4 py-2.5 font-semibold text-slate-200 hover:border-cyan-400">Inspect existing KiCad project</Link></div></div><aside className="rounded-xl border border-slate-800 bg-slate-900/70 p-6"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Session status</p><dl className="mt-5 grid gap-4 text-sm"><div><dt className="text-slate-500">Website authentication</dt><dd className={auth.ready ? 'mt-1 font-semibold text-emerald-300' : 'mt-1 font-semibold text-amber-200'}>{auth.ready ? 'Configured' : 'Setup required'}</dd></div><div><dt className="text-slate-500">Local engine</dt><dd className="mt-1 font-semibold text-slate-200">Pair a desktop helper to inspect status</dd></div><div><dt className="text-slate-500">Manufacturing exports</dt><dd className="mt-1 font-semibold text-slate-200">Released only after local evidence passes</dd></div></dl></aside></section>
-    <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{workspaceCards.map(([title, body, action, href]) => <article key={title} className="flex min-h-56 flex-col rounded-lg border border-slate-800 bg-slate-900/50 p-5"><h3 className="text-lg font-semibold">{title}</h3><p className="mt-3 flex-1 text-sm leading-6 text-slate-400">{body}</p><Link href={href} className="mt-5 text-sm font-semibold text-cyan-300">{action} →</Link></article>)}</section>
-  </div></main>
+  return <AppShell active="Dashboard"><div className={styles.layout}>
+    <section className={styles.primary}>
+      <header className={styles.welcome}><p>ENGINEERING WORKSPACE</p><h1>Good evening, Luifi.</h1><span>Start a board brief, inspect an existing project, or continue a verified candidate.</span></header>
+      {!auth.ready && <section className={styles.setupNotice}><strong>Account services need setup.</strong><span>{auth.missing.join(', ')} is missing, so protected workspace actions are unavailable.</span><Link href="/setup">Complete setup <ArrowRight /></Link></section>}
+      <section className={styles.quickGrid}>{quickActions.map((action) => <Link href={action.href} key={action.title} className={styles.quickCard}><span className={styles[action.tone]}>{action.icon}</span><h2>{action.title}</h2><p>{action.body}</p><i>Open <ArrowRight /></i></Link>)}</section>
+      <section className={styles.panel}><header><div><h2>Recent projects</h2><p>Projects stay local until the desktop engine has been paired.</p></div><Link href="/projects">View all <ArrowRight /></Link></header><div className={styles.emptyProjects}><span><Upload /></span><div><h3>Connect a local project to begin</h3><p>Import a KiCad project or create a new board brief. BoardForge keeps the source workspace untouched and works through reviewable candidates.</p></div><div className={styles.emptyActions}><Link href="/upload-kicad">Import KiCad</Link><Link href="/new-board">New board</Link></div></div></section>
+      <section className={styles.toolPanel}><h2>Design tools</h2><div>{[['DRC check','Run local design-rule validation','/reports'],['ERC check','Review schematic electrical rules','/evidence'],['3D viewer','Inspect the accepted board candidate','/pcb-workspace'],['Gerber package','Review manufacturing exports','/downloads']].map(([title,body,href]) => <Link href={href} key={title}><CheckCircle2 /><span><b>{title}</b><small>{body}</small></span></Link>)}</div></section>
+    </section>
+    <aside className={styles.rightRail}>
+      <section className={styles.metrics}><Metric value="Local" label="Projects"/><Metric value="—" label="Boards"/><Metric value="Ready" label="Auth" good/><Metric value="0" label="Candidates"/></section>
+      <section className={styles.railPanel}><header><h2>Running jobs</h2><Link href="/reports">View all</Link></header><div className={styles.blank}><StatusIcon kind="candidate"/><p>No jobs are running</p><span>Start a board brief to create the first candidate.</span><Link href="/new-board">Create board <ArrowRight /></Link></div></section>
+      <section className={styles.railPanel}><header><h2>System status</h2><span className={styles.healthy}>Live status</span></header><StatusRow icon="engine" title="BoardForge Engine" detail="Pair a local desktop engine" href="/plugin/connect"/><StatusRow icon="validation" title="Rust Geometry Engine" detail="Browser runtime available" href="/custom-board-generator"/><StatusRow icon="package" title="Manufacturing pipeline" detail="Awaiting accepted board" href="/downloads"/><StatusRow icon="validation" title="Account services" detail={auth.ready ? 'Authenticated workspace ready' : 'Configuration required'} href="/settings"/></section>
+    </aside>
+  </div></AppShell>
 }
+
+function Metric({ value, label, good }: { value: string; label: string; good?: boolean }) { return <div><strong className={good ? styles.good : undefined}>{value}</strong><span>{label}</span></div> }
+function StatusRow({ icon, title, detail, href }: { icon: 'engine' | 'candidate' | 'validation' | 'package'; title: string; detail: string; href: string }) { return <Link href={href} className={styles.statusRow}><StatusIcon kind={icon}/><span><b>{title}</b><small>{detail}</small></span><MoreHorizontal /></Link> }
