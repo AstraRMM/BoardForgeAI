@@ -22,7 +22,7 @@ export function DashboardLocalContent({ authReady }: { authReady: boolean }) {
       <Metric icon={<FolderKanban size={19} />} label="Projects tracked" value={summary ? String(summary.totalProjects) : '—'} note={summary ? 'from local artifacts' : 'local engine required'} />
       <Metric icon={<CheckCircle2 size={19} />} label="Clean ERC / DRC" value={summary ? String(summary.cleanDrcErc) : '—'} note="zero reported errors" tone="success" />
       <Metric icon={<FileCheck2 size={19} />} label="Packages validated" value={summary ? String(summary.manufacturingReady) : '—'} note="manufacturing evidence" tone="copper" />
-      <Metric icon={<RadioTower size={19} />} label="Local engine" value={state === 'ready' || state === 'empty' ? 'Connected' : 'Offline'} note="for live KiCad actions" />
+      <Metric icon={<RadioTower size={19} />} label="Project registry" value={state === 'ready' ? 'Available' : state === 'empty' ? 'Empty' : state === 'loading' ? 'Checking' : 'Unavailable'} note="browser drafts or paired local artifacts" />
     </section>
     <section className="bf-workspace-grid">
       <article className="bf-workspace-panel bf-workspace-projects"><div className="bf-panel-title"><div><p>Active projects</p><h2>Evidence-backed project state</h2></div><Link href="/projects">View all <ArrowUpRight size={15} /></Link></div><div className="bf-workspace-project-list">

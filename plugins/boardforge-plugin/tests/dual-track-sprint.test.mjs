@@ -25,8 +25,8 @@ test('web dashboard pages consume BoardForge manifest data instead of fake cloud
   for (const page of pages) assert.equal(fs.existsSync(path.join(repoRoot, page)), true, `${page} should exist`)
   const dashboard = fs.readFileSync(path.join(repoRoot, 'apps/web/src/app/dashboard/page.tsx'), 'utf8')
   const newBoard = fs.readFileSync(path.join(repoRoot, 'apps/web/src/app/new-board/page.tsx'), 'utf8')
-  assert.match(dashboard, /DashboardRecentProjects/)
-  assert.match(dashboard, /Saved browser projects remain visible/)
+  assert.match(dashboard, /DashboardLocalContent/)
+  assert.match(dashboard, /Engineering work, grounded in recorded evidence/)
   assert.match(newBoard, /NewBoardIntakeWorkspace/)
 })
 
