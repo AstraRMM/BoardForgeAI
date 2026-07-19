@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in TypeScript runner needs the source extension; Next's bundler does not load this test module.
 // @ts-expect-error -- TypeScript source import is supported by node --experimental-strip-types.
-import { createBrowserProject, readBrowserProjects, removeBrowserProject, saveBrowserProject } from './browser-project-registry.ts'
+import { createBrowserProject, readBrowserProjectLibraryMetadata, readBrowserProjects, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
 
 const registryKey = 'boardforge.browser-projects.v1'
 
@@ -58,4 +58,13 @@ test('browser registry ignores corrupt local storage rather than inventing proje
 
   assert.deepEqual(data.projects, [])
   assert.deepEqual(data.summary, { totalProjects: 0, manufacturingReady: 0, blocked: 0, review: 0, needsRouting: 0, cleanDrcErc: 0 })
+}))
+
+test('favorites and archive state are browser-only library metadata', () => inBrowser(() => {
+  const project = createBrowserProject({ projectId: 'browser-organize', projectName: 'Organize me', prompt: 'A browser draft.' })
+  saveBrowserProject(project)
+  saveBrowserProjectLibraryMetadata(project.projectId, { favorite: true, archived: true })
+  assert.deepEqual(readBrowserProjectLibraryMetadata()[project.projectId] && { favorite: true, archived: true }, { favorite: true, archived: true })
+  removeBrowserProject(project.projectId)
+  assert.equal(readBrowserProjectLibraryMetadata()[project.projectId], undefined)
 }))
