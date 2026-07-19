@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-import { ArrowRight, Upload } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { callBoardForgeLocalEngine, checkBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
 import type { BoardForgeDashboardCard, BoardForgeDashboardData } from '../../lib/boardforge-manifest'
@@ -93,15 +91,4 @@ export function mergeProjectDashboards(helper: BoardForgeDashboardData, browser:
       cleanDrcErc: projects.filter((project) => project.validation.drcViolations === 0 && project.validation.ercViolations === 0).length,
     },
   }
-}
-
-export function DashboardRecentProjects({ rowsClassName, rowClassName, emptyClassName, actionsClassName }: { rowsClassName: string; rowClassName: string; emptyClassName: string; actionsClassName: string }) {
-  const { state, data } = useLocalProjectDashboard()
-  const projects = data?.projects || []
-
-  if (projects.length) {
-    return <div className={rowsClassName}>{projects.slice(0, 4).map((project) => <Link href={`/projects/${encodeURIComponent(project.projectId)}`} key={project.projectId} className={rowClassName}><span><strong>{project.projectName}</strong><small>DRC {project.validation.drcViolations ?? 'not run'} · ERC {project.validation.ercViolations ?? 'not run'} · {project.routingCompletionPercent}% routed</small></span><b>{project.manufacturing.ready ? 'Release evidence' : 'Review required'} <ArrowRight /></b></Link>)}</div>
-  }
-
-  return <div className={emptyClassName}><span><Upload /></span><div><h3>{state === 'loading' ? 'Loading saved projects' : 'No browser projects yet'}</h3><p>{state === 'loading' ? 'Reading the authenticated browser project registry.' : 'Create a board brief or import KiCad. Projects saved by this browser appear here even when the desktop helper is offline.'}</p></div><div className={actionsClassName}><Link href="/upload-kicad">Import KiCad</Link><Link href="/new-board">New board</Link></div></div>
 }
