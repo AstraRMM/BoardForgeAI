@@ -799,11 +799,11 @@ export function OutlineEditor() {
       </div>
       <div className="bf-outline-generator-shell">
         <aside className="bf-outline-tool-rail" aria-label="Outline tools">
-          <button title="Select and edit points, holes, and edges." type="button" className={mode === 'select' ? 'active' : ''} onClick={() => setMode('select')}><MousePointer2 size={16} /> Select</button>
-          <button title="Insert one point without changing the view." type="button" className={mode === 'add-point' ? 'active' : ''} onClick={() => setMode('add-point')}><Plus size={16} /> Add point</button>
-          <button title="Draw a freehand outline. Release to preview and simplify." type="button" className={mode === 'draw' ? 'active' : ''} onClick={() => setMode('draw')}><Pencil size={16} /> Draw</button>
-          <button title="Move the view without changing geometry." type="button" className={mode === 'pan' ? 'active' : ''} onClick={() => setMode('pan')}><Hand size={16} /> Pan</button>
-          <button title="Snap edits to the board grid." type="button" className={snap ? 'active' : ''} onClick={() => setSnap(!snap)}><Grid2X2 size={16} /> Snap</button>
+          <button title="Select and edit points, holes, and edges." type="button" aria-pressed={mode === 'select'} className={mode === 'select' ? 'active' : ''} onClick={() => setMode('select')}><MousePointer2 size={16} /> Select</button>
+          <button title="Insert one point without changing the view." type="button" aria-pressed={mode === 'add-point'} className={mode === 'add-point' ? 'active' : ''} onClick={() => setMode('add-point')}><Plus size={16} /> Add point</button>
+          <button title="Draw a freehand outline. Release to preview and simplify." type="button" aria-pressed={mode === 'draw'} className={mode === 'draw' ? 'active' : ''} onClick={() => setMode('draw')}><Pencil size={16} /> Draw</button>
+          <button title="Move the view without changing geometry." type="button" aria-pressed={mode === 'pan'} className={mode === 'pan' ? 'active' : ''} onClick={() => setMode('pan')}><Hand size={16} /> Pan</button>
+          <button title="Snap edits to the board grid." type="button" aria-pressed={snap} className={snap ? 'active' : ''} onClick={() => setSnap(!snap)}><Grid2X2 size={16} /> Snap</button>
           <button title="Close the entire outline." type="button" onClick={fillWholeBoard}><Wand2 size={16} /> Fill Whole Board</button>
           <button title="Close only a selected section." type="button" onClick={() => fillSection()}><Wand2 size={16} /> Fill Section</button>
           <button type="button" onClick={addHole}><ShieldCheck size={16} /> Add hole</button>

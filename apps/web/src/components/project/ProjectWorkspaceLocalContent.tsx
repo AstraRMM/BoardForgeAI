@@ -119,7 +119,7 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
         <div className="bf-panel-title"><div><p>Browser project controls</p><h2>Organize this local draft</h2></div><FileText size={20} /></div>
         <p className="bf-project-workspace-note">These controls change only the project record saved in this browser. They never rename, edit, or delete KiCad files.</p>
         <label className="bf-browser-project-name"><span>Project name</span><input value={draftName} onChange={(event) => setDraftName(event.target.value)} maxLength={120} /></label>
-        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
+        <div className="bf-browser-project-actions"><Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>Plan browser schematic</Link><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
         {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
       </section>}
     </section>
@@ -141,7 +141,7 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
       {isBrowserDraft ? <section className="bf-workspace-panel bf-project-workspace-reports">
         <div className="bf-panel-title"><div><p>Browser activity</p><h2>Local project record history</h2></div><History size={20} /></div>
         <p className="bf-project-workspace-note">This history records only changes saved in this browser. It is not KiCad, validation, manufacturing, or helper activity.</p>
-        {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{event.action === 'created' ? 'Saved in this browser' : 'Browser project renamed'}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
+        {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{event.action === 'created' ? 'Saved in this browser' : event.action === 'renamed' ? 'Browser project renamed' : 'Browser schematic plan saved'}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
       </section> : <section className="bf-workspace-panel bf-project-workspace-reports"><div className="bf-panel-title"><div><p>Helper activity</p><h2>No project activity feed recorded</h2></div><History size={20} /></div><p className="bf-project-workspace-note">The paired helper currently exposes project evidence and artifact availability, not an auditable per-project activity timeline. This workspace does not infer one from file timestamps.</p></section>}
     </section>
   </>

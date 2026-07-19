@@ -1,3 +1,5 @@
+import type { BrowserPcbSnapshotV1 } from './pcb-editor/model'
+
 export type BoardForgeManifest = {
   schema: string
   projectId: string
@@ -99,7 +101,7 @@ export type BoardForgeDashboardCard = {
 
 export type BoardForgeBrowserDraft = {
   schema: 'boardforge.browser-draft.v1'
-  kind: 'board' | 'outline' | 'import'
+  kind: 'board' | 'outline' | 'import' | 'pcb'
   updatedAt: string
   summary: string
   outline?: {
@@ -122,6 +124,20 @@ export type BoardForgeBrowserDraft = {
       blockers: string[]
     }
   }
+  /** Exact browser sandbox model. It has never passed the KiCad candidate pipeline. */
+  pcb?: BrowserPcbSnapshotV1
+  /** Browser-only circuit planning data. It is never KiCad source or a netlist. */
+  schematicPlan?: BoardForgeBrowserSchematicPlan
+}
+
+export type BoardForgeBrowserSchematicPlan = {
+  schema: 'boardforge.browser-schematic-plan.v1'
+  version: 1
+  title: string
+  updatedAt: string
+  notes: string
+  components: Array<{ id: string; reference: string; value: string; notes: string }>
+  connections: Array<{ id: string; fromComponentId: string; toComponentId: string; netName: string }>
 }
 
 export type BoardForgeDashboardData = {

@@ -37,6 +37,26 @@ test('browser project records remain explicitly local-only and unvalidated', () 
   assert.equal(project.status, 'BROWSER_BOARD_DRAFT')
 }))
 
+test('browser PCB snapshots are retained as browser-only project data without validation claims', () => inBrowser(() => {
+  const snapshot = {
+    schema: 'boardforge.browser-pcb-snapshot/v1' as const,
+    savedAt: '2026-07-19T00:00:00.000Z',
+    sandboxSource: '(kicad_pcb (version 20240108))',
+    document: { schema: 'boardforge.pcb-view/v1' as const, documentId: 'pcb-draft', revision: 4, sourceSha256: 'snapshot-sha', units: 'mm' as const, title: 'Saved PCB', bounds: { min: { x: 0, y: 0 }, max: { x: 10, y: 10 } }, layers: [], footprints: [], tracks: [], vias: [], graphics: [], ratsnest: [], unconnectedCount: 0, violations: [], unsupportedCount: 0 },
+    transactions: [],
+  }
+  const project = createBrowserProject({ projectId: 'browser-pcb', projectName: 'Saved PCB', prompt: 'Browser PCB draft.', kind: 'browser_pcb', browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'pcb', updatedAt: snapshot.savedAt, summary: 'Browser PCB snapshot. KiCad validation not run.', pcb: snapshot } })
+  saveBrowserProject(project)
+  const saved = readBrowserProjects().projects[0]
+
+  assert.equal(saved.status, 'BROWSER_PCB_DRAFT')
+  assert.equal(saved.localOnly, true)
+  assert.equal(saved.validation.drcViolations, null)
+  assert.equal(saved.browserDraft?.kind, 'pcb')
+  assert.equal(saved.browserDraft?.pcb?.sandboxSource, snapshot.sandboxSource)
+  assert.equal(saved.browserDraft?.pcb?.document.sourceSha256, snapshot.document.sourceSha256)
+}))
+
 test('saving a browser record upserts it and removal only changes browser storage', () => inBrowser((storage) => {
   const first = createBrowserProject({ projectId: 'browser-rename', projectName: 'Original name', prompt: 'Original.' })
   const retained = createBrowserProject({ projectId: 'browser-retained', projectName: 'Retained draft', prompt: 'Retain.' })
@@ -80,4 +100,23 @@ test('browser activity records only actual browser project actions and is delete
   assert.deepEqual(readBrowserProjectActivity('not-a-browser-project'), [])
   removeBrowserProject(project.projectId)
   assert.deepEqual(readBrowserProjectActivity(project.projectId), [])
+}))
+
+test('browser schematic plans persist as browser-only intent without KiCad evidence', () => inBrowser(() => {
+  const project = createBrowserProject({ projectId: 'browser-schematic-plan', projectName: 'Planning draft', prompt: 'Plan a power path.' })
+  const schematicPlan = {
+    schema: 'boardforge.browser-schematic-plan.v1' as const,
+    version: 1 as const,
+    title: 'Power concept', updatedAt: '2026-07-19T00:00:00.000Z', notes: 'Review with KiCad candidate.',
+    components: [{ id: 'u1', reference: 'U1', value: 'Regulator', notes: '' }],
+    connections: [],
+  }
+  saveBrowserProject({ ...project, browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'board', updatedAt: schematicPlan.updatedAt, summary: 'Browser-only schematic planning.', schematicPlan } })
+  recordBrowserProjectActivity(project.projectId, 'schematic_plan_saved', '1 components, 0 planned nets')
+
+  const saved = readBrowserProjects().projects.find((entry) => entry.projectId === project.projectId)
+  assert.equal(saved?.browserDraft?.schematicPlan?.title, 'Power concept')
+  assert.equal(saved?.schematicPath, null)
+  assert.equal(saved?.validation.ercViolations, null)
+  assert.equal(readBrowserProjectActivity(project.projectId).some((event) => event.action === 'schematic_plan_saved'), true)
 }))

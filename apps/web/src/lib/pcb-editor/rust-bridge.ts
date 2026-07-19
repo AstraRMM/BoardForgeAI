@@ -1,7 +1,7 @@
-import {assertRustPcbView,RustPcbTransactionResultV1,RustPcbTransactionV1,RustPcbViewV1} from './model'
+import {assertRustPcbView,BrowserPcbSnapshotV1,RustPcbTransactionResultV1,RustPcbTransactionV1,RustPcbViewV1} from './model'
 
 export type RouteAngle='45'|'90'|'free'
-export interface RustPcbBridge {load():Promise<RustPcbViewV1>;apply(transaction:RustPcbTransactionV1):Promise<RustPcbTransactionResultV1>;planRoute?(start:{x:number;y:number},cursor:{x:number;y:number},angle:RouteAngle,layer:string,net:string,width:number):Promise<{x:number;y:number}[]>;undo?():Promise<RustPcbViewV1>;redo?():Promise<RustPcbViewV1>;downloadSandbox?():{filename:string;source:string};saveCandidate(document:RustPcbViewV1,transactions:RustPcbTransactionV1[]):Promise<{candidatePath:string;validationStatus:string}>}
+export interface RustPcbBridge {load():Promise<RustPcbViewV1>;apply(transaction:RustPcbTransactionV1):Promise<RustPcbTransactionResultV1>;planRoute?(start:{x:number;y:number},cursor:{x:number;y:number},angle:RouteAngle,layer:string,net:string,width:number):Promise<{x:number;y:number}[]>;undo?():Promise<RustPcbViewV1>;redo?():Promise<RustPcbViewV1>;downloadSandbox?():{filename:string;source:string};restoreBrowserSnapshot?(snapshot:BrowserPcbSnapshotV1):Promise<RustPcbViewV1>;saveCandidate(document:RustPcbViewV1,transactions:RustPcbTransactionV1[]):Promise<{candidatePath:string;validationStatus:string}>}
 
 /** HTTP transports Rust DTOs only. The local engine owns parsing, geometry and mutations. */
 export class LocalEnginePcbBridge implements RustPcbBridge {
@@ -23,6 +23,13 @@ export class WasmPcbBridge implements RustPcbBridge {
   const wasm=await import(/* webpackIgnore: true */'/wasm/boardforge_wasm.js') as unknown as WasmPcbModule
   await wasm.default('/wasm/boardforge_wasm_bg.wasm');return this.wasm=wasm}
  async load(){const [wasm,response]=await Promise.all([this.module(),fetch(this.fixture)]);if(!response.ok)throw new Error(`Unable to load PCB fixture (${response.status})`);this.source=await response.text();this.originalSource=this.source;this.operationLog=[];this.undoStack=[];this.redoStack=[];return this.document=await this.parseAndValidate(wasm,0)}
+ async restoreBrowserSnapshot(snapshot:BrowserPcbSnapshotV1){
+  if(snapshot.schema!=='boardforge.browser-pcb-snapshot/v1'||!snapshot.sandboxSource)throw new Error('Unsupported browser PCB snapshot')
+  const wasm=await this.module();this.source=snapshot.sandboxSource;this.originalSource=this.source;this.operationLog=[];this.undoStack=[];this.redoStack=[]
+  const restored=await this.parseAndValidate(wasm,snapshot.document.revision)
+  if(restored.sourceSha256!==snapshot.document.sourceSha256)throw new Error('Browser PCB snapshot no longer matches its saved model')
+  return this.document=restored
+ }
  private geometry(document:RustPcbViewV1){return{schema:1,outline:document.graphics.filter(g=>g.layer==='Edge.Cuts').flatMap(g=>g.points),segments:document.tracks.map(t=>({...t,net:t.net||null})),vias:document.vias.map(v=>({...v,net:v.net||null,layers:[...v.layers]})),pads:document.footprints.flatMap(f=>f.pads.map(p=>({id:p.id,at:{x:f.at.x+p.at.x,y:f.at.y+p.at.y},size:p.size,layer:p.layers[0]||f.layer,net:p.net||null}))),keepouts:[],rules:{clearance:.2,min_track_width:.2,edge_clearance:.25,via_clearance:.2,grid:.05}}}
  private async parseAndValidate(wasm:WasmPcbModule,revision:number){const parsed=assertRustPcbView(wasm.parse_pcb_document(this.source));const response=wasm.pcb_validate?.(this.geometry(parsed)) as {violations?:Array<{id:string;at:{x:number;y:number};severity:'error'|'warning';kind:string;message:string;object_ids:string[]}>}|undefined;return{...parsed,revision,violations:(response?.violations??[]).map(v=>({id:v.id,at:v.at,severity:v.severity,rule:v.kind,message:v.message,objectIds:v.object_ids}))}}
  private operations(tx:RustPcbTransactionV1){const board=this.document!;const op=tx.operation,items:Record<string,unknown>[]=[]

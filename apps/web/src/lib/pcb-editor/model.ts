@@ -23,6 +23,20 @@ export type PcbTransactionOperationV1 =
 export type RustPcbTransactionV1 = Readonly<{schema:'boardforge.pcb-transaction/v1';id:string;baseRevision:number;baseSourceSha256:string;operation:PcbTransactionOperationV1}>
 export type RustPcbTransactionResultV1 = Readonly<{schema:'boardforge.pcb-transaction-result/v1';transactionId:string;document:RustPcbViewV1;inverse:RustPcbTransactionV1;diff:unknown}>
 
+/**
+ * A browser-local PCB working copy. This is intentionally a snapshot of the
+ * browser sandbox, not a KiCad candidate, a validation record, or a release
+ * artifact. Keeping both the generated source and the parsed Rust view makes
+ * the saved model inspectable without trying to infer it from a project path.
+ */
+export type BrowserPcbSnapshotV1 = Readonly<{
+ schema:'boardforge.browser-pcb-snapshot/v1'
+ savedAt:string
+ sandboxSource:string
+ document:RustPcbViewV1
+ transactions:RustPcbTransactionV1[]
+}>
+
 export function assertRustPcbView(value:unknown):RustPcbViewV1 {
  if(!value||typeof value!=='object')throw new Error('Rust PCB view is not an object')
  const v=value as Partial<RustPcbViewV1>

@@ -20,7 +20,7 @@ export type BrowserProjectLibraryMetadata = Record<string, {
  */
 export type BrowserProjectActivity = {
   id: string
-  action: 'created' | 'renamed'
+  action: 'created' | 'renamed' | 'schematic_plan_saved'
   at: string
   detail?: string
 }
@@ -97,11 +97,11 @@ export function removeBrowserProject(projectId: string) {
     }
   } catch { /* The removed project has no readable browser activity to clean up. */ }
 }
-export function createBrowserProject({ projectId, projectName, prompt, kind = 'browser_board', browserDraft }: { projectId: string; projectName: string; prompt: string; kind?: 'browser_board' | 'browser_outline' | 'browser_import'; browserDraft?: BoardForgeBrowserDraft }): BoardForgeDashboardCard {
+export function createBrowserProject({ projectId, projectName, prompt, kind = 'browser_board', browserDraft }: { projectId: string; projectName: string; prompt: string; kind?: 'browser_board' | 'browser_outline' | 'browser_import' | 'browser_pcb'; browserDraft?: BoardForgeBrowserDraft }): BoardForgeDashboardCard {
   const isOutline = kind === 'browser_outline'
   return {
     schema: 'boardforge.project-dashboard-card.v1', projectId, projectName,
-    status: isOutline ? 'BROWSER_OUTLINE_DRAFT' : kind === 'browser_import' ? 'BROWSER_IMPORTED_DRAFT' : 'BROWSER_BOARD_DRAFT',
+    status: isOutline ? 'BROWSER_OUTLINE_DRAFT' : kind === 'browser_import' ? 'BROWSER_IMPORTED_DRAFT' : kind === 'browser_pcb' ? 'BROWSER_PCB_DRAFT' : 'BROWSER_BOARD_DRAFT',
     boardPath: null, schematicPath: null, readiness: 'review', routingCompletionPercent: 0,
     validation: { shorts: null, unconnected: null, forbiddenVias: null, drcViolations: null, ercViolations: null },
     manufacturing: { ready: false, zip: null, blockedReason: 'Browser project requires KiCad validation before release.' },
@@ -123,5 +123,5 @@ function toMetadata(changes: { favorite?: boolean; archived?: boolean }) {
 function isActivity(value: unknown): value is BrowserProjectActivity {
   if (!value || typeof value !== 'object') return false
   const event = value as Partial<BrowserProjectActivity>
-  return typeof event.id === 'string' && (event.action === 'created' || event.action === 'renamed') && typeof event.at === 'string' && (!event.detail || typeof event.detail === 'string')
+  return typeof event.id === 'string' && (event.action === 'created' || event.action === 'renamed' || event.action === 'schematic_plan_saved') && typeof event.at === 'string' && (!event.detail || typeof event.detail === 'string')
 }
