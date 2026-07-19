@@ -83,7 +83,7 @@ function matches(project: BoardForgeDashboardCard, query: string, filter: Filter
   const browserProject = isBrowserProject(project)
   const organization = metadata[project.projectId]
   if (filter === 'all') return !browserProject || !organization?.archived
-  if (filter === 'browser') return project.status.startsWith('BROWSER_')
+  if (filter === 'browser') return isBrowserProject(project)
   if (filter === 'favorite') return browserProject && Boolean(organization?.favorite) && !organization?.archived
   if (filter === 'archived') return browserProject && Boolean(organization?.archived)
   if (filter === 'evidence') return hasRecordedEvidence(project)
@@ -100,4 +100,6 @@ function compare(left: BoardForgeDashboardCard, right: BoardForgeDashboardCard, 
 }
 
 function readinessOrder(value: string) { return ({ ready: 0, review: 1, blocked: 2 } as Record<string, number>)[value] ?? 3 }
-function isBrowserProject(project: BoardForgeDashboardCard) { return project.localOnly === true && project.status.startsWith('BROWSER_') }
+// `localOnly` is the durable ownership boundary.  Keep the status prefix as
+// a compatibility fallback for browser drafts saved before that field existed.
+function isBrowserProject(project: BoardForgeDashboardCard) { return project.localOnly === true || project.status.startsWith('BROWSER_') }

@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, Copy, FileDown, Fil
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ProjectStatusCard } from '../ProjectStatusCard'
 import { useLocalProjectDashboard } from './LocalProjectDashboard'
-import { duplicateBrowserProject, readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
+import { duplicateBrowserProject, exportBrowserProject, readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
 import type { BoardForgeBrowserDraft } from '../../lib/boardforge-manifest'
 import { ProjectEngineeringCopilot } from './ProjectEngineeringCopilot'
@@ -127,6 +127,24 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
     }
     router.push(`/projects/${encodeURIComponent(copy.projectId)}`)
   }
+  const exportBrowserDraft = () => {
+    const exported = exportBrowserProject(project.projectId)
+    if (!exported) {
+      setBrowserNotice('This project cannot be exported. Only browser-local draft records are exportable here.')
+      return
+    }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' }))
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${safeBrowserExportFilename(project.projectName)}.boardforge-browser-project.json`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+    recordBrowserProjectActivity(project.projectId, 'exported', 'Browser-local project export downloaded')
+    setBrowserActivity(readBrowserProjectActivity(project.projectId))
+    setBrowserNotice('Exported this browser-local project and its saved browser drafts. It contains no helper paths, KiCad evidence, validation, or manufacturing release data.')
+  }
   return <>
     <div className="bf-project-workspace-actions"><Link href="/projects"><ArrowLeft size={15} />All projects</Link><Link href="/evidence">Evidence registry <ArrowUpRight size={15} /></Link><Link href="/downloads">Manufacturing registry <ArrowUpRight size={15} /></Link></div>
     <nav className="bf-project-section-nav" aria-label="Project workspace sections">
@@ -149,9 +167,9 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
         <div className="bf-browser-project-actions" aria-label="Start or reopen browser engineering work">
           <Link href={`/pcb-workspace?project=${encodeURIComponent(project.projectId)}`}>{savedPcbDraft ? 'Open saved browser PCB' : 'Start browser PCB draft'}</Link>
           <Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>{savedSchematicPlan ? 'Open saved schematic plan' : 'Start browser schematic plan'}</Link>
-          {savedOutlineDraft && <Link href={`/custom-board-generator?project=${encodeURIComponent(project.projectId)}`}>Open saved board outline</Link>}
+          <Link href={`/custom-board-generator?project=${encodeURIComponent(project.projectId)}`}>{savedOutlineDraft ? 'Open saved board outline' : 'Start browser board outline'}</Link>
         </div>
-        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" onClick={duplicateBrowserDraft}><Copy size={15} />Duplicate browser project</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
+        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" onClick={exportBrowserDraft}><FileDown size={15} />Export browser draft</button><button type="button" onClick={duplicateBrowserDraft}><Copy size={15} />Duplicate browser project</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
         {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
       </section>}
     </section>
@@ -224,7 +242,13 @@ function activityLabel(action: BrowserProjectActivity['action']) {
   if (action === 'created') return 'Saved in this browser'
   if (action === 'duplicated') return 'Duplicated in this browser'
   if (action === 'renamed') return 'Browser project renamed'
+  if (action === 'exported') return 'Browser project exported'
   if (action === 'pcb_snapshot_saved') return 'Browser PCB snapshot saved'
   if (action === 'outline_saved') return 'Browser board outline saved'
   return 'Browser schematic plan saved'
+}
+
+function safeBrowserExportFilename(name: string) {
+  const normalized = name.trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '')
+  return normalized.slice(0, 96) || 'boardforge-browser-project'
 }

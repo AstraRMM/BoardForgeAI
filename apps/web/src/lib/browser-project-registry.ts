@@ -16,6 +16,13 @@ export type BrowserWorkspaceExport = {
   projects: BoardForgeDashboardCard[]
 }
 
+/** A portable export of exactly one browser-owned project and its draft data. */
+export type BrowserProjectExport = {
+  schema: 'boardforge.browser-project-export.v1'
+  exportedAt: string
+  project: BoardForgeDashboardCard
+}
+
 /**
  * Personal library organization is intentionally stored separately from a
  * project record. It is browser-local UI state, never helper/KiCad state.
@@ -32,7 +39,7 @@ export type BrowserProjectLibraryMetadata = Record<string, {
  */
 export type BrowserProjectActivity = {
   id: string
-  action: 'created' | 'duplicated' | 'renamed' | 'pcb_snapshot_saved' | 'outline_saved' | 'schematic_plan_saved'
+  action: 'created' | 'duplicated' | 'renamed' | 'exported' | 'pcb_snapshot_saved' | 'outline_saved' | 'schematic_plan_saved'
   at: string
   detail?: string
 }
@@ -40,6 +47,7 @@ export type BrowserProjectActivity = {
 export type BrowserProjectActivityRegistry = Record<string, BrowserProjectActivity[]>
 
 const browserWorkspaceExportSchema = 'boardforge.browser-workspace-export.v1'
+const browserProjectExportSchema = 'boardforge.browser-project-export.v1'
 const maxImportedProjects = 500
 
 export type BrowserWorkspaceImportPreview = {
@@ -123,6 +131,25 @@ export function exportBrowserWorkspace(): BrowserWorkspaceExport {
     schema: 'boardforge.browser-workspace-export.v1',
     exportedAt: new Date().toISOString(),
     projects: readBrowserProjects().projects.filter((project) => project.localOnly === true),
+  }
+}
+
+/**
+ * Produce a portable record for one browser-local project. This deliberately
+ * passes through the same reconstruction boundary as import/duplication, so
+ * a corrupted local record cannot export helper paths, validation, release,
+ * manufacturing, or publishing claims. Text values receive a final path
+ * redaction pass because browser-authored notes can contain pasted file paths.
+ */
+export function exportBrowserProject(projectId: string): BrowserProjectExport | null {
+  if (typeof window === 'undefined') return null
+  const source = readBrowserProjects().projects.find((project) => project.projectId === projectId)
+  const project = source ? normalizeImportedBrowserProject(source) : null
+  if (!project) return null
+  return {
+    schema: browserProjectExportSchema,
+    exportedAt: new Date().toISOString(),
+    project: redactExportedBrowserText(project),
   }
 }
 
@@ -291,6 +318,7 @@ function isActivity(value: unknown): value is BrowserProjectActivity {
     event.action === 'created' ||
     event.action === 'duplicated' ||
     event.action === 'renamed' ||
+    event.action === 'exported' ||
     event.action === 'pcb_snapshot_saved' ||
     event.action === 'outline_saved' ||
     event.action === 'schematic_plan_saved'
@@ -351,6 +379,21 @@ function parseSchematicPlan(value: unknown): NonNullable<BoardForgeBrowserDraft[
  * from sharing mutable nested outline, PCB, or schematic records. */
 function cloneBrowserDraft(draft: BoardForgeBrowserDraft): BoardForgeBrowserDraft {
   return JSON.parse(JSON.stringify(draft)) as BoardForgeBrowserDraft
+}
+
+/** Remove local absolute/UNC paths from browser-authored free text without
+ * changing the export's structured browser-draft data model. */
+function redactExportedBrowserText(project: BoardForgeDashboardCard): BoardForgeDashboardCard {
+  const clone = JSON.parse(JSON.stringify(project)) as BoardForgeDashboardCard
+  const redact = (value: unknown): unknown => {
+    if (typeof value === 'string') return value
+      .replace(/(?:[A-Za-z]:[\\/]|\\\\)[^\s"'`<>()[\]{}]+/g, '[local path]')
+      .replace(/(?:file:\/\/)?\/(?:Users|home|tmp|var|private|etc|mnt|Volumes)\/[^\s"'`<>()[\]{}]+/gi, '[local path]')
+    if (Array.isArray(value)) return value.map(redact)
+    if (isRecord(value)) return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, redact(item)]))
+    return value
+  }
+  return redact(clone) as BoardForgeDashboardCard
 }
 
 function nextBrowserProjectId() {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in TypeScript runner needs the source extension; Next's bundler does not load this test module.
 // @ts-expect-error -- TypeScript source import is supported by node --experimental-strip-types.
-import { browserDraftArtifacts, createBrowserProject, duplicateBrowserProject, exportBrowserWorkspace, hasBrowserDraftArtifact, mergeBrowserWorkspaceImport, previewBrowserWorkspaceImport, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
+import { browserDraftArtifacts, createBrowserProject, duplicateBrowserProject, exportBrowserProject, exportBrowserWorkspace, hasBrowserDraftArtifact, mergeBrowserWorkspaceImport, previewBrowserWorkspaceImport, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
 
 const registryKey = 'boardforge.browser-projects.v1'
 
@@ -213,6 +213,35 @@ test('browser duplication rejects helper records and uses an available copy name
   const stored = JSON.parse((globalThis.window as unknown as { localStorage: MemoryStorage }).localStorage.getItem(registryKey) || '[]')
   ;(globalThis.window as unknown as { localStorage: MemoryStorage }).localStorage.setItem(registryKey, JSON.stringify([helperLike, ...stored]))
   assert.equal(duplicateBrowserProject('helper-project'), null)
+}))
+
+test('single-project export reconstructs browser-only data and redacts pasted local paths', () => inBrowser((storage) => {
+  const project = createBrowserProject({ projectId: 'exportable-board', projectName: 'Exportable board', prompt: 'Review C:\\Users\\someone\\Desktop\\notes.md before continuing.' })
+  // Simulate stale or corrupt browser storage with engineering claims. The
+  // export boundary must rebuild it instead of serializing those fields.
+  storage.setItem(registryKey, JSON.stringify([{
+    ...project,
+    boardPath: 'C:\\private\\release\\board.kicad_pcb',
+    schematicPath: 'C:\\private\\release\\board.kicad_sch',
+    sourceManifest: 'C:\\private\\manifest.json',
+    replayCommand: 'private helper command',
+    readiness: 'ready',
+    validation: { shorts: 0, unconnected: 0, forbiddenVias: 0, drcViolations: 0, ercViolations: 0 },
+    manufacturing: { ready: true, zip: 'C:\\private\\release.zip', blockedReason: null },
+  }]))
+
+  const exported = exportBrowserProject(project.projectId)
+  assert.ok(exported)
+  assert.equal(exported.schema, 'boardforge.browser-project-export.v1')
+  assert.equal(exported.project.localOnly, true)
+  assert.equal(exported.project.boardPath, null)
+  assert.equal(exported.project.schematicPath, null)
+  assert.equal(exported.project.sourceManifest, null)
+  assert.equal(exported.project.replayCommand, null)
+  assert.equal(exported.project.manufacturing.ready, false)
+  assert.equal(exported.project.validation.drcViolations, null)
+  assert.doesNotMatch(JSON.stringify(exported), /C:\\Users|C:\\private/)
+  assert.equal(exportBrowserProject('not-a-browser-project'), null)
 }))
 
 test('workspace imports reject malformed and helper-shaped exports without inventing browser projects', () => inBrowser(() => {

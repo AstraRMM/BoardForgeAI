@@ -7,7 +7,7 @@ import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers
 import { outlinePresets } from '../../lib/outline-export'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
 import { createBrowserProject, hasBrowserDraftArtifact, readBrowserProjects, recordBrowserProjectActivity, saveBrowserProject } from '../../lib/browser-project-registry'
-import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
+import type { BoardForgeBrowserDraft, BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
 import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
@@ -138,8 +138,16 @@ export function OutlineEditor() {
     const projectId = searchParams.get('project')
     if (!projectId || loadedProjectId.current === projectId) return
     const project = readBrowserProjects().projects.find((entry) => entry.projectId === projectId)
-    if (!project || !isBrowserOutlineProject(project)) return
-    loadBrowserOutlineDraft(project)
+    if (!project || project.localOnly !== true) return
+    // A project may not have an outline yet.  In that case retain its ID so
+    // the first browser-outline save attaches to the project the user opened,
+    // rather than silently creating a second project record.
+    if (isBrowserOutlineProject(project)) loadBrowserOutlineDraft(project)
+    else {
+      browserDraftId.current = project.projectId
+      setSelectedSavedOutlineId(project.projectId)
+      setStatus(`Starting a browser outline for â€œ${project.projectName}â€. Save it to attach the geometry to this browser-local project.`)
+    }
     loadedProjectId.current = projectId
   }, [searchParams])
 
@@ -659,37 +667,39 @@ export function OutlineEditor() {
     const projectId = browserDraftId.current || `browser-outline-${Date.now().toString(36)}`
     browserDraftId.current = projectId
     const outline = buildOutlinePayload({ preset, points, holes, validation, metrics })
-    const project = createBrowserProject({
+    const draft: BoardForgeBrowserDraft = {
+      schema: 'boardforge.browser-draft.v1' as const,
+      kind: 'outline' as const,
+      updatedAt: new Date().toISOString(),
+      summary: `${outline.outlinePointsMm.length} outline vertices and ${outline.mountingHolesMm.length} mounting holes saved from the browser editor.`,
+      outline: {
+        preset,
+        closed,
+        pointsMm: outline.outlinePointsMm.map(({ x, y }) => ({ x, y })),
+        mountingHolesMm: outline.mountingHolesMm.map((hole) => ({
+          ref: hole.ref,
+          x: hole.x,
+          y: hole.y,
+          diameterMm: hole.diameterMm,
+          keepoutMm: hole.keepoutMm,
+          plating: hole.plating,
+          locked: hole.locked,
+        })),
+        browserValidation: {
+          status: validation.valid ? 'valid' : 'blocked',
+          routeabilityScore: outline.browserValidation.routeabilityScore,
+          risk: outline.browserValidation.risk,
+          blockers: outline.browserValidation.blockers,
+        },
+      },
+    }
+    const existing = readBrowserProjects().projects.find((entry) => entry.projectId === projectId && entry.localOnly === true)
+    const project = existing ? { ...existing, browserDraft: draft } : createBrowserProject({
       projectId,
       projectName: `${labelForPreset(preset)} outline`,
       prompt,
       kind: 'browser_outline',
-      browserDraft: {
-        schema: 'boardforge.browser-draft.v1',
-        kind: 'outline',
-        updatedAt: new Date().toISOString(),
-        summary: `${outline.outlinePointsMm.length} outline vertices and ${outline.mountingHolesMm.length} mounting holes saved from the browser editor.`,
-        outline: {
-          preset,
-          closed,
-          pointsMm: outline.outlinePointsMm.map(({ x, y }) => ({ x, y })),
-          mountingHolesMm: outline.mountingHolesMm.map((hole) => ({
-            ref: hole.ref,
-            x: hole.x,
-            y: hole.y,
-            diameterMm: hole.diameterMm,
-            keepoutMm: hole.keepoutMm,
-            plating: hole.plating,
-            locked: hole.locked,
-          })),
-          browserValidation: {
-            status: validation.valid ? 'valid' : 'blocked',
-            routeabilityScore: outline.browserValidation.routeabilityScore,
-            risk: outline.browserValidation.risk,
-            blockers: outline.browserValidation.blockers,
-          },
-        },
-      },
+      browserDraft: draft,
     })
     saveBrowserProject(project)
     recordBrowserProjectActivity(projectId, 'outline_saved', `${outline.outlinePointsMm.length} outline vertices, ${outline.mountingHolesMm.length} mounting holes`)
