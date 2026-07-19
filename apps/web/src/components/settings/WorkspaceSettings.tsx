@@ -76,7 +76,7 @@ export function WorkspaceSettings({ authReady, missing }: { authReady: boolean; 
         <div className="bf-settings-control">
           <div><strong>Workspace density</strong><span>Adjust the spacing of the engineering workspace in this browser.</span></div>
           <div className="bf-settings-segmented" role="group" aria-label="Workspace density">
-            {(['comfortable', 'compact'] as Density[]).map((density) => <button type="button" key={density} className={preferences.density === density ? 'is-selected' : ''} onClick={() => update({ density })}>{density === 'comfortable' ? 'Comfortable' : 'Compact'}</button>)}
+            {(['comfortable', 'compact'] as Density[]).map((density) => <button type="button" key={density} className={preferences.density === density ? 'is-selected' : ''} aria-pressed={preferences.density === density} onClick={() => update({ density })}>{density === 'comfortable' ? 'Comfortable' : 'Compact'}</button>)}
           </div>
         </div>
         <div className="bf-settings-control">
