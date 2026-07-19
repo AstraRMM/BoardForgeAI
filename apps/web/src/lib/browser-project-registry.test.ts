@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in TypeScript runner needs the source extension; Next's bundler does not load this test module.
 // @ts-expect-error -- TypeScript source import is supported by node --experimental-strip-types.
-import { createBrowserProject, readBrowserProjectLibraryMetadata, readBrowserProjects, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
+import { createBrowserProject, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
 
 const registryKey = 'boardforge.browser-projects.v1'
 
@@ -67,4 +67,17 @@ test('favorites and archive state are browser-only library metadata', () => inBr
   assert.deepEqual(readBrowserProjectLibraryMetadata()[project.projectId] && { favorite: true, archived: true }, { favorite: true, archived: true })
   removeBrowserProject(project.projectId)
   assert.equal(readBrowserProjectLibraryMetadata()[project.projectId], undefined)
+}))
+
+test('browser activity records only actual browser project actions and is deleted with its draft', () => inBrowser(() => {
+  const project = createBrowserProject({ projectId: 'browser-history', projectName: 'History draft', prompt: 'A browser draft.' })
+  saveBrowserProject(project)
+  recordBrowserProjectActivity(project.projectId, 'renamed', 'Renamed history draft')
+  recordBrowserProjectActivity('not-a-browser-project', 'renamed', 'Must not be retained')
+
+  assert.deepEqual(readBrowserProjectActivity(project.projectId).map((event) => event.action).sort(), ['created', 'renamed'])
+  assert.equal(readBrowserProjectActivity(project.projectId).find((event) => event.action === 'renamed')?.detail, 'Renamed history draft')
+  assert.deepEqual(readBrowserProjectActivity('not-a-browser-project'), [])
+  removeBrowserProject(project.projectId)
+  assert.deepEqual(readBrowserProjectActivity(project.projectId), [])
 }))

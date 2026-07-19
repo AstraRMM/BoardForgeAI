@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, FileDown, FileText, Route, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, FileDown, FileText, History, Route, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ProjectStatusCard } from '../ProjectStatusCard'
 import { useLocalProjectDashboard } from './LocalProjectDashboard'
-import { removeBrowserProject, saveBrowserProject } from '../../lib/browser-project-registry'
+import { readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
 import { ProjectEngineeringCopilot } from './ProjectEngineeringCopilot'
 
@@ -26,10 +26,12 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
   const project = data?.projects.find((entry) => entry.projectId === projectId) || null
   const [draftName, setDraftName] = useState('')
   const [browserNotice, setBrowserNotice] = useState('')
+  const [browserActivity, setBrowserActivity] = useState<BrowserProjectActivity[]>([])
   const [helperArtifacts, setHelperArtifacts] = useState<HelperArtifacts | null>(null)
   const [artifactState, setArtifactState] = useState<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
   const isBrowserDraft = Boolean(project?.status.startsWith('BROWSER_'))
   useEffect(() => { setDraftName(project?.projectName || '') }, [project?.projectName])
+  useEffect(() => { setBrowserActivity(isBrowserDraft && project ? readBrowserProjectActivity(project.projectId) : []) }, [isBrowserDraft, project?.projectId])
   const state = registryState === 'empty' && !project ? 'missing' : registryState
   const message = state === 'missing' ? 'This project ID is not present in the paired helper registry or among projects saved in this browser.' : registryMessage
   const load = refresh
@@ -80,7 +82,12 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
       setBrowserNotice('Enter a project name before saving.')
       return
     }
+    const renamed = projectName !== project.projectName
     saveBrowserProject({ ...project, projectName })
+    if (renamed) {
+      recordBrowserProjectActivity(project.projectId, 'renamed', projectName)
+      setBrowserActivity(readBrowserProjectActivity(project.projectId))
+    }
     setBrowserNotice('Saved in this browser. This does not change a KiCad project or its engineering evidence.')
     refresh()
   }
@@ -98,6 +105,11 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
       <label className="bf-browser-project-name"><span>Project name</span><input value={draftName} onChange={(event) => setDraftName(event.target.value)} maxLength={120} /></label>
       <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
       {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
+    </section>}
+    {isBrowserDraft && <section className="bf-workspace-panel bf-project-workspace-reports">
+      <div className="bf-panel-title"><div><p>Browser activity</p><h2>Local project record history</h2></div><History size={20} /></div>
+      <p className="bf-project-workspace-note">This history records only changes saved in this browser. It is not KiCad, validation, manufacturing, or helper activity.</p>
+      {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{event.action === 'created' ? 'Saved in this browser' : 'Browser project renamed'}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
     </section>}
     <section className="bf-workspace-grid bf-project-workspace-grid">
       <article className="bf-workspace-panel"><div className="bf-panel-title"><div><p>Validation evidence</p><h2>Current engineering gates</h2></div><ShieldCheck size={20} /></div><dl className="bf-project-evidence-grid"><Datum label="DRC violations" value={validation.drcViolations} /><Datum label="ERC violations" value={validation.ercViolations} /><Datum label="Unconnected" value={validation.unconnected} /><Datum label="Forbidden vias" value={validation.forbiddenVias} /></dl><p className="bf-project-workspace-note">This project is read from the browser registry. “Not run” is not treated as passing; KiCad validation remains a desktop-engine action.</p></article>
