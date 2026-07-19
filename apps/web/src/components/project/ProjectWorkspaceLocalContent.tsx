@@ -87,6 +87,12 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
 
   const validation = project.validation
   const reports = Object.entries(project.reports || {}).filter(([label]) => label !== 'browserDraft')
+  // Tool launchers are deliberately evidence-driven. A browser project may be
+  // a brief, import record, or outline, so never send it into an editor unless
+  // that editor has an exact persisted browser record to reopen.
+  const savedPcbDraft = isBrowserDraft && project.browserDraft?.kind === 'pcb' && Boolean(project.browserDraft.pcb)
+  const savedSchematicPlan = isBrowserDraft && Boolean(project.browserDraft?.schematicPlan)
+  const savedOutlineDraft = isBrowserDraft && project.browserDraft?.kind === 'outline' && Boolean(project.browserDraft.outline)
   const saveBrowserName = () => {
     const projectName = draftName.trim()
     if (!projectName) {
@@ -119,7 +125,12 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
         <div className="bf-panel-title"><div><p>Browser project controls</p><h2>Organize this local draft</h2></div><FileText size={20} /></div>
         <p className="bf-project-workspace-note">These controls change only the project record saved in this browser. They never rename, edit, or delete KiCad files.</p>
         <label className="bf-browser-project-name"><span>Project name</span><input value={draftName} onChange={(event) => setDraftName(event.target.value)} maxLength={120} /></label>
-        <div className="bf-browser-project-actions"><Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>Plan browser schematic</Link><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
+        {(savedPcbDraft || savedSchematicPlan || savedOutlineDraft) && <div className="bf-browser-project-actions" aria-label="Reopen saved browser work">
+          {savedPcbDraft && <Link href={`/pcb-workspace?project=${encodeURIComponent(project.projectId)}`}>Open saved browser PCB</Link>}
+          {savedSchematicPlan && <Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>Open saved schematic plan</Link>}
+          {savedOutlineDraft && <Link href={`/custom-board-generator?project=${encodeURIComponent(project.projectId)}`}>Open saved board outline</Link>}
+        </div>}
+        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
         {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
       </section>}
     </section>

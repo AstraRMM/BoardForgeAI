@@ -42,3 +42,20 @@ test('viewport supports manual zoom, pan and touch pointer input', async ({ page
   await page.mouse.up()
   await expect(page.getByText(/Rust revision 0/)).toBeVisible()
 })
+
+test('typing in routing controls does not invoke destructive canvas shortcuts', async ({ page }) => {
+  await page.goto('/pcb-workspace')
+  const editor = page.getByRole('application', { name: /Rust-backed interactive PCB editor/i })
+  const footprint = editor.getByRole('button', { name: /Select / }).first()
+  await footprint.dispatchEvent('pointerdown', { pointerId: 1, button: 0 })
+  await expect(page.getByText(/1 selected/)).toBeVisible()
+
+  const net = page.getByLabel('Net')
+  await net.fill('USB')
+  await net.press('Backspace')
+  await net.press('Control+z')
+
+  await expect(net).toHaveValue('USB')
+  await expect(page.getByText(/Rust revision 0/)).toBeVisible()
+  await expect(page.getByText(/1 selected/)).toBeVisible()
+})
