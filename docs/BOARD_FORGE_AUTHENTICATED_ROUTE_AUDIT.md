@@ -25,8 +25,8 @@ The actual Next entrypoints are in root `app/`; most delegate to `apps/web/src/a
 | `/settings` | Workspace configuration hub | AppShell page linking pairing/setup/evidence | 55 | Needs a real settings information architecture. Do not fabricate provider/account configuration state. |
 | `/settings/plugin` | Browser-local-engine pairing and diagnostics | Real session pairing UI; pairing token remains session-only | 78 | Keep as sole pairing surface. Correct its account-pairing link so it does not point through the legacy `/plugin/connect` redirect. |
 | `/plugin/connect` | Legacy pairing URL | Redirects to `/settings/plugin` | 100 (alias) | Retain one-hop redirect only. |
-| `/settings/devices` | Device registry | Honest unavailable state | 35 | The route has no device-registry API; keep as unavailable only if a direct settings link is required, otherwise hide until a registry exists. |
-| `/settings/billing` | Account license/billing | Honest unavailable state | 35 | No account billing API exists. Keep out of normal workspace navigation until it can perform account actions. |
+| `/settings/devices` | Legacy device-settings URL | One-hop redirect to `/settings` | 100 (alias) | Keep only for bookmark compatibility. No device registry screen is exposed because there is no authenticated device API. See `BOARD_FORGE_LICENSE_CAPABILITY_AUDIT.md`. |
+| `/settings/billing` | Legacy billing-settings URL | One-hop redirect to `/settings` | 100 (alias) | Keep only for bookmark compatibility. No billing or license-management screen is exposed because there is no account entitlement authority. See `BOARD_FORGE_LICENSE_CAPABILITY_AUDIT.md`. |
 | `/demo` | Internal guided workflow/reference project | Static guided content and demo controls; protected | 35 | Not an authenticated application task surface. Move to public/onboarding documentation or an explicit internal reference route. |
 | `/alpha-readiness` | Release readiness reference | Static release checklist; protected | 25 | Release documentation, not workspace UI. Move to internal docs/admin, then remove from authenticated route policy. |
 
@@ -62,7 +62,7 @@ This removes the present overlap where Evidence, Manufacturing, and project deta
 2. **Project workspace:** create tabs/loaders for real per-project dashboard, reports, and downloads data. Keep inactive local-alpha operations unavailable, not button-shaped promises.
 3. **Global operations:** remodel Evidence as registry and Manufacturing as package queue using the project-tab destinations. Eliminate static glossary/documentation panels from app routes.
 4. **State integrity:** remove the unused `projectDir` dashboard client; fix pairing wording and make engine/pairing state consistently observable in shell and dashboard.
-5. **Settings and internal pages:** hide Devices/Billing from normal navigation until APIs exist; relocate `/demo` and `/alpha-readiness` outside the authenticated workstation.
+5. **Settings and internal pages:** retain Devices/Billing only as redirect aliases until the contracts in `BOARD_FORGE_LICENSE_CAPABILITY_AUDIT.md` exist; relocate `/demo` and `/alpha-readiness` outside the authenticated workstation.
 6. **Acceptance QA:** for every retained non-alias route, verify desktop and mobile shell, keyboard navigation, local-engine offline/loading/empty/error states, and that every visible action resolves to a real endpoint or an explicit unavailable state.
 
 ## Acceptance rule
