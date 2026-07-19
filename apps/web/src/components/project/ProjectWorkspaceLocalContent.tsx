@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, FileDown, FileText, History, Route, ShieldCheck } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { ProjectStatusCard } from '../ProjectStatusCard'
 import { useLocalProjectDashboard } from './LocalProjectDashboard'
 import { readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
@@ -18,6 +18,17 @@ type HelperArtifacts = {
     artifacts: Record<'gerbers' | 'drill' | 'bom' | 'cpl' | 'package', boolean>
     browserTransferAvailable: boolean
   }
+}
+
+/**
+ * Fragment navigation scrolls correctly in browsers, but it does not
+ * consistently move keyboard or screen-reader focus to a non-focusable
+ * section. Keep the native URL fragment and move focus after it is applied.
+ */
+function focusProjectSection(event: MouseEvent<HTMLAnchorElement>) {
+  const sectionId = event.currentTarget.getAttribute('href')?.slice(1)
+  if (!sectionId) return
+  window.setTimeout(() => document.getElementById(sectionId)?.focus({ preventScroll: true }), 0)
 }
 
 export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string }) {
@@ -99,9 +110,9 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
   return <>
     <div className="bf-project-workspace-actions"><Link href="/projects"><ArrowLeft size={15} />All projects</Link><Link href="/evidence">Evidence registry <ArrowUpRight size={15} /></Link><Link href="/downloads">Manufacturing registry <ArrowUpRight size={15} /></Link></div>
     <nav className="bf-project-section-nav" aria-label="Project workspace sections">
-      <a href="#overview">Overview</a><a href="#evidence">Evidence</a><a href="#release">Release</a><a href="#activity">Activity</a>
+      <a href="#overview" onClick={focusProjectSection}>Overview</a><a href="#evidence" onClick={focusProjectSection}>Evidence</a><a href="#release" onClick={focusProjectSection}>Release</a><a href="#activity" onClick={focusProjectSection}>Activity</a>
     </nav>
-    <section id="overview" className="bf-project-workspace-section" aria-labelledby="overview-title">
+    <section id="overview" className="bf-project-workspace-section" aria-labelledby="overview-title" tabIndex={-1}>
       <div className="bf-project-section-heading"><p>Project context</p><h2 id="overview-title">Overview</h2><span>{isBrowserDraft ? 'Browser-local draft' : 'Paired-helper project record'}</span></div>
       <ProjectStatusCard project={project} />
       {isBrowserDraft && <section className="bf-workspace-panel bf-browser-project-controls">
@@ -112,7 +123,7 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
         {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
       </section>}
     </section>
-    <section id="evidence" className="bf-project-workspace-section" aria-labelledby="evidence-title">
+    <section id="evidence" className="bf-project-workspace-section" aria-labelledby="evidence-title" tabIndex={-1}>
       <div className="bf-project-section-heading"><p>Recorded engineering state</p><h2 id="evidence-title">Evidence</h2><span>Only saved results appear here</span></div>
       <section className="bf-workspace-grid bf-project-workspace-grid">
         <article className="bf-workspace-panel"><div className="bf-panel-title"><div><p>Validation evidence</p><h2>Current engineering gates</h2></div><ShieldCheck size={20} /></div><dl className="bf-project-evidence-grid"><Datum label="DRC violations" value={validation.drcViolations} /><Datum label="ERC violations" value={validation.ercViolations} /><Datum label="Unconnected" value={validation.unconnected} /><Datum label="Forbidden vias" value={validation.forbiddenVias} /></dl><p className="bf-project-workspace-note">“Not run” is not treated as passing; KiCad validation remains a desktop-engine action.</p></article>
@@ -121,11 +132,11 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
       {!isBrowserDraft && <ProjectArtifactAvailability state={artifactState} artifacts={helperArtifacts} />}
       {!isBrowserDraft && <ProjectEngineeringCopilot projectId={project.projectId} />}
     </section>
-    <section id="release" className="bf-project-workspace-section" aria-labelledby="release-title">
+    <section id="release" className="bf-project-workspace-section" aria-labelledby="release-title" tabIndex={-1}>
       <div className="bf-project-section-heading"><p>Manufacturing readiness</p><h2 id="release-title">Release</h2><span>Review remains required before fabrication</span></div>
       <article className="bf-workspace-panel"><div className="bf-panel-title"><div><p>Release state</p><h2>{project.manufacturing.ready ? 'Manufacturing evidence ready' : 'Release remains blocked'}</h2></div>{project.manufacturing.ready ? <CheckCircle2 size={20} /> : <Route size={20} />}</div><dl className="bf-project-evidence-grid"><Datum label="Routing completion" value={`${project.routingCompletionPercent}%`} /><Datum label="Routeability score" value={project.routeabilityScore ?? 'Not recorded'} /><Datum label="Next action" value={humanize(project.nextAction)} /><Datum label="Package" value={project.manufacturing.zip ? 'Recorded locally' : humanize(project.manufacturing.blockedReason || 'Not exported')} /></dl><Link className="bf-panel-action" href="/downloads">Review manufacturing artifacts <FileDown size={15} /></Link></article>
     </section>
-    <section id="activity" className="bf-project-workspace-section" aria-labelledby="activity-title">
+    <section id="activity" className="bf-project-workspace-section" aria-labelledby="activity-title" tabIndex={-1}>
       <div className="bf-project-section-heading"><p>{isBrowserDraft ? 'Browser-only record' : 'Project history'}</p><h2 id="activity-title">Activity</h2><span>{isBrowserDraft ? 'Saved in this browser only' : 'No helper activity feed is exposed'}</span></div>
       {isBrowserDraft ? <section className="bf-workspace-panel bf-project-workspace-reports">
         <div className="bf-panel-title"><div><p>Browser activity</p><h2>Local project record history</h2></div><History size={20} /></div>

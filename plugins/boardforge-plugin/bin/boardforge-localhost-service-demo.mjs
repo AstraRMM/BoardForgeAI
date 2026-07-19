@@ -24,9 +24,10 @@ try {
     projectId,
     prompt: 'Make a compact odd-shaped robotics controller with USB-C, CAN, I2C, UART/GPS, SWD, PWM, mounting ears, and JLCPCB manufacturing.',
   })
-  const sessionFile = intake.data.sessionFile
+  const intakeProjectId = intake.data.projectId
+  if (!intakeProjectId) throw new Error('The intake start route did not return a project ID.')
   await call('POST', '/intake/answer', {
-    sessionFile,
+    projectId: intakeProjectId,
     answers: {
       controller_preference: 'STM32 recommended',
       interfaces_needed: 'USB CAN I2C UART PWM',
@@ -35,12 +36,12 @@ try {
       manufacturing_target: 'JLCPCB',
     },
   })
-  await call('POST', '/brief/approve', { sessionFile })
-  const create = await call('POST', '/project/create', { projectId, projectDir, oddShapeProof: true })
-  const status = await call('GET', `/project/${encodeURIComponent(projectId)}/status?projectDir=${encodeURIComponent(projectDir)}`)
-  const downloads = await call('GET', `/project/${encodeURIComponent(projectId)}/downloads?projectDir=${encodeURIComponent(projectDir)}`)
-  const publishBlocked = await call('POST', `/project/${encodeURIComponent(projectId)}/publish`, { projectDir }, false)
-  const publishOk = await call('POST', `/project/${encodeURIComponent(projectId)}/publish`, { projectDir, confirm: true })
+  await call('POST', '/brief/approve', { projectId: intakeProjectId })
+  const create = await call('POST', '/project/create', { projectId: intakeProjectId, projectDir, oddShapeProof: true })
+  const status = await call('GET', `/project/${encodeURIComponent(intakeProjectId)}/status?projectDir=${encodeURIComponent(projectDir)}`)
+  const downloads = await call('GET', `/project/${encodeURIComponent(intakeProjectId)}/downloads?projectDir=${encodeURIComponent(projectDir)}`)
+  const publishBlocked = await call('POST', `/project/${encodeURIComponent(intakeProjectId)}/publish`, { projectDir }, false)
+  const publishOk = await call('POST', `/project/${encodeURIComponent(intakeProjectId)}/publish`, { projectDir, confirm: true })
 
   const validation = create.data.validation
   const report = [
@@ -53,7 +54,7 @@ try {
     `- ERC: ${validation.erc}`,
     `- Shorts: ${validation.shorts}`,
     `- Unconnected: ${validation.unconnected}`,
-    `- Manufacturing ZIP: ${downloads.data.zip}`,
+    `- Manufacturing package recorded: ${downloads.data.artifacts.package ? 'yes' : 'no'}`,
     `- Publish without confirm: ${publishBlocked.status}`,
     `- Publish with confirm: ${publishOk.status}`,
     '',
@@ -65,7 +66,7 @@ try {
     baseUrl,
     projectDir,
     validation,
-    manufacturingZip: downloads.data.zip,
+    manufacturingPackageRecorded: downloads.data.artifacts.package,
     publishGate: { withoutConfirm: publishBlocked.status, withConfirm: publishOk.status },
   }
   await writeFile(path.join(projectDir, 'BoardForge_Localhost_Service_Demo_Report.md'), report, 'utf8')

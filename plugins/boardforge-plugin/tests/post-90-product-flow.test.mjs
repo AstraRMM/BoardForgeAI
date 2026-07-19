@@ -217,14 +217,14 @@ test('boardforge create question flow writes a brief and local candidate after a
   assert.equal(manifest.publishApproved, false)
 })
 
-test('CLI intake and answer commands write local intake session artifacts', async () => {
+test('CLI intake and answer commands write local conversation session artifacts', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'boardforge-cli-intake-'))
   const intake = JSON.parse(execFileSync(process.execPath, [cliPath, 'intake', '--prompt', 'Make a compact robotics controller with CAN, USB-C, I2C, UART/GPS, and PWM.', '--output', dir], { encoding: 'utf8' }))
-  assert.equal(intake.status, 'BOARD_FORGE_INTAKE_SESSION_WRITTEN')
+  assert.equal(intake.status, 'BOARD_FORGE_CONVERSATION_SESSION_WRITTEN')
   assert.equal(intake.session.boardType, 'robotics_controller')
-  assert.ok(intake.session.questionsToAsk.length <= 7)
+  assert.ok(intake.session.questionsAsked.length <= 7)
   const answered = JSON.parse(execFileSync(process.execPath, [cliPath, 'answer', '--session', intake.file, '--output', dir, '--answers', '{"manufacturing_target":"JLCPCB"}'], { encoding: 'utf8' }))
-  assert.equal(answered.session.answers.manufacturing_target, 'JLCPCB')
+  assert.ok(answered.session.answers.some((answer) => answer.field === 'manufacturing_target' && answer.value === 'JLCPCB'))
 })
 
 test('prompt layer test matrix infers board types and keeps builds approval-gated', () => {
@@ -363,11 +363,14 @@ test('board preview generator writes SVG and JSON card inputs', async () => {
   assert.equal(JSON.parse(await readFile(preview.json, 'utf8')).projectName, 'preview')
 })
 
-test('downloads center and web local artifact client expose manufacturing and offline behavior', async () => {
+test('downloads center delegates to recorded manufacturing evidence and preserves offline behavior', async () => {
   const downloadsPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
+  const manufacturingContent = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ManufacturingLocalContent.tsx'), 'utf8')
   const artifactClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-artifact-client.ts'), 'utf8')
   const engineClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-engine-client.ts'), 'utf8')
-  assert.match(downloadsPage, /Gerbers, drill files, BOM, CPL/)
+  assert.match(downloadsPage, /ManufacturingLocalContent/)
+  assert.match(downloadsPage, /Browser download is unavailable until an explicit artifact-transfer endpoint is added/)
+  assert.match(manufacturingContent, /Gerbers, drills, BOM, CPL, package, or manufacturing validation has been recorded/)
   assert.ok(artifactClient.includes('POST /intake/start'))
   assert.match(engineClient, /Local Engine is offline/)
 })
@@ -501,22 +504,21 @@ test('question flow approval e2e blocks build then approves candidate and publis
   assert.equal(canPublishToDashboard({ publish: created.publish }, { confirm: true }).allowed, false)
 })
 
-test('web brief approval UI exposes approve reject revise and publish controls', async () => {
+test('project route mounts the active evidence-backed project workspace', async () => {
   const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
-  assert.match(projectPage, /Board Brief and Approval/)
-  assert.match(projectPage, /Publish to Dashboard/)
-  assert.match(projectPage, /Archive/)
-  assert.match(projectPage, /Revise \/ Rerun/)
+  assert.match(projectPage, /ProjectWorkspaceLocalContent/)
+  assert.match(projectPage, /Local project evidence, validation gates, and release state/)
 })
 
-test('web intake UI exposes questions brief preview and local artifact truth', async () => {
+test('web intake UI exposes questions, browser draft saving, and local-artifact truth', async () => {
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
   const intakeWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'NewBoardIntakeWorkspace.tsx'), 'utf8')
   assert.match(newBoardPage, /NewBoardIntakeWorkspace/)
   assert.match(intakeWorkspace, /\/intake\/start/)
   assert.match(intakeWorkspace, /\/intake\/answer/)
   assert.match(intakeWorkspace, /\/brief\/approve/)
-  assert.match(intakeWorkspace, /Nothing creates or changes KiCad files from this page/)
+  assert.match(intakeWorkspace, /Browser drafts are request records only/)
+  assert.match(intakeWorkspace, /Pair the desktop helper only when you want BoardForge to create or validate real KiCad files/)
 })
 
 test('web live intake UI exposes conversation panels and artifact-backed outline generator', async () => {
@@ -563,12 +565,12 @@ test('KiCad plugin intake status exposes build and publish gates', async () => {
   assert.match(bridge, /publishAllowed/)
 })
 
-test('alpha launcher scripts expose environment dashboard and demo flow', async () => {
+test('alpha launcher scripts expose environment checks, helper startup, and demo flow', async () => {
   const start = await readFile(path.join(launcherDir, 'BoardForge_Start_Local_Alpha.ps1'), 'utf8')
   const check = await readFile(path.join(launcherDir, 'BoardForge_Check_Environment.ps1'), 'utf8')
   const demo = await readFile(path.join(launcherDir, 'BoardForge_Run_Demo.cmd'), 'utf8')
   assert.match(start, /BoardForge_Check_Environment/)
-  assert.match(start, /npm run dev:web/)
+  assert.match(start, /npm run boardforge:start/)
   assert.match(check, /Git/)
   assert.match(check, /KiCad CLI/)
   assert.match(check, /DIGIKEY_CLIENT_ID/)
@@ -612,11 +614,13 @@ test('web dashboard demo data labels local artifact status and demo command', as
   assert.match(customPage, /GeneratorWorkspace/)
 })
 
-test('downloads page shows PCB fab assembly and blocked manufacturing states', async () => {
+test('manufacturing registry distinguishes released packages, blocked packages, and missing package evidence', async () => {
   const downloadsPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
-  assert.match(downloadsPage, /PCB_FAB_READY/)
-  assert.match(downloadsPage, /ASSEMBLY_READY_NOT_VERIFIED/)
-  assert.match(downloadsPage, /BLOCKED_COMPLIANCE_REVIEW/)
+  const manufacturingContent = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ManufacturingLocalContent.tsx'), 'utf8')
+  assert.match(downloadsPage, /ManufacturingLocalContent/)
+  assert.match(manufacturingContent, /Released manufacturing packages/)
+  assert.match(manufacturingContent, /Packages requiring review/)
+  assert.match(manufacturingContent, /Projects without a manufacturing package/)
 })
 
 test('KiCad plugin install docs mention helper and no forced install', async () => {
@@ -786,23 +790,24 @@ test('CLI local client includes health status intake publish and downloads comma
   assert.match(pkg, /boardforge:local-health/)
 })
 
-test('localhost service demo creates board through local service and writes trace', () => {
+test('localhost service demo creates board through local service and reports protected package availability', () => {
   const rootDir = path.join(os.tmpdir(), `boardforge-localhost-demo-${Date.now()}`)
   const output = JSON.parse(execFileSync(process.execPath, [localhostDemoPath, '--root', rootDir, '--port', '38993'], { encoding: 'utf8' }))
   assert.equal(output.status, 'BOARD_FORGE_LOCALHOST_SERVICE_DEMO_COMPLETED')
   assert.equal(output.validation.drc, 0)
   assert.equal(output.validation.erc, 0)
-  assert.match(output.manufacturingZip, /JLCPCB\.zip/)
+  assert.equal(output.manufacturingPackageRecorded, true)
 })
 
-test('web UI local engine actions expose status bar badges and action routes', async () => {
+test('web local engine UI exposes private pairing status and active project evidence surfaces', async () => {
   const statusBar = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'LocalEngineStatusBar.tsx'), 'utf8')
   const badges = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'StatusBadges.tsx'), 'utf8')
-  const actions = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectActionPanel.tsx'), 'utf8')
-  assert.match(statusBar, /boardforge:local-server/)
+  const workspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectWorkspaceLocalContent.tsx'), 'utf8')
+  assert.match(statusBar, /Private desktop pairing/)
+  assert.match(statusBar, /Desktop helper required for real KiCad actions/)
   assert.match(badges, /ManufacturingReadinessBadge/)
-  assert.match(actions, /POST \/project\/:id\/publish confirm=true/)
-  assert.match(actions, /job-backed local route wired/)
+  assert.match(workspace, /ProjectArtifactAvailability/)
+  assert.match(workspace, /ProjectEngineeringCopilot/)
 })
 
 test('web new board interactive flow shows local service intake and brief approval', async () => {
@@ -833,13 +838,11 @@ test('web custom outline interactive flow connects outline presets to local serv
   assert.doesNotMatch(outlineEditor, /fetch\(`http:\/\/127\.0\.0\.1:38991/)
 })
 
-test('web project action buttons and downloads local service parity are visible', async () => {
+test('project and manufacturing routes mount the active workspace surfaces', async () => {
   const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
   const downloadsPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
-  assert.match(projectPage, /ProjectActionPanel/)
-  assert.match(projectPage, /ProjectStateBadge/)
-  assert.match(downloadsPage, /ManufacturingReadinessBadge/)
-  assert.match(downloadsPage, /SourcingStatusBadge/)
+  assert.match(projectPage, /ProjectWorkspaceLocalContent/)
+  assert.match(downloadsPage, /ManufacturingLocalContent/)
 })
 
 test('legacy readiness page redirects to the evidence registry', async () => {
@@ -957,22 +960,15 @@ test('product demo review fixture generates clean board and differentiator repor
   assert.ok(output.reportsGenerated.some((file) => file.endsWith('BoardForge_Project_Health_Score.json')))
 })
 
-test('web project review panels expose command center surface', async () => {
+test('active project workspace exposes evidence, release, activity, and engineering-copilot sections', async () => {
   const projectPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'projects', '[id]', 'page.tsx'), 'utf8')
-  const actions = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectActionPanel.tsx'), 'utf8')
-  assert.match(projectPage, /JobStatusPanel/)
-  assert.match(projectPage, /ProjectHealthScoreCard/)
-  assert.match(projectPage, /BoardReviewPanel/)
-  assert.match(projectPage, /ManufacturingRiskPanel/)
-  assert.match(projectPage, /RouteabilityPanel/)
-  assert.match(projectPage, /ProjectDiffPanel/)
-  assert.match(projectPage, /AppliedLessonsPanel/)
-  assert.match(projectPage, /BlockerReportPanel/)
-  assert.match(actions, /Run Health Score/)
-  assert.match(actions, /Run Manufacturability Risk/)
-  assert.match(actions, /Generate Board Diff/)
-  assert.match(actions, /Archive/)
-  assert.match(actions, /Keep Local/)
+  const workspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ProjectWorkspaceLocalContent.tsx'), 'utf8')
+  assert.match(projectPage, /ProjectWorkspaceLocalContent/)
+  assert.match(workspace, /#overview/)
+  assert.match(workspace, /#evidence/)
+  assert.match(workspace, /#release/)
+  assert.match(workspace, /#activity/)
+  assert.match(workspace, /ProjectEngineeringCopilot/)
 })
 
 test('web job polling panel exposes localhost job routes and honest local status', async () => {
