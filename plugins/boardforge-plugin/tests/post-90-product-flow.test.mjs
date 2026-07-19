@@ -511,21 +511,24 @@ test('web brief approval UI exposes approve reject revise and publish controls',
 
 test('web intake UI exposes questions brief preview and local artifact truth', async () => {
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
-  const intakeLib = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-intake.ts'), 'utf8')
-  const questionList = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'IntakeQuestionList.tsx'), 'utf8')
-  const briefPanel = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'BoardBriefPanel.tsx'), 'utf8')
-  assert.match(newBoardPage, /BoardBriefApprovalActions/)
-  assert.match(intakeLib, /robotics_controller/)
-  assert.match(questionList, /Minimum useful questions/)
-  assert.match(briefPanel, /blocked_before_approval/)
+  const intakeWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'NewBoardIntakeWorkspace.tsx'), 'utf8')
+  assert.match(newBoardPage, /NewBoardIntakeWorkspace/)
+  assert.match(intakeWorkspace, /\/intake\/start/)
+  assert.match(intakeWorkspace, /\/intake\/answer/)
+  assert.match(intakeWorkspace, /\/brief\/approve/)
+  assert.match(intakeWorkspace, /Nothing creates or changes KiCad files from this page/)
 })
 
 test('web live intake UI exposes conversation panels and artifact-backed outline generator', async () => {
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  const intakeWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'NewBoardIntakeWorkspace.tsx'), 'utf8')
   const outlinePage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
+  const outlineWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'generator', 'GeneratorWorkspace.tsx'), 'utf8')
   const outlineExport = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'outline-export.ts'), 'utf8')
-  assert.match(newBoardPage, /IntakeQuestionList/)
-  assert.match(outlinePage, /OutlineValidationPanel/)
+  assert.match(newBoardPage, /NewBoardIntakeWorkspace/)
+  assert.match(intakeWorkspace, /projectId/)
+  assert.match(outlinePage, /GeneratorWorkspace/)
+  assert.match(outlineWorkspace, /OutlineValidationPanel/)
   assert.match(outlineExport, /BoardForge_Custom_Outline_Project_Seed|DRC_ERC_CONNECTIVITY/)
 })
 
@@ -601,7 +604,7 @@ test('web dashboard demo data labels local artifact status and demo command', as
   assert.match(dashboardPage, /Local engine artifact/)
   assert.match(dashboardPage, /npm run boardforge:demo/)
   assert.match(newBoardPage, /Premium intake flow/)
-  assert.match(uploadPage, /Local-only import/)
+  assert.match(uploadPage, /redirect\('\/import'\)/)
   assert.match(demoPage, /BoardForge local alpha demo/)
   assert.match(customPage, /Custom Board Generator/)
 })
@@ -680,11 +683,16 @@ test('local server intake flow and brief approval work through HTTP', async () =
   const { server, baseUrl } = await startTestLocalServer(rootDir)
   try {
     const intake = await localFetch(baseUrl, '/intake/start', 'POST', { projectId: 'demo', prompt: 'Make a compact robotics controller with CAN and USB-C.' })
-    const answered = await localFetch(baseUrl, '/intake/answer', 'POST', { sessionFile: intake.data.sessionFile, answers: { usb_c: 'power + data', can: 'default termination' } })
-    const approved = await localFetch(baseUrl, '/brief/approve', 'POST', { sessionFile: answered.data.sessionFile })
+    const answered = await localFetch(baseUrl, '/intake/answer', 'POST', { projectId: 'demo', answers: { usb_c: 'power + data', can: 'default termination' } })
+    const approved = await localFetch(baseUrl, '/brief/approve', 'POST', { projectId: 'demo' })
+    const created = await localFetch(baseUrl, '/project/create', 'POST', { projectId: 'demo' })
     assert.equal(intake.ok, true)
     assert.equal(answered.ok, true)
     assert.equal(approved.status, 'BOARD_FORGE_BRIEF_APPROVED')
+    assert.equal(created.status, 'BOARD_FORGE_CREATE_LOCAL_CANDIDATE')
+    assert.equal(created.data.projectCreated, true)
+    assert.equal(created.data.projectState, 'local_candidate')
+    assert.equal('manifestPath' in created.data, false)
   } finally {
     server.close()
   }
@@ -697,9 +705,16 @@ test('local server create project generates odd-shape candidate and project stat
   try {
     const created = await localFetch(baseUrl, '/project/create', 'POST', { projectId: 'odd', projectDir, oddShapeProof: true })
     const status = await localFetch(baseUrl, `/project/odd/status?projectDir=${encodeURIComponent(projectDir)}`)
+    const reports = await localFetch(baseUrl, `/project/odd/reports?projectDir=${encodeURIComponent(projectDir)}`)
+    const downloads = await localFetch(baseUrl, `/project/odd/downloads?projectDir=${encodeURIComponent(projectDir)}`)
     assert.equal(created.ok, true)
     assert.equal(created.data.validation.drc, 0)
     assert.equal(status.data.projectState, 'local_candidate')
+    assert.equal(reports.data.validation.drcViolations, 0)
+    assert.equal('boardPath' in reports.data, false)
+    assert.equal(downloads.data.artifacts.package, true)
+    assert.equal(downloads.data.browserTransferAvailable, false)
+    assert.equal('zip' in downloads.data, false)
     assert.equal(status.data.dashboardVisible, false)
   } finally {
     server.close()
@@ -727,11 +742,22 @@ test('local server publish confirm and protected path guard are enforced', async
 
 test('web localhost engine client exposes service URL offline copy and fetch client', async () => {
   const artifactClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-artifact-client.ts'), 'utf8')
+  const sessionClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-engine-session.ts'), 'utf8')
+  const pairingClient = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'boardforge-local-engine-pairing-client.ts'), 'utf8')
+  const pairingPanel = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'engine', 'BrowserLocalEnginePairing.tsx'), 'utf8')
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
   assert.match(artifactClient, /127\.0\.0\.1:38991/)
   assert.match(artifactClient, /callBoardForgeLocalEngine/)
-  assert.match(artifactClient, /npm run boardforge:local-server/)
-  assert.match(newBoardPage, /Local Engine Service/)
+  assert.match(artifactClient, /method === 'POST'/)
+  assert.match(artifactClient, /x-boardforge-token/)
+  assert.match(sessionClient, /sessionStorage/)
+  assert.doesNotMatch(sessionClient, /localStorage/)
+  assert.match(pairingClient, /pairing\/code/)
+  assert.match(pairingClient, /pairing\/verify/)
+  assert.match(pairingPanel, /Pair browser/)
+  assert.doesNotMatch(pairingPanel, /console\./)
+  assert.match(artifactClient, /protected desktop helper service/)
+  assert.match(newBoardPage, /NewBoardIntakeWorkspace/)
 })
 
 test('KiCad plugin localhost status advertises health and guarded service actions', async () => {
@@ -774,26 +800,30 @@ test('web UI local engine actions expose status bar badges and action routes', a
 
 test('web new board interactive flow shows local service intake and brief approval', async () => {
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
-  assert.match(newBoardPage, /LocalEngineStatusBar/)
-  assert.match(newBoardPage, /ProjectActionPanel/)
-  assert.match(newBoardPage, /BoardBriefApprovalActions/)
-  assert.match(newBoardPage, /Local Engine Service/)
+  const intakeWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'NewBoardIntakeWorkspace.tsx'), 'utf8')
+  assert.match(newBoardPage, /NewBoardIntakeWorkspace/)
+  assert.match(intakeWorkspace, /checkBoardForgeLocalEngine/)
+  assert.match(intakeWorkspace, /Approve engineering brief/)
+  assert.match(intakeWorkspace, /projectId/)
 })
 
 test('web custom outline interactive flow connects outline presets to local service actions', async () => {
   const customPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
+  const generatorWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'generator', 'GeneratorWorkspace.tsx'), 'utf8')
   const outlineEditor = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'outline', 'OutlineEditor.tsx'), 'utf8')
-  assert.match(customPage, /OutlinePresetPicker/)
-  assert.match(customPage, /OutlineEditor/)
-  assert.match(customPage, /OutlineValidationPanel/)
-  assert.match(customPage, /ProjectActionPanel/)
-  assert.match(outlineEditor, /mode, setMode.*points/)
+  assert.match(customPage, /GeneratorWorkspace/)
+  assert.match(generatorWorkspace, /OutlinePresetPicker/)
+  assert.match(generatorWorkspace, /OutlineEditor/)
+  assert.match(generatorWorkspace, /OutlineValidationPanel/)
+  assert.match(outlineEditor, /const \[mode, setMode\]/)
   assert.match(outlineEditor, /setMode\('draw'\)/)
-  assert.match(outlineEditor, /setMode\('delete'\)/)
+  assert.match(outlineEditor, /deleteSelected/)
   assert.match(outlineEditor, /setSnap/)
   assert.match(outlineEditor, /validateOutline/)
   assert.match(outlineEditor, /bf-outline-validation-chips/)
   assert.match(outlineEditor, /action === 'generate' && !validation\.valid/)
+  assert.match(outlineEditor, /callBoardForgeLocalEngine/)
+  assert.doesNotMatch(outlineEditor, /fetch\(`http:\/\/127\.0\.0\.1:38991/)
 })
 
 test('web project action buttons and downloads local service parity are visible', async () => {
@@ -805,10 +835,9 @@ test('web project action buttons and downloads local service parity are visible'
   assert.match(downloadsPage, /SourcingStatusBadge/)
 })
 
-test('web readiness page shows local service status', async () => {
+test('legacy readiness page redirects to the evidence registry', async () => {
   const readinessPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'readiness', 'page.tsx'), 'utf8')
-  assert.match(readinessPage, /LocalEngineStatusBar/)
-  assert.match(readinessPage, /Evidence-backed alpha score/)
+  assert.match(readinessPage, /redirect\('\/evidence'\)/)
 })
 
 test('KiCad plugin action parity advertises local service and sandbox gates', async () => {

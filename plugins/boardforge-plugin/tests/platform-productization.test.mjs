@@ -100,21 +100,15 @@ test('KiCad plugin scaffold refuses protected paths and hands off to CLI', () =>
   assert.match(source, /refused protected project path/i)
 })
 
-test('web upload page presents sandbox import without source mutation', () => {
+test('legacy web upload URL redirects to the single import workflow', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const pagePath = path.join(repoRoot, 'apps', 'web', 'src', 'app', 'upload-kicad', 'page.tsx')
-  const helperPath = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'import-sandbox.ts')
   const page = fs.readFileSync(pagePath, 'utf8')
-  const helper = fs.readFileSync(helperPath, 'utf8')
-  assert.match(page, /Original project is never modified/)
-  assert.match(page, /boardforge:import-sandbox/)
-  assert.match(page, /Protected paths are refused/)
-  assert.match(helper, /previewImportSandbox/)
-  assert.match(helper, /originalMutationPolicy/)
-  assert.match(helper, /BLOCKED_PROTECTED_USER_PROJECT/)
+  assert.match(page, /redirect\('\/import'\)/)
+  assert.doesNotMatch(page, /previewImportedRepairProof/)
 })
 
-test('web upload import repair status exposes source hash guard and sandbox repair proof', () => {
+test('legacy web upload page keeps repair proof data out of the browser surface', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const pagePath = path.join(repoRoot, 'apps', 'web', 'src', 'app', 'upload-kicad', 'page.tsx')
   const helperPath = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'import-sandbox.ts')
@@ -123,33 +117,29 @@ test('web upload import repair status exposes source hash guard and sandbox repa
   assert.match(helper, /previewImportedRepairProof/)
   assert.match(helper, /hash_guarded_no_source_mutation/)
   assert.match(helper, /BF-IMPORTED-USER-BOARD-REPAIR-01/)
-  assert.match(page, /Sandboxed imported-board repair proof/)
-  assert.match(page, /Source untouched/)
-  assert.match(page, /boardforge:imported-board-repair-proof/)
+  assert.doesNotMatch(page, /previewImportedRepairProof/)
+  assert.doesNotMatch(page, /BF-IMPORTED-USER-BOARD-REPAIR-01/)
 })
 
 test('web downloads page lists manufacturing zips and blocked review outputs honestly', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const page = fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'downloads', 'page.tsx'), 'utf8')
-  assert.match(page, /Manufacturing Packages/)
-  assert.match(page, /Blocked \/ Review Outputs/)
-  assert.match(page, /Manufacturing ZIP/)
-  assert.match(page, /local manufacturing validator/)
-  assert.match(page, /replayCommand/)
+  const content = fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'project', 'ManufacturingLocalContent.tsx'), 'utf8')
+  assert.doesNotMatch(page, /sample-manifests\/project-dashboard/)
+  assert.match(page, /ManufacturingLocalContent/)
+  assert.match(content, /useLocalProjectDashboard/)
+  assert.match(content, /Manufacturing packages/)
+  assert.match(content, /Blocked or review outputs/)
+  assert.match(page, /Browser download is unavailable/)
+  assert.match(content, /No manufacturing artifacts yet/)
+  assert.match(content, /Release locked/)
 })
 
-test('readiness evidence dashboard exposes score, gaps, and proof counts', () => {
+test('legacy readiness route redirects to the evidence registry', () => {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..')
   const pagePath = path.join(repoRoot, 'apps', 'web', 'src', 'app', 'readiness', 'page.tsx')
-  const evidencePath = path.join(repoRoot, 'apps', 'web', 'src', 'sample-manifests', 'readiness-evidence.json')
   const page = fs.readFileSync(pagePath, 'utf8')
-  const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'))
-  assert.equal(evidence.readiness >= 73, true)
-  assert.equal(evidence.evidence.cleanFixtures >= 8, true)
-  assert.equal(evidence.evidence.dirtyToCleanRepairs >= 1, true)
-  assert.match(page, /Readiness/)
-  assert.match(page, /Known gaps/)
-  assert.match(page, /Latest proof tests/)
+  assert.match(page, /redirect\('\/evidence'\)/)
 })
 
 test('readiness scorer audit documents plateau causes and required evidence', () => {

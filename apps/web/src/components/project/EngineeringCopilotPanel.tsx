@@ -1,4 +1,6 @@
-export function EngineeringCopilotPanel({ state = {} }: { state?: any }) {
+type CopilotState = { actions?: string[] }
+
+export function EngineeringCopilotPanel({ state = {} }: { state?: CopilotState }) {
   const actions = state.actions || [
     'Run DigiKey Verification if BOM data is stale.',
     'Review quote readiness warnings before assembly claims.',

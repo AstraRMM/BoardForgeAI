@@ -8,6 +8,7 @@ import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
 import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
 import { rustPolygonMetrics } from '../../lib/custom-editor/geometry-wasm'
+import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
 
 type Point = { id?: string; x: number; y: number }
 type Hole = { ref: string; x: number; y: number; diameterMm: number; keepoutMm?: number; plating?: 'plated' | 'non-plated'; locked?: boolean }
@@ -99,9 +100,10 @@ export function OutlineEditor() {
   const prompt = useMemo(() => buildCodexPrompt({ preset, points, holes, validation, metrics }), [preset, points, holes, validation, metrics])
   const statusTone = validation.valid ? 'valid' : 'blocked'
   const areaMm2 = useMemo(() => Math.abs(polygonArea(points)), [points])
-  const edgeLength = rustMetrics?.perimeter ?? totalEdgeLength(points)
+  const activeRustMetrics = closed && points.length >= 3 ? rustMetrics : null
+  const edgeLength = activeRustMetrics?.perimeter ?? totalEdgeLength(points)
   const holesInside = useMemo(() => holes.filter((hole) => pointInPolygon(hole, points)).length, [holes, points])
-  const areaText = closed && points.length >= 3 ? `${((rustMetrics?.area ?? areaMm2) / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
+  const areaText = closed && points.length >= 3 ? `${((activeRustMetrics?.area ?? areaMm2) / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
   const selectedPoint = selectedObject?.type === 'point' ? points.findIndex((point) => point.id === selectedObject.id) : null
   const selectedHole = selectedObject?.type === 'hole' ? holes.find((hole) => hole.ref === selectedObject.ref) || null : null
   const selectedEdge = selectedObject?.type === 'edge' ? {
@@ -112,8 +114,7 @@ export function OutlineEditor() {
 
   useEffect(() => {
     let current = true
-    if (!closed || points.length < 3) { setRustMetrics(null); return () => { current = false } }
-    setRustGeometryStatus('loading')
+    if (!closed || points.length < 3) return () => { current = false }
     rustPolygonMetrics(points).then((value) => { if (current) { setRustMetrics(value); setRustGeometryStatus('active') } }).catch(() => { if (current) { setRustMetrics(null); setRustGeometryStatus('fallback') } })
     return () => { current = false }
   }, [points, closed])
@@ -154,7 +155,12 @@ export function OutlineEditor() {
 
       const key = event.key.toLowerCase()
       if (event.code === 'Space') spacePressedRef.current = true
-      if ((event.ctrlKey || event.metaKey) && key === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); return }
+      if ((event.ctrlKey || event.metaKey) && key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) redo()
+        else undo()
+        return
+      }
       if ((event.ctrlKey || event.metaKey) && key === 'y') { event.preventDefault(); redo(); return }
       if (key === 'escape') {
         setSelectedObject(null)
@@ -585,9 +591,9 @@ export function OutlineEditor() {
     const body = JSON.stringify({ preset, id: `BF-OUTLINE-WEB-${Date.now()}`, points, holes, validation })
     const path = action === 'validate' ? '/outline/validate' : '/outline/generate-kicad'
     try {
-      const response = await fetch(`http://127.0.0.1:38991${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
-      const data = await response.json()
-      setStatus(`${data.status}${data.data?.manifest?.projectDir ? ` - ${data.data.manifest.projectDir}` : ''}`)
+      const data = await callBoardForgeLocalEngine(path, { method: 'POST', body }) as { ok?: boolean; status?: string; errors?: Array<{ message?: string }> }
+      if (!data.ok) throw new Error(data.errors?.[0]?.message || 'The local engine refused this action.')
+      setStatus(data.status || 'Local engine action completed.')
     } catch {
       setStatus(action === 'generate' ? 'Local engine not paired. Generation stayed blocked locally; copy the Codex prompt or start BoardForge Local Engine.' : 'Local engine not paired. Browser validation is shown; start BoardForge Local Engine for KiCad checks.')
     }
@@ -746,7 +752,7 @@ export function OutlineEditor() {
           </defs>
           <rect x={viewport.panX - 200} y={viewport.panY - 200} width={500} height={500} fill="url(#bf-outline-grid)" />
           {points.length > 1 && <polyline className="bf-editor-open-path" points={toSvgPoints(points)} />}
-          {points.slice(0, closed ? points.length : -1).map((point, index) => { const end = points[(index + 1) % points.length]; return <line key={`edge-${point.id}-${end.id}`} className="bf-editor-edge" stroke="rgba(255,255,255,.08)" strokeWidth="12" x1={point.x} y1={point.y} x2={end.x} y2={end.y} /> })}
+          {points.slice(0, closed ? points.length : -1).map((point, index) => { const end = points[(index + 1) % points.length]; return <line key={`edge-${point.id}-${end.id}`} className={`bf-editor-edge ${styles.edgeHitbox}`} stroke="rgba(255,255,255,.08)" strokeWidth="12" x1={point.x} y1={point.y} x2={end.x} y2={end.y} /> })}
           {drawDraft && drawDraft.points.length > 1 && <polyline className={styles.drawPreview} points={toSvgPoints(drawDraft.points)} />}
           {fillProposal && <polyline className={styles.fillPreview} points={toSvgPoints(fillProposal.points)} />}
           {selectedObject?.type === 'edge' && selectedEdge?.start && selectedEdge.end && <line className={styles.selectedEdge} x1={selectedEdge.start.x} y1={selectedEdge.start.y} x2={selectedEdge.end.x} y2={selectedEdge.end.y} />}

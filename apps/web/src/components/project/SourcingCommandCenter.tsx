@@ -16,7 +16,25 @@ const actions = [
   ['Open Proposed Substitution Plan', 'make_sourcable'],
 ]
 
-export function SourcingCommandCenter({ project }: { project?: any }) {
+type SourcingRow = Record<string, unknown> & { selected?: Record<string, unknown> }
+type SupplierStatus = { status?: string; reason?: string; verified?: number; rows?: number }
+type SourcingState = {
+  digikeyStatus?: string
+  digikeyAuthenticated?: boolean
+  liveLookupStatus?: string
+  mouserStatus?: string
+  mouserLiveLookupStatus?: string
+  quoteReadiness?: string
+  state?: string
+  rows?: SourcingRow[]
+  supplierMatrix?: { providers?: Record<string, SupplierStatus> }
+  quoteReport?: { status?: string }
+  alternatives?: { mpn?: string; reason?: string }[]
+  makeSourcableReport?: { status?: string }
+}
+type SourcingProject = { sourcing?: SourcingState }
+
+export function SourcingCommandCenter({ project }: { project?: SourcingProject }) {
   const sourcing = project?.sourcing || {}
   return (
     <section className="rounded-lg border border-cyan-400/30 bg-cyan-400/10 p-4">
@@ -54,6 +72,6 @@ export function SourcingCommandCenter({ project }: { project?: any }) {
   )
 }
 
-function humanize(value: string) {
+function humanize(value: unknown) {
   return String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

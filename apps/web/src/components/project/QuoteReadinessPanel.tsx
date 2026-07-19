@@ -1,4 +1,6 @@
-export function QuoteReadinessPanel({ report }: { report?: any }) {
+type QuoteReadinessReport = { status?: string }
+
+export function QuoteReadinessPanel({ report }: { report?: QuoteReadinessReport }) {
   const status = humanize(report?.status || 'Not verified yet')
   return (
     <section className="rounded-lg border border-slate-800 bg-slate-900 p-4">
@@ -9,6 +11,6 @@ export function QuoteReadinessPanel({ report }: { report?: any }) {
   )
 }
 
-function humanize(value: string) {
+function humanize(value: unknown) {
   return String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

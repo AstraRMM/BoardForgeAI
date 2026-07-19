@@ -1,18 +1,18 @@
 import Link from 'next/link'
+import { ArrowUpRight, CircleAlert } from 'lucide-react'
+import { AppShell } from '../../components/app/AppShell'
+import { DashboardLocalContent } from '../../components/project/DashboardLocalContent'
 import { getAuthEnvironment } from '../../lib/auth'
 
-const workspaceCards = [
-  ['Projects', 'Local projects appear after you pair the desktop engine.', 'Open projects', '/projects'],
-  ['New board', 'Capture a board brief or create an Edge.Cuts outline.', 'Start a board', '/new-board'],
-  ['Plugin pairing', 'Pair Codex and the local engine with a short-lived code.', 'Connect plugin', '/plugin/connect'],
-  ['Evidence', 'Review local checks, reports, sourcing state, and export gates.', 'View evidence', '/evidence'],
-]
+export const dynamic = 'force-dynamic'
 
 export default function DashboardPage() {
   const auth = getAuthEnvironment()
-  return <main className="min-h-screen bg-[#050a12] text-slate-100"><header className="border-b border-slate-800 bg-[#070e18]"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5"><div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">BoardForge workspace</p><h1 className="mt-1 text-2xl font-semibold">Engineering command center</h1></div><Link href="/settings/plugin" className="rounded-md border border-cyan-400/40 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10">Plugin settings</Link></div></header><div className="mx-auto max-w-7xl px-6 py-10">
-    {!auth.ready && <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-5"><div><p className="font-semibold text-amber-100">Account services need configuration before this workspace can be used by testers.</p><p className="mt-1 text-sm text-amber-100/80">Missing: {auth.missing.join(', ')}. The local engine remains local; this page does not expose project files.</p></div><Link href="/setup" className="rounded-md bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950">Complete setup</Link></section>}
-    <section className="grid gap-6 lg:grid-cols-[1.35fr_.65fr]"><div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-900 to-[#08101c] p-7"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">Safe starting point</p><h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-tight">Create a board brief before anything touches KiCad.</h2><p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">BoardForge turns requirements into a reviewable local plan. Project creation, validation, repair, and export stay behind explicit approvals and local evidence.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/new-board" className="rounded-md bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950">New board</Link><Link href="/upload-kicad" className="rounded-md border border-slate-700 px-4 py-2.5 font-semibold text-slate-200 hover:border-cyan-400">Inspect existing KiCad project</Link></div></div><aside className="rounded-xl border border-slate-800 bg-slate-900/70 p-6"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Session status</p><dl className="mt-5 grid gap-4 text-sm"><div><dt className="text-slate-500">Website authentication</dt><dd className={auth.ready ? 'mt-1 font-semibold text-emerald-300' : 'mt-1 font-semibold text-amber-200'}>{auth.ready ? 'Configured' : 'Setup required'}</dd></div><div><dt className="text-slate-500">Local engine</dt><dd className="mt-1 font-semibold text-slate-200">Pair a desktop helper to inspect status</dd></div><div><dt className="text-slate-500">Manufacturing exports</dt><dd className="mt-1 font-semibold text-slate-200">Released only after local evidence passes</dd></div></dl></aside></section>
-    <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{workspaceCards.map(([title, body, action, href]) => <article key={title} className="flex min-h-56 flex-col rounded-lg border border-slate-800 bg-slate-900/50 p-5"><h3 className="text-lg font-semibold">{title}</h3><p className="mt-3 flex-1 text-sm leading-6 text-slate-400">{body}</p><Link href={href} className="mt-5 text-sm font-semibold text-cyan-300">{action} →</Link></article>)}</section>
-  </div></main>
+  return <AppShell title="Engineering command center" subtitle="Review projects, evidence, and local execution gates.">
+    <div className="bf-workspace-page">
+      {!auth.ready && <section className="bf-workspace-alert"><CircleAlert size={20} /><div><strong>Account services still need configuration.</strong><span>Missing: {auth.missing.join(', ')}. Local project files remain private to the approved workspace.</span></div><Link href="/setup">Complete setup <ArrowUpRight size={15} /></Link></section>}
+      <header className="bf-workspace-head"><div><p>Workspace overview</p><h1>Welcome back, engineer.</h1><span>Everything below is derived from local project artifacts and readiness gates.</span></div><div className="bf-workspace-actions"><Link href="/new-board">Create board brief <ArrowUpRight size={16} /></Link><Link className="is-secondary" href="/import">Inspect KiCad</Link></div></header>
+      <DashboardLocalContent authReady={auth.ready} />
+    </div>
+  </AppShell>
 }

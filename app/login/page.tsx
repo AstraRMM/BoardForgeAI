@@ -1,8 +1,11 @@
-import Link from 'next/link'
-import { AuthForms } from '../../apps/web/src/components/auth/AuthForms'
+import { AuthExperience } from '../../apps/web/src/components/auth/AuthExperience'
 import { getAuthEnvironment } from '../../apps/web/src/lib/auth'
+
+// Auth configuration belongs to the deployment runtime. Rendering dynamically
+// avoids shipping a stale "missing env" page after a Vercel env update.
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const auth = getAuthEnvironment()
-  return <main className="min-h-screen bg-[#020816] px-6 py-16 text-slate-100"><section className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1.1fr_.9fr]"><div className="pt-6"><Link href="/" className="text-sm font-semibold text-cyan-300">BoardForge AI</Link><p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Account access</p><h1 className="mt-3 max-w-xl text-5xl font-semibold tracking-tight">Open your protected engineering workspace.</h1><p className="mt-5 max-w-xl text-lg leading-8 text-slate-400">Sign in before pairing a local engine, creating protected projects, or viewing user-specific evidence. KiCad projects remain in the workspace you approve.</p></div><div className="rounded-xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-cyan-950/30"><h2 className="text-2xl font-semibold">Sign in</h2>{auth.ready ? <AuthForms mode="login" /> : <div className="mt-6 rounded-lg border border-amber-400/30 bg-amber-400/10 p-4"><p className="font-semibold text-amber-200">Authentication setup is incomplete.</p><p className="mt-2 text-sm leading-6 text-amber-100">The deployment is missing: {auth.missing.join(', ')}. Configure production variables and run the Better Auth migration before inviting users.</p><Link href="/setup" className="mt-4 inline-block text-sm font-semibold text-cyan-300 underline">View setup requirements</Link></div>}<p className="mt-5 text-sm text-slate-400">New to BoardForge? <Link href="/signup" className="font-semibold text-cyan-300">Create an account</Link></p></div></section></main>
+  return <AuthExperience mode="login" ready={auth.ready} missing={auth.missing} />
 }

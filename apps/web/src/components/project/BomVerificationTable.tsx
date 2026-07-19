@@ -1,4 +1,6 @@
-export function BomVerificationTable({ rows = [] }: { rows?: any[] }) {
+type SourcingRow = Record<string, unknown> & { selected?: Record<string, unknown> }
+
+export function BomVerificationTable({ rows = [] }: { rows?: SourcingRow[] }) {
   const sample = rows.length ? rows : [
     { Ref: 'R?', MPN: 'BOM not verified yet', Manufacturer: 'Not verified', digiKeyPartNumber: 'Not verified yet', matchType: 'Waiting for supplier check', sourcingStatus: 'Supplier lookup not run', stockStatus: 'Not verified', quantityAvailable: '', unitPrice: '', lifecycleStatus: 'Not verified', rohsStatus: 'Not verified', datasheetUrl: '', liveStatus: 'Not verified yet', risk: 'Run supplier verification', nextAction: 'Start sourcing verification' },
   ]
@@ -13,14 +15,14 @@ export function BomVerificationTable({ rows = [] }: { rows?: any[] }) {
         <tbody>
           {sample.map((row, index) => (
             <tr key={index} className="border-t border-slate-800">
-              <td className="p-2 font-mono">{row.Ref || row.ref || row.reference}</td>
-              <td className="p-2 font-mono">{row.MPN || row.mpn || row.manufacturerPartNumber}</td>
+              <td className="p-2 font-mono">{display(row.Ref || row.ref || row.reference)}</td>
+              <td className="p-2 font-mono">{display(row.MPN || row.mpn || row.manufacturerPartNumber)}</td>
               <td className="p-2">{humanize(row.Manufacturer || row.manufacturer || 'Not verified')}</td>
               <td className="p-2 font-mono">{humanize(row.digiKeyPartNumber || row.digikeyPartNumber || row.selected?.digiKeyPartNumber || 'Not verified yet')}</td>
               <td className="p-2">{humanize(row.matchType || row.sourcingStatus || 'Waiting for supplier check')}</td>
               <td className="p-2">{humanize(row.stockStatus || 'Not verified')}</td>
-              <td className="p-2">{row.quantityAvailable || ''}</td>
-              <td className="p-2">{row.unitPrice || ''}</td>
+              <td className="p-2">{display(row.quantityAvailable)}</td>
+              <td className="p-2">{display(row.unitPrice)}</td>
               <td className="p-2">{humanize(row.lifecycleStatus || 'Not verified')}</td>
               <td className="p-2">{humanize(row.rohsStatus || 'Not verified')}</td>
               <td className="p-2">{row.datasheetUrl ? 'Datasheet linked' : humanize(row.liveStatus || 'Not verified yet')}</td>
@@ -34,6 +36,10 @@ export function BomVerificationTable({ rows = [] }: { rows?: any[] }) {
   )
 }
 
-function humanize(value: string) {
+function display(value: unknown) {
+  return value == null ? '' : String(value)
+}
+
+function humanize(value: unknown) {
   return String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }

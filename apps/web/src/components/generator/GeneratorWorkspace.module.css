@@ -1,0 +1,248 @@
+.workspace {
+  --bf-page: #0a1018;
+  --bf-panel: #111924;
+  --bf-panel-raised: #151f2c;
+  --bf-hover: #1a2737;
+  --bf-border: #27384c;
+  --bf-border-muted: #1d2a3a;
+  --bf-text: #f4f7fb;
+  --bf-text-secondary: #a7b4c5;
+  --bf-text-tertiary: #728196;
+  --bf-blue: #3182f6;
+  --bf-green: #39c87d;
+  --bf-radius: 10px;
+  min-width: 0;
+  color: var(--bf-text);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 2px 0 22px;
+  border-bottom: 1px solid var(--bf-border-muted);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 8px;
+  color: #72adff;
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(26px, 2vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+
+.copy {
+  max-width: 680px;
+  margin: 9px 0 0;
+  color: var(--bf-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.headerFacts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.headerFacts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--bf-border);
+  border-radius: 7px;
+  color: var(--bf-text-secondary);
+  background: rgba(16, 25, 36, .8);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.headerFacts svg { color: var(--bf-blue); }
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 16px 0;
+  padding: 10px 12px;
+  border: 1px solid #243952;
+  border-radius: 8px;
+  color: #b2c4db;
+  background: rgba(33, 72, 120, .14);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.notice svg { flex: 0 0 auto; color: #6aa8ff; }
+
+.editorGrid {
+  display: grid;
+  align-items: start;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 320px);
+}
+
+.canvasRegion { min-width: 0; }
+
+.inspector {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.shortcuts {
+  padding: 14px;
+  border: 1px solid var(--bf-border);
+  border-radius: var(--bf-radius);
+  background: var(--bf-panel);
+}
+
+.shortcuts > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcuts svg { color: #7eb4ff; }
+
+.shortcuts h2 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: -.01em;
+}
+
+.shortcuts dl {
+  display: grid;
+  gap: 8px;
+  margin: 13px 0 0;
+}
+
+.shortcuts dl div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcuts dt,
+.shortcuts dd { margin: 0; }
+.shortcuts dd { color: var(--bf-text-secondary); font-size: 12px; }
+.shortcuts kbd {
+  display: inline-flex;
+  min-width: 22px;
+  justify-content: center;
+  margin-right: 3px;
+  padding: 3px 5px;
+  border: 1px solid #34455b;
+  border-bottom-color: #52647c;
+  border-radius: 4px;
+  color: #dce8f9;
+  background: #0b111a;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.workflow { margin-top: 16px; }
+
+/* Re-skin the protected feature components only inside this workspace. */
+.workspace :global(.bf-outline-workbench.premium),
+.workspace :global(.bf-premium-panel),
+.workspace :global(.bf-engine-status-card),
+.workspace :global(.bf-local-workflow-panel) {
+  border-color: var(--bf-border);
+  border-radius: var(--bf-radius);
+  background: var(--bf-panel);
+  box-shadow: none;
+}
+
+.workspace :global(.bf-outline-workbench.premium) { padding: 16px; }
+.workspace :global(.bf-outline-premium-head h2),
+.workspace :global(.bf-premium-panel h2),
+.workspace :global(.bf-local-workflow-panel h2) { color: var(--bf-text); }
+.workspace :global(.bf-outline-premium-head h2) {
+  font-size: clamp(25px, 2.2vw, 38px);
+  line-height: 1.08;
+}
+.workspace :global(.bf-outline-premium-head p),
+.workspace :global(.bf-premium-panel p),
+.workspace :global(.bf-local-workflow-copy),
+.workspace :global(.bf-engine-status-card p) { color: var(--bf-text-secondary); }
+.workspace :global(.bf-outline-canvas-panel),
+.workspace :global(.bf-outline-score-card),
+.workspace :global(.bf-outline-status),
+.workspace :global(.bf-local-workflow-card),
+.workspace :global(.bf-outline-preset-card),
+.workspace :global(.bf-outline-checks div) {
+  border-color: var(--bf-border-muted);
+  border-radius: 8px;
+  background: #0d151f;
+}
+
+.workspace :global(.bf-outline-workbench.premium .bf-outline-studio),
+.workspace :global(.bf-outline-workbench.premium .bf-outline-studio > svg) { min-height: 620px; }
+.workspace :global(.bf-outline-tool-rail button),
+.workspace :global(.bf-outline-toolbar button),
+.workspace :global(.bf-outline-floating-toolbar),
+.workspace :global(.bf-outline-handoff button) { border-radius: 7px; }
+.workspace :global(.bf-kicker),
+.workspace :global(.bf-local-workflow-kicker) { color: #72adff; }
+
+@media (max-width: 2050px) {
+  .editorGrid { grid-template-columns: 1fr; }
+  .inspector { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inspector > :first-child,
+  .shortcuts { grid-column: 1 / -1; }
+  .workspace :global(.bf-outline-workbench.premium .bf-outline-studio),
+  .workspace :global(.bf-outline-workbench.premium .bf-outline-studio > svg) { min-height: 540px; }
+
+  /* The preserved editor normally owns the entire browser width. In the app
+     shell it has roughly 1,650px, so apply its desktop composition breakpoint
+     to the embedded workbench rather than allowing its cards to overflow. */
+  .workspace :global(.bf-outline-premium-head),
+  .workspace :global(.bf-outline-generator-shell) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace :global(.bf-outline-tool-rail) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .workspace :global(.bf-outline-truth-gates),
+  .workspace :global(.bf-outline-metrics) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .header { align-items: flex-start; flex-direction: column; }
+  .headerFacts { justify-content: flex-start; }
+  .editorGrid { grid-template-columns: 1fr; }
+  .inspector { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inspector > :first-child,
+  .shortcuts { grid-column: 1 / -1; }
+}
+
+@media (max-width: 680px) {
+  .header { padding-bottom: 16px; }
+  .headerFacts span { font-size: 11px; }
+  .inspector { grid-template-columns: 1fr; }
+  .workspace :global(.bf-outline-workbench.premium) { padding: 10px; }
+  .workspace :global(.bf-outline-workbench.premium .bf-outline-studio),
+  .workspace :global(.bf-outline-workbench.premium .bf-outline-studio > svg) { min-height: 430px; }
+}

@@ -1,14 +1,18 @@
 import { ImportKiCadWizard } from '../../components/import/ImportKiCadWizard'
+import { AppShell } from '../../components/app/AppShell'
 
 export default function ImportPage() {
-  return (
-    <main className="min-h-screen bg-slate-950 px-8 py-8 text-slate-100">
-      <section className="mx-auto max-w-5xl">
-        <p className="text-sm uppercase tracking-wide text-cyan-300">Local-first import</p>
-        <h1 className="mt-2 text-3xl font-semibold">Import Existing KiCad Project</h1>
-        <p className="mt-3 max-w-3xl text-slate-400">The live website asks the local engine to copy into a sandbox. Source hashes prove the original stayed untouched.</p>
+  return <AppShell title="Import KiCad project" subtitle="Copy-based import keeps source KiCad projects outside the browser workflow.">
+    <div className="bf-app-page">
+      <section className="bf-app-hero">
+        <span className="bf-kicker">Local-first import</span>
+        <h1>Import an existing KiCad project without modifying its source.</h1>
+        <p>
+          The local import workflow copies a selected project into a sandbox before validation or repair. Source hashes
+          prove the original stayed untouched. No project has been selected or imported from this browser page.
+        </p>
       </section>
-      <section className="mx-auto mt-8 max-w-5xl"><ImportKiCadWizard /></section>
-    </main>
-  )
+      <ImportKiCadWizard />
+    </div>
+  </AppShell>
 }

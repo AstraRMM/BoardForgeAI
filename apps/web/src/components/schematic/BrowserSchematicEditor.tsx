@@ -20,9 +20,6 @@ import {
 import styles from "./BrowserSchematicEditor.module.css";
 type Tool = "select" | "pan" | "wire" | "label";
 type View = { zoom: number; x: number; y: number };
-const DEFAULT_SOURCE = String.raw`C:\Users\luifi\Desktop\BoardForge_Dev\boardforge-ai\fixtures\kicad-roundtrip\m3\05-simple-mcu\simple-mcu.kicad_sch`;
-const DEFAULT_SOURCE_HASH =
-  "762b28f64563a89364d9def4b253d35ebeeef6b3c83d79b7000c136906c95feb";
 export function BrowserSchematicEditor() {
   const [baseline, setBaseline] = useState(() =>
       structuredClone(sampleSchematic),
@@ -37,14 +34,14 @@ export function BrowserSchematicEditor() {
     [view, setView] = useState<View>({ zoom: 8, x: 80, y: 80 }),
     [grid, setGrid] = useState(true),
     [wireStart, setWireStart] = useState<Point | null>(null),
-    [status, setStatus] = useState("Loaded local schematic fixture."),
+    [status, setStatus] = useState("Loaded browser sample. Bind a local KiCad source before creating a candidate."),
     [approval, setApproval] = useState<ApprovedSchematicTransaction | null>(
       null,
     ),
     [candidate, setCandidate] = useState<CandidateReport | null>(null),
     [requesting, setRequesting] = useState(false),
-    [sourcePath, setSourcePath] = useState(DEFAULT_SOURCE),
-    [sourceHash, setSourceHash] = useState(DEFAULT_SOURCE_HASH);
+    [sourcePath, setSourcePath] = useState(""),
+    [sourceHash, setSourceHash] = useState("");
   const svg = useRef<SVGSVGElement>(null),
     drag = useRef<{
       screen: Point;
@@ -53,6 +50,9 @@ export function BrowserSchematicEditor() {
       moving: boolean;
     } | null>(null);
   const changes = useMemo(() => diffSchematic(baseline, doc), [baseline, doc]);
+  const sourceBound =
+    /\.kicad_sch$/i.test(sourcePath.trim()) &&
+    /^[a-f0-9]{64}$/i.test(sourceHash.trim());
   const commit = useCallback(
     (next: SchematicDocument, message: string) => {
       setHistory((h) => [...h, doc]);
@@ -229,6 +229,12 @@ export function BrowserSchematicEditor() {
     );
   const approve = () => {
     if (!changes.length) return;
+    if (!sourceBound) {
+      setStatus(
+        "Bind a local .kicad_sch path and its 64-character SHA-256 before approving a candidate.",
+      );
+      return;
+    }
     try {
       setApproval(
         buildApprovedTransaction(
@@ -326,9 +332,10 @@ export function BrowserSchematicEditor() {
   return (
     <div className={styles.shell}>
       <header>
-        <strong>Schematic workspace</strong>
-        <span>{doc.title}</span>
+        <strong>Schematic candidate editor</strong>
+        <span>Browser sample: {doc.title}</span>
         <b>Browser fixture · no direct file writes</b>
+        <span aria-live="polite">{sourceBound ? "Local source bound" : "No local source bound"}</span>
       </header>
       <nav aria-label="Schematic tools">
         {(["select", "pan", "wire", "label"] as Tool[]).map((t) => (
@@ -391,7 +398,7 @@ export function BrowserSchematicEditor() {
         <output>{Math.round((view.zoom / 8) * 100)}%</output>
       </nav>
       <aside className={styles.tree}>
-        <h2>Fixture</h2>
+        <h2>Browser sample</h2>
         <p>{doc.symbols.length} symbols</p>
         <p>{doc.wires.length} wires</p>
         <p>{doc.labels.length} labels</p>
@@ -495,12 +502,14 @@ export function BrowserSchematicEditor() {
         </svg>
       </main>
       <aside className={styles.inspector}>
-        <h2>Properties</h2>
+        <h2>Candidate source binding</h2>
         <label>
-          Source path
+          Local .kicad_sch path
           <input
             value={sourcePath}
             onChange={(event) => setSourcePath(event.target.value)}
+            placeholder="C:\\Projects\\MyBoard\\MyBoard.kicad_sch"
+            aria-describedby="source-binding-help"
           />
         </label>
         <label>
@@ -508,8 +517,14 @@ export function BrowserSchematicEditor() {
           <input
             value={sourceHash}
             onChange={(event) => setSourceHash(event.target.value)}
+            placeholder="64-character SHA-256"
+            aria-describedby="source-binding-help"
           />
         </label>
+        <p id="source-binding-help">
+          This canvas is a browser sample, not a parsed KiCad file. BoardForge sends edits only as an isolated candidate transaction against the source you explicitly bind here.
+        </p>
+        <h2>Properties</h2>
         {symbol ? (
           <>
             <strong>{symbol.reference}</strong>
@@ -567,7 +582,7 @@ export function BrowserSchematicEditor() {
         ) : (
           <p>No candidate changes.</p>
         )}
-        <button onClick={approve} disabled={!changes.length || requesting}>
+        <button onClick={approve} disabled={!changes.length || !sourceBound || requesting}>
           Approve transaction
         </button>
         <button

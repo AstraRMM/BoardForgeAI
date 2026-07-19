@@ -1,4 +1,6 @@
-export function AlternativePartsPanel({ alternatives = [] }: { alternatives?: any[] }) {
+type AlternativePart = { mpn?: string; reason?: string }
+
+export function AlternativePartsPanel({ alternatives = [] }: { alternatives?: AlternativePart[] }) {
   return (
     <section className="rounded-lg border border-slate-800 bg-slate-900 p-4">
       <h3 className="text-sm font-semibold text-slate-100">Candidate Alternatives</h3>

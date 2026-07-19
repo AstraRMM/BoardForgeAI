@@ -72,8 +72,30 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
       if (method === 'GET' && pathname === '/status') {
         return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_STATUS', data: { ...(await api.status()), port: 38991, logDir, version: 'local-alpha', workspace: rootDir, entitlement: canRunPremiumAction('create_project') } })
       }
+      if (method === 'GET' && pathname === '/projects/dashboard') {
+        const result = await api.projectDashboard()
+        return okResponse({
+          status: 'BOARD_FORGE_PROJECT_DASHBOARD_DATA',
+          data: result.dashboard,
+          warnings: result.warnings,
+          artifactPaths: result.artifactPaths,
+        })
+      }
       if (method === 'GET' && pathname === '/readiness') {
-        return okResponse({ status: 'BOARD_FORGE_READINESS_STATUS', data: { readiness: 91, label: 'MVP_READINESS_90_EVIDENCE_BACKED_WITH_EXACT_SOURCING_SECRET_BLOCKER', source: 'report:90:quick' } })
+        const result = await api.projectDashboard()
+        const summary = result.dashboard.summary
+        return okResponse({
+          status: 'BOARD_FORGE_READINESS_STATUS',
+          data: {
+            label: summary.totalProjects ? 'Local project evidence available' : 'No local project evidence recorded',
+            source: 'canonical local project dashboard artifacts',
+            summary,
+            scoreAvailable: false,
+            reason: 'BoardForge does not calculate a release score unless a dedicated readiness artifact has been generated locally.',
+          },
+          warnings: result.warnings,
+          artifactPaths: result.artifactPaths,
+        })
       }
       if (method === 'GET' && pathname === '/fixtures') {
         return okResponse({ status: 'BOARD_FORGE_FIXTURE_STATUS', data: { fixtureRoot: rootDir, fixturesCommand: 'npm run fixtures:run', reportCommand: 'npm run report:90:quick -- --fresh' } })
@@ -140,24 +162,26 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
       }
       if (method === 'POST' && pathname === '/intake/start') {
         const result = await api.startIntake(payload)
-        return okResponse({ status: 'BOARD_FORGE_INTAKE_STARTED', data: result, artifactPaths: [result.sessionFile, ...(Object.values(result.briefFiles || {}))] })
+        return okResponse({ status: 'BOARD_FORGE_INTAKE_STARTED', data: publicIntakeResponse(result, payload.projectId) })
       }
       if (method === 'POST' && pathname === '/intake/answer') {
         const result = await api.answerIntake(payload)
-        return okResponse({ status: 'BOARD_FORGE_INTAKE_ANSWERED', data: result, artifactPaths: [result.sessionFile, ...(Object.values(result.briefFiles || {}))] })
+        return okResponse({ status: 'BOARD_FORGE_INTAKE_ANSWERED', data: publicIntakeResponse(result, payload.projectId) })
       }
       const intakeSession = pathname.match(/^\/intake\/session\/(.+)$/)
       if (method === 'GET' && intakeSession) {
-        const sessionFile = query.get('sessionFile') || path.join(rootDir, decodeURIComponent(intakeSession[1]), 'BoardForge_Conversation_Session.json')
+        const projectId = decodeURIComponent(intakeSession[1])
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,80}$/.test(projectId)) return errorResponse({ status: 'BOARD_FORGE_INTAKE_SESSION_REFUSED', error: 'project reference is invalid' })
+        const sessionFile = path.join(rootDir, projectId, 'BoardForge_Conversation_Session.json')
         return okResponse({ status: 'BOARD_FORGE_INTAKE_SESSION', data: JSON.parse(await readFile(sessionFile, 'utf8')), artifactPaths: [sessionFile] })
       }
       if (method === 'POST' && pathname === '/brief/generate') {
         const result = await api.generateBrief(payload)
-        return okResponse({ status: 'BOARD_FORGE_BRIEF_GENERATED', data: result, artifactPaths: Object.values(result.files || {}) })
+        return okResponse({ status: 'BOARD_FORGE_BRIEF_GENERATED', data: publicIntakeResponse(result, payload.projectId) })
       }
       if (method === 'POST' && pathname === '/brief/approve') {
         const result = await api.approveBrief(payload)
-        return okResponse({ status: 'BOARD_FORGE_BRIEF_APPROVED', data: result, artifactPaths: [result.sessionFile, ...(Object.values(result.briefFiles || {}))] })
+        return okResponse({ status: 'BOARD_FORGE_BRIEF_APPROVED', data: publicIntakeResponse(result, payload.projectId) })
       }
       if (method === 'POST' && pathname === '/project/create') {
         const entitlement = canRunPremiumAction('create_project')
@@ -169,7 +193,7 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
           return okResponse({ status: 'BOARD_FORGE_PROJECT_CREATED_BY_LOCALHOST_SERVICE', data: { ...result, entitlement }, warnings: entitlement.allowed ? [] : entitlement.blockers, artifactPaths: [result.projectFiles.pcb, result.manufacturing.zip] })
         }
         const result = await api.createProject(payload)
-        return okResponse({ status: result.status, data: { ...result, entitlement }, warnings: entitlement.allowed ? [] : entitlement.blockers, artifactPaths: [result.manifestPath, ...(Object.values(result.projectFiles || {}))].filter(Boolean) })
+        return okResponse({ status: result.status, data: publicProjectCreateResponse(result, payload.projectId, entitlement), warnings: entitlement.allowed ? [] : entitlement.blockers, artifactPaths: [result.manifestPath, ...(Object.values(result.projectFiles || {}))].filter(Boolean) })
       }
 
       const projectRoute = pathname.match(/^\/project\/([^/]+)\/?([^/]*)$/)
@@ -182,8 +206,20 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
 
         if (method === 'GET' && action === 'status') return okResponse({ status: 'BOARD_FORGE_PROJECT_STATUS', data: await api.projectStatus({ projectDir }) })
         if (method === 'GET' && action === 'manifest') return okResponse({ status: 'BOARD_FORGE_PROJECT_MANIFEST', data: JSON.parse(await readFile(path.join(projectDir, 'BoardForge_Project_Manifest.json'), 'utf8')), artifactPaths: [path.join(projectDir, 'BoardForge_Project_Manifest.json')] })
-        if (method === 'GET' && action === 'reports') return okResponse({ status: 'BOARD_FORGE_PROJECT_REPORTS', data: await api.reports({ projectDir }), artifactPaths: [path.join(projectDir, 'BoardForge_Project_Manifest.json')] })
-        if (method === 'GET' && action === 'downloads') return okResponse({ status: 'BOARD_FORGE_PROJECT_DOWNLOADS', data: await api.downloads({ projectDir }), artifactPaths: [path.join(projectDir, 'BoardForge_Downloads_Manifest.json')] })
+        // The dashboard must consume the artifact written by the local project
+        // workflow, rather than reconstructing a card from browser fixtures.
+        // This route is read-only and remains subject to the same project-path
+        // guard and localhost/token checks as every other project route.
+        if (method === 'GET' && action === 'dashboard') {
+          const artifactPath = path.join(projectDir, 'BoardForge_Project_Dashboard_Data.json')
+          return okResponse({
+            status: 'BOARD_FORGE_PROJECT_DASHBOARD_DATA',
+            data: JSON.parse(await readFile(artifactPath, 'utf8')),
+            artifactPaths: [artifactPath],
+          })
+        }
+        if (method === 'GET' && action === 'reports') return okResponse({ status: 'BOARD_FORGE_PROJECT_REPORTS', data: publicProjectReports(await api.reports({ projectDir })) })
+        if (method === 'GET' && action === 'downloads') return okResponse({ status: 'BOARD_FORGE_PROJECT_DOWNLOADS', data: publicProjectDownloads(await api.downloads({ projectDir })) })
         if (method === 'POST' && action === 'publish') {
           requirePublishConfirm(payload)
           const result = await api.publishProject({ projectDir, confirm: true })
@@ -269,5 +305,85 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
     } catch (error) {
       return errorResponse({ status: error.status || 'BOARD_FORGE_LOCAL_SERVER_ROUTE_ERROR', error })
     }
+  }
+}
+
+function publicIntakeResponse(result = {}, projectId = '') {
+  const session = result.session || {}
+  return {
+    projectId: String(projectId || '').replace(/[^A-Za-z0-9_-]/g, ''),
+    session: {
+      sessionId: session.sessionId,
+      originalPrompt: session.originalPrompt,
+      boardType: session.boardType,
+      currentStage: session.currentStage,
+      questionsAsked: session.questionsAsked || [],
+      questionsToAsk: session.plan?.questionsToAsk || [],
+      assumptions: session.assumptions || [],
+      risks: session.risks || [],
+      approvalStatus: session.approvalStatus,
+      projectState: session.projectState,
+    },
+    brief: result.brief ? publicBrief(result.brief) : undefined,
+  }
+}
+
+function publicProjectCreateResponse(result = {}, projectId = '', entitlement = {}) {
+  return {
+    projectId: String(projectId || '').replace(/[^A-Za-z0-9_-]/g, ''),
+    projectCreated: Boolean(result.projectCreated),
+    projectState: result.publish?.projectState || null,
+    briefApproved: Boolean(result.brief?.briefApproved),
+    blockers: Array.isArray(result.blockers) ? result.blockers : [],
+    entitlement: {
+      allowed: Boolean(entitlement.allowed),
+      action: entitlement.action || 'create_project',
+    },
+  }
+}
+
+/** Browser views need artifact availability and engineering state, not local paths. */
+function publicProjectReports(manifest = {}) {
+  return {
+    projectId: manifest.projectId || null,
+    projectName: manifest.projectName || null,
+    status: manifest.status || null,
+    validation: {
+      drcViolations: manifest.validation?.drcViolations ?? manifest.validation?.drc ?? null,
+      ercViolations: manifest.validation?.ercViolations ?? manifest.validation?.erc ?? null,
+      unconnected: manifest.validation?.unconnected ?? manifest.validation?.unconnectedCount ?? null,
+      forbiddenVias: manifest.validation?.forbiddenVias ?? manifest.validation?.forbiddenViasCount ?? null,
+    },
+    reports: Object.keys(manifest.reports || {}).map((id) => ({ id, available: true })),
+  }
+}
+
+function publicProjectDownloads(downloads = {}) {
+  return {
+    readiness: downloads.readiness || null,
+    assembly: downloads.assembly || null,
+    artifacts: {
+      gerbers: Boolean(downloads.gerbers),
+      drill: Boolean(downloads.drill),
+      bom: Boolean(downloads.bom),
+      cpl: Boolean(downloads.cpl),
+      package: Boolean(downloads.zip),
+    },
+    browserTransferAvailable: false,
+  }
+}
+
+function publicBrief(brief = {}) {
+  return {
+    boardPurpose: brief.boardPurpose,
+    boardType: brief.boardType,
+    selectedArchitecture: brief.selectedArchitecture || [],
+    assumptions: brief.assumptions || [],
+    partsAndBlocksProposed: brief.partsAndBlocksProposed || [],
+    boardOutlinePlan: brief.boardOutlinePlan,
+    connectorPlan: brief.connectorPlan,
+    powerPlan: brief.powerPlan,
+    manufacturingTarget: brief.manufacturingTarget,
+    briefApproved: Boolean(brief.briefApproved),
   }
 }

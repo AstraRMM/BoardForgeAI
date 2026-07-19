@@ -1,4 +1,6 @@
-export function MakeSourcableReportPanel({ report }: { report?: any }) {
+type SourcingReport = { status?: string }
+
+export function MakeSourcableReportPanel({ report }: { report?: SourcingReport }) {
   return (
     <section className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-4">
       <h3 className="text-sm font-semibold text-emerald-100">Make Sourcable Report</h3>
