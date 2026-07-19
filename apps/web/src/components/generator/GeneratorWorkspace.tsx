@@ -13,23 +13,23 @@ import styles from './GeneratorWorkspace.module.css'
  */
 export function GeneratorWorkspace() {
   return (
-    <AppShell title="Custom Board Generator" subtitle="Precise board outlines with gated KiCad Edge.Cuts export.">
+    <AppShell title="Custom Board Generator" subtitle="Browser-first mechanical design with an optional gated KiCad handoff.">
       <div className={styles.workspace}>
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}><BoxSelect size={14} /> Mechanical design workspace</p>
             <h1>Custom Board Generator</h1>
-            <p className={styles.copy}>Create a precise mechanical outline, review routeability, and hand an exact Edge.Cuts seed to the paired local engine.</p>
+            <p className={styles.copy}>Create a precise mechanical outline, review routeability in-browser, save a browser outline draft, or hand an exact Edge.Cuts seed to a paired local engine.</p>
           </div>
           <div className={styles.headerFacts} aria-label="Generator information">
             <span><Ruler size={15} /> Dimensions in mm</span>
-            <span><FileCog size={15} /> Candidate-safe export</span>
+            <span><FileCog size={15} /> Optional KiCad handoff</span>
           </div>
         </header>
 
         <div className={styles.notice}>
           <Info size={16} />
-          <span>Geometry checks are immediate. KiCad ERC, DRC, and manufacturing evidence remain local-engine gated.</span>
+          <span>Geometry checks run here. A local engine is only needed when you request KiCad creation or KiCad evidence.</span>
         </div>
 
         <div className={styles.editorGrid}>
@@ -54,9 +54,9 @@ export function GeneratorWorkspace() {
 
         <section className={styles.workflow} aria-label="Local engineering workflow">
           <div className="bf-workspace-panel">
-            <p className="bf-panel-kicker">Export boundary</p>
-            <h2>Outline export stays local and explicit.</h2>
-            <p className="bf-project-workspace-note">The editor can validate geometry and prepare an outline seed. A paired local engine must write the Edge.Cuts candidate and later run KiCad validation; the browser does not claim those steps have happened.</p>
+            <p className="bf-panel-kicker">Handoff boundary</p>
+            <h2>Browser drafts and KiCad candidates are distinct.</h2>
+            <p className="bf-project-workspace-note">The editor can save a browser outline draft and package exact geometry. A paired local engine must create Edge.Cuts files and later run KiCad validation; neither action is implied by browser geometry checks.</p>
           </div>
         </section>
       </div>

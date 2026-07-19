@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
 import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers3, MousePointer2, Pencil, Plus, Redo2, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Undo2, Wand2, ZoomIn, ZoomOut } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
+import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
+import { createBrowserProject, saveBrowserProject } from '../../lib/browser-project-registry'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
 import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
@@ -86,6 +88,8 @@ export function OutlineEditor() {
   const [copied, setCopied] = useState(false)
   const [showPromptPanel, setShowPromptPanel] = useState(false)
   const [autoFixProposal, setAutoFixProposal] = useState<AutoFixProposal | null>(null)
+  const [browserDraftSaved, setBrowserDraftSaved] = useState(false)
+  const browserDraftId = useRef<string | null>(null)
 
   const box = useMemo(() => bounds(points), [points])
   const viewBox = `${viewport.panX} ${viewport.panY} ${100 / viewport.zoom} ${70 / viewport.zoom}`
@@ -112,9 +116,11 @@ export function OutlineEditor() {
 
   useEffect(() => {
     let current = true
-    if (!closed || points.length < 3) { setRustMetrics(null); return () => { current = false } }
-    setRustGeometryStatus('loading')
-    rustPolygonMetrics(points).then((value) => { if (current) { setRustMetrics(value); setRustGeometryStatus('active') } }).catch(() => { if (current) { setRustMetrics(null); setRustGeometryStatus('fallback') } })
+    if (!closed || points.length < 3) return () => { current = false }
+    void Promise.resolve().then(() => {
+      if (current) setRustGeometryStatus('loading')
+      return rustPolygonMetrics(points)
+    }).then((value) => { if (current) { setRustMetrics(value); setRustGeometryStatus('active') } }).catch(() => { if (current) { setRustMetrics(null); setRustGeometryStatus('fallback') } })
     return () => { current = false }
   }, [points, closed])
 
@@ -154,7 +160,7 @@ export function OutlineEditor() {
 
       const key = event.key.toLowerCase()
       if (event.code === 'Space') spacePressedRef.current = true
-      if ((event.ctrlKey || event.metaKey) && key === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); return }
+      if ((event.ctrlKey || event.metaKey) && key === 'z') { event.preventDefault(); if (event.shiftKey) redo(); else undo(); return }
       if ((event.ctrlKey || event.metaKey) && key === 'y') { event.preventDefault(); redo(); return }
       if (key === 'escape') {
         setSelectedObject(null)
@@ -585,12 +591,27 @@ export function OutlineEditor() {
     const body = JSON.stringify({ preset, id: `BF-OUTLINE-WEB-${Date.now()}`, points, holes, validation })
     const path = action === 'validate' ? '/outline/validate' : '/outline/generate-kicad'
     try {
-      const response = await fetch(`http://127.0.0.1:38991${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
-      const data = await response.json()
-      setStatus(`${data.status}${data.data?.manifest?.projectDir ? ` - ${data.data.manifest.projectDir}` : ''}`)
-    } catch {
-      setStatus(action === 'generate' ? 'Local engine not paired. Generation stayed blocked locally; copy the Codex prompt or start BoardForge Local Engine.' : 'Local engine not paired. Browser validation is shown; start BoardForge Local Engine for KiCad checks.')
+      const data = await callBoardForgeLocalEngine(path, { method: 'POST', body }) as { ok?: boolean; errors?: Array<{ message?: string }> }
+      if (!data.ok) throw new Error(data.errors?.[0]?.message || 'The local engine did not accept the outline request.')
+      setStatus(action === 'generate' ? 'Local KiCad outline candidate created. Open Projects to inspect its recorded evidence.' : 'Local engine validation request completed. Browser geometry results remain separate from KiCad evidence.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      setStatus(action === 'generate' ? `Local KiCad creation was not started. ${message || 'Pair a desktop helper before creating a candidate.'}` : `Browser geometry checks remain available. ${message || 'Pair a desktop helper to request local KiCad validation.'}`)
     }
+  }
+
+  function saveBrowserOutlineDraft() {
+    const projectId = browserDraftId.current || `browser-outline-${Date.now().toString(36)}`
+    browserDraftId.current = projectId
+    const project = createBrowserProject({
+      projectId,
+      projectName: `${labelForPreset(preset)} outline`,
+      prompt,
+      kind: 'browser_outline',
+    })
+    saveBrowserProject(project)
+    setBrowserDraftSaved(true)
+    setStatus('Browser outline draft saved in this browser. It retains no KiCad files and has no local DRC/ERC or manufacturing evidence.')
   }
 
   async function downloadSeed() {
@@ -681,13 +702,13 @@ export function OutlineEditor() {
           <span className="bf-kicker">Custom board generator</span>
           <h2>Draw. Validate. Build with confidence.</h2>
           <p>
-            This studio only validates the mechanical outline in-browser. KiCad DRC/ERC and real manufacturing export
-            stay pending until the local BoardForge engine is paired.
+            Shape editing, dimensions, and mechanical checks run in this browser. Save the outline as a browser draft,
+            then optionally pair the desktop helper when you are ready to create and validate KiCad artifacts.
           </p>
         </div>
         <div className="bf-outline-truth-gates" aria-label="Outline validation truth gates">
           <div className={validation.valid ? 'pass' : 'blocked'}><CheckCircle2 size={22} /><span>Geometry</span><strong>{validation.valid ? 'Browser checks pass' : 'Blocked'}</strong></div>
-          <div className="pending"><Cpu size={22} /><span>Local KiCad</span><strong>DRC/ERC pending</strong></div>
+          <div className="pending"><Cpu size={22} /><span>Local KiCad</span><strong>Not requested</strong></div>
           <div className={validation.valid ? 'pass' : 'blocked'}><ShieldCheck size={22} /><span>Edge.Cuts seed</span><strong>{validation.valid ? 'Ready to hand off' : 'Needs repair'}</strong></div>
         </div>
       </div>
@@ -715,8 +736,8 @@ export function OutlineEditor() {
                 {outlinePresets.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
               </select>
             </label>
-            <button type="button" onClick={() => callLocal('validate')}><Sparkles size={16} /> Validate Board</button>
-            <button type="button" className={!validation.valid ? 'blocked' : ''} onClick={() => callLocal('generate')} aria-disabled={!validation.valid}><Download size={16} /> Generate KiCad outline</button>
+            <button type="button" onClick={() => callLocal('validate')}><Sparkles size={16} /> Run local KiCad check</button>
+            <button type="button" className={!validation.valid ? 'blocked' : ''} onClick={() => callLocal('generate')} disabled={!validation.valid}><Download size={16} /> Create local KiCad outline</button>
           </div>
           <div className="bf-outline-studio">
         <div className={styles.viewportControls} aria-label="Viewport controls">
@@ -857,7 +878,7 @@ export function OutlineEditor() {
         <div><ShieldCheck size={20} /><span>Holes verified</span><strong>{holesInside} / {holes.length}</strong></div>
         <div><Ruler size={20} /><span>Dimensions</span><strong>{box.width.toFixed(1)} x {box.height.toFixed(1)} mm</strong></div>
         <div><Grid2X2 size={20} /><span>Edge length</span><strong>{edgeLength.toFixed(1)} mm</strong></div>
-        <div><Cpu size={20} /><span>Local KiCad</span><strong>Pending helper</strong></div>
+        <div><Cpu size={20} /><span>Local KiCad</span><strong>Not requested</strong></div>
       </div>
       <div className="bf-outline-status">
         <strong className={`bf-outline-state ${statusTone}`}>{validation.valid ? 'Valid outline' : 'Outline blocked'}</strong>
@@ -870,16 +891,17 @@ export function OutlineEditor() {
         </div>
         <div className="bf-outline-handoff">
           <div>
-            <b>Codex handoff ready</b>
+            <b>Browser outline handoff</b>
             <p>
-              Exact outline points, mounting holes, connector intent, and validation requirements are packaged for the
-              BoardForge plugin when you copy the prompt or download the outline package.
+              Save a browser draft to continue from Projects, or package exact points, mounting holes, and geometry notes
+              for a paired local engine or external review.
             </p>
           </div>
+          <button type="button" onClick={saveBrowserOutlineDraft}>{browserDraftSaved ? 'Update browser draft' : 'Save browser outline draft'}</button>
           <button type="button" onClick={copyPrompt}>
             <ClipboardCopy size={15} /> {copied ? 'Copied' : 'Copy prompt'}
           </button>
-          <button type="button" onClick={downloadSeed}>Download outline package</button>
+          <button type="button" onClick={downloadSeed}>Download outline handoff</button>
         </div>
         <div className="bf-outline-hotkeys" aria-label="Custom board generator keyboard shortcuts">
           <b>Keyboard shortcuts</b>
