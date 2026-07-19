@@ -61,6 +61,15 @@ test('custom board generator starts blank, validates real preset geometry, and e
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: /Save browser outline draft/i }).click()
   await expect(page.getByText(/Browser outline draft saved/i)).toBeVisible()
+  await expect(page.getByRole('button', { name: /Open browser draft/i })).toBeVisible()
+  const savedOutlineId = await page.evaluate(() => {
+    const projects = JSON.parse(window.localStorage.getItem('boardforge.browser-projects.v1') || '[]')
+    return projects.find((project: { status?: string }) => project.status === 'BROWSER_OUTLINE_DRAFT')?.projectId || ''
+  })
+  expect(savedOutlineId).toBeTruthy()
+  await page.goto(`/custom-board-generator?project=${encodeURIComponent(savedOutlineId)}`)
+  await expect(page.getByText(/Loaded browser outline draft.*vertices and 4 holes/i)).toBeVisible()
+  await expect(page.getByRole('button', { name: /Update browser draft/i })).toBeVisible()
   await page.getByRole('button', { name: /Download outline handoff/i }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toMatch(/^BoardForge_Custom_Outline_.*\.zip$/)
@@ -72,7 +81,7 @@ test('custom board generator starts blank, validates real preset geometry, and e
     title: 'BoardForge Custom Outline E2E Report',
     status: 'PASSED_WITH_LIMITATIONS',
     route: '/custom-board-generator',
-    proves: ['blank canvas is the default', 'drone preset uses four FC stack holes', 'selection opens a useful edit menu', 'draw interaction appends geometry without navigating away', 'validation chips visible', 'browser outline draft can be saved honestly', 'local KiCad handoff buttons are visible', 'exact Codex prompt can be generated', 'keyboard shortcuts are visible'],
+    proves: ['blank canvas is the default', 'drone preset uses four FC stack holes', 'selection opens a useful edit menu', 'draw interaction appends geometry without navigating away', 'validation chips visible', 'browser outline draft can be saved honestly and reopened with its exact geometry', 'local KiCad handoff buttons are visible', 'exact Codex prompt can be generated', 'keyboard shortcuts are visible'],
     limitation: 'Browser test does not require a running localhost engine; local engine outline routes are covered by node tests.',
   })
 })

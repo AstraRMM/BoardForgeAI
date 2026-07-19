@@ -718,6 +718,10 @@ test('local server create project generates odd-shape candidate and project stat
     assert.equal(downloads.data.artifacts.package, true)
     assert.equal(downloads.data.browserTransferAvailable, false)
     assert.equal('zip' in downloads.data, false)
+    assert.equal('readiness' in downloads.data, false)
+    assert.equal('assembly' in downloads.data, false)
+    assert.equal(typeof downloads.data.readinessEvidenceRecorded, 'boolean')
+    assert.equal(typeof downloads.data.assemblyEvidenceRecorded, 'boolean')
     assert.equal(status.data.dashboardVisible, false)
   } finally {
     server.close()

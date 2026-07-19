@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers3, MousePointer2, Pencil, Plus, Redo2, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Undo2, Wand2, ZoomIn, ZoomOut } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
-import { createBrowserProject, saveBrowserProject } from '../../lib/browser-project-registry'
+import { createBrowserProject, readBrowserProjects, saveBrowserProject } from '../../lib/browser-project-registry'
+import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
 import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
@@ -60,6 +62,7 @@ const presetPoints: Record<string, Point[]> = {
 }
 
 export function OutlineEditor() {
+  const searchParams = useSearchParams()
   const svgRef = useRef<SVGSVGElement | null>(null)
   const drawingRef = useRef(false)
   const panRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
@@ -90,6 +93,9 @@ export function OutlineEditor() {
   const [autoFixProposal, setAutoFixProposal] = useState<AutoFixProposal | null>(null)
   const [browserDraftSaved, setBrowserDraftSaved] = useState(false)
   const browserDraftId = useRef<string | null>(null)
+  const [savedOutlineDrafts, setSavedOutlineDrafts] = useState<BoardForgeDashboardCard[]>([])
+  const [selectedSavedOutlineId, setSelectedSavedOutlineId] = useState('')
+  const loadedProjectId = useRef<string | null>(null)
 
   const box = useMemo(() => bounds(points), [points])
   const viewBox = `${viewport.panX} ${viewport.panY} ${100 / viewport.zoom} ${70 / viewport.zoom}`
@@ -123,6 +129,19 @@ export function OutlineEditor() {
     }).then((value) => { if (current) { setRustMetrics(value); setRustGeometryStatus('active') } }).catch(() => { if (current) { setRustMetrics(null); setRustGeometryStatus('fallback') } })
     return () => { current = false }
   }, [points, closed])
+
+  useEffect(() => {
+    setSavedOutlineDrafts(readBrowserProjects().projects.filter(isBrowserOutlineProject))
+  }, [])
+
+  useEffect(() => {
+    const projectId = searchParams.get('project')
+    if (!projectId || loadedProjectId.current === projectId) return
+    const project = readBrowserProjects().projects.find((entry) => entry.projectId === projectId)
+    if (!project || !isBrowserOutlineProject(project)) return
+    loadBrowserOutlineDraft(project)
+    loadedProjectId.current = projectId
+  }, [searchParams])
 
   function snapshot(): GeometrySnapshot {
     return { points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), preset, closed }
@@ -600,6 +619,42 @@ export function OutlineEditor() {
     }
   }
 
+  function loadBrowserOutlineDraft(project: BoardForgeDashboardCard) {
+    const outline = project.browserDraft?.outline
+    if (!outline) return
+    const loadedPoints = outline.pointsMm.map((point, index) => ({ ...point, id: `loaded-${project.projectId}-${index + 1}` }))
+    const loadedHoles = outline.mountingHolesMm.map((hole) => ({ ...hole }))
+    setPoints(loadedPoints)
+    setHoles(loadedHoles)
+    setPreset(outline.preset)
+    setClosed(outline.closed)
+    setHistory([])
+    setFuture([])
+    setSelectedObject(null)
+    setSelectedPointIds([])
+    setAutoFixProposal(null)
+    browserDraftId.current = project.projectId
+    setBrowserDraftSaved(true)
+    setSelectedSavedOutlineId(project.projectId)
+    setStatus(`Loaded browser outline draft “${project.projectName}” with ${loadedPoints.length} vertices and ${loadedHoles.length} holes. Browser validation is recalculated from the restored geometry.`)
+  }
+
+  function refreshSavedOutlineDrafts() {
+    const next = readBrowserProjects().projects.filter(isBrowserOutlineProject)
+    setSavedOutlineDrafts(next)
+    return next
+  }
+
+  function openSelectedBrowserOutline() {
+    const project = savedOutlineDrafts.find((entry) => entry.projectId === selectedSavedOutlineId)
+    if (!project) {
+      setStatus('Choose a saved browser outline draft to open.')
+      return
+    }
+    loadBrowserOutlineDraft(project)
+    window.history.replaceState(null, '', `${window.location.pathname}?project=${encodeURIComponent(project.projectId)}`)
+  }
+
   function saveBrowserOutlineDraft() {
     const projectId = browserDraftId.current || `browser-outline-${Date.now().toString(36)}`
     browserDraftId.current = projectId
@@ -637,6 +692,9 @@ export function OutlineEditor() {
       },
     })
     saveBrowserProject(project)
+    refreshSavedOutlineDrafts()
+    setSelectedSavedOutlineId(projectId)
+    window.history.replaceState(null, '', `${window.location.pathname}?project=${encodeURIComponent(projectId)}`)
     setBrowserDraftSaved(true)
     setStatus(`Browser outline draft saved with ${outline.outlinePointsMm.length} vertices and ${outline.mountingHolesMm.length} holes. It retains no KiCad files and has no local DRC/ERC or manufacturing evidence.`)
   }
@@ -930,6 +988,18 @@ export function OutlineEditor() {
           </button>
           <button type="button" onClick={downloadSeed}>Download outline handoff</button>
         </div>
+        <div className="bf-outline-saved-drafts" aria-label="Saved browser outline drafts">
+          <div>
+            <b>Continue a saved browser outline</b>
+            <p>Open exact geometry saved in this browser. This restores only the browser draft; it does not open or create KiCad files.</p>
+          </div>
+          <select value={selectedSavedOutlineId} onChange={(event) => setSelectedSavedOutlineId(event.target.value)} aria-label="Saved browser outline draft">
+            <option value="">{savedOutlineDrafts.length ? 'Choose a saved outline draft' : 'No browser outline drafts saved yet'}</option>
+            {savedOutlineDrafts.map((draft) => <option key={draft.projectId} value={draft.projectId}>{draft.projectName}</option>)}
+          </select>
+          <button type="button" onClick={openSelectedBrowserOutline} disabled={!selectedSavedOutlineId}>Open browser draft</button>
+          <button type="button" onClick={() => { refreshSavedOutlineDrafts(); setStatus('Refreshed saved browser outline drafts from this browser.') }}>Refresh list</button>
+        </div>
         <div className="bf-outline-hotkeys" aria-label="Custom board generator keyboard shortcuts">
           <b>Keyboard shortcuts</b>
           <span><kbd>M</kbd> move selected</span>
@@ -1161,6 +1231,16 @@ function buildOutlinePackage({
     payload: buildOutlinePayload({ preset, points, holes, validation, metrics }),
     codexPrompt: prompt,
   }
+}
+
+function isBrowserOutlineProject(project: BoardForgeDashboardCard): boolean {
+  const outline = project.browserDraft?.outline
+  return project.status === 'BROWSER_OUTLINE_DRAFT'
+    && project.browserDraft?.kind === 'outline'
+    && Array.isArray(outline?.pointsMm)
+    && Array.isArray(outline?.mountingHolesMm)
+    && typeof outline?.preset === 'string'
+    && typeof outline?.closed === 'boolean'
 }
 
 function buildOutlinePayload({

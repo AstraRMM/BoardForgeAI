@@ -13,8 +13,8 @@ import { ProjectEngineeringCopilot } from './ProjectEngineeringCopilot'
 type HelperArtifacts = {
   reports: Array<{ id: string; available: boolean }>
   downloads: {
-    readiness: string | null
-    assembly: string | null
+    readinessEvidenceRecorded: boolean
+    assemblyEvidenceRecorded: boolean
     artifacts: Record<'gerbers' | 'drill' | 'bom' | 'cpl' | 'package', boolean>
     browserTransferAvailable: boolean
   }
@@ -97,27 +97,42 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
     router.replace('/projects')
   }
   return <>
-    <div className="bf-project-workspace-actions"><Link href="/projects"><ArrowLeft size={15} />All projects</Link><Link href="/evidence">Validation evidence <ArrowUpRight size={15} /></Link><Link href="/downloads">Manufacturing evidence <ArrowUpRight size={15} /></Link></div>
-    <ProjectStatusCard project={project} />
-    {isBrowserDraft && <section className="bf-workspace-panel bf-browser-project-controls">
-      <div className="bf-panel-title"><div><p>Browser project controls</p><h2>Organize this local draft</h2></div><FileText size={20} /></div>
-      <p className="bf-project-workspace-note">These controls change only the project record saved in this browser. They never rename, edit, or delete KiCad files.</p>
-      <label className="bf-browser-project-name"><span>Project name</span><input value={draftName} onChange={(event) => setDraftName(event.target.value)} maxLength={120} /></label>
-      <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
-      {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
-    </section>}
-    {isBrowserDraft && <section className="bf-workspace-panel bf-project-workspace-reports">
-      <div className="bf-panel-title"><div><p>Browser activity</p><h2>Local project record history</h2></div><History size={20} /></div>
-      <p className="bf-project-workspace-note">This history records only changes saved in this browser. It is not KiCad, validation, manufacturing, or helper activity.</p>
-      {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{event.action === 'created' ? 'Saved in this browser' : 'Browser project renamed'}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
-    </section>}
-    <section className="bf-workspace-grid bf-project-workspace-grid">
-      <article className="bf-workspace-panel"><div className="bf-panel-title"><div><p>Validation evidence</p><h2>Current engineering gates</h2></div><ShieldCheck size={20} /></div><dl className="bf-project-evidence-grid"><Datum label="DRC violations" value={validation.drcViolations} /><Datum label="ERC violations" value={validation.ercViolations} /><Datum label="Unconnected" value={validation.unconnected} /><Datum label="Forbidden vias" value={validation.forbiddenVias} /></dl><p className="bf-project-workspace-note">This project is read from the browser registry. “Not run” is not treated as passing; KiCad validation remains a desktop-engine action.</p></article>
+    <div className="bf-project-workspace-actions"><Link href="/projects"><ArrowLeft size={15} />All projects</Link><Link href="/evidence">Evidence registry <ArrowUpRight size={15} /></Link><Link href="/downloads">Manufacturing registry <ArrowUpRight size={15} /></Link></div>
+    <nav className="bf-project-section-nav" aria-label="Project workspace sections">
+      <a href="#overview">Overview</a><a href="#evidence">Evidence</a><a href="#release">Release</a><a href="#activity">Activity</a>
+    </nav>
+    <section id="overview" className="bf-project-workspace-section" aria-labelledby="overview-title">
+      <div className="bf-project-section-heading"><p>Project context</p><h2 id="overview-title">Overview</h2><span>{isBrowserDraft ? 'Browser-local draft' : 'Paired-helper project record'}</span></div>
+      <ProjectStatusCard project={project} />
+      {isBrowserDraft && <section className="bf-workspace-panel bf-browser-project-controls">
+        <div className="bf-panel-title"><div><p>Browser project controls</p><h2>Organize this local draft</h2></div><FileText size={20} /></div>
+        <p className="bf-project-workspace-note">These controls change only the project record saved in this browser. They never rename, edit, or delete KiCad files.</p>
+        <label className="bf-browser-project-name"><span>Project name</span><input value={draftName} onChange={(event) => setDraftName(event.target.value)} maxLength={120} /></label>
+        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
+        {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
+      </section>}
+    </section>
+    <section id="evidence" className="bf-project-workspace-section" aria-labelledby="evidence-title">
+      <div className="bf-project-section-heading"><p>Recorded engineering state</p><h2 id="evidence-title">Evidence</h2><span>Only saved results appear here</span></div>
+      <section className="bf-workspace-grid bf-project-workspace-grid">
+        <article className="bf-workspace-panel"><div className="bf-panel-title"><div><p>Validation evidence</p><h2>Current engineering gates</h2></div><ShieldCheck size={20} /></div><dl className="bf-project-evidence-grid"><Datum label="DRC violations" value={validation.drcViolations} /><Datum label="ERC violations" value={validation.ercViolations} /><Datum label="Unconnected" value={validation.unconnected} /><Datum label="Forbidden vias" value={validation.forbiddenVias} /></dl><p className="bf-project-workspace-note">“Not run” is not treated as passing; KiCad validation remains a desktop-engine action.</p></article>
+        <section className="bf-workspace-panel bf-project-workspace-reports"><div className="bf-panel-title"><div><p>Recorded reports</p><h2>Evidence generated for this project</h2></div><FileText size={20} /></div>{reports.length ? <dl className="bf-project-reports-list">{reports.map(([label]) => <div key={label}><dt>{humanize(label)}</dt><dd>Recorded in the merged browser and paired-helper registry</dd></div>)}</dl> : <p className="bf-project-workspace-note">No validation or report artifacts have been recorded for this project.</p>}</section>
+      </section>
+      {!isBrowserDraft && <ProjectArtifactAvailability state={artifactState} artifacts={helperArtifacts} />}
+      {!isBrowserDraft && <ProjectEngineeringCopilot projectId={project.projectId} />}
+    </section>
+    <section id="release" className="bf-project-workspace-section" aria-labelledby="release-title">
+      <div className="bf-project-section-heading"><p>Manufacturing readiness</p><h2 id="release-title">Release</h2><span>Review remains required before fabrication</span></div>
       <article className="bf-workspace-panel"><div className="bf-panel-title"><div><p>Release state</p><h2>{project.manufacturing.ready ? 'Manufacturing evidence ready' : 'Release remains blocked'}</h2></div>{project.manufacturing.ready ? <CheckCircle2 size={20} /> : <Route size={20} />}</div><dl className="bf-project-evidence-grid"><Datum label="Routing completion" value={`${project.routingCompletionPercent}%`} /><Datum label="Routeability score" value={project.routeabilityScore ?? 'Not recorded'} /><Datum label="Next action" value={humanize(project.nextAction)} /><Datum label="Package" value={project.manufacturing.zip ? 'Recorded locally' : humanize(project.manufacturing.blockedReason || 'Not exported')} /></dl><Link className="bf-panel-action" href="/downloads">Review manufacturing artifacts <FileDown size={15} /></Link></article>
     </section>
-    <section className="bf-workspace-panel bf-project-workspace-reports"><div className="bf-panel-title"><div><p>Recorded reports</p><h2>Evidence generated for this project</h2></div><FileText size={20} /></div>{reports.length ? <dl className="bf-project-reports-list">{reports.map(([label]) => <div key={label}><dt>{humanize(label)}</dt><dd>Recorded in the merged browser and paired-helper registry</dd></div>)}</dl> : <p className="bf-project-workspace-note">No validation or report artifacts have been recorded for this project.</p>}</section>
-    {!isBrowserDraft && <ProjectEngineeringCopilot projectId={project.projectId} />}
-    {!isBrowserDraft && <ProjectArtifactAvailability state={artifactState} artifacts={helperArtifacts} />}
+    <section id="activity" className="bf-project-workspace-section" aria-labelledby="activity-title">
+      <div className="bf-project-section-heading"><p>{isBrowserDraft ? 'Browser-only record' : 'Project history'}</p><h2 id="activity-title">Activity</h2><span>{isBrowserDraft ? 'Saved in this browser only' : 'No helper activity feed is exposed'}</span></div>
+      {isBrowserDraft ? <section className="bf-workspace-panel bf-project-workspace-reports">
+        <div className="bf-panel-title"><div><p>Browser activity</p><h2>Local project record history</h2></div><History size={20} /></div>
+        <p className="bf-project-workspace-note">This history records only changes saved in this browser. It is not KiCad, validation, manufacturing, or helper activity.</p>
+        {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{event.action === 'created' ? 'Saved in this browser' : 'Browser project renamed'}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
+      </section> : <section className="bf-workspace-panel bf-project-workspace-reports"><div className="bf-panel-title"><div><p>Helper activity</p><h2>No project activity feed recorded</h2></div><History size={20} /></div><p className="bf-project-workspace-note">The paired helper currently exposes project evidence and artifact availability, not an auditable per-project activity timeline. This workspace does not infer one from file timestamps.</p></section>}
+    </section>
   </>
 }
 
@@ -131,6 +146,8 @@ function ProjectArtifactAvailability({ state, artifacts }: { state: 'idle' | 'lo
     {state === 'ready' && artifacts && <>
       <dl className="bf-project-reports-list">
         <div><dt>Recorded reports</dt><dd>{availableReports.length ? availableReports.map((report) => humanize(report.id)).join(', ') : 'None recorded'}</dd></div>
+        <div><dt>Release evidence</dt><dd>{artifacts.downloads.readinessEvidenceRecorded ? 'Recorded locally' : 'Not recorded'}</dd></div>
+        <div><dt>Assembly evidence</dt><dd>{artifacts.downloads.assemblyEvidenceRecorded ? 'Recorded locally' : 'Not recorded'}</dd></div>
         <div><dt>Manufacturing files</dt><dd>{availableFiles.length ? availableFiles.map(humanize).join(', ') : 'None recorded'}</dd></div>
         <div><dt>Browser transfer</dt><dd>{artifacts.downloads.browserTransferAvailable ? 'Available' : 'Not available from this browser session'}</dd></div>
       </dl>

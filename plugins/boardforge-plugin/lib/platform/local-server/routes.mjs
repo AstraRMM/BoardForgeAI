@@ -405,8 +405,10 @@ function publicProjectReports(manifest = {}) {
 
 function publicProjectDownloads(downloads = {}) {
   return {
-    readiness: downloads.readiness || null,
-    assembly: downloads.assembly || null,
+    // These manifest fields may be local report paths. The browser needs to
+    // know whether release evidence exists, never where the helper stored it.
+    readinessEvidenceRecorded: Boolean(downloads.readiness),
+    assemblyEvidenceRecorded: Boolean(downloads.assembly),
     artifacts: {
       gerbers: Boolean(downloads.gerbers),
       drill: Boolean(downloads.drill),

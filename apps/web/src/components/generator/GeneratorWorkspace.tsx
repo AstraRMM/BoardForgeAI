@@ -4,6 +4,7 @@ import { OutlinePresetPicker } from '../outline/OutlinePresetPicker'
 import { OutlineValidationPanel } from '../outline/OutlineValidationPanel'
 import { LocalEngineStatusBar } from '../project/LocalEngineStatusBar'
 import { BoxSelect, FileCog, Info, Keyboard, Ruler } from 'lucide-react'
+import { Suspense } from 'react'
 import styles from './GeneratorWorkspace.module.css'
 
 /**
@@ -34,7 +35,9 @@ export function GeneratorWorkspace() {
 
         <div className={styles.editorGrid}>
           <section className={styles.canvasRegion} aria-label="Board outline editor">
-            <OutlineEditor />
+            <Suspense fallback={<div className="bf-workspace-panel" role="status">Loading outline workspace…</div>}>
+              <OutlineEditor />
+            </Suspense>
           </section>
           <aside className={styles.inspector} aria-label="Board generator inspector">
             <LocalEngineStatusBar />
