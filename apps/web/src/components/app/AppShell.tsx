@@ -56,14 +56,14 @@ export function AppShell({ children, title = 'Engineering workspace', subtitle =
           {operations.map(({ href, label, icon: Icon }) => <ShellLink key={label} href={href} label={label} icon={<Icon size={16} />} active={isActivePath(pathname, href)} onFollow={closeMobileNavigation} />)}
         </nav>
         <div className="bf-command-sidebar-foot">
-          <span className="bf-engine-dot" /> Desktop pairing unlocks KiCad actions
+          <span className="bf-engine-dot" /> Browser workspace · pair helper for KiCad actions
         </div>
       </aside>
       <section className="bf-command-main">
         <header className="bf-command-topbar">
           <div className="bf-command-context"><span><strong>{title}</strong><small>{subtitle}</small></span></div>
           <div className="bf-command-top-actions">
-            <span className="bf-command-engine-status"><span />Desktop helper for KiCad</span>
+            <span className="bf-command-engine-status"><span />Browser workspace · helper for KiCad</span>
             <Link href="/settings/plugin" aria-label="Plugin pairing" title="Plugin pairing"><PlugZap size={17} /></Link>
             <Link href="/settings" aria-label="Workspace settings" title="Workspace settings"><Settings2 size={17} /></Link>
             <Link href="/" aria-label="Open BoardForge home" title="Open BoardForge home"><ExternalLink size={17} /></Link>
