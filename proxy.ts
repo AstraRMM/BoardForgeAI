@@ -16,8 +16,6 @@ const protectedPrefixes = [
   '/reports',
   '/downloads',
   '/readiness',
-  '/alpha-readiness',
-  '/demo',
   '/settings',
   '/plugin/connect',
 ]
@@ -38,7 +36,7 @@ export const config = {
     '/dashboard/:path*', '/projects/:path*', '/new-board/:path*',
     '/pcb-workspace/:path*', '/schematic-workspace/:path*', '/custom-board-generator/:path*',
     '/upload-kicad/:path*', '/import/:path*', '/evidence/:path*', '/reports/:path*',
-    '/downloads/:path*', '/readiness/:path*', '/alpha-readiness/:path*', '/demo/:path*',
+    '/downloads/:path*', '/readiness/:path*',
     '/settings/:path*', '/plugin/connect/:path*',
   ],
 }
