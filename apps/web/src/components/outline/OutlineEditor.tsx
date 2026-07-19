@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers3, MousePointer2, Pencil, Plus, Redo2, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Undo2, Wand2, ZoomIn, ZoomOut } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
-import { createBrowserProject, readBrowserProjects, recordBrowserProjectActivity, saveBrowserProject } from '../../lib/browser-project-registry'
+import { createBrowserProject, hasBrowserDraftArtifact, readBrowserProjects, recordBrowserProjectActivity, saveBrowserProject } from '../../lib/browser-project-registry'
 import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
@@ -1236,8 +1236,7 @@ function buildOutlinePackage({
 
 function isBrowserOutlineProject(project: BoardForgeDashboardCard): boolean {
   const outline = project.browserDraft?.outline
-  return project.status === 'BROWSER_OUTLINE_DRAFT'
-    && project.browserDraft?.kind === 'outline'
+  return hasBrowserDraftArtifact(project.browserDraft, 'outline')
     && Array.isArray(outline?.pointsMm)
     && Array.isArray(outline?.mountingHolesMm)
     && typeof outline?.preset === 'string'

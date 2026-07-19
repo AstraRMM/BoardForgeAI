@@ -27,6 +27,44 @@ export type BrowserProjectActivity = {
 
 export type BrowserProjectActivityRegistry = Record<string, BrowserProjectActivity[]>
 
+/**
+ * `kind` predates projects that can hold more than one browser workspace.
+ * Treat it as a compact legacy label only; the presence of an artifact is the
+ * authoritative answer to whether it can be opened.
+ */
+export type BrowserDraftArtifact = 'pcb' | 'outline' | 'schematicPlan'
+
+export function hasBrowserDraftArtifact(draft: BoardForgeBrowserDraft | undefined, artifact: BrowserDraftArtifact) {
+  return artifact === 'pcb' ? Boolean(draft?.pcb)
+    : artifact === 'outline' ? Boolean(draft?.outline)
+      : Boolean(draft?.schematicPlan)
+}
+
+export function browserDraftArtifacts(draft: BoardForgeBrowserDraft | undefined): BrowserDraftArtifact[] {
+  return (['pcb', 'outline', 'schematicPlan'] as const).filter((artifact) => hasBrowserDraftArtifact(draft, artifact))
+}
+
+/** Preserve unrelated browser artifacts whenever one workspace saves. */
+export function mergeBrowserDraft(existing: BoardForgeBrowserDraft | undefined, update: BoardForgeBrowserDraft): BoardForgeBrowserDraft {
+  const merged = { ...existing, ...update, schema: 'boardforge.browser-draft.v1' as const }
+  const artifacts = browserDraftArtifacts(merged)
+  return {
+    ...merged,
+    // A multi-artifact project deliberately has no exclusive editor kind.
+    kind: artifacts.length === 1 && artifacts[0] === 'pcb' ? 'pcb'
+      : artifacts.length === 1 && artifacts[0] === 'outline' ? 'outline'
+        : 'board',
+  }
+}
+
+export function browserDraftProjectStatus(draft: BoardForgeBrowserDraft | undefined, fallback = 'BROWSER_BOARD_DRAFT') {
+  const artifacts = browserDraftArtifacts(draft)
+  if (artifacts.length !== 1) return fallback
+  return artifacts[0] === 'pcb' ? 'BROWSER_PCB_DRAFT'
+    : artifacts[0] === 'outline' ? 'BROWSER_OUTLINE_DRAFT'
+      : fallback
+}
+
 export function readBrowserProjectLibraryMetadata(): BrowserProjectLibraryMetadata {
   if (typeof window === 'undefined') return {}
   try {
@@ -53,7 +91,14 @@ export function readBrowserProjects(): BoardForgeDashboardData {
 export function saveBrowserProject(project: BoardForgeDashboardCard) {
   const existing = readBrowserProjects().projects.find((item) => item.projectId === project.projectId)
   const current = readBrowserProjects().projects.filter((item) => item.projectId !== project.projectId)
-  window.localStorage.setItem(key, JSON.stringify([project, ...current]))
+  const browserDraft = project.browserDraft ? mergeBrowserDraft(existing?.browserDraft, project.browserDraft) : existing?.browserDraft
+  const normalized = browserDraft ? {
+    ...project,
+    browserDraft,
+    reports: { ...existing?.reports, ...project.reports, browserDraft: browserDraft.summary },
+    ...(project.localOnly || existing?.localOnly ? { status: browserDraftProjectStatus(browserDraft, project.status) } : {}),
+  } : project
+  window.localStorage.setItem(key, JSON.stringify([normalized, ...current]))
   if (!existing) recordBrowserProjectActivity(project.projectId, 'created')
 }
 

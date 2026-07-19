@@ -3,7 +3,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react'
 import { useSearchParams } from 'next/navigation'
 import {newTransaction,pcbObject,PcbId,PcbPoint,RustPcbTransactionV1,RustPcbViewV1} from '../../lib/pcb-editor/model'
 import {RustPcbBridge,WasmPcbBridge} from '../../lib/pcb-editor/rust-bridge'
-import { createBrowserProject, readBrowserProjects, recordBrowserProjectActivity, saveBrowserProject } from '../../lib/browser-project-registry'
+import { createBrowserProject, hasBrowserDraftArtifact, readBrowserProjects, recordBrowserProjectActivity, saveBrowserProject } from '../../lib/browser-project-registry'
 import styles from './BrowserPcbEditor.module.css'
 type View={zoom:number;x:number;y:number};type Tool='select'|'pan'|'measure'|'track'|'via';type Angle='45'|'90'|'free'
 const world=(e:{clientX:number;clientY:number},svg:SVGSVGElement,v:View)=>{const r=svg.getBoundingClientRect();return{x:(e.clientX-r.left-v.x)/v.zoom,y:(e.clientY-r.top-v.y)/v.zoom}}
@@ -15,7 +15,7 @@ export function BrowserPcbEditor({bridge:given}:{bridge?:RustPcbBridge}){
  const [projectId,setProjectId]=useState(''),[projectOptions,setProjectOptions]=useState(()=>readBrowserProjects().projects),openedQueryProject=useRef<string | undefined>(undefined)
  const applyLoadedBoard=useCallback((document:RustPcbViewV1)=>{setBoard(document);setVisible(new Map(document.layers.map(layer=>[layer.id,1])))},[])
  const restoreSavedDraft=useCallback(async(project:string)=>{
-  const card=readBrowserProjects().projects.find(item=>item.projectId===project),snapshot=card?.browserDraft?.kind==='pcb'?card.browserDraft.pcb:undefined
+  const card=readBrowserProjects().projects.find(item=>item.projectId===project),snapshot=hasBrowserDraftArtifact(card?.browserDraft, 'pcb')?card?.browserDraft?.pcb:undefined
   if(!card){setSaveStatus('That browser project is unavailable in this browser. Choose another project before saving.');return}
   // A project may legitimately be entering the PCB workspace for its first
   // snapshot. Retain the handoff ID so Save updates that project instead of

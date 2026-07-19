@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in TypeScript runner needs the source extension; Next's bundler does not load this test module.
 // @ts-expect-error -- TypeScript source import is supported by node --experimental-strip-types.
-import { createBrowserProject, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
+import { browserDraftArtifacts, createBrowserProject, hasBrowserDraftArtifact, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
 
 const registryKey = 'boardforge.browser-projects.v1'
 
@@ -122,6 +122,41 @@ test('browser schematic plans persist as browser-only intent without KiCad evide
   assert.equal(saved?.schematicPath, null)
   assert.equal(saved?.validation.ercViolations, null)
   assert.equal(readBrowserProjectActivity(project.projectId).some((event) => event.action === 'schematic_plan_saved'), true)
+}))
+
+test('saving PCB, outline, and schematic browser work preserves every artifact on one project', () => inBrowser(() => {
+  const project = createBrowserProject({ projectId: 'browser-multi-artifact', projectName: 'Multi-artifact draft', prompt: 'Keep every browser workspace.' })
+  const updatedAt = '2026-07-19T00:00:00.000Z'
+  const outline = {
+    preset: 'rounded-rectangle', closed: true, pointsMm: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }], mountingHolesMm: [],
+    browserValidation: { status: 'valid' as const, routeabilityScore: 80, risk: 'Low' as const, blockers: [] },
+  }
+  const pcb = {
+    schema: 'boardforge.browser-pcb-snapshot/v1' as const, savedAt: updatedAt, sandboxSource: '(kicad_pcb (version 20240108))', transactions: [],
+    document: { schema: 'boardforge.pcb-view/v1' as const, documentId: 'multi', revision: 1, sourceSha256: 'multi-sha', units: 'mm' as const, title: 'Multi', bounds: { min: { x: 0, y: 0 }, max: { x: 10, y: 10 } }, layers: [], footprints: [], tracks: [], vias: [], graphics: [], ratsnest: [], unconnectedCount: 0, violations: [], unsupportedCount: 0 },
+  }
+  const schematicPlan = { schema: 'boardforge.browser-schematic-plan.v1' as const, version: 1 as const, title: 'Multi plan', updatedAt, notes: '', components: [], connections: [] }
+
+  saveBrowserProject({ ...project, browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'outline', updatedAt, summary: 'Outline only.', outline } })
+  saveBrowserProject({ ...project, browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'pcb', updatedAt, summary: 'PCB only.', pcb } })
+  saveBrowserProject({ ...project, browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'board', updatedAt, summary: 'Schematic only.', schematicPlan } })
+
+  const saved = readBrowserProjects().projects[0]
+  assert.deepEqual(browserDraftArtifacts(saved.browserDraft).sort(), ['outline', 'pcb', 'schematicPlan'])
+  assert.equal(hasBrowserDraftArtifact(saved.browserDraft, 'pcb'), true)
+  assert.equal(hasBrowserDraftArtifact(saved.browserDraft, 'outline'), true)
+  assert.equal(hasBrowserDraftArtifact(saved.browserDraft, 'schematicPlan'), true)
+  assert.equal(saved.browserDraft?.kind, 'board')
+  // Reopening goes through the persisted project record, not an editor-local cache.
+  assert.equal(saved.browserDraft?.pcb?.document.sourceSha256, 'multi-sha')
+  assert.equal(saved.browserDraft?.schematicPlan?.title, 'Multi plan')
+  assert.equal(saved.status, 'BROWSER_BOARD_DRAFT')
+  assert.equal(saved.boardPath, null)
+  assert.equal(saved.schematicPath, null)
+  assert.equal(saved.sourceManifest, null)
+  assert.equal(saved.validation.drcViolations, null)
+  assert.equal(saved.validation.ercViolations, null)
+  assert.equal(saved.manufacturing.ready, false)
 }))
 
 test('browser outline saves are retained as local editor activity without manufacturing claims', () => inBrowser(() => {
