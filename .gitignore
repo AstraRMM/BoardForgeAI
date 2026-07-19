@@ -49,6 +49,7 @@ tools/freerouting/
 *-drl_map.pdf
 
 # BoardForge local run outputs
+.boardforge-local-server/
 tmp/
 plugins/boardforge-plugin/tmp/
 plugins/boardforge-plugin/tmp-*/
