@@ -8,6 +8,7 @@ import { ProjectStatusCard } from '../ProjectStatusCard'
 import { useLocalProjectDashboard } from './LocalProjectDashboard'
 import { readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
+import type { BoardForgeBrowserDraft } from '../../lib/boardforge-manifest'
 import { ProjectEngineeringCopilot } from './ProjectEngineeringCopilot'
 
 type HelperArtifacts = {
@@ -97,6 +98,7 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
   const savedPcbDraft = isBrowserDraft && project.browserDraft?.kind === 'pcb' && Boolean(project.browserDraft.pcb)
   const savedSchematicPlan = isBrowserDraft && Boolean(project.browserDraft?.schematicPlan)
   const savedOutlineDraft = isBrowserDraft && project.browserDraft?.kind === 'outline' && Boolean(project.browserDraft.outline)
+  const browserWork = isBrowserDraft ? summarizeBrowserWork(project.browserDraft) : []
   const saveBrowserName = () => {
     const projectName = draftName.trim()
     if (!projectName) {
@@ -125,6 +127,13 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
     <section id="overview" className="bf-project-workspace-section" aria-labelledby="overview-title" tabIndex={-1}>
       <div className="bf-project-section-heading"><p>Project context</p><h2 id="overview-title">Overview</h2><span>{isBrowserDraft ? 'Browser-local draft' : 'Paired-helper project record'}</span></div>
       <ProjectStatusCard project={project} />
+      {browserWork.length > 0 && <section className="bf-workspace-panel bf-browser-work-summary" aria-labelledby="browser-work-summary-title">
+        <div className="bf-panel-title"><div><p>Saved browser work</p><h2 id="browser-work-summary-title">Draft contents</h2></div><FileText size={20} /></div>
+        <dl className="bf-browser-work-list">
+          {browserWork.map((entry) => <div key={entry.label}><dt>{entry.label}</dt><dd>{entry.detail}</dd></div>)}
+        </dl>
+        <p className="bf-project-workspace-note">These are browser-local working records. They are not KiCad files, validation evidence, or manufacturing output.</p>
+      </section>}
       {isBrowserDraft && <section className="bf-workspace-panel bf-browser-project-controls">
         <div className="bf-panel-title"><div><p>Browser project controls</p><h2>Organize this local draft</h2></div><FileText size={20} /></div>
         <p className="bf-project-workspace-note">These controls change only the project record saved in this browser. They never rename, edit, or delete KiCad files.</p>
@@ -183,6 +192,25 @@ function ProjectArtifactAvailability({ state, artifacts }: { state: 'idle' | 'lo
 }
 
 function Datum({ label, value }: { label: string; value: string | number | null }) { return <div><dt>{label}</dt><dd>{value ?? 'Not run'}</dd></div> }
+
+function summarizeBrowserWork(draft: BoardForgeBrowserDraft | undefined) {
+  if (!draft) return [] as Array<{ label: string; detail: string }>
+  const entries: Array<{ label: string; detail: string }> = []
+  if (draft.pcb) {
+    const { footprints, tracks, vias } = draft.pcb.document
+    entries.push({ label: 'PCB snapshot', detail: `${footprints.length} footprints · ${tracks.length} tracks · ${vias.length} vias` })
+  }
+  if (draft.schematicPlan) {
+    const { components, connections } = draft.schematicPlan
+    entries.push({ label: 'Schematic intent', detail: `${components.length} components · ${connections.length} planned connections` })
+  }
+  if (draft.outline) {
+    const { pointsMm, mountingHolesMm, preset, closed } = draft.outline
+    entries.push({ label: 'Board outline', detail: `${pointsMm.length} edge points · ${mountingHolesMm.length} mounting holes · ${humanize(preset)}${closed ? '' : ' (open)'}` })
+  }
+  return entries
+}
+
 function humanize(value: string) { return value.replace(/[A-Z]:\\[^ ]+/g, 'local project workspace').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 function activityLabel(action: BrowserProjectActivity['action']) {
   if (action === 'created') return 'Saved in this browser'
