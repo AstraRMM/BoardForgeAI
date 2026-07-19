@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { WorkspaceCommandPalette } from './WorkspaceCommandPalette'
 
 const navigation = [
   { href: '/dashboard', label: 'Overview', icon: Grid2X2 },
@@ -64,6 +65,7 @@ export function AppShell({ children, title = 'Engineering workspace', subtitle =
           <div className="bf-command-context"><span><strong>{title}</strong><small>{subtitle}</small></span></div>
           <div className="bf-command-top-actions">
             <span className="bf-command-engine-status"><span />Browser workspace · helper for KiCad</span>
+            <WorkspaceCommandPalette />
             <Link href="/settings/plugin" aria-label="Plugin pairing" title="Plugin pairing"><PlugZap size={17} /></Link>
             <Link href="/settings" aria-label="Workspace settings" title="Workspace settings"><Settings2 size={17} /></Link>
             <Link href="/" aria-label="Open BoardForge home" title="Open BoardForge home"><ExternalLink size={17} /></Link>
