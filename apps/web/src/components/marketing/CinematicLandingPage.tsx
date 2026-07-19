@@ -1,101 +1,35 @@
 'use client'
 
 import Link from 'next/link'
-import {
-  ArrowRight, BadgeCheck, Box, Check, CheckCircle2, ChevronDown, ClipboardCheck,
-  Cpu, Download, FileText, Layers3, ShieldCheck, Sparkles, Wrench,
-} from 'lucide-react'
+import { ArrowRight, CheckCircle2, ClipboardCheck, FolderTree, ShieldCheck } from 'lucide-react'
 import styles from './CinematicLandingPage.module.css'
 
-const nav = [['Product', '#product'], ['Solutions', '#platform'], ['Resources', '#resources'], ['Company', '#company']] as const
-const trust = [['AI-Powered', Cpu], ['Production Ready', ShieldCheck], ['Manufacturing Verified', ClipboardCheck], ['Secure by Design', BadgeCheck]] as const
-const metrics = [
-  ['Faster Iteration', 'Requirements to editable PCB', Wrench],
-  ['ERC + DRC', 'Built-in validation gates', ShieldCheck],
-  ['Manufacturing Outputs', 'Gerber, drill, BOM and CPL', Layers3],
-  ['KiCad Native', 'Openable project deliverables', FileText],
-] as const
-const plans = [
-  { name: 'Builder', price: '$26', limit: 'Up to 12 production boards / month', blurb: 'For individual builders and engineers with a focused project cadence.', features: ['AI-assisted board requirements', 'Custom Board Generator', 'Schematic and PCB generation', 'KiCad-native project export', 'ERC + DRC validation', 'DigiKey and Mouser sourcing', 'Gerber, drill, BOM and CPL exports'], cta: 'Start with Builder', href: '/signup?plan=builder', featured: false },
-  { name: 'Engineer', price: '$57', limit: 'Up to 42 production boards / month', blurb: 'For active engineers and small product teams that need deeper tools.', features: ['Everything in Builder', 'Requirements Intelligence', 'Advanced component binding', 'Advanced placement and routing', 'Differential-pair workflows', 'Manufacturing-readiness reports', 'Evidence history and priority processing'], cta: 'Choose Engineer', href: '/signup?plan=engineer', featured: true },
-  { name: 'Team', price: '$110', limit: 'Up to 90 production boards / month', blurb: 'For teams managing review, approval, and manufacturing handoff together.', features: ['Everything in Engineer', 'Team workspaces and member access', 'Shared projects and libraries', 'Design review and approval gates', 'Role-based access and comments', 'Team activity history', 'Manufacturing handoff collaboration'], cta: 'Choose Team', href: '/signup?plan=team', featured: false },
+const workflow = [['01','Define','Requirements and constraints'],['02','Resolve','Parts, symbols, footprints and pin maps'],['03','Build','Schematic, placement and routing'],['04','Validate','ERC, DRC and manufacturing checks'],['05','Approve','Review the candidate before publishing']] as const
+const comparison = [
+  ['ENGINEERING CORE','','',''],['Requirements capture','●','●','●'],['Component binding','●','●','●'],['Schematic and PCB generation','●','●','●'],['ERC, DRC and KiCad export','●','●','●'],['Manufacturing package','●','●','●'],
+  ['ADVANCED ENGINEERING','','',''],['Requirements Intelligence','—','●','●'],['Candidate comparison and evidence history','—','●','●'],['Advanced routing and differential pairs','—','●','●'],
+  ['COLLABORATION','','',''],['Shared projects and libraries','—','—','●'],['Comments, review gates and approvals','—','—','●'],['Role-based permissions and activity history','—','—','●'],
 ] as const
 
-function Logo() {
-  return <Link className={styles.brand} href="/" aria-label="BoardForge home"><b>B</b><span>BoardForge</span></Link>
-}
+function Brand() { return <Link href="/" className={styles.brand}><b>BF</b><span>BoardForge</span></Link> }
+function Header() { return <header className={styles.header}><Brand/><nav><a href="#product">Product</a><a href="#workflow">Workflow</a><a href="#resources">Documentation</a><a href="#pricing">Pricing</a><a href="#company">Company</a></nav><div><Link href="/login">Sign in</Link><Link className={styles.primary} href="/signup">Get Started <ArrowRight size={15}/></Link></div></header> }
 
-function Header() {
-  return <header className={styles.header}>
-    <Logo />
-    <nav className={styles.nav} aria-label="Primary navigation">
-      {nav.map(([name, href]) => <a key={name} href={href}>{name}{name !== 'Company' && <ChevronDown size={13} />}</a>)}
-      <a href="#pricing">Pricing</a>
-    </nav>
-    <div className={styles.actions}><Link className={styles.signIn} href="/login">Sign in</Link><Link className={styles.getStarted} href="/signup">Get Started <ArrowRight size={15} /></Link></div>
-  </header>
-}
+function ProjectEvidence() { return <div className={styles.projectEvidence}><div className={styles.projectBar}><span>Industrial Ethernet Controller</span><code>Candidate 04 · DEMONSTRATION FIXTURE</code></div><div className={styles.boardFrame}><img src="/images/boardforge-production-pcb-hero.png" alt="Industrial Ethernet controller PCB candidate"/><aside><label>VALIDATION</label><b><CheckCircle2/> ERC 0 errors</b><b><CheckCircle2/> DRC 0 violations</b><b><CheckCircle2/> 0 unconnected</b><label>COMPONENT BINDING</label><code>18/18 verified</code><code>W5500 · MPN verified</code><label>OUTPUTS</label><code>kicad · gerber · drill</code><code>BOM · CPL · manifest</code></aside></div><div className={styles.evidenceFooter}><span><ShieldCheck size={14}/> Source protected</span><span><ClipboardCheck size={14}/> Candidate awaiting approval</span><code>SHA256: 96a1…7de4</code></div></div> }
 
-function BoardVisual() {
-  const panel = (className: string, children: React.ReactNode) => <section className={`${styles.panel} ${styles[className]}`}>{children}</section>
-  return <div className={styles.visual} aria-label="BoardForge PCB design status">
-    <div className={styles.guide} />
-    <img className={styles.board} src="/images/boardforge-production-pcb-hero.png" alt="Production PCB with USB-C, Ethernet, microcontrollers, routing, and mounted components" />
-    {panel('copilot', <><span><Cpu size={14} /> AI Copilot</span><p>Routing differential pairs...</p><div className={styles.progress}><i /><b>92%</b></div></>)}
-    {panel('drc', <><span>DRC Status <ChevronDown size={13} /></span><strong><CheckCircle2 size={16} />No errors</strong><small>0 warnings</small></>)}
-    {panel('parts', <><span>Components <ChevronDown size={13} /></span><strong><CheckCircle2 size={14} />All parts verified</strong><b>98% <small>Sourced</small></b></>)}
-    {panel('package', <><span><Box size={14} /> Manufacturing Package</span><strong><CheckCircle2 size={14} />Ready for production</strong><div className={styles.files}>{['GERBER', 'DRILL', 'BOM', 'CPL'].map((item) => <small key={item}><FileText size={16} />{item}</small>)}</div><Link href="/downloads"><Download size={13} />Download package <ArrowRight size={13} /></Link></>)}
-  </div>
-}
+function Hero() { return <section className={styles.hero} id="product"><div><p className={styles.kicker}>LOCAL-FIRST PCB ENGINEERING</p><h1>From requirements to a manufacturing-ready <em>KiCad project.</em></h1><p className={styles.lead}>BoardForge turns a design brief into an editable schematic, PCB, sourced BOM, validation record, and manufacturing package—while keeping every proposed change reviewable.</p><p className={styles.actions}><Link className={styles.primary} href="/new-board">Start a Board <ArrowRight size={16}/></Link><a href="#workflow">View the Workflow</a></p><ul className={styles.trust}><li>Local-first execution</li><li>KiCad-native output</li><li>Live supplier evidence</li><li>User-approved changes</li></ul></div><ProjectEvidence/></section> }
 
-function Hero() {
-  return <section className={styles.hero} id="product">
-    <div className={styles.copy}>
-      <span className={styles.eyebrow}><Cpu size={13} />AI-NATIVE PCB ENGINEERING PLATFORM</span>
-      <h1>From idea to<br />manufacturing,<br /><em>instantly.</em></h1>
-      <p>BoardForge is the AI-native PCB engineering platform that helps engineers move from concept to production-ready boards faster—without compromising the engineering record.</p>
-      <div className={styles.ctas}><Link href="/new-board">Start Designing <ArrowRight size={16} /></Link><a href="mailto:hello@boardforge.ai?subject=BoardForge%20demo%20request">Book a Demo</a></div>
-      <div className={styles.trust}>{trust.map(([label, Icon]) => <span key={label}><Icon size={14} />{label}</span>)}</div>
-    </div>
-    <BoardVisual />
-  </section>
-}
+function Workflow() { return <section className={styles.workflow} id="workflow">{workflow.map(([n,t,d],i)=><article key={t}><code>{n}</code><div><b>{t}</b><span>{d}</span></div>{i<4&&<i/>}</article>)}</section> }
 
-function Metrics() {
-  return <section className={styles.metrics} aria-label="BoardForge product capabilities">{metrics.map(([label, detail, Icon]) => <article key={label}><i><Icon size={21} /></i><div><b>{label}</b><small>{detail}</small></div></article>)}</section>
-}
+function Workspace() { return <section className={styles.workspace}><div className={styles.workspaceScreen}><header><span>BoardForge / Industrial Ethernet Controller</span><code>Candidate 04</code><b>DRC clean</b></header><div><aside><small>PROJECT</small><b>Industrial Ethernet Controller</b><small>DESIGN</small><span>Schematic</span><strong>PCB layout</strong><span>Validation</span><span>Evidence</span></aside><main><div><span>F.Cu</span><code>U1 W5500</code><code>J1 MagJack</code><code>R12 49.9Ω</code></div><img src="/images/boardforge-production-pcb-hero.png" alt="Populated BoardForge PCB workspace demonstration fixture"/></main></div></div><div className={styles.workspaceNotes}><h2>A real engineering workspace, not a one-shot generator.</h2><p>BoardForge creates editable candidates, preserves the original project, and exposes every validation result before anything is approved.</p><ol><li>Candidate-based editing</li><li>Protected source project</li><li>Live validation feedback</li><li>Exact component bindings</li><li>KiCad-native serialization</li></ol></div></section> }
 
-function EditorPreview() {
-  return <div className={styles.editor} aria-label="BoardForge PCB editor preview">
-    <header><Logo /><span>⌕&nbsp; HexFlight F7 Controller</span><i>Top Layer</i><i>View</i></header>
-    <aside><small>PROJECT</small><b>HexFlight F7 Controller</b><small>DESIGN</small><span>Schematic</span><strong>PCB Layout</strong><span>3D Viewer</span><small>ANALYSIS</small><span>DRC Check</span><span>ERC Check</span></aside>
-    <main><div><b>PCB Layout</b><span>● All changes saved</span><i>Design rules</i></div><section><img src="/images/boardforge-production-pcb-hero.png" alt="PCB preview inside BoardForge editor" /><div className={styles.editorRef}>U1</div><div className={styles.editorRefTwo}>J3</div></section></main>
-  </div>
-}
+function Evidence() { return <section className={styles.evidence} id="resources"><div><h2>Every important decision stays inspectable.</h2><p>Requirements, part selection, validation results, and manufacturing outputs remain attached to the candidate instead of disappearing inside a generated result.</p><dl><div><dt>ERC</dt><dd><b>0</b> errors <span>0 warnings</span></dd></div><div><dt>DRC</dt><dd><b>0</b> violations <span>0 unconnected</span></dd></div><div><dt>Bindings</dt><dd><b>18</b> verified <span>0 unresolved</span></dd></div><div><dt>Manufacturing</dt><dd>BOM/CPL parity <span>manifest verified</span></dd></div></dl></div><div className={styles.sourceTable}><header><span>Ref</span><span>Requirement</span><span>Evidence</span><span>Status</span></header><p><code>U1</code><span>Ethernet controller<br/><b>W5500</b></span><span>Package + pin map verified</span><strong>Passed</strong></p><p><code>J1</code><span>RJ45 MagJack<br/><b>Exact MPN</b></span><span>Symbol and footprint bound</span><strong>Passed</strong></p><p><code>R12</code><span>49.9 Ω 1%<br/><b>0603</b></span><span>Value + package verified</span><strong>Passed</strong></p><small>Demonstration fixture; supplier evidence is displayed only when provider data is available.</small></div></section> }
 
-function Platform() {
-  return <section className={styles.platform} id="platform"><EditorPreview /><div><span className={styles.eyebrow}><Cpu size={13} />DESIGN WITHOUT LIMITS</span><h2>Powerful tools.<br />Seamless experience.</h2><p>Schematic capture, intelligent placement, advanced routing, and real-time validation—everything you need in one unified platform.</p><Link href="/dashboard">Explore the Platform <ArrowRight size={16} /></Link></div></section>
-}
+function Outline() { return <section className={styles.outline}><div><p className={styles.kicker}>MECHANICAL WORKFLOW</p><h2>Mechanical constraints become real board geometry.</h2><p>Custom Board Generator keeps the outline editable while it records Edge.Cuts geometry, mounting holes, routeability and manufacturing risk before a KiCad project is created.</p><ul><li>Selectable points, fillets and connector relief</li><li>Mounting-ear and keep-out geometry</li><li>Routeability and manufacturing-risk checks</li><li>KiCad Edge.Cuts handoff</li></ul><Link href="/custom-board-generator">Open Custom Board Generator <ArrowRight size={15}/></Link></div><figure><img src="/images/boardforge-outline-workflow.png" alt="Actual BoardForge Custom Board Generator with Robotics controller preset"/><figcaption>Live browser workspace · Robotics controller preset · geometry checks pass</figcaption></figure></section> }
 
-function Company() {
-  const proofs = ['Local-first project control', 'Source-attributed component decisions', 'Visible ERC and DRC gates', 'KiCad-native deliverables', 'Manufacturing evidence packages', 'User-approved publishing']
-  return <section className={styles.company} id="company"><div><span className={styles.eyebrow}><BadgeCheck size={13} />BUILT FOR ACCOUNTABLE ENGINEERING</span><h2>Engineering decisions backed by evidence.</h2><p>BoardForge keeps requirements, component sources, validation reports, and manufacturing outputs attached to the project so every decision can be reviewed and reproduced.</p></div><div className={styles.proofList}>{proofs.map((proof) => <span key={proof}><CheckCircle2 size={16} />{proof}</span>)}</div></section>
-}
+function Deliverables() { return <section className={styles.deliverables}><div className={styles.fileTree}><p><FolderTree size={16}/> Industrial_Ethernet_Controller/</p><code>|-- project.kicad_pro</code><code>|-- project.kicad_sch</code><code>|-- project.kicad_pcb</code><code>|-- gerbers/</code><code>|-- drill/</code><code>|-- BOM.csv</code><code>|-- CPL.csv</code><code>|-- validation/</code><code>|   |-- ERC.json</code><code>|   |-- DRC.json</code><code>|   `-- binding-evidence.json</code><code>`-- manufacturing.zip</code></div><div><p className={styles.kicker}>MANUFACTURING HANDOFF</p><h2>The output is the engineering project—not a screenshot.</h2><p>Open the project in KiCad, inspect every decision, modify it locally, or send the manufacturing package for review.</p><dl><dt>Project hash</dt><dd><code>96a1...7de4</code></dd><dt>Validation</dt><dd>KiCad CLI evidence attached</dd><dt>Package</dt><dd>BOM/CPL parity recorded</dd><dt>Approval</dt><dd>Required before publishing</dd></dl></div></section> }
 
-function Pricing() {
-  return <section className={styles.pricing} id="pricing"><header><span className={styles.eyebrow}><Sparkles size={13} />PRICING</span><h2>Pricing built around how many boards you produce.</h2><p>Every plan includes BoardForge’s core engineering workflow. Higher plans unlock additional design tools, larger production allowances, and collaboration capabilities.</p></header><div className={styles.planGrid}>{plans.map((plan) => <article className={plan.featured ? styles.featuredPlan : ''} key={plan.name}>{plan.featured && <span className={styles.popular}>Most Popular</span>}<h3>{plan.name}</h3><strong>{plan.price}<small>/month</small></strong><b>{plan.limit}</b><p>{plan.blurb}</p><ul>{plan.features.map((feature) => <li key={feature}><Check size={14} />{feature}</li>)}</ul><Link href={plan.href}>{plan.cta} <ArrowRight size={15} /></Link></article>)}</div><small className={styles.disclosure}>Production-board allowances apply to boards generated and completed through the BoardForge production workflow during each billing month. Drafts, failed candidates, archived attempts, and user-rejected candidates do not consume a production-board allowance.</small></section>
-}
+function Pricing() { return <section className={styles.pricing} id="pricing"><header><p className={styles.kicker}>LICENSING</p><h2>Plans sized for accepted production boards.</h2><p>An accepted production board completes the BoardForge generation, sourcing, ERC, DRC, and manufacturing acceptance workflow. Drafts, failed candidates, archived attempts, and user-rejected candidates do not use the monthly allowance.</p></header><div className={styles.planHeads}><div/><div><b>Builder</b><strong>$26 <small>/ month</small></strong><span>12 accepted boards</span></div><div className={styles.recommended}><b>Engineer <small>Recommended for active development</small></b><strong>$57 <small>/ month</small></strong><span>42 accepted boards</span></div><div><b>Team</b><strong>$110 <small>/ month</small></strong><span>90 accepted boards</span></div></div><div className={styles.comparison}>{comparison.map((r)=><div key={r[0]} className={r[1]?'':styles.category}><b>{r[0]}</b><span>{r[1]}</span><span>{r[2]}</span><span>{r[3]}</span></div>)}</div><div className={styles.planActions}><span/><Link href="/signup?plan=builder">Start Builder</Link><Link className={styles.primary} href="/signup?plan=engineer">Start Engineer <ArrowRight size={15}/></Link><Link href="/signup?plan=team">Start Team</Link></div></section> }
 
-function FinalCta() {
-  return <section className={styles.finalCta}><div><h2>Build your next board with evidence behind every decision.</h2><p>Move from requirements to an editable, sourced, validated, manufacturing-ready KiCad project.</p></div><div><Link href="/new-board">Start Designing <ArrowRight size={16} /></Link><Link href="/login">Sign In</Link></div></section>
-}
-
-function Footer() {
-  return <footer id="resources"><section><div><Logo /><p>AI-native PCB engineering from requirements through manufacturing handoff.</p></div><div><b>Product</b><Link href="/dashboard">Dashboard</Link><Link href="/custom-board-generator">Custom Board Generator</Link><Link href="/schematic-workspace">Schematic Editor</Link><Link href="/pcb-workspace">PCB Editor</Link><Link href="/downloads">Manufacturing</Link></div><div><b>Resources</b><Link href="/docs">Documentation</Link><Link href="/readiness">Reference Designs</Link><Link href="/reports">Updates</Link><Link href="/readiness">System Status</Link></div><div><b>Company</b><a href="#company">About</a><a href="mailto:hello@boardforge.ai">Contact</a><a href="#pricing">Pricing</a><a href="mailto:privacy@boardforge.ai">Privacy</a><a href="mailto:legal@boardforge.ai">Terms</a></div></section><small>© {new Date().getFullYear()} BoardForge <i /> Engineering systems operational</small></footer>
-}
-
-export function CinematicLandingPage() {
-  return <main className={styles.landing}><Header /><Hero /><Metrics /><Platform /><Company /><Pricing /><FinalCta /><Footer /></main>
-}
-
+function Footer() { return <><section className={styles.finalRow}><b>Ready to build a reviewable KiCad project?</b><span><Link className={styles.primary} href="/new-board">Start a Board <ArrowRight size={15}/></Link><Link href="/login">Sign In</Link></span></section><footer id="company"><section><div><Brand/><p>Local-first PCB engineering with KiCad-native deliverables.</p></div><div><b>Product</b><Link href="/dashboard">Dashboard</Link><Link href="/custom-board-generator">Custom Board Generator</Link><Link href="/schematic-workspace">Schematic Editor</Link><Link href="/pcb-workspace">PCB Editor</Link></div><div><b>Engineering</b><Link href="/evidence">Validation</Link><Link href="/reports">Component sourcing</Link><Link href="/projects">Candidate workflow</Link><Link href="/readiness">System status</Link></div><div><b>Resources</b><Link href="/docs">Documentation</Link><Link href="/readiness">Reference designs</Link><Link href="/reports">Release notes</Link><a href="mailto:hello@boardforge.ai">Support</a></div><div><b>Company</b><a href="#company">About</a><a href="mailto:hello@boardforge.ai">Contact</a><a href="#pricing">Pricing</a><a href="mailto:privacy@boardforge.ai">Privacy</a></div></section><small>© 2026 BoardForge <i/> System status: operational · Local engine compatible</small></footer></> }
+export function CinematicLandingPage(){return <main className={styles.landing}><Header/><Hero/><Workflow/><Workspace/><Evidence/><Outline/><Deliverables/><Pricing/><Footer/></main>}
 export default CinematicLandingPage
