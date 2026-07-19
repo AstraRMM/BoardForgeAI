@@ -9,6 +9,13 @@ export function saveBrowserProject(project: BoardForgeDashboardCard) {
   const current = readBrowserProjects().projects.filter((item) => item.projectId !== project.projectId)
   window.localStorage.setItem(key, JSON.stringify([project, ...current]))
 }
+
+/** Browser project records are deliberately the only records this module can mutate. */
+export function removeBrowserProject(projectId: string) {
+  if (typeof window === 'undefined') return
+  const current = readBrowserProjects().projects.filter((item) => item.projectId !== projectId)
+  window.localStorage.setItem(key, JSON.stringify(current))
+}
 export function createBrowserProject({ projectId, projectName, prompt, kind = 'browser_board' }: { projectId: string; projectName: string; prompt: string; kind?: 'browser_board' | 'browser_outline' | 'browser_import' }): BoardForgeDashboardCard {
   const isOutline = kind === 'browser_outline'
   return {

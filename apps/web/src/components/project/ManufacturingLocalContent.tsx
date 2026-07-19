@@ -19,19 +19,31 @@ const readinessStates = [
 export function ManufacturingLocalContent() {
   const { state, data, message, refresh } = useLocalProjectDashboard()
   const projects = data?.projects || []
-  const packages = projects.filter((project) => Boolean(project.manufacturing.zip))
+  const released = projects.filter((project) => project.manufacturing.ready && Boolean(project.manufacturing.zip))
+  const recordedButUnreleased = projects.filter((project) => !project.manufacturing.ready && Boolean(project.manufacturing.zip))
   const awaitingPackage = projects.filter((project) => !project.manufacturing.zip)
 
   return <>
     <LocalProjectDataNotice state={state} message={message} onRetry={refresh} />
-    {packages.length > 0 && <section className="bf-app-section">
-      <h2>Manufacturing packages</h2>
+    {released.length > 0 && <section className="bf-app-section">
+      <div className="bf-panel-heading"><div><p className="bf-panel-eyebrow">Release evidence</p><h2>Released manufacturing packages</h2><p>Each release below has a recorded package and a passed manufacturing-ready state.</p></div></div>
       <div className="bf-app-stack">
-        {packages.map((project) => <article key={project.projectId} className="bf-premium-panel">
+        {released.map((project) => <article key={project.projectId} className="bf-premium-panel">
           <div className="bf-panel-heading"><div><p className="bf-panel-eyebrow">Release candidate</p><h3>{project.projectName}</h3></div><ManufacturingReadinessBadge state="PCB_FAB_READY" /></div>
-          <p>Readiness: {humanize(project.readiness)}. A package location is recorded in the project artifact.</p>
+          <p>Readiness: {humanize(project.readiness)}. A package location is recorded in the paired project artifact.</p>
           <p>Browser download remains unavailable until the local helper exposes an explicit artifact-transfer route.</p>
           <Link className="bf-workspace-link" href={`/projects/${encodeURIComponent(project.projectId)}`}>Open release evidence <ArrowUpRight size={15} /></Link>
+        </article>)}
+      </div>
+    </section>}
+    {recordedButUnreleased.length > 0 && <section className="bf-app-section">
+      <div className="bf-panel-heading"><div><p className="bf-panel-eyebrow">Release blocked</p><h2>Packages requiring review</h2><p>A package path alone is not a release. These projects retain their recorded artifact while the engineering gate remains incomplete.</p></div></div>
+      <div className="bf-app-stack">
+        {recordedButUnreleased.map((project) => <article key={project.projectId} className="bf-premium-panel">
+          <div className="bf-panel-heading"><div><p className="bf-panel-eyebrow">Package recorded, not released</p><h3>{project.projectName}</h3></div><ManufacturingReadinessBadge state="REVIEW" /></div>
+          <p>Release is not approved: {humanize(project.manufacturing.blockedReason || project.nextAction || 'engineering review is incomplete')}.</p>
+          {project.criticalBlockers.length > 0 && <ul className="bf-project-blockers">{project.criticalBlockers.map((blocker) => <li key={blocker.code}>{humanize(blocker.code)}: {blocker.count}</li>)}</ul>}
+          <Link className="bf-workspace-link" href={`/projects/${encodeURIComponent(project.projectId)}`}>Review release blockers <ArrowUpRight size={15} /></Link>
         </article>)}
       </div>
     </section>}
@@ -39,10 +51,10 @@ export function ManufacturingLocalContent() {
       <h2>Projects without a manufacturing package</h2>
       <div className="bf-app-stack">
         {awaitingPackage.map((project) => <article key={project.projectId} className="bf-premium-panel">
-          <div className="bf-panel-heading"><div><p className="bf-panel-eyebrow">Package not recorded</p><h3>{project.projectName}</h3></div><ManufacturingReadinessBadge state={project.manufacturing.ready ? 'REVIEW' : 'BLOCKED'} /></div>
-          <p>{project.manufacturing.ready ? 'The release state is recorded, but no package location is available to this browser.' : `Not eligible for release: ${humanize(project.manufacturing.blockedReason || 'validation not complete')}.`}</p>
+          <div className="bf-panel-heading"><div><p className="bf-panel-eyebrow">Package not recorded</p><h3>{project.projectName}</h3></div><ManufacturingReadinessBadge state={project.manufacturing.ready ? 'REVIEW' : project.status.startsWith('BROWSER_') ? 'NOT_CHECKED' : 'BLOCKED'} /></div>
+          <p>{project.manufacturing.ready ? 'The release state is recorded, but no package location is available to this browser.' : project.status.startsWith('BROWSER_') ? 'Browser draft only. No Gerbers, drills, BOM, CPL, package, or manufacturing validation has been recorded.' : `Not eligible for release: ${humanize(project.manufacturing.blockedReason || 'validation not complete')}.`}</p>
           {project.criticalBlockers.length > 0 && <ul className="bf-project-blockers">{project.criticalBlockers.map((blocker) => <li key={blocker.code}>{humanize(blocker.code)}: {blocker.count}</li>)}</ul>}
-          <Link className="bf-workspace-link" href={`/projects/${encodeURIComponent(project.projectId)}`}>Review project evidence <ArrowUpRight size={15} /></Link>
+          <div className="bf-workspace-actions"><Link href={`/projects/${encodeURIComponent(project.projectId)}`}>Review project evidence <ArrowUpRight size={15} /></Link>{project.status.startsWith('BROWSER_') && <Link className="is-secondary" href="/settings/plugin">Pair for KiCad validation</Link>}</div>
         </article>)}
       </div>
     </section>}
