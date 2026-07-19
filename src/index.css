@@ -5052,3 +5052,10 @@ text.bf-silk.small {
 }
 .bf-project-library-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(150px, .45fr) minmax(150px, .45fr); gap: 12px; align-items: end; margin: 20px 0 8px; }.bf-project-library-toolbar label { display: grid; gap: 6px; color: #83a1aa; font-size: 11px; font-weight: 700; }.bf-project-library-toolbar input, .bf-project-library-toolbar select { width: 100%; min-height: 38px; border: 1px solid rgba(105, 183, 202, .26); border-radius: 6px; background: rgba(4, 17, 23, .62); color: #e5f6f8; padding: 0 10px; font: inherit; }.bf-project-library-count { margin: 0 0 14px; color: #7d9ea7; font-size: 12px; }.bf-project-library-clear { border: 1px solid rgba(106, 192, 211, .35); border-radius: 5px; background: transparent; color: #80e8f3; cursor: pointer; font: inherit; font-size: 12px; font-weight: 750; padding: 8px 10px; } @media (max-width: 720px) { .bf-project-library-toolbar { grid-template-columns: 1fr; } }
 .bf-project-library-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid rgba(106, 192, 211, .2); border-top: 0; background: rgba(5, 24, 30, .72); }.bf-project-library-actions span { margin-right: auto; color: #76969d; font-size: 11px; }.bf-project-library-actions button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(106, 192, 211, .3); border-radius: 5px; background: transparent; color: #a9e9ee; cursor: pointer; font: inherit; font-size: 11px; font-weight: 750; padding: 6px 8px; }.bf-project-library-actions button[aria-pressed='true'] { border-color: rgba(255, 205, 91, .65); color: #ffd56d; background: rgba(112, 76, 15, .18); }
+
+/* A single high-contrast focus cue keeps every keyboard-reachable workspace
+   control discoverable, including controls that do not define a local state. */
+:where(a, button, input, select, textarea, summary, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid #7cecff;
+  outline-offset: 3px;
+}

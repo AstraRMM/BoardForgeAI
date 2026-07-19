@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile } from 'node:fs/promises'
+import { mkdtemp, readFile, mkdir, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { writeReadinessGapAudit } from '../lib/readiness/readiness-gap-auditor.mjs'
@@ -97,6 +97,25 @@ test('engineering copilot uses artifact-only next actions', async () => {
   assert.ok(result.report.actions.length > 0)
 })
 
+test('project copilot route returns artifact-backed actions without workspace paths', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'bf-copilot-route-'))
+  const projectId = 'P1'
+  const projectDir = path.join(rootDir, projectId)
+  await mkdir(projectDir)
+  await writeFile(path.join(projectDir, 'BoardForge_Project_Manifest.json'), JSON.stringify({
+    projectState: 'local_candidate',
+    manufacturing: { state: 'BLOCKED_DRC' },
+    validation: {},
+  }))
+  const route = createLocalServerRouter({ rootDir })
+  const response = await route({ method: 'POST', pathname: `/project/${projectId}/copilot`, payload: {} })
+  assert.equal(response.ok, true)
+  assert.equal(response.data.hallucinationPolicy, 'artifact_only')
+  assert.ok(response.data.actions.length > 0)
+  assert.deepEqual(response.artifactPaths, [])
+  assert.doesNotMatch(JSON.stringify(response.data), new RegExp(rootDir.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')))
+})
+
 test('local engine supports new 91-to-99 job types', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'bf-jobs-99-'))
   const route = createLocalServerRouter({ rootDir })
@@ -112,7 +131,10 @@ test('web sourcing command center exposes live job buttons and no-secret languag
   assert.match(component, /no browser-exposed supplier secrets/i)
 })
 
-test('engineering copilot panel is present on project page', async () => {
-  const page = await readFile(path.resolve('apps/web/src/app/projects/[id]/page.tsx'), 'utf8')
-  assert.match(page, /EngineeringCopilotPanel/)
+test('engineering copilot is integrated into the real project workspace', async () => {
+  const workspace = await readFile(path.resolve('apps/web/src/components/project/ProjectWorkspaceLocalContent.tsx'), 'utf8')
+  const panel = await readFile(path.resolve('apps/web/src/components/project/ProjectEngineeringCopilot.tsx'), 'utf8')
+  assert.match(workspace, /ProjectEngineeringCopilot/)
+  assert.match(panel, /artifact-backed briefing/i)
+  assert.match(panel, /\/copilot/)
 })

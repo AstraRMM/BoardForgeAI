@@ -28,6 +28,7 @@ export const localArtifactApiContract = {
     'POST /project/:id/route',
     'POST /project/:id/repair',
     'POST /project/:id/export',
+    'POST /project/:id/copilot',
   ],
 }
 

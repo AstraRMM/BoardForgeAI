@@ -15,6 +15,7 @@ import { writeProjectDiffReport } from '../../diff/project-version-diff.mjs'
 import { writeBoardPreview } from '../../preview/board-preview-generator.mjs'
 import { writeBlockerReport } from '../../blockers/blocker-report.mjs'
 import { writeAppliedLessonsReport } from '../../solution-library/applied-lessons-report.mjs'
+import { writeProjectNextActionsReport } from '../../copilot/project-explanation-generator.mjs'
 import { routePairingRequest } from './pairing-routes.mjs'
 import { checkFirstRunSetup } from '../setup/setup-status.mjs'
 import { writeVariantComparisonReport } from '../../variants/variant-report.mjs'
@@ -234,6 +235,32 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
             status: `BOARD_FORGE_PROJECT_${action.toUpperCase()}_LOCAL_ALPHA_RECORDED`,
             data: { action, projectDir, projectStatus: status, sandboxRequired: true, noFakeCloudExecution: true, entitlement },
             warnings: [`${action} is local-engine guarded; this alpha route records the action and reads local validation artifacts.`, ...(entitlement.allowed ? [] : entitlement.blockers)],
+          })
+        }
+        if (method === 'POST' && action === 'copilot') {
+          // This is deliberately an artifact-backed briefing, not a generic
+          // chat endpoint. It reads the current local project state and writes
+          // a reviewable next-actions report without changing the design.
+          const status = await api.projectStatus({ projectDir })
+          const result = await writeProjectNextActionsReport({
+            projectDir,
+            state: {
+              health: status.projectState || 'Not recorded',
+              manufacturing: status.manufacturing?.state || 'NOT_RECORDED',
+              sourcing: 'NOT_RECORDED',
+            },
+          })
+          return okResponse({
+            status: result.status,
+            data: {
+              projectId,
+              generatedAt: result.report.generatedAt,
+              health: result.report.health,
+              manufacturing: result.report.manufacturing,
+              sourcing: result.report.sourcing,
+              actions: result.report.actions,
+              hallucinationPolicy: result.report.hallucinationPolicy,
+            },
           })
         }
         if (method === 'POST' && action === 'review') {
