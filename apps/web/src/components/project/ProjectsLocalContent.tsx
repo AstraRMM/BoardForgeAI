@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { Archive, ArchiveRestore, ArrowUpRight, Star } from 'lucide-react'
+import { Archive, ArchiveRestore, ArrowUpRight, Copy, Star } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { ProjectStatusCard } from '../ProjectStatusCard'
 import { filterDashboardPublishedProjects, filterLocalDraftProjects } from '../../lib/boardforge-manifest'
 import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
-import { readBrowserProjectLibraryMetadata, saveBrowserProjectLibraryMetadata, type BrowserProjectLibraryMetadata } from '../../lib/browser-project-registry'
+import { duplicateBrowserProject, readBrowserProjectLibraryMetadata, saveBrowserProjectLibraryMetadata, type BrowserProjectLibraryMetadata } from '../../lib/browser-project-registry'
 import { LocalProjectDataNotice, useLocalProjectDashboard } from './LocalProjectDashboard'
 
 export function ProjectsLocalContent() {
@@ -25,6 +25,10 @@ export function ProjectsLocalContent() {
   const updateMetadata = (projectId: string, changes: { favorite?: boolean; archived?: boolean }) => {
     saveBrowserProjectLibraryMetadata(projectId, changes)
     setMetadata(readBrowserProjectLibraryMetadata())
+  }
+  const duplicate = (projectId: string) => {
+    duplicateBrowserProject(projectId)
+    refresh()
   }
 
   return <>
@@ -45,6 +49,7 @@ export function ProjectsLocalContent() {
               <span>Stored in this browser</span>
               <button type="button" aria-pressed={Boolean(organization?.favorite)} onClick={() => updateMetadata(project.projectId, { favorite: !organization?.favorite })}><Star size={14} fill={organization?.favorite ? 'currentColor' : 'none'} />{organization?.favorite ? 'Starred' : 'Star'}</button>
               <button type="button" onClick={() => updateMetadata(project.projectId, { archived: !organization?.archived })}>{organization?.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}{organization?.archived ? 'Restore' : 'Archive'}</button>
+              <button type="button" onClick={() => duplicate(project.projectId)}><Copy size={14} />Duplicate</button>
             </div>}
             <Link href={`/projects/${encodeURIComponent(project.projectId)}`} className="bf-project-open">Open project workspace <ArrowUpRight size={15} /></Link>
           </div>

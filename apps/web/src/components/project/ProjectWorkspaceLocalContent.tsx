@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, FileDown, FileText, History, Route, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, Copy, FileDown, FileText, History, Route, ShieldCheck } from 'lucide-react'
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ProjectStatusCard } from '../ProjectStatusCard'
 import { useLocalProjectDashboard } from './LocalProjectDashboard'
-import { readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
+import { duplicateBrowserProject, readBrowserProjectActivity, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, type BrowserProjectActivity } from '../../lib/browser-project-registry'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
 import type { BoardForgeBrowserDraft } from '../../lib/boardforge-manifest'
 import { ProjectEngineeringCopilot } from './ProjectEngineeringCopilot'
@@ -119,6 +119,14 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
     removeBrowserProject(project.projectId)
     router.replace('/projects')
   }
+  const duplicateBrowserDraft = () => {
+    const copy = duplicateBrowserProject(project.projectId)
+    if (!copy) {
+      setBrowserNotice('This project could not be copied. Only complete browser-local project records can be duplicated.')
+      return
+    }
+    router.push(`/projects/${encodeURIComponent(copy.projectId)}`)
+  }
   return <>
     <div className="bf-project-workspace-actions"><Link href="/projects"><ArrowLeft size={15} />All projects</Link><Link href="/evidence">Evidence registry <ArrowUpRight size={15} /></Link><Link href="/downloads">Manufacturing registry <ArrowUpRight size={15} /></Link></div>
     <nav className="bf-project-section-nav" aria-label="Project workspace sections">
@@ -143,7 +151,7 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
           <Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>{savedSchematicPlan ? 'Open saved schematic plan' : 'Start browser schematic plan'}</Link>
           {savedOutlineDraft && <Link href={`/custom-board-generator?project=${encodeURIComponent(project.projectId)}`}>Open saved board outline</Link>}
         </div>
-        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
+        <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" onClick={duplicateBrowserDraft}><Copy size={15} />Duplicate browser project</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
         {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
       </section>}
     </section>
@@ -214,6 +222,7 @@ function summarizeBrowserWork(draft: BoardForgeBrowserDraft | undefined) {
 function humanize(value: string) { return value.replace(/[A-Z]:\\[^ ]+/g, 'local project workspace').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 function activityLabel(action: BrowserProjectActivity['action']) {
   if (action === 'created') return 'Saved in this browser'
+  if (action === 'duplicated') return 'Duplicated in this browser'
   if (action === 'renamed') return 'Browser project renamed'
   if (action === 'pcb_snapshot_saved') return 'Browser PCB snapshot saved'
   if (action === 'outline_saved') return 'Browser board outline saved'

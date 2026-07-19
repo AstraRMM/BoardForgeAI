@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in TypeScript runner needs the source extension; Next's bundler does not load this test module.
 // @ts-expect-error -- TypeScript source import is supported by node --experimental-strip-types.
-import { browserDraftArtifacts, createBrowserProject, exportBrowserWorkspace, hasBrowserDraftArtifact, mergeBrowserWorkspaceImport, previewBrowserWorkspaceImport, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
+import { browserDraftArtifacts, createBrowserProject, duplicateBrowserProject, exportBrowserWorkspace, hasBrowserDraftArtifact, mergeBrowserWorkspaceImport, previewBrowserWorkspaceImport, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
 
 const registryKey = 'boardforge.browser-projects.v1'
 
@@ -169,6 +169,50 @@ test('browser outline saves are retained as local editor activity without manufa
   assert.equal(activity.find((event) => event.action === 'outline_saved')?.detail, '8 outline vertices, 4 mounting holes')
   assert.equal(readBrowserProjects().projects[0]?.manufacturing.ready, false)
   assert.equal(readBrowserProjects().projects[0]?.validation.drcViolations, null)
+}))
+
+test('duplicating a browser project deep-copies browser work while rebuilding every engineering claim', () => inBrowser(() => {
+  const updatedAt = '2026-07-19T00:00:00.000Z'
+  const source = createBrowserProject({ projectId: 'copy-source', projectName: 'Power planner', prompt: 'Original browser intent.', browserDraft: {
+    schema: 'boardforge.browser-draft.v1', kind: 'board', updatedAt, summary: 'Browser engineering plan. KiCad validation not run.',
+    outline: { preset: 'rounded', closed: true, pointsMm: [{ x: 0, y: 0 }, { x: 20, y: 0 }], mountingHolesMm: [], browserValidation: { status: 'valid', routeabilityScore: 70, risk: 'Low', blockers: [] } },
+    schematicPlan: { schema: 'boardforge.browser-schematic-plan.v1', version: 1, title: 'Power plan', updatedAt, notes: '', components: [{ id: 'u1', reference: 'U1', value: 'Regulator', notes: '' }], connections: [] },
+  } })
+  saveBrowserProject(source)
+
+  const duplicate = duplicateBrowserProject(source.projectId)
+  assert.ok(duplicate)
+  assert.notEqual(duplicate.projectId, source.projectId)
+  assert.equal(duplicate.projectName, 'Copy of Power planner')
+  assert.equal(duplicate.localOnly, true)
+  assert.equal(duplicate.boardPath, null)
+  assert.equal(duplicate.schematicPath, null)
+  assert.equal(duplicate.sourceManifest, null)
+  assert.equal(duplicate.replayCommand, null)
+  assert.equal(duplicate.readiness, 'review')
+  assert.equal(duplicate.validation.drcViolations, null)
+  assert.equal(duplicate.validation.ercViolations, null)
+  assert.equal(duplicate.manufacturing.ready, false)
+  assert.equal(duplicate.browserDraft?.outline?.pointsMm[0]?.x, 0)
+  assert.equal(duplicate.browserDraft?.schematicPlan?.components[0]?.reference, 'U1')
+  assert.notEqual(duplicate.browserDraft, source.browserDraft)
+  assert.deepEqual(readBrowserProjectActivity(duplicate.projectId).map((event) => event.action).sort(), ['created', 'duplicated'])
+  assert.match(readBrowserProjectActivity(duplicate.projectId).find((event) => event.action === 'duplicated')?.detail || '', /Power planner/)
+}))
+
+test('browser duplication rejects helper records and uses an available copy name', () => inBrowser(() => {
+  const first = createBrowserProject({ projectId: 'copy-first', projectName: 'Project', prompt: 'A browser draft.' })
+  const existingCopy = createBrowserProject({ projectId: 'copy-existing', projectName: 'Copy of Project', prompt: 'A browser draft.' })
+  saveBrowserProject(first)
+  saveBrowserProject(existingCopy)
+  assert.equal(duplicateBrowserProject(first.projectId)?.projectName, 'Copy of Project (2)')
+
+  // This mimics a card returned by the helper. It must never become copyable
+  // through the browser-local mutation API.
+  const helperLike = { ...first, projectId: 'helper-project', localOnly: false, status: 'READY', boardPath: 'C:\\helper\\board.kicad_pcb' }
+  const stored = JSON.parse((globalThis.window as unknown as { localStorage: MemoryStorage }).localStorage.getItem(registryKey) || '[]')
+  ;(globalThis.window as unknown as { localStorage: MemoryStorage }).localStorage.setItem(registryKey, JSON.stringify([helperLike, ...stored]))
+  assert.equal(duplicateBrowserProject('helper-project'), null)
 }))
 
 test('workspace imports reject malformed and helper-shaped exports without inventing browser projects', () => inBrowser(() => {

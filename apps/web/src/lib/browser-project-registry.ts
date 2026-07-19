@@ -32,7 +32,7 @@ export type BrowserProjectLibraryMetadata = Record<string, {
  */
 export type BrowserProjectActivity = {
   id: string
-  action: 'created' | 'renamed' | 'pcb_snapshot_saved' | 'outline_saved' | 'schematic_plan_saved'
+  action: 'created' | 'duplicated' | 'renamed' | 'pcb_snapshot_saved' | 'outline_saved' | 'schematic_plan_saved'
   at: string
   detail?: string
 }
@@ -138,6 +138,34 @@ export function saveBrowserProject(project: BoardForgeDashboardCard) {
   } : project
   window.localStorage.setItem(key, JSON.stringify([normalized, ...current]))
   if (!existing) recordBrowserProjectActivity(project.projectId, 'created')
+}
+
+/**
+ * Create a separate browser-owned copy of a saved browser project.  This is
+ * intentionally not a generic dashboard-card clone: paired-helper records
+ * are not eligible, and every KiCad, validation, release, and helper field is
+ * rebuilt through createBrowserProject rather than carried into the copy.
+ */
+export function duplicateBrowserProject(projectId: string): BoardForgeDashboardCard | null {
+  if (typeof window === 'undefined') return null
+  const source = readBrowserProjects().projects.find((project) => project.projectId === projectId)
+  if (!source || source.localOnly !== true) return null
+
+  // Reuse the import boundary as a defensive parser. It also means corrupt
+  // localStorage cannot turn a duplicate into a carrier for helper metadata.
+  const normalized = normalizeImportedBrowserProject(source)
+  if (!normalized) return null
+  const browserDraft = normalized.browserDraft ? cloneBrowserDraft(normalized.browserDraft) : undefined
+  const copy = createBrowserProject({
+    projectId: nextBrowserProjectId(),
+    projectName: nextCopyName(normalized.projectName),
+    prompt: browserDraft?.summary || normalized.reports.browserDraft || 'Copied browser workspace. KiCad validation has not run.',
+    kind: browserDraft?.kind === 'outline' ? 'browser_outline' : browserDraft?.kind === 'pcb' ? 'browser_pcb' : browserDraft?.kind === 'import' ? 'browser_import' : 'browser_board',
+    ...(browserDraft ? { browserDraft } : {}),
+  })
+  saveBrowserProject(copy)
+  recordBrowserProjectActivity(copy.projectId, 'duplicated', `Copied from ${normalized.projectName} in this browser`)
+  return copy
 }
 
 /**
@@ -261,6 +289,7 @@ function isActivity(value: unknown): value is BrowserProjectActivity {
   const event = value as Partial<BrowserProjectActivity>
   return typeof event.id === 'string' && (
     event.action === 'created' ||
+    event.action === 'duplicated' ||
     event.action === 'renamed' ||
     event.action === 'pcb_snapshot_saved' ||
     event.action === 'outline_saved' ||
@@ -316,6 +345,31 @@ function parseSchematicPlan(value: unknown): NonNullable<BoardForgeBrowserDraft[
   if (!value.components.every((component) => isRecord(component) && isNonBlankString(component.id, 160) && isNonBlankString(component.reference, 160) && typeof component.value === 'string' && component.value.length <= 1_000 && typeof component.notes === 'string' && component.notes.length <= 5_000)) return null
   if (!value.connections.every((connection) => isRecord(connection) && isNonBlankString(connection.id, 160) && isNonBlankString(connection.fromComponentId, 160) && isNonBlankString(connection.toComponentId, 160) && typeof connection.netName === 'string' && connection.netName.length <= 300)) return null
   return value as NonNullable<BoardForgeBrowserDraft['schematicPlan']>
+}
+
+/** Browser drafts contain plain persisted data; JSON cloning prevents callers
+ * from sharing mutable nested outline, PCB, or schematic records. */
+function cloneBrowserDraft(draft: BoardForgeBrowserDraft): BoardForgeBrowserDraft {
+  return JSON.parse(JSON.stringify(draft)) as BoardForgeBrowserDraft
+}
+
+function nextBrowserProjectId() {
+  const suffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  return `browser-copy-${suffix}`
+}
+
+function nextCopyName(projectName: string) {
+  const existing = new Set(readBrowserProjects().projects.map((project) => project.projectName.trim().toLocaleLowerCase()))
+  const base = `Copy of ${projectName}`.slice(0, 160)
+  if (!existing.has(base.toLocaleLowerCase())) return base
+  for (let index = 2; index < 10_000; index += 1) {
+    const suffix = ` (${index})`
+    const candidate = `${base.slice(0, 160 - suffix.length)}${suffix}`
+    if (!existing.has(candidate.toLocaleLowerCase())) return candidate
+  }
+  return `${base.slice(0, 145)} ${Date.now()}`
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value) && typeof value === 'object' && !Array.isArray(value) }
