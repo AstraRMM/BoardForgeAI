@@ -38,9 +38,9 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
   const jobs = createJobQueue({ rootDir, api })
   const kicadCandidates = createKiCadCandidateService({ rootDir, ...(kicadValidator ? { kicadValidator } : {}) })
 
-  return async function routeLocalServer({ method, pathname, payload = {}, query = new URLSearchParams() }) {
+  return async function routeLocalServer({ method, pathname, payload = {}, query = new URLSearchParams(), origin = null }) {
     try {
-      const pairingResponse = await routePairingRequest({ method, pathname, payload, auth })
+      const pairingResponse = await routePairingRequest({ method, pathname, payload, auth, origin })
       if (pairingResponse) return pairingResponse
 
       const jobResponse = await routeJobRequest({ method, pathname, payload, query, rootDir, jobs })

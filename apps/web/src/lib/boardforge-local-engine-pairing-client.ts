@@ -10,9 +10,38 @@ export const pairingRoutes = {
 
 type PairingEnvelope = { ok?: boolean; status?: string; data?: { code?: string; expiresAt?: string; token?: string; status?: { paired?: boolean } }; errors?: Array<{ message?: string }> }
 export type BrowserPairingCode = { code: string; expiresAt: string | null }
+export type LocalEnginePairingDiagnostic = {
+  reachable: boolean
+  message: string
+  status: string | null
+}
 
 export function hasLocalEngineBrowserSession() { return Boolean(getLocalEngineSessionToken()) }
 export function clearLocalEngineBrowserSession() { clearLocalEngineSessionToken() }
+
+/**
+ * Pairing is a browser-to-localhost boundary. Check that boundary explicitly so
+ * the UI can distinguish an offline helper from a rejected pairing code.
+ */
+export async function checkLocalEnginePairingConnection(): Promise<LocalEnginePairingDiagnostic> {
+  try {
+    const response = await fetch(`${BOARDFORGE_LOCAL_ENGINE_URL}/health`, { cache: 'no-store' })
+    const payload = await readPairingResponse(response)
+    if (!response.ok || payload.ok === false) {
+      return { reachable: false, status: payload.status || `HTTP_${response.status}`, message: pairingError(payload, 'The desktop helper did not accept its health check.') }
+    }
+    return { reachable: true, status: payload.status || null, message: 'Desktop helper is reachable from this browser.' }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    return {
+      reachable: false,
+      status: null,
+      message: /failed to fetch|networkerror|load failed/i.test(message)
+        ? 'This browser cannot reach the BoardForge Desktop Helper on 127.0.0.1:38991. Start the helper on this device, then retry.'
+        : 'The BoardForge Desktop Helper could not be reached from this browser. Start the helper on this device, then retry.',
+    }
+  }
+}
 
 export async function requestLocalEnginePairingCode(): Promise<BrowserPairingCode> {
   const response = await fetch(`${BOARDFORGE_LOCAL_ENGINE_URL}/pairing/code`, { cache: 'no-store' })

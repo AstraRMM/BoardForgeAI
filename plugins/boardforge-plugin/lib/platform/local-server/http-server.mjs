@@ -34,7 +34,7 @@ export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVE
       if (!authResult.allowed && req.method !== 'OPTIONS' && !publicPost) {
         throw Object.assign(new Error(authResult.reason), { status: 'BOARD_FORGE_LOCAL_ENGINE_AUTH_REQUIRED' })
       }
-      response = await router({ method: req.method, pathname: url.pathname, payload, query: url.searchParams })
+      response = await router({ method: req.method, pathname: url.pathname, payload, query: url.searchParams, origin: req.headers.origin || null })
       await appendAuditLog({
         logDir: effectiveLogDir,
         action: `${req.method} ${url.pathname}`,

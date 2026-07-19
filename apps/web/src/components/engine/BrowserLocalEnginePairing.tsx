@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Copy, KeyRound, LoaderCircle, Unplug } from 'lucide-react'
-import { clearLocalEngineBrowserSession, hasLocalEngineBrowserSession, requestLocalEnginePairingCode, verifyLocalEngineBrowserSession, type BrowserPairingCode } from '../../lib/boardforge-local-engine-pairing-client'
+import { CheckCircle2, Copy, KeyRound, LoaderCircle, PlugZap, Unplug } from 'lucide-react'
+import { checkLocalEnginePairingConnection, clearLocalEngineBrowserSession, hasLocalEngineBrowserSession, requestLocalEnginePairingCode, verifyLocalEngineBrowserSession, type BrowserPairingCode, type LocalEnginePairingDiagnostic } from '../../lib/boardforge-local-engine-pairing-client'
 
 type Phase = 'idle' | 'creating' | 'ready' | 'verifying' | 'paired' | 'error'
 
@@ -11,17 +11,27 @@ export function BrowserLocalEnginePairing() {
   const [pairing, setPairing] = useState<BrowserPairingCode | null>(null)
   const [code, setCode] = useState('')
   const [message, setMessage] = useState('')
+  const [diagnostic, setDiagnostic] = useState<LocalEnginePairingDiagnostic | null>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (hasLocalEngineBrowserSession()) setPhase('paired')
+      void checkConnection()
     }, 0)
     return () => window.clearTimeout(timer)
   }, [])
 
+  async function checkConnection() {
+    const next = await checkLocalEnginePairingConnection()
+    setDiagnostic(next)
+    return next
+  }
+
   async function createCode() {
     setPhase('creating'); setMessage('')
     try {
+      const connection = await checkConnection()
+      if (!connection.reachable) throw new Error(connection.message)
       const created = await requestLocalEnginePairingCode()
       setPairing(created); setCode(created.code); setPhase('ready')
     } catch (error) {
@@ -55,6 +65,10 @@ export function BrowserLocalEnginePairing() {
   return <article className="bf-workspace-panel bf-plugin-command">
     <div className="bf-panel-title"><div><p>Browser session</p><h2>{paired ? 'Helper paired for this browser' : 'Pair for helper-backed actions'}</h2></div>{paired ? <CheckCircle2 size={20} /> : <KeyRound size={20} />}</div>
     <p className="bf-project-workspace-note">{paired ? 'Supported browser-origin helper POST actions use a session-only token until you disconnect or close this browser.' : 'Pairing is optional for browser-only drafts and review. Create a one-time code from the local helper only when you need a supported local-engine action.'}</p>
+    <div className={`bf-plugin-connection${diagnostic?.reachable ? ' is-ready' : diagnostic ? ' is-error' : ''}`} role="status">
+      <PlugZap size={15} /><span>{diagnostic ? diagnostic.message : 'Checking whether the desktop helper is reachable…'}</span>
+      <button type="button" onClick={() => void checkConnection()} disabled={busy}>Check connection</button>
+    </div>
     {!paired && <div className="bf-plugin-pairing-controls">
       <button type="button" className="bf-panel-action" onClick={createCode} disabled={busy}>{phase === 'creating' ? <LoaderCircle className="bf-spin" size={15} /> : <KeyRound size={15} />}{pairing ? 'Refresh code' : 'Get one-time code'}</button>
       {pairing && <>

@@ -64,6 +64,34 @@ test('local server pairing requires token for browser-origin POST actions', asyn
   }
 })
 
+test('local server verifies pairing against the actual request origin', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'bf-pairing-origin-'))
+  const server = startBoardForgeLocalServer({ rootDir, port: 0 })
+  await new Promise((resolve) => server.once('listening', resolve))
+  const { port } = server.address()
+  const baseUrl = `http://127.0.0.1:${port}`
+  try {
+    const pairing = await fetch(`${baseUrl}/pairing/code`).then((response) => response.json())
+    const rejected = await fetch(`${baseUrl}/pairing/verify`, {
+      method: 'POST',
+      headers: { origin: 'https://evil.example', 'content-type': 'application/json' },
+      // Body origin deliberately claims a trusted site. The server must ignore it.
+      body: JSON.stringify({ code: pairing.data.code, origin: 'https://boardforge-ai.com' }),
+    }).then((response) => response.json())
+    assert.equal(rejected.ok, false)
+    assert.match(rejected.errors[0].message, /ORIGIN_NOT_ALLOWED/)
+
+    const verified = await fetch(`${baseUrl}/pairing/verify`, {
+      method: 'POST',
+      headers: { origin: 'https://boardforge-ai.com', 'content-type': 'application/json' },
+      body: JSON.stringify({ code: pairing.data.code }),
+    }).then((response) => response.json())
+    assert.equal(verified.ok, true)
+  } finally {
+    server.close()
+  }
+})
+
 test('first run setup reports required and optional dependencies honestly', () => {
   const status = checkFirstRunSetup({ env: {} })
   assert.equal(status.missingSupplierKeys.includes('DIGIKEY_CLIENT_ID'), true)
