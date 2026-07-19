@@ -30,5 +30,24 @@ export function createJobQueue({ rootDir, api }) {
     async listForProject(projectId) {
       return (await store.listForProject(projectId)).map(publicJobRecord)
     },
+    async dashboard() {
+      const jobs = (await store.listRecent()).map(publicJobRecord)
+      const summary = { total: jobs.length, queued: 0, running: 0, succeeded: 0, failed: 0, canceled: 0 }
+      for (const job of jobs) {
+        if (Object.hasOwn(summary, job.status)) summary[job.status] += 1
+      }
+      // Paths are meaningful only on the helper's filesystem. The browser
+      // dashboard needs job state, never local artifact locations.
+      return {
+        schema: 'boardforge.job-dashboard.v1',
+        generatedAt: new Date().toISOString(),
+        summary,
+        jobs: jobs.map(({ artifactPaths, logs, error, ...job }) => ({
+          ...job,
+          logs: logs.map(({ timestamp, message }) => ({ timestamp, message })),
+          error: error ? { message: error.message } : null,
+        })),
+      }
+    },
   }
 }

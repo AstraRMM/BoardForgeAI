@@ -32,5 +32,21 @@ export function createJobStore({ rootDir }) {
       }
       return jobs.sort((a, b) => String(b.startedAt || b.createdAt || '').localeCompare(String(a.startedAt || a.createdAt || '')))
     },
+    async listRecent(limit = 12) {
+      await ensure()
+      const files = await readdir(jobDir)
+      const jobs = []
+      for (const file of files.filter((name) => name.endsWith('.json'))) {
+        try {
+          jobs.push(JSON.parse(await readFile(path.join(jobDir, file), 'utf8')))
+        } catch {
+          // A partial or manually removed historical record must not make the
+          // dashboard unavailable. Individual job reads still fail explicitly.
+        }
+      }
+      return jobs
+        .sort((a, b) => String(b.startedAt || b.createdAt || '').localeCompare(String(a.startedAt || a.createdAt || '')))
+        .slice(0, Math.max(0, Math.min(Number(limit) || 12, 50)))
+    },
   }
 }

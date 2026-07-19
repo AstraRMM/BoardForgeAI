@@ -3,6 +3,10 @@ import { okResponse, errorResponse } from './response-schema.mjs'
 import { validateProjectPath } from './request-validator.mjs'
 
 export async function routeJobRequest({ method, pathname, payload = {}, query = new URLSearchParams(), rootDir, jobs }) {
+  if (method === 'GET' && pathname === '/jobs/dashboard') {
+    return okResponse({ status: 'BOARD_FORGE_JOB_DASHBOARD', data: await jobs.dashboard() })
+  }
+
   if (method === 'POST' && pathname === '/jobs/start') {
     const projectId = payload.projectId || 'BoardForge_Local_Project'
     const projectDir = payload.projectDir || path.join(rootDir, projectId)

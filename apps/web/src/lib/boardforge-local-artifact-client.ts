@@ -16,6 +16,7 @@ export const localArtifactApiContract = {
     'POST /brief/approve',
     'POST /project/create',
     'GET /projects/dashboard',
+    'GET /jobs/dashboard',
     'GET /project/:id/status',
     'GET /project/:id/manifest',
     'GET /project/:id/dashboard',
