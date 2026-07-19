@@ -2,26 +2,15 @@
 
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight, CheckCircle2, CircleAlert, FileDown, FileText, Route, ShieldCheck } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
-import { readBrowserProjects } from '../../lib/browser-project-registry'
 import { ProjectStatusCard } from '../ProjectStatusCard'
+import { useLocalProjectDashboard } from './LocalProjectDashboard'
 
 export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string }) {
-  const [project, setProject] = useState<BoardForgeDashboardCard | null>(null)
-  const [state, setState] = useState<'loading' | 'ready' | 'offline' | 'missing' | 'error'>('loading')
-  const [message, setMessage] = useState('')
-  const load = useCallback(async () => {
-    setState('loading')
-    const candidate = readBrowserProjects().projects.find((entry) => entry.projectId === projectId)
-    if (!candidate) { setProject(null); setState('missing'); setMessage('This project is not saved in this browser. The desktop helper does not expose a project registry for fallback lookup.'); return }
-    setProject(candidate)
-    setState('ready')
-  }, [projectId])
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void load() }, 0)
-    return () => window.clearTimeout(timer)
-  }, [load])
+  const { state: registryState, data, message: registryMessage, refresh } = useLocalProjectDashboard()
+  const project = data?.projects.find((entry) => entry.projectId === projectId) || null
+  const state = registryState === 'empty' && !project ? 'missing' : registryState
+  const message = state === 'missing' ? 'This project ID is not present in the paired helper registry or among projects saved in this browser.' : registryMessage
+  const load = refresh
 
   if (state !== 'ready' || !project) return <section className="bf-workspace-alert" role={state === 'loading' ? 'status' : 'alert'}><CircleAlert size={20} /><div><strong>{state === 'loading' ? 'Loading local project artifact.' : state === 'missing' ? 'Project not found.' : state === 'offline' ? 'Local engine not connected.' : 'Project data unavailable.'}</strong><span>{state === 'loading' ? 'Reading the canonical project dashboard artifact…' : message}</span></div>{state !== 'loading' && <button type="button" onClick={load}>Retry connection</button>}</section>
 
