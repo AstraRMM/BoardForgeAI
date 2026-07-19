@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 .next
+.next-e2e
 .boardforge/
 coverage/
 test-results/

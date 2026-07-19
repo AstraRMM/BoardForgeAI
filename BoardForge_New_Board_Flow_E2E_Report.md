@@ -2,9 +2,9 @@
 
 - schema: boardforge.browser-e2e-report.v1
 - name: BoardForge_New_Board_Flow_E2E_Report
-- generatedAt: 2026-07-07T09:44:33.888Z
+- generatedAt: 2026-07-19T22:12:52.579Z
 - status: PASSED_WITH_LIMITATIONS
 - route: /new-board
-- prompt: Make me a compact odd-shaped robotics controller with USB-C, CAN, I2C, UART/GPS, SWD, PWM, mounting ears, and JLCPCB manufacturing.
-- proves: board type inferred as robotics; relevant interface questions visible; brief approval gate visible; project creation blocked before approval; raw internal statuses hidden
-- limitation: Browser presents intake/brief/approval artifacts. Local project creation is CLI/local-engine backed.
+- prompt: A compact CAN sensor node with 24 V input and JLCPCB assembly.
+- proves: browser can capture a board request without fixture content; browser draft is explicitly not a KiCad project; draft labels state validation is not run; raw local filesystem paths are not rendered
+- limitation: The paired local engine is required for engineering questions, KiCad candidate creation, and validation.

@@ -16,9 +16,14 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev -- --hostname 127.0.0.1 --port 3212',
     url: 'http://127.0.0.1:3212',
-    reuseExistingServer: true,
+    // Never attach tests to an arbitrary process on the E2E port: that process
+    // might not have the development-only auth bypass or isolated distDir.
+    reuseExistingServer: false,
     timeout: 120_000,
     env: {
+      // Must match the narrowly-scoped distDir switch in next.config.ts. This
+      // lets Playwright run independently from a developer's active `.next`.
+      BOARDFORGE_E2E_RUNTIME: '1',
       BOARDFORGE_E2E_AUTH_BYPASS: '1',
     },
   },

@@ -9,7 +9,7 @@ test('new board flow offers a local-engine intake and honest browser draft fallb
   await expect(page.getByRole('button', { name: 'Start engineering intake' })).toBeVisible()
   await page.getByLabel(/Describe the purpose/i).fill('A compact CAN sensor node with 24 V input and JLCPCB assembly.')
   await page.getByRole('button', { name: 'Save browser draft' }).click()
-  await expect(page.getByText(/Browser draft saved/i)).toBeVisible()
+  await expect(page.getByText(/Browser draft saved\. It is a request record only/i)).toBeVisible()
   const bodyText = await page.locator('body').innerText()
   expect(bodyText).toMatch(/no KiCad files/i)
   expect(bodyText).toMatch(/manufacturing evidence/i)
