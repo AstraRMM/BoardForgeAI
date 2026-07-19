@@ -76,9 +76,8 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
         const result = await api.projectDashboard()
         return okResponse({
           status: 'BOARD_FORGE_PROJECT_DASHBOARD_DATA',
-          data: result.dashboard,
+          data: publicProjectDashboard(result.dashboard),
           warnings: result.warnings,
-          artifactPaths: result.artifactPaths,
         })
       }
       if (method === 'GET' && pathname === '/readiness') {
@@ -339,6 +338,25 @@ function publicProjectCreateResponse(result = {}, projectId = '', entitlement = 
       allowed: Boolean(entitlement.allowed),
       action: entitlement.action || 'create_project',
     },
+  }
+}
+
+/** The browser may list helper projects but never receives protected workspace paths. */
+function publicProjectDashboard(dashboard = {}) {
+  return {
+    schema: dashboard.schema,
+    generatedAt: dashboard.generatedAt,
+    summary: dashboard.summary,
+    projects: (dashboard.projects || []).map((project) => ({
+      ...project,
+      boardPath: null,
+      schematicPath: null,
+      sourceManifest: null,
+      reports: Object.fromEntries(Object.keys(project.reports || {}).map((key) => [key, 'recorded locally'])),
+      replayCommand: null,
+      importSandbox: project.importSandbox ? { ...project.importSandbox, report: 'Recorded locally' } : undefined,
+      localOnly: true,
+    })),
   }
 }
 

@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { ArrowRight, Upload } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { checkBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
-import type { BoardForgeDashboardData } from '../../lib/boardforge-manifest'
+import { callBoardForgeLocalEngine, checkBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
+import type { BoardForgeDashboardCard, BoardForgeDashboardData } from '../../lib/boardforge-manifest'
 import { readBrowserProjects } from '../../lib/browser-project-registry'
 
 type DashboardLoadState = 'loading' | 'ready' | 'empty' | 'offline' | 'error'
+type LocalEngineEnvelope = { ok?: boolean; data?: BoardForgeDashboardData; errors?: Array<{ message?: string }> }
 
 export function useLocalProjectDashboard() {
   const [state, setState] = useState<DashboardLoadState>('loading')
@@ -17,22 +18,35 @@ export function useLocalProjectDashboard() {
   const refresh = useCallback(async () => {
     setState('loading')
     setMessage('')
-    // Browser projects are the only project list currently available to the
-    // authenticated web app. Prefer them before checking desktop availability.
     const browser = readBrowserProjects()
-    if (browser.projects.length) {
+    const health = await checkBoardForgeLocalEngine()
+    if (!health?.ok) {
       setData(browser)
-      setState('ready')
-      setMessage('Showing projects saved in this browser.')
+      setState(browser.projects.length ? 'ready' : 'empty')
+      setMessage(browser.projects.length ? 'Showing projects saved in this browser. The local engine is not connected.' : 'Save a browser project or connect a local engine to see projects here.')
       return
     }
 
-    const health = await checkBoardForgeLocalEngine()
-    setData(browser)
-    setState('empty')
-    setMessage(health?.ok
-      ? 'The paired local engine is online but does not expose a project registry. Saved browser projects will appear here when available.'
-      : 'Save a browser project or connect a local engine to see projects here.')
+    try {
+      const response = await callBoardForgeLocalEngine('/projects/dashboard') as LocalEngineEnvelope
+      const helper = response.data
+      if (!response.ok || !helper || helper.schema !== 'boardforge.project-dashboard-data.v1' || !Array.isArray(helper.projects)) {
+        setData(browser)
+        setState(browser.projects.length ? 'ready' : 'empty')
+        setMessage(response.errors?.[0]?.message || 'The paired engine did not return a usable project registry. Browser-saved projects remain available.')
+        return
+      }
+      const merged = mergeProjectDashboards(helper, browser)
+      setData(merged)
+      setState(merged.projects.length ? 'ready' : 'empty')
+      setMessage(helper.projects.length && browser.projects.length
+        ? 'Showing paired local projects and projects saved in this browser.'
+        : helper.projects.length ? 'Showing projects discovered by the paired local engine.' : 'Showing projects saved in this browser.')
+    } catch {
+      setData(browser)
+      setState(browser.projects.length ? 'ready' : 'offline')
+      setMessage(browser.projects.length ? 'Showing projects saved in this browser. The local project registry could not be reached.' : 'The local project registry could not be reached.')
+    }
   }, [])
 
   useEffect(() => {
@@ -56,6 +70,29 @@ export function LocalProjectDataNotice({ state, message, onRetry }: { state: Das
     <div><strong>{state === 'offline' ? 'Local engine not connected.' : state === 'empty' ? 'No local projects yet.' : state === 'loading' ? 'Loading local workspace.' : 'Local project data unavailable.'}</strong><span>{copy}</span></div>
     {state !== 'loading' && <button type="button" onClick={onRetry}>Retry connection</button>}
   </section>
+}
+
+export function mergeProjectDashboards(helper: BoardForgeDashboardData, browser: BoardForgeDashboardData): BoardForgeDashboardData {
+  // Canonical helper artifacts override browser drafts sharing an ID. This lets
+  // a plugin-created project replace its local browser placeholder without
+  // accepting project paths from the browser.
+  const byId = new Map<string, BoardForgeDashboardCard>()
+  for (const project of browser.projects) byId.set(project.projectId, project)
+  for (const project of helper.projects) byId.set(project.projectId, project)
+  const projects = [...byId.values()]
+  return {
+    schema: 'boardforge.project-dashboard-data.v1',
+    generatedAt: helper.generatedAt,
+    projects,
+    summary: {
+      totalProjects: projects.length,
+      manufacturingReady: projects.filter((project) => project.manufacturing.ready).length,
+      blocked: projects.filter((project) => project.readiness === 'blocked').length,
+      review: projects.filter((project) => project.readiness === 'review').length,
+      needsRouting: projects.filter((project) => project.validation.unconnected !== null && project.validation.unconnected > 0).length,
+      cleanDrcErc: projects.filter((project) => project.validation.drcViolations === 0 && project.validation.ercViolations === 0).length,
+    },
+  }
 }
 
 export function DashboardRecentProjects({ rowsClassName, rowClassName, emptyClassName, actionsClassName }: { rowsClassName: string; rowClassName: string; emptyClassName: string; actionsClassName: string }) {
