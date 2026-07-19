@@ -1,8 +1,20 @@
 import type { BoardForgeBrowserDraft, BoardForgeDashboardCard, BoardForgeDashboardData } from './boardforge-manifest'
+import type { BrowserPcbSnapshotV1 } from './pcb-editor/model'
 
 const key = 'boardforge.browser-projects.v1'
 const libraryMetadataKey = 'boardforge.browser-project-library.v1'
 const activityKey = 'boardforge.browser-project-activity.v1'
+
+/**
+ * Portable browser-workspace data is deliberately narrower than a dashboard
+ * card. It carries only browser-authored drafts; helper paths, KiCad evidence,
+ * validation and release state are never trusted on import.
+ */
+export type BrowserWorkspaceExport = {
+  schema: 'boardforge.browser-workspace-export.v1'
+  exportedAt: string
+  projects: BoardForgeDashboardCard[]
+}
 
 /**
  * Personal library organization is intentionally stored separately from a
@@ -26,6 +38,22 @@ export type BrowserProjectActivity = {
 }
 
 export type BrowserProjectActivityRegistry = Record<string, BrowserProjectActivity[]>
+
+const browserWorkspaceExportSchema = 'boardforge.browser-workspace-export.v1'
+const maxImportedProjects = 500
+
+export type BrowserWorkspaceImportPreview = {
+  projects: BoardForgeDashboardCard[]
+  ignored: number
+  warnings: string[]
+}
+
+export type BrowserWorkspaceMergeResult = {
+  added: number
+  updated: number
+  ignored: number
+  warnings: string[]
+}
 
 /**
  * `kind` predates projects that can hold more than one browser workspace.
@@ -88,18 +116,81 @@ export function readBrowserProjects(): BoardForgeDashboardData {
   if (typeof window === 'undefined') return empty()
   try { const projects = JSON.parse(window.localStorage.getItem(key) || '[]') as BoardForgeDashboardCard[]; return { ...empty(), projects, summary: summary(projects) } } catch { return empty() }
 }
+
+/** Produces a portable snapshot of browser-owned projects only. */
+export function exportBrowserWorkspace(): BrowserWorkspaceExport {
+  return {
+    schema: 'boardforge.browser-workspace-export.v1',
+    exportedAt: new Date().toISOString(),
+    projects: readBrowserProjects().projects.filter((project) => project.localOnly === true),
+  }
+}
+
 export function saveBrowserProject(project: BoardForgeDashboardCard) {
   const existing = readBrowserProjects().projects.find((item) => item.projectId === project.projectId)
   const current = readBrowserProjects().projects.filter((item) => item.projectId !== project.projectId)
   const browserDraft = project.browserDraft ? mergeBrowserDraft(existing?.browserDraft, project.browserDraft) : existing?.browserDraft
   const normalized = browserDraft ? {
     ...project,
-    browserDraft,
+    ...(browserDraft ? { browserDraft } : {}),
     reports: { ...existing?.reports, ...project.reports, browserDraft: browserDraft.summary },
     ...(project.localOnly || existing?.localOnly ? { status: browserDraftProjectStatus(browserDraft, project.status) } : {}),
   } : project
   window.localStorage.setItem(key, JSON.stringify([normalized, ...current]))
   if (!existing) recordBrowserProjectActivity(project.projectId, 'created')
+}
+
+/**
+ * Validate a portable browser-workspace export before it can reach storage.
+ * Import is deliberately a one-way normalization boundary: helper paths,
+ * validation results, release state, and account/publish state are discarded.
+ */
+export function previewBrowserWorkspaceImport(value: unknown): BrowserWorkspaceImportPreview {
+  if (!isRecord(value) || value.schema !== browserWorkspaceExportSchema) {
+    throw new Error('Choose a BoardForge browser workspace export (.json) created by this Settings page.')
+  }
+  if (!Array.isArray(value.projects)) {
+    throw new Error('This browser workspace export is missing its project list.')
+  }
+  if (value.projects.length > maxImportedProjects) {
+    throw new Error(`This export contains more than ${maxImportedProjects} projects. Split it into smaller exports before importing.`)
+  }
+
+  const projects: BoardForgeDashboardCard[] = []
+  const warnings: string[] = []
+  const seen = new Set<string>()
+  for (const [index, rawProject] of value.projects.entries()) {
+    const project = normalizeImportedBrowserProject(rawProject)
+    if (!project) {
+      warnings.push(`Project ${index + 1} was skipped because it is not a valid browser-local BoardForge project.`)
+      continue
+    }
+    if (seen.has(project.projectId)) {
+      warnings.push(`Project “${project.projectName}” was skipped because this export repeats its project ID.`)
+      continue
+    }
+    seen.add(project.projectId)
+    projects.push(project)
+  }
+  if (!projects.length && value.projects.length) {
+    throw new Error('No importable browser-local projects were found. Helper-backed projects and invalid records are never imported here.')
+  }
+  return { projects, ignored: value.projects.length - projects.length, warnings }
+}
+
+/** Merge only normalized browser-local records; paired helper records are never read or changed. */
+export function mergeBrowserWorkspaceImport(value: unknown): BrowserWorkspaceMergeResult {
+  if (typeof window === 'undefined') throw new Error('Browser workspace import is only available in a browser session.')
+  const preview = previewBrowserWorkspaceImport(value)
+  const existing = new Set(readBrowserProjects().projects.map((project) => project.projectId))
+  let added = 0
+  let updated = 0
+  for (const project of preview.projects) {
+    if (existing.has(project.projectId)) updated += 1
+    else added += 1
+    saveBrowserProject(project)
+  }
+  return { added, updated, ignored: preview.ignored, warnings: preview.warnings }
 }
 
 export function readBrowserProjectActivity(projectId: string): BrowserProjectActivity[] {
@@ -155,7 +246,7 @@ export function createBrowserProject({ projectId, projectName, prompt, kind = 'b
     nextAction: 'Continue editing in BoardForge, then pair the desktop helper to create and validate KiCad files.',
     sourceManifest: null, honestyBadges: ['Browser draft', 'Validation not run'],
     projectState: 'local_draft', publishApproved: false, dashboardVisible: true, syncStatus: 'browser_saved', localOnly: true,
-    browserDraft,
+    ...(browserDraft ? { browserDraft } : {}),
   }
 }
 function empty(): BoardForgeDashboardData { return { schema: 'boardforge.project-dashboard-data.v1', generatedAt: new Date().toISOString(), projects: [], summary: { totalProjects: 0, manufacturingReady: 0, blocked: 0, review: 0, needsRouting: 0, cleanDrcErc: 0 } } }
@@ -175,4 +266,63 @@ function isActivity(value: unknown): value is BrowserProjectActivity {
     event.action === 'outline_saved' ||
     event.action === 'schematic_plan_saved'
   ) && typeof event.at === 'string' && (!event.detail || typeof event.detail === 'string')
+}
+
+function normalizeImportedBrowserProject(value: unknown): BoardForgeDashboardCard | null {
+  if (!isRecord(value) || value.schema !== 'boardforge.project-dashboard-card.v1' || value.localOnly !== true) return null
+  if (!isProjectId(value.projectId) || !isNonBlankString(value.projectName, 160)) return null
+  const browserDraft = value.browserDraft === undefined ? undefined : parseBrowserDraft(value.browserDraft)
+  if (value.browserDraft !== undefined && !browserDraft) return null
+  const prompt = isRecord(value.reports) && isNonBlankString(value.reports.browserDraft, 2_000)
+    ? value.reports.browserDraft
+    : browserDraft?.summary || 'Imported browser workspace. KiCad validation has not run.'
+  return createBrowserProject({
+    projectId: value.projectId,
+    projectName: value.projectName.trim(),
+    prompt,
+    kind: browserDraft?.kind === 'outline' ? 'browser_outline' : browserDraft?.kind === 'pcb' ? 'browser_pcb' : browserDraft?.kind === 'import' ? 'browser_import' : 'browser_board',
+    browserDraft: browserDraft ?? undefined,
+  })
+}
+
+function parseBrowserDraft(value: unknown): BoardForgeBrowserDraft | null {
+  if (!isRecord(value) || value.schema !== 'boardforge.browser-draft.v1' || !isNonBlankString(value.updatedAt, 80) || !isNonBlankString(value.summary, 2_000)) return null
+  if (value.kind !== 'board' && value.kind !== 'outline' && value.kind !== 'import' && value.kind !== 'pcb') return null
+  const outline = value.outline === undefined ? undefined : parseOutlineDraft(value.outline)
+  const pcb = value.pcb === undefined ? undefined : parsePcbSnapshot(value.pcb)
+  const schematicPlan = value.schematicPlan === undefined ? undefined : parseSchematicPlan(value.schematicPlan)
+  if ((value.outline !== undefined && !outline) || (value.pcb !== undefined && !pcb) || (value.schematicPlan !== undefined && !schematicPlan)) return null
+  return { schema: 'boardforge.browser-draft.v1', kind: value.kind, updatedAt: value.updatedAt, summary: value.summary, ...(outline ? { outline } : {}), ...(pcb ? { pcb } : {}), ...(schematicPlan ? { schematicPlan } : {}) }
+}
+
+function parseOutlineDraft(value: unknown): NonNullable<BoardForgeBrowserDraft['outline']> | null {
+  if (!isRecord(value) || !isNonBlankString(value.preset, 160) || typeof value.closed !== 'boolean' || !Array.isArray(value.pointsMm) || !Array.isArray(value.mountingHolesMm) || !isRecord(value.browserValidation)) return null
+  if (value.pointsMm.length > 10_000 || value.mountingHolesMm.length > 1_000) return null
+  if (!value.pointsMm.every((point) => isRecord(point) && isFiniteNumber(point.x) && isFiniteNumber(point.y))) return null
+  if (!value.mountingHolesMm.every((hole) => isRecord(hole) && isNonBlankString(hole.ref, 160) && isFiniteNumber(hole.x) && isFiniteNumber(hole.y) && isFiniteNumber(hole.diameterMm) && isFiniteNumber(hole.keepoutMm) && (hole.plating === 'plated' || hole.plating === 'non-plated') && typeof hole.locked === 'boolean')) return null
+  const validation = value.browserValidation
+  if ((validation.status !== 'valid' && validation.status !== 'blocked') || !isFiniteNumber(validation.routeabilityScore) || !['Low', 'Medium', 'High', 'Blocked'].includes(String(validation.risk)) || !Array.isArray(validation.blockers) || validation.blockers.length > 500 || !validation.blockers.every((blocker) => isNonBlankString(blocker, 500))) return null
+  return value as NonNullable<BoardForgeBrowserDraft['outline']>
+}
+
+function parsePcbSnapshot(value: unknown): BrowserPcbSnapshotV1 | null {
+  if (!isRecord(value) || value.schema !== 'boardforge.browser-pcb-snapshot/v1' || !isNonBlankString(value.savedAt, 80) || !isNonBlankString(value.sandboxSource, 4_000_000) || !Array.isArray(value.transactions) || value.transactions.length > 5_000) return null
+  if (!isBrowserPcbDocument(value.document)) return null
+  return value as unknown as BrowserPcbSnapshotV1
+}
+
+function parseSchematicPlan(value: unknown): NonNullable<BoardForgeBrowserDraft['schematicPlan']> | null {
+  if (!isRecord(value) || value.schema !== 'boardforge.browser-schematic-plan.v1' || value.version !== 1 || !isNonBlankString(value.title, 300) || !isNonBlankString(value.updatedAt, 80) || typeof value.notes !== 'string' || value.notes.length > 20_000 || !Array.isArray(value.components) || !Array.isArray(value.connections) || value.components.length > 1_000 || value.connections.length > 5_000) return null
+  if (!value.components.every((component) => isRecord(component) && isNonBlankString(component.id, 160) && isNonBlankString(component.reference, 160) && typeof component.value === 'string' && component.value.length <= 1_000 && typeof component.notes === 'string' && component.notes.length <= 5_000)) return null
+  if (!value.connections.every((connection) => isRecord(connection) && isNonBlankString(connection.id, 160) && isNonBlankString(connection.fromComponentId, 160) && isNonBlankString(connection.toComponentId, 160) && typeof connection.netName === 'string' && connection.netName.length <= 300)) return null
+  return value as NonNullable<BoardForgeBrowserDraft['schematicPlan']>
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value) && typeof value === 'object' && !Array.isArray(value) }
+function isFiniteNumber(value: unknown): value is number { return typeof value === 'number' && Number.isFinite(value) }
+function isNonBlankString(value: unknown, maxLength: number): value is string { return typeof value === 'string' && value.trim().length > 0 && value.length <= maxLength }
+function isProjectId(value: unknown): value is string { return isNonBlankString(value, 128) && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value) }
+function isBrowserPcbDocument(value: unknown) {
+  if (!isRecord(value) || value.schema !== 'boardforge.pcb-view/v1' || !isNonBlankString(value.documentId, 200) || !Number.isInteger(value.revision) || !isNonBlankString(value.sourceSha256, 200) || value.units !== 'mm' || !isNonBlankString(value.title, 500) || !isRecord(value.bounds) || !isRecord(value.bounds.min) || !isRecord(value.bounds.max) || !isFiniteNumber(value.bounds.min.x) || !isFiniteNumber(value.bounds.min.y) || !isFiniteNumber(value.bounds.max.x) || !isFiniteNumber(value.bounds.max.y) || !isFiniteNumber(value.unconnectedCount) || !isFiniteNumber(value.unsupportedCount)) return false
+  return ['layers', 'footprints', 'tracks', 'vias', 'graphics', 'ratsnest', 'violations'].every((field) => Array.isArray(value[field]))
 }

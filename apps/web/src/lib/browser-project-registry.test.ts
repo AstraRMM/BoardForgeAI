@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 // Node's built-in TypeScript runner needs the source extension; Next's bundler does not load this test module.
 // @ts-expect-error -- TypeScript source import is supported by node --experimental-strip-types.
-import { browserDraftArtifacts, createBrowserProject, hasBrowserDraftArtifact, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
+import { browserDraftArtifacts, createBrowserProject, exportBrowserWorkspace, hasBrowserDraftArtifact, mergeBrowserWorkspaceImport, previewBrowserWorkspaceImport, readBrowserProjectActivity, readBrowserProjectLibraryMetadata, readBrowserProjects, recordBrowserProjectActivity, removeBrowserProject, saveBrowserProject, saveBrowserProjectLibraryMetadata } from './browser-project-registry.ts'
 
 const registryKey = 'boardforge.browser-projects.v1'
 
@@ -169,4 +169,53 @@ test('browser outline saves are retained as local editor activity without manufa
   assert.equal(activity.find((event) => event.action === 'outline_saved')?.detail, '8 outline vertices, 4 mounting holes')
   assert.equal(readBrowserProjects().projects[0]?.manufacturing.ready, false)
   assert.equal(readBrowserProjects().projects[0]?.validation.drcViolations, null)
+}))
+
+test('workspace imports reject malformed and helper-shaped exports without inventing browser projects', () => inBrowser(() => {
+  assert.throws(() => previewBrowserWorkspaceImport('{not-json'), /BoardForge browser workspace export/)
+  assert.throws(() => previewBrowserWorkspaceImport({ schema: 'wrong', projects: [] }), /BoardForge browser workspace export/)
+  assert.throws(() => previewBrowserWorkspaceImport({
+    schema: 'boardforge.browser-workspace-export.v1', projects: [{
+      projectId: 'helper-project', projectName: 'Untrusted helper claim',
+      schema: 'boardforge.project-dashboard-card.v1', localOnly: false,
+      boardPath: 'C:\\secret\\board.kicad_pcb', schematicPath: 'C:\\secret\\board.kicad_sch',
+      validation: { drcViolations: 0 }, manufacturing: { ready: true },
+    }],
+  }), /No importable browser-local projects/)
+  assert.deepEqual(readBrowserProjects().projects, [])
+}))
+
+test('workspace import rebuilds local-only state and merges without accepting KiCad or release claims', () => inBrowser(() => {
+  const existing = createBrowserProject({ projectId: 'portable-board', projectName: 'Existing browser board', prompt: 'Keep existing PCB.' })
+  const pcb = {
+    schema: 'boardforge.browser-pcb-snapshot/v1' as const, savedAt: '2026-07-19T00:00:00.000Z', sandboxSource: '(kicad_pcb)', transactions: [],
+    document: { schema: 'boardforge.pcb-view/v1' as const, documentId: 'portable', revision: 1, sourceSha256: 'existing-sha', units: 'mm' as const, title: 'Portable', bounds: { min: { x: 0, y: 0 }, max: { x: 10, y: 10 } }, layers: [], footprints: [], tracks: [], vias: [], graphics: [], ratsnest: [], unconnectedCount: 0, violations: [], unsupportedCount: 0 },
+  }
+  saveBrowserProject({ ...existing, browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'pcb', updatedAt: pcb.savedAt, summary: 'Existing PCB draft.', pcb } })
+
+  const imported = {
+    schema: 'boardforge.browser-workspace-export.v1', exportedAt: '2026-07-19T00:00:00.000Z', projects: [{
+      schema: 'boardforge.project-dashboard-card.v1', projectId: 'portable-board', projectName: 'Imported renamed board', localOnly: true,
+      boardPath: 'C:\\should-never-return.kicad_pcb', schematicPath: 'C:\\should-never-return.kicad_sch', sourceManifest: 'C:\\manifest.json', replayCommand: 'run private command',
+      readiness: 'ready', routingCompletionPercent: 100, validation: { shorts: 0, unconnected: 0, forbiddenVias: 0, drcViolations: 0, ercViolations: 0 },
+      manufacturing: { ready: true, zip: 'C:\\package.zip', blockedReason: null }, reports: { browserDraft: 'Imported browser outline only.' },
+      browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'outline', updatedAt: '2026-07-19T00:00:00.000Z', summary: 'Imported outline draft.', outline: { preset: 'rounded', closed: true, pointsMm: [{ x: 0, y: 0 }], mountingHolesMm: [], browserValidation: { status: 'valid', routeabilityScore: 100, risk: 'Low', blockers: [] } } },
+    }],
+  }
+
+  assert.deepEqual(mergeBrowserWorkspaceImport(imported), { added: 0, updated: 1, ignored: 0, warnings: [] })
+  const saved = readBrowserProjects().projects
+  assert.equal(saved.length, 1)
+  assert.equal(saved[0]?.projectName, 'Imported renamed board')
+  assert.equal(saved[0]?.localOnly, true)
+  assert.equal(saved[0]?.boardPath, null)
+  assert.equal(saved[0]?.schematicPath, null)
+  assert.equal(saved[0]?.sourceManifest, null)
+  assert.equal(saved[0]?.replayCommand, null)
+  assert.equal(saved[0]?.readiness, 'review')
+  assert.equal(saved[0]?.manufacturing.ready, false)
+  assert.equal(saved[0]?.validation.drcViolations, null)
+  assert.equal(saved[0]?.browserDraft?.outline?.preset, 'rounded')
+  assert.equal(saved[0]?.browserDraft?.pcb?.document.sourceSha256, 'existing-sha')
+  assert.equal(exportBrowserWorkspace().projects[0]?.projectId, 'portable-board')
 }))

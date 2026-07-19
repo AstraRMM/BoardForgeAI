@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Check, Download, MonitorCog, RotateCcw, Settings2, ShieldCheck } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { readBrowserProjects } from '../../lib/browser-project-registry'
+import { ArrowUpRight, Check, Download, MonitorCog, RotateCcw, Settings2, ShieldCheck, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { exportBrowserWorkspace, mergeBrowserWorkspaceImport, readBrowserProjects } from '../../lib/browser-project-registry'
 
 type Density = 'comfortable' | 'compact'
 type Preferences = { density: Density; reduceMotion: boolean }
@@ -28,6 +28,7 @@ export function WorkspaceSettings({ authReady, missing }: { authReady: boolean; 
   const [preferences, setPreferences] = useState<Preferences>(defaults)
   const [browserProjects, setBrowserProjects] = useState(0)
   const [notice, setNotice] = useState<string | null>(null)
+  const importInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const next = readPreferences()
@@ -49,16 +50,39 @@ export function WorkspaceSettings({ authReady, missing }: { authReady: boolean; 
     setNotice('Workspace preferences reset for this browser.')
   }
 
-  const exportBrowserWorkspace = () => {
-    const projects = readBrowserProjects().projects
-    const file = new Blob([JSON.stringify({ schema: 'boardforge.browser-workspace-export.v1', exportedAt: new Date().toISOString(), projects }, null, 2)], { type: 'application/json' })
+  const downloadBrowserWorkspace = () => {
+    const workspace = exportBrowserWorkspace()
+    const file = new Blob([JSON.stringify(workspace, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(file)
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = 'boardforge-browser-workspace.json'
     anchor.click()
     URL.revokeObjectURL(url)
-    setNotice(`Exported ${projects.length} browser-saved project${projects.length === 1 ? '' : 's'}.`)
+    setNotice(`Exported ${workspace.projects.length} browser-saved project${workspace.projects.length === 1 ? '' : 's'}.`)
+  }
+
+  const importBrowserWorkspace = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setNotice('Choose a .json browser workspace export from BoardForge Settings.')
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setNotice('This export is larger than 8 MB. Split it into a smaller browser workspace export before importing.')
+      return
+    }
+    try {
+      const imported = mergeBrowserWorkspaceImport(JSON.parse(await file.text()) as unknown)
+      setBrowserProjects(readBrowserProjects().projects.length)
+      const changes = [`${imported.added} added`, imported.updated ? `${imported.updated} updated` : 'no duplicates']
+      if (imported.ignored) changes.push(`${imported.ignored} skipped`)
+      setNotice(`Browser workspace imported: ${changes.join(', ')}. KiCad validation and release evidence were not imported.`)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'The browser workspace could not be imported. No existing project was changed.')
+    }
   }
 
   return <div className="bf-app-page bf-settings-page">
@@ -88,9 +112,13 @@ export function WorkspaceSettings({ authReady, missing }: { authReady: boolean; 
 
       <article className="bf-workspace-panel">
         <div className="bf-panel-title"><div><p>Browser data</p><h2>Keep a portable copy</h2></div><Download size={20} /></div>
-        <p className="bf-project-workspace-note">{browserProjects ? `${browserProjects} browser-saved project${browserProjects === 1 ? '' : 's'} can be exported as a metadata handoff.` : 'No browser-saved projects yet. New board, import, and outline drafts appear here after you save them.'}</p>
-        <button type="button" className="bf-settings-export" onClick={exportBrowserWorkspace}><Download size={15} />Export browser workspace</button>
-        <small>This export contains browser draft metadata only. It does not claim KiCad validation, fabrication readiness, or a synced account record.</small>
+        <p className="bf-project-workspace-note">{browserProjects ? `${browserProjects} browser-saved project${browserProjects === 1 ? '' : 's'} can be exported for this browser workspace.` : 'No browser-saved projects yet. New board, import, and outline drafts appear here after you save them.'}</p>
+        <div className="bf-settings-data-actions">
+          <button type="button" className="bf-settings-export" onClick={downloadBrowserWorkspace}><Download size={15} />Export browser workspace</button>
+          <button type="button" className="bf-settings-export" onClick={() => importInput.current?.click()}><Upload size={15} />Import browser workspace</button>
+          <input ref={importInput} className="bf-visually-hidden" type="file" accept="application/json,.json" onChange={(event) => void importBrowserWorkspace(event)} />
+        </div>
+        <small>Import merges only browser-local projects from a Settings export. Existing browser drafts with the same project ID are updated; helper projects, validation, fabrication readiness, and account state are never imported.</small>
       </article>
     </section>
 

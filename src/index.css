@@ -2541,6 +2541,9 @@ a {
 .bf-settings-switch.is-on span { background: #6ee9ac; transform: translateX(2px); }
 .bf-settings-footer { display: flex; justify-content: space-between; gap: 14px; padding-top: 18px; color: #718f97; font-size: 11px; }
 .bf-settings-footer button,.bf-settings-export { display: inline-flex; align-items: center; gap: 6px; color: #71e1ed; }
+.bf-settings-data-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.bf-settings-data-actions .bf-settings-export { margin-top: 20px; }
+.bf-visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .bf-settings-export { margin-top: 20px; padding: 9px 11px; border: 1px solid rgba(100, 215, 239, .27); border-radius: 5px; background: rgba(24, 119, 138, .13); }
 .bf-settings-export:hover,.bf-settings-footer button:hover { color: #e1fcff; }
 .bf-settings-grid > .bf-workspace-panel small { display: block; margin-top: 12px; color: #718f97; font-size: 11px; line-height: 1.5; }
