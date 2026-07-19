@@ -1,102 +1,70 @@
-# BoardForge Authenticated Application Audit
+# BoardForge Authenticated Route Audit
 
 Audit date: 2026-07-19
-Baseline branch: `boardforge-platform-productization`
-Scope: route purpose, current UI architecture, auth boundary, functional evidence, and V3 migration priority.
+Scope: the authenticated engineering workspace, its local-engine ownership boundary, and route-level product acceptance. Public marketing, documentation, login, signup, and setup are excluded unless they leak into the workspace.
 
-## Executive findings
+## Current application map
 
-- The application has **one new shell** (`AppShell`) on `/dashboard`; every other authenticated-route candidate uses a legacy page, a raw component surface, or a text-only page.
-- `proxy.ts` protects only `/dashboard`, `/projects`, `/reports`, `/downloads`, `/settings`, and `/plugin/connect`. Design/editor, import, evidence, readiness, and generator routes are currently reachable without the authenticated-app boundary. This must be resolved before the V3 shell becomes the source of truth.
-- The canonical page source is `apps/web/src/app/*`; root `app/*` mostly re-exports it. The legacy visual systems are split between Tailwind utility markup, `bf-*` global CSS, and editor-specific component styling.
-- Several pages have real engineering functionality that must be retained (browser PCB editor, browser schematic editor, outline editor, import sandbox, pairing APIs, evidence panels). The V3 work is a shell-and-experience replacement, **not** a feature rewrite.
-- Text-only routes (`/reports`, `/settings`, `/settings/billing`, `/settings/devices`) cannot ship as authenticated application views.
+The actual Next entrypoints are in root `app/`; most delegate to `apps/web/src/app/`. `AppShell` is the one authenticated application shell. `proxy.ts` currently protects the routes listed below when production authentication environment variables are configured; it intentionally permits local setup development when they are absent.
 
-## Route inventory
+| Route | Engineering purpose and principal data source | Current functional state | Product score | Gap / required disposition |
+| --- | --- | --- | ---: | --- |
+| `/dashboard` | Workspace overview; browser-saved project registry with local-helper health fallback | Browser projects, loading/empty state, and direct workflow links | 72 | Keep as overview only. Pairing checklist confuses configured auth with an actual paired browser session; live jobs/candidate queue are not yet represented. |
+| `/projects` | Browser project library with optional paired KiCad context | Browser-saved drafts and truthful empty state | 70 | Keep. Needs search/filter/sort only once project volume warrants it. Persist browser projects to an authenticated backend before multi-device sync is promised. |
+| `/projects/[id]` | Project workspace; `GET /project/:id/dashboard` | Real project card, validation/release summary, report labels | 63 | Make this the sole project-detail owner. Add project-scoped Overview, Evidence, Manufacturing, and Controls tabs; present report/download artifacts from their dedicated endpoints rather than only card fields. |
+| `/new-board` | Requirements intake, brief approval, local candidate creation; paired local POSTs | Real staged workflow with no sample board fallback | 76 | Keep. After creation, provide a clear handoff to the created project; do not turn it into a generic chat page. |
+| `/custom-board-generator` | Exact outline editing, local routeability checks, Edge.Cuts candidate handoff | Real editor wrapped in `AppShell` | 78 | Keep and preserve editor behavior. Candidate/export progress needs a project-bound return path after the engine writes it. |
+| `/pcb-workspace` | Browser PCB geometry sandbox | Honest sandbox editor, explicitly not project-bound | 52 | It is not a project workspace. Either retain as a clearly named sandbox/tool route or replace with project-bound PCB editing when such an engine path exists. Do not imply KiCad editing. |
+| `/schematic-workspace` | Legacy editor URL | Redirects to `/projects` | 100 (alias) | Retain only as a redirect while external links exist; remove from product map/navigation. |
+| `/import` | KiCad sandbox-import entry point | Honest unavailable state; no browser import API exists | 47 | Keep one import route only. Add a real desktop import launch/status contract before presenting workflow completion. |
+| `/upload-kicad` | Legacy import URL | Redirects to `/import` | 100 (alias) | Retain one-hop redirect only; no separate UI or links. |
+| `/evidence` | Cross-project validation/evidence registry; `GET /projects/dashboard` | Real aggregate project signals and truthful empty state | 60 | Must become an artifact registry, not another project-summary card grid. Link each row to a project Evidence tab and report source/status. |
+| `/downloads` (navigation label: Manufacturing) | Cross-project manufacturing release queue | Honest release/blocked summary; browser transfer explicitly unavailable | 56 | Must read per-project downloads manifests. Rename path only through a compatibility plan; keep it as global release queue, not project detail. Remove static readiness glossary from the application surface. |
+| `/reports` | Legacy reports URL | Redirects to `/evidence` | 100 (alias) | Keep redirect or remove after external-link migration. Delete unused report-list component; reports belong to Project > Evidence. |
+| `/readiness` | Legacy readiness URL | Redirects to `/evidence` | 100 (alias) | Keep redirect only. Do not restore a separate score view without a generated readiness artifact. |
+| `/settings` | Workspace configuration hub | AppShell page linking pairing/setup/evidence | 55 | Needs a real settings information architecture. Do not fabricate provider/account configuration state. |
+| `/settings/plugin` | Browser-local-engine pairing and diagnostics | Real session pairing UI; pairing token remains session-only | 78 | Keep as sole pairing surface. Correct its account-pairing link so it does not point through the legacy `/plugin/connect` redirect. |
+| `/plugin/connect` | Legacy pairing URL | Redirects to `/settings/plugin` | 100 (alias) | Retain one-hop redirect only. |
+| `/settings/devices` | Device registry | Honest unavailable state | 35 | The route has no device-registry API; keep as unavailable only if a direct settings link is required, otherwise hide until a registry exists. |
+| `/settings/billing` | Account license/billing | Honest unavailable state | 35 | No account billing API exists. Keep out of normal workspace navigation until it can perform account actions. |
+| `/demo` | Internal guided workflow/reference project | Static guided content and demo controls; protected | 35 | Not an authenticated application task surface. Move to public/onboarding documentation or an explicit internal reference route. |
+| `/alpha-readiness` | Release readiness reference | Static release checklist; protected | 25 | Release documentation, not workspace UI. Move to internal docs/admin, then remove from authenticated route policy. |
 
-| Route | Purpose / retained capability | Current state | Legacy or structural issue | Score | V3 destination |
-| --- | --- | --- | --- | ---: | --- |
-| `/dashboard` | Workspace overview, actions, health | New `AppShell` command-center first pass | Data still mostly local/empty; global command palette and loading model missing | 78 | Keep and polish |
-| `/projects` | Project manager using local/published manifest data | Legacy `bf-app-page` cards | No shared shell; no project-manager search/filter/empty-state model | 34 | Rebuild as project index |
-| `/projects/[id]` | Project status, actions, engine/jobs/reports | Richest legacy project surface | Dense legacy composition; no workspace tabs or common layout | 48 | Rebuild as Project Workspace |
-| `/new-board` | Requirements intake and board-brief approval | Real intake/approval components | Legacy premium page; not a persistent engineering conversation | 51 | AI PCB Chat / project creation |
-| `/pcb-workspace` | Browser PCB editor | Real `BrowserPcbEditor` surface | No app shell, project context, or consistent inspector dock | 55 | Preserve editor; wrap V3 workspace chrome |
-| `/schematic-workspace` | Browser schematic editor | Real `BrowserSchematicEditor` surface | No app shell, project context, or consistent inspector dock | 55 | Preserve editor; wrap V3 workspace chrome |
-| `/custom-board-generator` | Outline editor, preset picker, validation | Real geometry/editor components | Legacy hero/page system; no V3 canvas workspace | 57 | Preserve tools; rebuild canvas shell |
-| `/upload-kicad` | Safe local sandbox import proof | Real import safety explanation | Tailwind document layout; no project workflow framing | 43 | Import workflow inside Projects |
-| `/import` | Import KiCad wizard | Real `ImportKiCadWizard` | Tailwind document layout; duplicates `/upload-kicad` concept | 42 | Consolidate with import workflow |
-| `/downloads` | Manufacturing package readiness | Manifest-backed status information | Legacy page; package actions and empty state not unified | 44 | Manufacturing workspace |
-| `/reports` | Validation/report inspection | Raw JSON `<pre>` output | Text-only; no filters, readable report model, or actions | 8 | Rebuild from scratch |
-| `/evidence` | Engineering evidence dashboard | Real `EvidenceDashboard` | Legacy `bf-*` shell and presentation | 46 | Evidence / Reports tab |
-| `/readiness` | Readiness evidence and local engine state | Manifest-backed status | Public-looking Tailwind page; duplicate health information | 39 | System Health view |
-| `/plugin/connect` | Pair local plugin/engine | Auth-gated pairing explanation and APIs | Raw/legacy page; missing status, device list, repair flow UI | 28 | Plugin Pairing workspace |
-| `/settings/plugin` | Plugin settings entry point | Legacy one-card redirect page | Redundant with pairing; no unified settings navigation | 18 | Settings > Plugins |
-| `/settings` | Settings root | Text-only paragraph | No controls or navigation | 5 | Rebuild from scratch |
-| `/settings/billing` | License/billing | Text-only paragraph | No license data, issuance, revocation, history, or device view | 4 | Settings > License Keys |
-| `/settings/devices` | Trusted device management | Text-only paragraph | No devices, actions, loading, or error state | 5 | Settings > Devices |
-| `/alpha-readiness` | Alpha release readiness | Static category list | Internal/release document, not application task surface | 25 | Move behind Admin / Reports |
-| `/demo` | Guided local demo workflow | Real demo gallery/button | Legacy marketing/workflow presentation | 45 | Reference project / onboarding |
-| `/docs` | Product documentation | Legacy documentation page | Should remain public documentation, not authenticated app UI | 52 | Keep public, restyle separately |
-| `/docs/installer-return-codes` | Installer reference | Static documentation | Correctly documentation, not a dashboard route | 61 | Keep public |
-| `/pricing` | Public pricing | Legacy marketing page | Not authenticated application scope | 50 | Keep public |
-| `/setup` | Deployment setup diagnostics | Environment setup page | Useful admin diagnostic; not an engineering workspace surface | 43 | Keep restricted admin setup |
+## Ownership boundary
 
-## Authentication boundary audit
+```text
+Dashboard     → cross-project overview and next task
+Projects      → project library
+Project       → all project-scoped state and controls
+Evidence      → cross-project evidence registry
+Manufacturing → cross-project release queue
+New board     → requirement intake and candidate handoff
+Outlines      → mechanical tool and candidate handoff
+Pairing       → browser ↔ desktop-helper session
+```
 
-Current protected prefixes in `proxy.ts`:
+This removes the present overlap where Evidence, Manufacturing, and project detail all restate the same manifest-card fields without exposing their distinct artifacts.
 
-`/dashboard`, `/projects`, `/reports`, `/downloads`, `/settings`, `/plugin/connect`
+## Confirmed data and action gaps
 
-Routes that behave like authenticated workspace routes but are outside that boundary:
+1. The local service exposes `GET /project/:id/reports` and `GET /project/:id/downloads`, but visible pages never call either. Evidence and Manufacturing currently re-project `GET /projects/dashboard` instead of showing evidence or package-manifest data.
+2. Project detail lists `project.reports` labels from the dashboard card, not report contents or metadata; its Manufacturing call-to-action opens the global queue and loses project context.
+3. `POST /project/:id/validate`, `route`, `repair`, and `export` only record local-alpha intent and read existing artifacts. They must not be promoted to browser action buttons as if they execute engineering work.
+4. `publish`, `archive`, and `keep-local` exist server-side but have no visible, confirm-gated project control surface. Add one only after defining approval, pairing, and refresh behavior; otherwise do not advertise them as browser functionality.
+5. `boardforge-project-dashboard-client.ts` is unused and accepts a browser-supplied `projectDir`; the live page uses the safer project-id-only path. Remove the unused alternate access model.
+6. `ReportsLocalContent` is unused because `/reports` redirects. Delete it rather than revive a second report page.
+7. The dashboard’s pairing checklist currently derives “Account and device pairing configured” from auth environment configuration, not pairing state. It must say “account services configured” or consume the pairing-session status.
+8. The local `/evidence` API writes an index on a `GET`. Discovery endpoints must be read-only; index generation belongs to an explicit, paired write action before the route can underpin the Evidence UI.
 
-- `/new-board`
-- `/pcb-workspace`
-- `/schematic-workspace`
-- `/custom-board-generator`
-- `/upload-kicad`
-- `/import`
-- `/evidence`
-- `/readiness`
-- `/demo`
+## Prioritized fix order
 
-V3 decision required before implementation: the V3 shell will protect all engineering-workspace routes and leave only marketing, login/signup, public documentation, and installer references public. This is a route-policy change and will be implemented with an explicit allowlist; it will not alter APIs or local engine access semantics.
+1. **Lock ownership:** retain aliases as redirects, remove dead report client/component, and amend all alias links to canonical destinations.
+2. **Project workspace:** create tabs/loaders for real per-project dashboard, reports, and downloads data. Keep inactive local-alpha operations unavailable, not button-shaped promises.
+3. **Global operations:** remodel Evidence as registry and Manufacturing as package queue using the project-tab destinations. Eliminate static glossary/documentation panels from app routes.
+4. **State integrity:** remove the unused `projectDir` dashboard client; fix pairing wording and make engine/pairing state consistently observable in shell and dashboard.
+5. **Settings and internal pages:** hide Devices/Billing from normal navigation until APIs exist; relocate `/demo` and `/alpha-readiness` outside the authenticated workstation.
+6. **Acceptance QA:** for every retained non-alias route, verify desktop and mobile shell, keyboard navigation, local-engine offline/loading/empty/error states, and that every visible action resolves to a real endpoint or an explicit unavailable state.
 
-## Legacy UI inventory
+## Acceptance rule
 
-| Legacy system | Where it appears | V3 action |
-| --- | --- | --- |
-| Tailwind one-off pages (`min-h-screen`, `bg-slate-*`) | Import, downloads, reports, settings, readiness, plugin pages | Replace page wrappers with V3 application primitives |
-| `bf-premium-site`, `bf-app-page`, `bf-*` global CSS | Projects, project detail, board creation, custom generator, evidence, demo | Retain functional child components only; retire page-level legacy wrappers |
-| Raw editor components without app chrome | PCB and schematic workspace | Add V3 project/editor shell without rewriting editor engines |
-| Static/sample manifest presentation | Projects, downloads, reports, readiness | Keep real local-evidence adapter; use truthful empty/loading states rather than sample production data |
-
-## Functional and UX gaps to close
-
-1. **One shell:** sidebar, topbar, command palette, status strip, keyboard shortcuts, panels, forms, and empty/loading/error states must be provided by a V3 workspace component library.
-2. **Projects first:** introduce an actual project manager and an explicit Project Workspace route/tab model; avoid opening a PCB surface as the first project view.
-3. **No duplicated import workflow:** `/import` and `/upload-kicad` need consolidation behind one well-defined sandbox-import action.
-4. **Editor preservation:** do not replace `BrowserPcbEditor`, `BrowserSchematicEditor`, or outline geometry operations with mock canvases. Adapt their containers, controls, and state presentation.
-5. **Reports/settings/licenses:** rebuild rather than restyle; the current pages have no usable application experience.
-6. **Data honesty:** local engine/project data must render as loading, disconnected, or empty when unavailable. Sample manifests cannot be presented as a signed-in user's live work.
-7. **Route protection:** align protected prefixes with the V3 authenticated workspace before visual QA.
-
-## V3 implementation order
-
-1. Lock V3 route boundary and add a route inventory test.
-2. Expand `AppShell` into shared primitives: page header, panel, toolbar, empty state, skeleton, error callout, command palette, and workspace tabs.
-3. Rebuild Projects and Project Workspace (Overview, Requirements, Candidates, PCB, Schematic, Manufacturing, Evidence, History, Settings).
-4. Wrap the three existing editor engines in V3 workspaces.
-5. Replace Manufacturing, Reports, Evidence, Plugin Pairing, Settings, Devices, and License surfaces.
-6. Consolidate import/onboarding and relocate release/demo pages to appropriate non-workspace areas.
-7. Run protected-route, interaction, responsive, and visual QA across every V3 route before retiring legacy page CSS.
-
-## Audit acceptance criteria
-
-This audit is complete only as a baseline. No route may be marked V3-complete until it:
-
-- uses the shared authenticated `AppShell` and V3 primitives;
-- has a defined engineering task and working action path;
-- renders truthful loading, empty, error, and disconnected states;
-- has keyboard-accessible controls and a responsive layout;
-- does not import a legacy page wrapper or raw text-only content; and
-- passes visual QA at desktop and mobile breakpoints.
+A route is complete only if it has a distinct task in the map above, uses `AppShell`, exposes honest local data or a clear unavailable state, and has no duplicate summary/action owned by another route. Redirect aliases are compatibility routes, not completed product surfaces.

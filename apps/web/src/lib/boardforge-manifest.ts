@@ -4,11 +4,11 @@ export type BoardForgeManifest = {
   projectName: string
   status: string
   validation: {
-    shorts: number
-    unconnected: number
-    forbiddenVias: number
-    drcViolations: number
-    ercViolations: number
+    shorts: number | null
+    unconnected: number | null
+    forbiddenVias: number | null
+    drcViolations: number | null
+    ercViolations: number | null
   }
   manufacturing: {
     ready: boolean
@@ -111,8 +111,9 @@ export type BoardForgeDashboardData = {
 
 export function readinessLabel(manifest: BoardForgeManifest): BoardForgeReadiness {
   const v = manifest.validation
+  if ([v.shorts, v.unconnected, v.forbiddenVias, v.drcViolations, v.ercViolations].some((value) => value === null)) return 'review'
   if (manifest.manufacturing.ready && v.shorts === 0 && v.unconnected === 0 && v.forbiddenVias === 0 && v.drcViolations === 0 && v.ercViolations === 0) return 'ready'
-  if (v.shorts > 0 || v.forbiddenVias > 0 || v.unconnected > 0 || v.drcViolations > 0 || v.ercViolations > 0) return 'blocked'
+  if ([v.shorts, v.forbiddenVias, v.unconnected, v.drcViolations, v.ercViolations].some((value) => (value ?? 0) > 0)) return 'blocked'
   return 'review'
 }
 

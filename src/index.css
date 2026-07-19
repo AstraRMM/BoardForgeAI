@@ -3315,6 +3315,16 @@ text.bf-silk.small {
   opacity: .56;
 }
 
+.bf-new-board-draft-note {
+  margin: 14px 0 0;
+  color: #a9c2c9;
+}
+
+.bf-new-board-draft-note a {
+  color: #7fe9ff;
+  font-weight: 760;
+}
+
 .bf-new-board-risk-list {
   display: grid;
   gap: 8px;
@@ -3323,6 +3333,30 @@ text.bf-silk.small {
   color: #f2d09a;
   line-height: 1.45;
 }
+
+.bf-pcb-workspace-page {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.bf-pcb-workspace-notice {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid rgba(100, 214, 255, .16);
+  border-radius: 8px;
+  color: #a9c2c9;
+  background: rgba(5, 16, 24, .72);
+}
+
+.bf-pcb-workspace-notice strong,
+.bf-pcb-workspace-notice span { display: block; }
+.bf-pcb-workspace-notice strong { color: #e7f7f8; }
+.bf-pcb-workspace-notice span { margin-top: 4px; font-size: 13px; }
+.bf-pcb-workspace-notice a { color: #7fe9ff; font-weight: 760; white-space: nowrap; }
 
 .bf-new-board-hero {
   display: grid;

@@ -6,18 +6,22 @@ import { errorResponse } from './response-schema.mjs'
 import { appendRequestLog } from './request-log.mjs'
 import { appendAuditLog } from './audit-log.mjs'
 import { createLocalEngineAuth } from '../security/local-engine-auth.mjs'
-import { allowedOriginsFromEnv } from '../security/origin-allowlist.mjs'
+import { allowedOriginsFromEnv, isOriginAllowed } from '../security/origin-allowlist.mjs'
 
 export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVER_PORT, host = DEFAULT_LOCAL_SERVER_HOST, logDir = null } = {}) {
   if (!rootDir) throw new Error('rootDir is required')
   const effectiveLogDir = logDir || path.join(rootDir, '.boardforge-local-server')
-  const auth = createLocalEngineAuth({ allowedOrigins: allowedOriginsFromEnv() })
+  const allowedOrigins = allowedOriginsFromEnv()
+  const auth = createLocalEngineAuth({ allowedOrigins })
   const router = createLocalServerRouter({ rootDir, logDir: effectiveLogDir, auth })
   const server = http.createServer(async (req, res) => {
     const route = req.url || '/'
     let response
     try {
       assertLocalhostRequest(req)
+      if (req.method === 'OPTIONS') {
+        response = { ok: true, status: 'BOARD_FORGE_LOCAL_SERVER_PREFLIGHT', data: {} }
+      } else {
       const body = await readBody(req)
       const payload = body ? JSON.parse(body) : {}
       const url = new URL(req.url || '/', `http://${host}:${port || DEFAULT_LOCAL_SERVER_PORT}`)
@@ -38,6 +42,7 @@ export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVE
         result: response.status,
         blockedReason: response.ok ? null : response.errors?.[0]?.message,
       })
+      }
     } catch (error) {
       response = errorResponse({ status: error.status || 'BOARD_FORGE_LOCAL_SERVER_REQUEST_ERROR', error })
     }
@@ -52,9 +57,11 @@ export function startBoardForgeLocalServer({ rootDir, port = DEFAULT_LOCAL_SERVE
       artifactPaths: response.artifactPaths || [],
     })
 
+    const origin = req.headers.origin
+    const allowedOrigin = origin && isOriginAllowed(origin, allowedOrigins) ? origin : null
     res.writeHead(response.ok ? 200 : 400, {
       'content-type': 'application/json',
-      'access-control-allow-origin': 'http://localhost:3000',
+      ...(allowedOrigin ? { 'access-control-allow-origin': allowedOrigin, vary: 'Origin' } : {}),
       'access-control-allow-methods': 'GET,POST,OPTIONS',
       'access-control-allow-headers': 'content-type,x-boardforge-token',
     })

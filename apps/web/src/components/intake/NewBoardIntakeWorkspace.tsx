@@ -1,7 +1,10 @@
 'use client'
 
 import { FormEvent, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { callBoardForgeLocalEngine, checkBoardForgeLocalEngine, localArtifactApiContract } from '../../lib/boardforge-local-artifact-client'
+import { saveBrowserProject } from '../../lib/browser-project-registry'
+import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
 
 type IntakeSession = {
   sessionId?: string
@@ -46,6 +49,7 @@ export function NewBoardIntakeWorkspace() {
   const [error, setError] = useState('')
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [candidateCreated, setCandidateCreated] = useState(false)
+  const [browserDraftSaved, setBrowserDraftSaved] = useState(false)
 
   const questions = useMemo(() => session?.questionsToAsk || [], [session])
   const approved = session?.approvalStatus === 'approved'
@@ -84,6 +88,11 @@ export function NewBoardIntakeWorkspace() {
         setMessage(messageFor(action, data.session!))
       }
     } catch (cause) {
+      if (action === 'start' && !browserDraftSaved) {
+        saveBrowserDraft()
+        setMessage('Your board request was saved in this browser. Continue in the PCB workspace now, or pair the desktop helper later when you are ready to create and validate KiCad files.')
+        return
+      }
       setError(cause instanceof Error ? cause.message : 'The local intake request could not be completed.')
     } finally {
       setBusyAction(null)
@@ -102,13 +111,30 @@ export function NewBoardIntakeWorkspace() {
     void run('answer')
   }
 
+  const saveBrowserDraft = () => {
+    if (!prompt.trim()) { setError('Describe the board before saving a browser draft.'); return }
+    const draft: BoardForgeDashboardCard = {
+      schema: 'boardforge.project-dashboard-card.v1', projectId, projectName: browserDraftName(prompt), status: 'Browser draft — not a KiCad project',
+      boardPath: null, schematicPath: null, readiness: 'review', routingCompletionPercent: 0,
+      validation: { shorts: null, unconnected: null, forbiddenVias: null, drcViolations: null, ercViolations: null },
+      manufacturing: { ready: false, zip: null, blockedReason: 'Browser draft has no local KiCad artifacts or manufacturing evidence.' },
+      reports: { intakeSummary: browserDraftSummary(prompt) }, replayCommand: null, criticalBlockers: [{ code: 'BROWSER_DRAFT', count: 1, severity: 'review' }],
+      nextAction: 'Connect the local engine to turn this browser draft into an engineering intake.', sourceManifest: null,
+      honestyBadges: ['browser-saved draft', 'no KiCad files', 'validation not run'], projectState: 'local_draft', localOnly: true,
+    }
+    saveBrowserProject(draft)
+    setBrowserDraftSaved(true)
+    setError('')
+    setMessage('Browser draft saved. It is a request record only; it has no KiCad files, routing, validation, or manufacturing evidence.')
+  }
+
   return (
     <div className="bf-new-board-intake">
       <section className="bf-new-board-intake-intro">
         <div>
-          <span className="bf-kicker">Local engineering intake</span>
+          <span className="bf-kicker">Browser-first engineering intake</span>
           <h1>Turn a board request into a reviewable engineering brief.</h1>
-          <p>Nothing creates or changes KiCad files from this page. The paired local engine records the intake and waits for your brief approval before candidate creation.</p>
+          <p>Capture a board request and save it to this workspace immediately. Pair the desktop helper only when you want BoardForge to create or validate real KiCad files.</p>
         </div>
         <div className="bf-new-board-intake-status" aria-live="polite">
           <strong>{approved ? 'Brief approved' : session ? 'Requirements in review' : 'Ready for a board request'}</strong>
@@ -116,15 +142,16 @@ export function NewBoardIntakeWorkspace() {
         </div>
       </section>
 
-      {error && <section className="bf-workspace-alert" role="alert"><div><strong>Local intake unavailable.</strong><span>{error}</span></div></section>}
+      {error && <section className="bf-workspace-alert" role="alert"><div><strong>Desktop helper unavailable.</strong><span>{error}</span></div>{!browserDraftSaved && <button type="button" onClick={saveBrowserDraft}>Save browser draft</button>}</section>}
 
       {!session && <section className="bf-workspace-panel bf-new-board-request-panel">
         <div className="bf-panel-title"><div><p>Board request</p><h2>What should BoardForge engineer?</h2></div></div>
         <form onSubmit={startIntake} className="bf-new-board-form">
           <label htmlFor="board-prompt">Describe the purpose, interfaces, power source, mechanical constraints, and manufacturing target you know.</label>
           <textarea id="board-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Example: a compact CAN sensor node with 24 V input, an M12 connector, and JLCPCB assembly." rows={7} disabled={busyAction !== null} />
-          <div className="bf-button-row"><button className="bf-new-board-primary" type="submit" disabled={busyAction !== null}>{busyAction === 'start' ? 'Starting intake…' : 'Start engineering intake'}</button><span>Your request stays with the paired local engine.</span></div>
+          <div className="bf-button-row"><button className="bf-new-board-primary" type="submit" disabled={busyAction !== null}>{busyAction === 'start' ? 'Starting intake…' : 'Start engineering intake'}</button><button className="bf-new-board-secondary" type="button" onClick={saveBrowserDraft} disabled={busyAction !== null || browserDraftSaved}>{browserDraftSaved ? 'Browser draft saved' : 'Save browser draft'}</button><span>Browser drafts are request records only. The paired local engine is required for KiCad work.</span></div>
         </form>
+        {browserDraftSaved && <p className="bf-new-board-draft-note">Saved in this browser only. <Link href="/projects">View local drafts</Link></p>}
       </section>}
 
       {session && <>
@@ -202,4 +229,14 @@ function questionHint(question: string) {
     manufacturing_target: 'Example: JLCPCB assembled, PCBWay, or bare Gerbers.',
     max_dimensions: 'Example: 65 mm × 45 mm, including mounting ears.',
   }[question] || 'State the engineering constraint or preference.'
+}
+
+function browserDraftSummary(prompt: string) {
+  const normalized = prompt.trim().replace(/\s+/g, ' ')
+  return normalized.length > 56 ? `${normalized.slice(0, 53).trim()}…` : normalized
+}
+
+function browserDraftName(value: string) {
+  const words = value.trim().replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 7)
+  return words.length ? words.map((word) => word[0].toUpperCase() + word.slice(1)).join(' ') : 'Untitled browser draft'
 }

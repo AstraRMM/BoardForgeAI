@@ -25,7 +25,7 @@ export function BrowserLocalEnginePairing() {
       const created = await requestLocalEnginePairingCode()
       setPairing(created); setCode(created.code); setPhase('ready')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to reach the BoardForge desktop helper.'); setPhase('error')
+      setMessage(pairingFailureMessage(error, 'create a pairing code')); setPhase('error')
     }
   }
 
@@ -36,7 +36,7 @@ export function BrowserLocalEnginePairing() {
       await verifyLocalEngineBrowserSession(code)
       setPairing(null); setCode(''); setPhase('paired'); setMessage('This browser session is paired with the local engine.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'The local engine rejected this pairing code.'); setPhase('error')
+      setMessage(pairingFailureMessage(error, 'verify this pairing code')); setPhase('error')
     }
   }
 
@@ -65,4 +65,12 @@ export function BrowserLocalEnginePairing() {
     {paired && <button type="button" className="bf-panel-action" onClick={disconnect}><Unplug size={15} />Disconnect this browser</button>}
     {message && <p className={phase === 'error' ? 'bf-plugin-pairing-message is-error' : 'bf-plugin-pairing-message'} role={phase === 'error' ? 'alert' : 'status'}>{message}</p>}
   </article>
+}
+
+function pairingFailureMessage(error: unknown, action: string) {
+  const message = error instanceof Error ? error.message : ''
+  if (/failed to fetch|networkerror|load failed/i.test(message)) {
+    return `BoardForge Desktop Helper is not reachable on this device. Start the helper, then retry to ${action}. Browser projects remain available without pairing.`
+  }
+  return message || `The local engine could not ${action}.`
 }

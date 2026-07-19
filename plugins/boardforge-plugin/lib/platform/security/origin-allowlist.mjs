@@ -3,6 +3,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
   'https://boardforge.ai',
   'https://www.boardforge.ai',
+  'https://boardforge-ai.com',
+  'https://www.boardforge-ai.com',
 ]
 
 export function normalizeOrigin(origin) {

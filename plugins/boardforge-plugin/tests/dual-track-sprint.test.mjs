@@ -25,9 +25,9 @@ test('web dashboard pages consume BoardForge manifest data instead of fake cloud
   for (const page of pages) assert.equal(fs.existsSync(path.join(repoRoot, page)), true, `${page} should exist`)
   const dashboard = fs.readFileSync(path.join(repoRoot, 'apps/web/src/app/dashboard/page.tsx'), 'utf8')
   const newBoard = fs.readFileSync(path.join(repoRoot, 'apps/web/src/app/new-board/page.tsx'), 'utf8')
-  assert.match(dashboard, /project-dashboard\.json/)
-  assert.match(dashboard, /Manufacturing Ready/)
-  assert.match(newBoard, /Cloud execution is not enabled/)
+  assert.match(dashboard, /DashboardRecentProjects/)
+  assert.match(dashboard, /Saved browser projects remain visible/)
+  assert.match(newBoard, /NewBoardIntakeWorkspace/)
 })
 
 test('routeability scorer rejects tight corridor candidates before routing', () => {

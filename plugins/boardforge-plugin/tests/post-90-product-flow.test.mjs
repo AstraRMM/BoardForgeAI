@@ -598,15 +598,17 @@ test('alpha demo runner completes and writes product-facing reports', async () =
 test('web dashboard demo data labels local artifact status and demo command', async () => {
   const dashboardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'dashboard', 'page.tsx'), 'utf8')
   const newBoardPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'new-board', 'page.tsx'), 'utf8')
+  const intakeWorkspace = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'components', 'intake', 'NewBoardIntakeWorkspace.tsx'), 'utf8')
   const uploadPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'upload-kicad', 'page.tsx'), 'utf8')
   const demoPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'demo', 'page.tsx'), 'utf8')
   const customPage = await readFile(path.join(repoRoot, 'apps', 'web', 'src', 'app', 'custom-board-generator', 'page.tsx'), 'utf8')
-  assert.match(dashboardPage, /Local engine artifact/)
-  assert.match(dashboardPage, /npm run boardforge:demo/)
-  assert.match(newBoardPage, /Premium intake flow/)
+  assert.match(dashboardPage, /DashboardRecentProjects/)
+  assert.match(dashboardPage, /Saved browser projects remain visible/)
+  assert.match(newBoardPage, /NewBoardIntakeWorkspace/)
+  assert.match(intakeWorkspace, /Save browser draft/)
   assert.match(uploadPage, /redirect\('\/import'\)/)
-  assert.match(demoPage, /BoardForge local alpha demo/)
-  assert.match(customPage, /Custom Board Generator/)
+  assert.match(demoPage, /Run the guided workflow/)
+  assert.match(customPage, /GeneratorWorkspace/)
 })
 
 test('downloads page shows PCB fab assembly and blocked manufacturing states', async () => {
