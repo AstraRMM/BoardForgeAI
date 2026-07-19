@@ -88,12 +88,13 @@ export function NewBoardIntakeWorkspace() {
         setMessage(messageFor(action, data.session!))
       }
     } catch (cause) {
-      if (action === 'start' && !browserDraftSaved) {
+      const message = cause instanceof Error ? cause.message : 'The local intake request could not be completed.'
+      if (action === 'start' && !browserDraftSaved && message === localArtifactApiContract.offlineDisplayMessage) {
         saveBrowserDraft()
         setMessage('Your board request was saved in this browser. Continue in the PCB workspace now, or pair the desktop helper later when you are ready to create and validate KiCad files.')
         return
       }
-      setError(cause instanceof Error ? cause.message : 'The local intake request could not be completed.')
+      setError(message)
     } finally {
       setBusyAction(null)
     }
@@ -142,7 +143,7 @@ export function NewBoardIntakeWorkspace() {
         </div>
       </section>
 
-      {error && <section className="bf-workspace-alert" role="alert"><div><strong>Desktop helper unavailable.</strong><span>{error}</span></div>{!browserDraftSaved && <button type="button" onClick={saveBrowserDraft}>Save browser draft</button>}</section>}
+      {error && <section className="bf-workspace-alert" role="alert"><div><strong>{error === localArtifactApiContract.offlineDisplayMessage ? 'Desktop helper unavailable.' : 'Engineering intake could not continue.'}</strong><span>{error}</span></div>{!browserDraftSaved && <button type="button" onClick={saveBrowserDraft}>Save browser draft</button>}</section>}
 
       {!session && <section className="bf-workspace-panel bf-new-board-request-panel">
         <div className="bf-panel-title"><div><p>Board request</p><h2>What should BoardForge engineer?</h2></div></div>
@@ -151,7 +152,7 @@ export function NewBoardIntakeWorkspace() {
           <textarea id="board-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Example: a compact CAN sensor node with 24 V input, an M12 connector, and JLCPCB assembly." rows={7} disabled={busyAction !== null} />
           <div className="bf-button-row"><button className="bf-new-board-primary" type="submit" disabled={busyAction !== null}>{busyAction === 'start' ? 'Starting intake…' : 'Start engineering intake'}</button><button className="bf-new-board-secondary" type="button" onClick={saveBrowserDraft} disabled={busyAction !== null || browserDraftSaved}>{browserDraftSaved ? 'Browser draft saved' : 'Save browser draft'}</button><span>Browser drafts are request records only. The paired local engine is required for KiCad work.</span></div>
         </form>
-        {browserDraftSaved && <p className="bf-new-board-draft-note">Saved in this browser only. <Link href="/projects">View local drafts</Link></p>}
+        {browserDraftSaved && <p className="bf-new-board-draft-note">Saved in this browser only. <Link href={`/projects/${encodeURIComponent(projectId)}`}>Open this draft</Link> or <Link href="/projects">view all local drafts</Link>.</p>}
       </section>}
 
       {session && <>

@@ -1,4 +1,4 @@
-import type { BoardForgeDashboardCard, BoardForgeDashboardData } from './boardforge-manifest'
+import type { BoardForgeBrowserDraft, BoardForgeDashboardCard, BoardForgeDashboardData } from './boardforge-manifest'
 
 const key = 'boardforge.browser-projects.v1'
 export function readBrowserProjects(): BoardForgeDashboardData {
@@ -16,7 +16,7 @@ export function removeBrowserProject(projectId: string) {
   const current = readBrowserProjects().projects.filter((item) => item.projectId !== projectId)
   window.localStorage.setItem(key, JSON.stringify(current))
 }
-export function createBrowserProject({ projectId, projectName, prompt, kind = 'browser_board' }: { projectId: string; projectName: string; prompt: string; kind?: 'browser_board' | 'browser_outline' | 'browser_import' }): BoardForgeDashboardCard {
+export function createBrowserProject({ projectId, projectName, prompt, kind = 'browser_board', browserDraft }: { projectId: string; projectName: string; prompt: string; kind?: 'browser_board' | 'browser_outline' | 'browser_import'; browserDraft?: BoardForgeBrowserDraft }): BoardForgeDashboardCard {
   const isOutline = kind === 'browser_outline'
   return {
     schema: 'boardforge.project-dashboard-card.v1', projectId, projectName,
@@ -28,7 +28,8 @@ export function createBrowserProject({ projectId, projectName, prompt, kind = 'b
     criticalBlockers: [{ code: 'browser_validation_not_run', count: 1, severity: 'review' }],
     nextAction: 'Continue editing in BoardForge, then pair the desktop helper to create and validate KiCad files.',
     sourceManifest: null, honestyBadges: ['Browser draft', 'Validation not run'],
-    projectState: 'local_draft', publishApproved: false, dashboardVisible: true, syncStatus: 'browser_saved', localOnly: false,
+    projectState: 'local_draft', publishApproved: false, dashboardVisible: true, syncStatus: 'browser_saved', localOnly: true,
+    browserDraft,
   }
 }
 function empty(): BoardForgeDashboardData { return { schema: 'boardforge.project-dashboard-data.v1', generatedAt: new Date().toISOString(), projects: [], summary: { totalProjects: 0, manufacturingReady: 0, blocked: 0, review: 0, needsRouting: 0, cleanDrcErc: 0 } } }

@@ -603,15 +603,42 @@ export function OutlineEditor() {
   function saveBrowserOutlineDraft() {
     const projectId = browserDraftId.current || `browser-outline-${Date.now().toString(36)}`
     browserDraftId.current = projectId
+    const outline = buildOutlinePayload({ preset, points, holes, validation, metrics })
     const project = createBrowserProject({
       projectId,
       projectName: `${labelForPreset(preset)} outline`,
       prompt,
       kind: 'browser_outline',
+      browserDraft: {
+        schema: 'boardforge.browser-draft.v1',
+        kind: 'outline',
+        updatedAt: new Date().toISOString(),
+        summary: `${outline.outlinePointsMm.length} outline vertices and ${outline.mountingHolesMm.length} mounting holes saved from the browser editor.`,
+        outline: {
+          preset,
+          closed,
+          pointsMm: outline.outlinePointsMm.map(({ x, y }) => ({ x, y })),
+          mountingHolesMm: outline.mountingHolesMm.map((hole) => ({
+            ref: hole.ref,
+            x: hole.x,
+            y: hole.y,
+            diameterMm: hole.diameterMm,
+            keepoutMm: hole.keepoutMm,
+            plating: hole.plating,
+            locked: hole.locked,
+          })),
+          browserValidation: {
+            status: validation.valid ? 'valid' : 'blocked',
+            routeabilityScore: outline.browserValidation.routeabilityScore,
+            risk: outline.browserValidation.risk,
+            blockers: outline.browserValidation.blockers,
+          },
+        },
+      },
     })
     saveBrowserProject(project)
     setBrowserDraftSaved(true)
-    setStatus('Browser outline draft saved in this browser. It retains no KiCad files and has no local DRC/ERC or manufacturing evidence.')
+    setStatus(`Browser outline draft saved with ${outline.outlinePointsMm.length} vertices and ${outline.mountingHolesMm.length} holes. It retains no KiCad files and has no local DRC/ERC or manufacturing evidence.`)
   }
 
   async function downloadSeed() {
@@ -893,7 +920,7 @@ export function OutlineEditor() {
           <div>
             <b>Browser outline handoff</b>
             <p>
-              Save a browser draft to continue from Projects, or package exact points, mounting holes, and geometry notes
+              Save the exact browser geometry for the project library, or package points, mounting holes, and geometry notes
               for a paired local engine or external review.
             </p>
           </div>

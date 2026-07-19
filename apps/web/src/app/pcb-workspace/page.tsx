@@ -8,7 +8,7 @@ export default function PcbWorkspacePage() {
   return <AppShell title="PCB workspace" subtitle="Browser editing is transaction-backed; project-bound KiCad source remains a local-engine action.">
     <div className="bf-pcb-workspace-page">
       <section className="bf-pcb-workspace-notice">
-        <div><strong>Browser PCB sandbox</strong><span>Use the Rust/WASM editor to inspect selection, placement, routing, measurements, and live geometry checks. This session starts from a packaged sandbox board, not from a project artifact.</span></div>
+        <div><strong>Browser PCB sandbox</strong><span>Use the Rust/WASM editor to inspect selection, placement, routing, measurements, and live geometry checks. Downloaded boards are sandbox handoffs for KiCad review, not validated project candidates.</span></div>
         <Link href="/projects">Choose a local project</Link>
       </section>
       <BrowserPcbEditor />

@@ -93,6 +93,35 @@ export type BoardForgeDashboardCard = {
   dashboardVisible?: boolean
   syncStatus?: string
   localOnly?: boolean
+  /** Browser-only working data, never local-engine KiCad evidence. */
+  browserDraft?: BoardForgeBrowserDraft
+}
+
+export type BoardForgeBrowserDraft = {
+  schema: 'boardforge.browser-draft.v1'
+  kind: 'board' | 'outline' | 'import'
+  updatedAt: string
+  summary: string
+  outline?: {
+    preset: string
+    closed: boolean
+    pointsMm: Array<{ x: number; y: number }>
+    mountingHolesMm: Array<{
+      ref: string
+      x: number
+      y: number
+      diameterMm: number
+      keepoutMm: number
+      plating: 'plated' | 'non-plated'
+      locked: boolean
+    }>
+    browserValidation: {
+      status: 'valid' | 'blocked'
+      routeabilityScore: number
+      risk: 'Low' | 'Medium' | 'High' | 'Blocked'
+      blockers: string[]
+    }
+  }
 }
 
 export type BoardForgeDashboardData = {

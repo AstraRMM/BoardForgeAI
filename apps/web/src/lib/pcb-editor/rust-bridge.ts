@@ -1,7 +1,7 @@
 import {assertRustPcbView,RustPcbTransactionResultV1,RustPcbTransactionV1,RustPcbViewV1} from './model'
 
 export type RouteAngle='45'|'90'|'free'
-export interface RustPcbBridge {load():Promise<RustPcbViewV1>;apply(transaction:RustPcbTransactionV1):Promise<RustPcbTransactionResultV1>;planRoute?(start:{x:number;y:number},cursor:{x:number;y:number},angle:RouteAngle,layer:string,net:string,width:number):Promise<{x:number;y:number}[]>;undo?():Promise<RustPcbViewV1>;redo?():Promise<RustPcbViewV1>;saveCandidate(document:RustPcbViewV1,transactions:RustPcbTransactionV1[]):Promise<{candidatePath:string;validationStatus:string}>}
+export interface RustPcbBridge {load():Promise<RustPcbViewV1>;apply(transaction:RustPcbTransactionV1):Promise<RustPcbTransactionResultV1>;planRoute?(start:{x:number;y:number},cursor:{x:number;y:number},angle:RouteAngle,layer:string,net:string,width:number):Promise<{x:number;y:number}[]>;undo?():Promise<RustPcbViewV1>;redo?():Promise<RustPcbViewV1>;downloadSandbox?():{filename:string;source:string};saveCandidate(document:RustPcbViewV1,transactions:RustPcbTransactionV1[]):Promise<{candidatePath:string;validationStatus:string}>}
 
 /** HTTP transports Rust DTOs only. The local engine owns parsing, geometry and mutations. */
 export class LocalEnginePcbBridge implements RustPcbBridge {
@@ -37,5 +37,6 @@ export class WasmPcbBridge implements RustPcbBridge {
  private async restore(target:Array<{source:string;operations:Record<string,unknown>[]}>,opposite:Array<{source:string;operations:Record<string,unknown>[]}>) {if(!this.document)throw new Error('PCB document is not loaded');const state=target.pop();if(!state)throw new Error('No history item');opposite.push({source:this.source,operations:[...this.operationLog]});this.source=state.source;this.operationLog=state.operations;const wasm=await this.module();return this.document=await this.parseAndValidate(wasm,this.document.revision+1)}
  undo(){return this.restore(this.undoStack,this.redoStack)}
  redo(){return this.restore(this.redoStack,this.undoStack)}
+ downloadSandbox(){return{filename:'boardforge-browser-sandbox.kicad_pcb',source:this.source}}
  async saveCandidate(document:RustPcbViewV1,transactions:RustPcbTransactionV1[]){const response=await fetch('/api/local-engine/kicad/candidate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({schema:'boardforge.pcb-candidate-request/v1',source:this.originalSource,operations:this.operationLog,revision:document.revision,transactions})});if(!response.ok)throw new Error(`Candidate pipeline returned ${response.status}: ${await response.text()}`);return response.json() as Promise<{candidatePath:string;validationStatus:string}>}
 }
