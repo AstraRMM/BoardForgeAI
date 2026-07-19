@@ -1,0 +1,72 @@
+{
+  "schema": "boardforge.m4.visual-qa/v1",
+  "generatedAt": "2026-07-15T12:32:10.360Z",
+  "productionBuild": true,
+  "states": [
+    {
+      "name": "default-pcb-workspace",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\default-pcb-workspace.png"
+    },
+    {
+      "name": "footprint-selected",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\footprint-selected.png"
+    },
+    {
+      "name": "pad-selected",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\pad-selected.png"
+    },
+    {
+      "name": "track-selected",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\track-selected.png"
+    },
+    {
+      "name": "via-selected",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\via-selected.png"
+    },
+    {
+      "name": "drc-violations",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\drc-violations.png"
+    },
+    {
+      "name": "layer-isolation",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\layer-isolation.png"
+    },
+    {
+      "name": "active-routing",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\active-routing.png"
+    },
+    {
+      "name": "invalid-route-preview",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\invalid-route-preview.png"
+    },
+    {
+      "name": "candidate-save-state",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\candidate-save-state.png"
+    },
+    {
+      "name": "tablet-layout",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\tablet-layout.png"
+    },
+    {
+      "name": "mobile-layout",
+      "status": "INSPECTED",
+      "file": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\tmp\\m4-visual-qa\\mobile-layout.png"
+    }
+  ],
+  "inspection": {
+    "toolbarOverflow": "no failure observed in captured desktop/tablet layouts",
+    "cssModuleRegression": false
+  },
+  "status": "PASSED"
+}

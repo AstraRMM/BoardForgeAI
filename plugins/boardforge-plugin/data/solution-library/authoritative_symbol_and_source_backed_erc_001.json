@@ -1,0 +1,10 @@
+{
+  "id": "authoritative_symbol_and_source_backed_erc_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "PRODUCTION_SYMBOL_ID_MISSING_FROM_INSTALLED_KICAD_OR_PWR_FLAG_NOT_BACKED_BY_A_REAL_SOURCE",
+  "detectionRule": "Resolve every approved symbol against the installed KiCad library and reject any PWR_FLAG plan whose non-ground rail is absent, whose source ref is missing, or whose source component is not connected to that rail.",
+  "rootCause": "A legacy generic TVS identifier was treated as authoritative even though KiCad 10 does not ship it, the NUP2105 common-anode pin was mapped incorrectly, footprint aliases such as USB-C S1 were used as schematic pin IDs instead of SH, and power flags were inferred from net-name patterns instead of explicit power-source intent. A redundant flag on a regulator power-output also creates a real ERC conflict.",
+  "fixStrategy": "Use KiCad's manufacturer-specific Power_Protection:NUP2105L definition with cathodes 1/2 and common-anode ground pin 3. Emit PWR_FLAG only from an explicit source-backed plan validated against the real component pin map; assert the passive external VUSB supply and return, but not the regulator's existing power-output pin.",
+  "regressionTest": "authoritative-schematic-erc.integration.test.mjs resolves NUP2105, exercises fail-closed power assertions, and requires real KiCad 10 ERC zero on the representative ESP32 topology.",
+  "futureAutoApplyRule": "Never synthesize a production symbol under a missing library ID and never add PWR_FLAG based only on a rail-name regex. Resolve the symbol first and prove the asserted rail is delivered by a named connected source component."
+}

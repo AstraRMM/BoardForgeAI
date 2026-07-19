@@ -1,0 +1,79 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import { catalogDefinition } from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  loraNodeProductionProposal as p,
+  validateLoraNodeArchitecture as validate,
+} from "../lib/phase2c/templates/lora-node.mjs";
+test("Board024 requests LoRa telemetry but catalog contains only an ESP32 sensor shell", () => {
+  const b = manifest.boards[23],
+    d = catalogDefinition(b, 23),
+    g = validate(d);
+  assert.equal(b.id, "024_LORA_NODE");
+  assert.equal(b.purpose, "long-range low-power telemetry");
+  assert.equal(d.topologyId, "usb-c-esp32-sensor");
+  assert.equal(g.ok, false);
+  for (const code of [
+    "lora-radio-missing",
+    "lora-antenna-missing",
+    "lora-rf-network-missing",
+    "lora-frequency-reference-missing",
+    "lora-controller-missing",
+    "lora-power-management-missing",
+    "lora-region-frequency-plan-unverified",
+    "lora-network-protocol-unverified",
+    "lora-link-budget-unverified",
+    "lora-regulatory-unverified",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board024 proposal preserves radio alternatives without inventing regional parts", () => {
+  assert.match(p.status, /BLOCKED/);
+  assert.deepEqual(
+    p.candidates.map((x) => x.family),
+    [
+      "Semtech SX1261/SX1262",
+      "ST STM32WL",
+      "Raspberry Pi RP2040",
+      "Bosch BME280",
+      "Microchip MCP1700",
+    ],
+  );
+  assert.ok(p.candidates.every((x) => x.exactMpn === null));
+  assert.ok(p.mandatoryUnresolved.some((x) => /country\/region/i.test(x)));
+  assert.ok(p.mandatoryUnresolved.some((x) => /link margin/i.test(x)));
+  assert.ok(
+    p.requiredTopology.some((x) =>
+      /maximum data-sheet range is not a link budget/i.test(x),
+    ),
+  );
+});
+test("LoRa gate accepts explicit RF regional energy and security evidence", () => {
+  const roles = [
+    "LoRa transceiver radio",
+    "sub-GHz LoRa antenna",
+    "RF matching harmonic filter",
+    "TCXO frequency reference",
+    "low-power telemetry controller",
+    "battery node power management",
+    "secure provisioning interface",
+  ];
+  const d = {
+    bom: roles.map((role, i) => ({ ref: `X${i}`, role })),
+    semanticEvidence: {
+      loraNode: {
+        regionFrequencyPlanVerified: true,
+        networkProtocolVerified: true,
+        linkBudgetVerified: true,
+        rfMatchingVerified: true,
+        antennaAssemblyVerified: true,
+        regulatoryVerified: true,
+        energyBudgetVerified: true,
+        securityProvisioningVerified: true,
+        productionRfTestVerified: true,
+      },
+    },
+  };
+  assert.deepEqual(validate(d), { ok: true, errors: [] });
+});

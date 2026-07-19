@@ -1,6 +1,7 @@
 use boardforge_kicad::{
     edit::{apply_transaction, EditTransaction},
     pcb::PcbDocument,
+    pcb_edit::{apply_pcb_transaction, PcbEditTransaction},
     project::KicadProject,
     schematic::Schematic,
     WriteMode,
@@ -59,7 +60,7 @@ fn main() -> ExitCode {
     let mut arguments = env::args().skip(1);
     let mode = arguments.next().unwrap_or_default();
     let path = arguments.next().unwrap_or_default();
-    if mode == "apply-transaction" && !path.is_empty() {
+    if (mode == "apply-transaction" || mode == "apply-pcb-transaction") && !path.is_empty() {
         let transaction_path = arguments.next().unwrap_or_else(|| "-".into());
         let source = match fs::read_to_string(&path) {
             Ok(v) => v,
@@ -84,6 +85,32 @@ fn main() -> ExitCode {
                 }
             }
         };
+        if mode == "apply-pcb-transaction" {
+            let transaction: PcbEditTransaction = match serde_json::from_str(&json) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return ExitCode::from(2);
+                }
+            };
+            let pcb = match PcbDocument::parse(source) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return ExitCode::FAILURE;
+                }
+            };
+            return match apply_pcb_transaction(&pcb, &transaction) {
+                Ok(v) => {
+                    println!("{}", serde_json::to_string(&v).expect("result serializes"));
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("{}", serde_json::to_string(&e).expect("error serializes"));
+                    ExitCode::FAILURE
+                }
+            };
+        }
         let transaction: EditTransaction = match serde_json::from_str(&json) {
             Ok(v) => v,
             Err(e) => {
@@ -110,7 +137,7 @@ fn main() -> ExitCode {
         };
     }
     if mode != "normalize" || path.is_empty() {
-        eprintln!("usage: boardforge-kicad normalize <file> | apply-transaction <schematic> <transaction.json|->");
+        eprintln!("usage: boardforge-kicad normalize <file> | apply-transaction <schematic> <transaction.json|-> | apply-pcb-transaction <pcb> <transaction.json|->");
         return ExitCode::from(2);
     }
     let source = match fs::read_to_string(&path) {

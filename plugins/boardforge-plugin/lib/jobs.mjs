@@ -45,6 +45,9 @@ import { createProjectSnapshot, diffProjectSnapshot, listProjectSnapshots, resto
 import { auditComponentLibraryCoverage } from './component-audit.mjs'
 import { buildProjectPreflight } from './project-preflight.mjs'
 import { planRequirements } from './requirements-planner.mjs'
+import { analyzeRequirements, recordRequirementAnswers } from './phase2c/requirements-intelligence.mjs'
+import { buildEngineeringKnowledgeGraph, createKnowledgeRecord, measureRequirementsIntelligence } from './phase2c/engineering-knowledge-graph.mjs'
+import { createTrainingDesignIntent, validateTrainingDesignIntent } from './phase2c/training-design-intent.mjs'
 import { planMissionRequirements } from './mission-planner.mjs'
 import { auditUserBom, intakeUserBom } from './user-bom.mjs'
 import { compareManufacturerCapabilities, planStackup, scoreBoardComplexity } from './stackup-planner.mjs'
@@ -124,6 +127,12 @@ export const allowedJobTypes = new Set(['generate_custom_outline', 'create_outli
 for (const type of productionReadinessJobTypes) allowedJobTypes.add(type)
 for (const type of advancedBoardJobTypes) allowedJobTypes.add(type)
 for (const type of autotracerJobTypes) allowedJobTypes.add(type)
+allowedJobTypes.add('analyze_production_requirements')
+allowedJobTypes.add('record_production_requirements')
+allowedJobTypes.add('record_accepted_engineering_knowledge')
+allowedJobTypes.add('build_engineering_knowledge_graph')
+allowedJobTypes.add('measure_requirements_intelligence')
+allowedJobTypes.add('generate_training_design_intent')
 export const sanitizeName = (name) => (String(name || 'boardforge-project').trim().replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').slice(0, 64).toLowerCase() || 'boardforge-project')
 export function resolveInsideWorkspace(workspace, target) {
   const root = path.resolve(workspace)
@@ -212,6 +221,12 @@ export async function executeJob(job, workspace) {
   if (advancedBoardJobTypes.includes(job.type)) return advancedBoardSuiteJob(job, workspace, profile)
   if (autotracerJobTypes.includes(job.type)) return autotracerJob(job, workspace, profile)
   if (job.type === 'plan_requirements') return planRequirementsJob(job, workspace)
+  if (job.type === 'analyze_production_requirements') return productionRequirementsJob(job)
+  if (job.type === 'record_production_requirements') return recordProductionRequirementsJob(job, workspace)
+  if (job.type === 'record_accepted_engineering_knowledge') return recordAcceptedEngineeringKnowledgeJob(job, workspace)
+  if (job.type === 'build_engineering_knowledge_graph') return buildEngineeringKnowledgeGraphJob(job, workspace)
+  if (job.type === 'measure_requirements_intelligence') return requirementsIntelligenceMetricsJob(job, workspace)
+  if (job.type === 'generate_training_design_intent') return trainingDesignIntentJob(job, workspace)
   if (job.type === 'plan_pin_assignments') return pinAssignmentsJob(job, workspace)
   if (job.type === 'plan_power_tree') return powerTreePlanJob(job, workspace)
   if (job.type === 'plan_stackup') return stackupPlanJob(job, workspace, profile)
@@ -1967,6 +1982,83 @@ async function planRequirementsJob(job, workspace) {
     }))
   }
   return result(job, output.status, [], [], { ...output, generatedFiles: outputFile ? [outputFile] : [] })
+}
+
+function productionRequirementsJob(job) {
+  const input = job.input || {}
+  const requirements = analyzeRequirements({
+    boardId: input.boardId,
+    validation: { errors: input.blockerCodes || input.errors || [] },
+    answers: input.answers || {},
+  })
+  return result(job, requirements.status, [], [], {
+    requirements,
+    questions: requirements.questions,
+    humanReviewRequired: requirements.status === 'REQUIREMENTS_INPUT_REQUIRED',
+  })
+}
+
+async function recordProductionRequirementsJob(job, workspace) {
+  const input = job.input || {}
+  const plan = analyzeRequirements({
+    boardId: input.boardId,
+    validation: { errors: input.blockerCodes || input.errors || [] },
+    answers: input.existingAnswers || {},
+  })
+  const constraints = recordRequirementAnswers({ plan, answers: input.answers || {}, actor: input.actor || 'user' })
+  // Constraints are process metadata, not release artifacts.  Keeping them outside a
+  // KiCad delivery folder preserves the user's "KiCad files only" handoff contract.
+  const constraintsDir = path.join(path.resolve(workspace), '.boardforge', 'requirements')
+  await mkdir(constraintsDir, { recursive: true })
+  const outputFile = path.join(constraintsDir, `${sanitizeName(constraints.boardId)}.json`)
+  await writeFile(outputFile, JSON.stringify(constraints, null, 2), 'utf8')
+  return result(job, constraints.status, [], [], {
+    requirements: constraints.plan,
+    constraints,
+    questions: constraints.plan.questions,
+    generatedFiles: [outputFile],
+    humanReviewRequired: constraints.status === 'REQUIREMENTS_INPUT_REQUIRED',
+  })
+}
+
+async function recordAcceptedEngineeringKnowledgeJob(job, workspace) {
+  const record = createKnowledgeRecord(job.input || {})
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'engineering-knowledge')
+  await mkdir(outputDir, { recursive: true })
+  const outputFile = path.join(outputDir, `${sanitizeName(record.id)}.json`)
+  await writeFile(outputFile, JSON.stringify(record, null, 2), 'utf8')
+  return result(job, 'ENGINEERING_KNOWLEDGE_RECORDED', [], [], { record, generatedFiles: [outputFile], humanReviewRequired: false })
+}
+
+async function buildEngineeringKnowledgeGraphJob(job, workspace) {
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'engineering-knowledge')
+  const records = job.input?.records || await readEngineeringKnowledgeRecords(outputDir)
+  const graph = buildEngineeringKnowledgeGraph({ records })
+  return result(job, 'ENGINEERING_KNOWLEDGE_GRAPH_BUILT', [], [], { graph, humanReviewRequired: false })
+}
+
+async function requirementsIntelligenceMetricsJob(job, workspace) {
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'engineering-knowledge')
+  const knowledgeGraph = job.input?.knowledgeGraph || buildEngineeringKnowledgeGraph({ records: await readEngineeringKnowledgeRecords(outputDir) })
+  const metrics = measureRequirementsIntelligence({ plans: job.input?.plans || [], attempts: job.input?.attempts || [], knowledgeGraph })
+  return result(job, 'REQUIREMENTS_INTELLIGENCE_METRICS_MEASURED', [], [], { metrics, humanReviewRequired: false })
+}
+
+async function trainingDesignIntentJob(job, workspace) {
+  const intent = createTrainingDesignIntent({ board: job.input?.board, knowledgePatterns: job.input?.knowledgePatterns || [] })
+  const validation = validateTrainingDesignIntent(intent)
+  if (!validation.ok) throw new Error(`Generated training Design Intent Package is invalid: ${validation.errors.join(', ')}`)
+  // Intent packages are process records, not KiCad delivery artifacts.
+  const outputDir = path.join(path.resolve(workspace), '.boardforge', 'training-design-intents')
+  await mkdir(outputDir, { recursive: true })
+  const outputFile = path.join(outputDir, `${sanitizeName(intent.boardId)}.json`)
+  await writeFile(outputFile, JSON.stringify(intent, null, 2), 'utf8')
+  return result(job, intent.status, [], [], { designIntent: intent, generatedFiles: [outputFile], humanReviewRequired: false })
+}
+
+async function readEngineeringKnowledgeRecords(directory) {
+  if (!existsSync(directory)) return []
+  return Promise.all((await readdir(directory)).filter((file) => file.endsWith('.json')).map(async (file) => JSON.parse(await readFile(path.join(directory, file), 'utf8'))))
 }
 
 async function pinAssignmentsJob(job, workspace) {

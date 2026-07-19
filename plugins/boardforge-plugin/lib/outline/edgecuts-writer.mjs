@@ -19,7 +19,9 @@ export function outlineSummary(points) {
 
 export function writeKiCadPcbText({ projectName = 'boardforge-custom-outline', points = [], holes = [], layerCount = 2 }) {
   const normalized = normalizePoints(points)
-  const copperLayers = layerCount >= 4
+  const copperLayers = layerCount >= 6
+    ? '  (layers\n    (0 "F.Cu" signal)\n    (1 "In1.Cu" signal)\n    (2 "In2.Cu" signal)\n    (3 "In3.Cu" signal)\n    (4 "In4.Cu" signal)\n    (31 "B.Cu" signal)\n    (44 "Edge.Cuts" user)\n  )'
+    : layerCount >= 4
     ? '  (layers\n    (0 "F.Cu" signal)\n    (1 "In1.Cu" signal)\n    (2 "In2.Cu" signal)\n    (31 "B.Cu" signal)\n    (44 "Edge.Cuts" user)\n  )'
     : '  (layers\n    (0 "F.Cu" signal)\n    (31 "B.Cu" signal)\n    (44 "Edge.Cuts" user)\n  )'
   const edgeLines = normalized.map((point, index) => {
@@ -106,20 +108,39 @@ export function writeKiCadSchematicText({ projectName = 'boardforge-custom-outli
 export function writeKiCadProjectText({ projectName = 'boardforge-custom-outline' }) {
   return JSON.stringify({
     meta: { filename: `${projectName}.kicad_pro`, version: 1 },
-    board: { design_settings: { defaults: { board_outline_line_width: 0.1 } } },
+    // KiCad defaults intentionally ignore a handful of low-priority checks.
+    // Production projects must state that they are enabled so CLI evidence is
+    // independent of a workstation's global preferences.
+    board: { design_settings: { defaults: { board_outline_line_width: 0.1 }, drc_exclusions: [], rule_severities: strictDrcRuleSeverities() } },
     cvpcb: { equivalence_files: [] },
     libraries: { pinned_footprint_libs: [], pinned_symbol_libs: [] },
     net_settings: { classes: [{ bus_width: 12, clearance: 0.2, diff_pair_gap: 0.25, diff_pair_via_gap: 0.25, diff_pair_width: 0.2, line_style: 0, microvia_diameter: 0.3, microvia_drill: 0.1, name: 'Default', pcb_color: 'rgba(0, 0, 0, 0.000)', schematic_color: 'rgba(0, 0, 0, 0.000)', track_width: 0.2, via_diameter: 0.6, via_drill: 0.3, wire_width: 6 }] },
     pcbnew: { last_paths: { gencad: '', idf: '', netlist: '', specctra_dsn: '', step: '', vrml: '' }, page_layout_descr_file: '' },
+    erc: { erc_exclusions: [], rule_severities: strictErcRuleSeverities() },
     schematic: { drawing: { default_line_thickness: 6, default_text_size: 50 }, legacy_lib_dir: '', legacy_lib_list: [] },
   }, null, 2)
+}
+
+function strictErcRuleSeverities() {
+  return {
+    footprint_filter: 'warning', four_way_junction: 'warning',
+    simulation_model_issue: 'error', single_global_label: 'warning',
+  }
+}
+
+function strictDrcRuleSeverities() {
+  return {
+    footprint_filters_mismatch: 'warning', footprint_type_mismatch: 'error',
+    missing_courtyard: 'warning', track_not_centered_on_via: 'warning',
+    tuning_profile_track_geometries: 'warning',
+  }
 }
 
 function mountingHoleFootprint(hole, index) {
   const ref = hole.ref || `H${index + 1}`
   const drill = Number(hole.diameterMm || 2.2)
   const pad = drill + 1.4
-  return `  (footprint "MountingHole:MountingHole_${mm(drill)}mm_M${Math.round(drill)}" (layer "F.Cu")
+  return `  (footprint "MountingHole_${mm(drill)}mm_M${Math.round(drill)}" (layer "F.Cu")
     (uuid "${uuid('hole', index)}")
     (at ${mm(hole.x)} ${mm(hole.y)})
     (descr "BoardForge generated mounting hole")

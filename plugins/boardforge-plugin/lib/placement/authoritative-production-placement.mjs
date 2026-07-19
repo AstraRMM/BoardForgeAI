@@ -1,0 +1,213 @@
+import { resolveAuthoritativeKiCadFootprint, transformAuthoritativePads } from '../components/authoritative-kicad-footprint-resolver.mjs'
+import { pointInPolygon } from '../geometry.mjs'
+import {board007PlacementPreferences} from '../phase2c/board007-placement-route-contract.mjs'
+import {board008PlacementPreferences} from '../phase2c/board008-mechanical-placement-contract.mjs'
+
+const ESP32_TOPOLOGY = {
+  U1: { nx: .50, ny: .37, rotations: [0, 90, 270, 180] },
+  J1: { nx: .15, ny: .50, rotations: [90, 270, 0, 180] },
+  U2: { nx: .36, ny: .38, rotations: [0, 90, 270, 180] },
+  J2: { nx: .85, ny: .52, rotations: [0, 180, 90, 270] },
+  R1: { nx: .30, ny: .68, rotations: [0, 90, 180, 270] },
+  R2: { nx: .37, ny: .68, rotations: [0, 90, 180, 270] },
+}
+const RP2040_TOPOLOGY = {
+  J1:{nx:.13,ny:.50,rotations:[0,180]},D1:{nx:.27,ny:.55,rotations:[0,180]},
+  U1:{nx:.50,ny:.50,rotations:[0,90,270,180]},U2:{nx:.70,ny:.50,rotations:[0,180,90,270]},
+  U3:{nx:.38,ny:.25,rotations:[0,180,90,270]},J2:{nx:.80,ny:.50,rotations:[0,180]},
+  R1:{nx:.22,ny:.75,rotations:[0,90,180,270]},R2:{nx:.28,ny:.75,rotations:[0,90,180,270]},
+  C1:{nx:.42,ny:.28,rotations:[0,90,180,270]},C2:{nx:.50,ny:.28,rotations:[0,90,180,270]},C3:{nx:.58,ny:.28,rotations:[0,90,180,270]},
+}
+const USB_PD_SINK_TOPOLOGY = {
+  // Rotate the receptacle so its contact row faces the left board edge. The
+  // remaining packages retain collision-aware generic packing behind it.
+  // nx=.21 makes the contact copper tangent to the notch clearance envelope.
+  J1:{nx:.23,ny:.50,rotations:[90]},
+}
+// Board005 is a compact single-port 5 V source.  Its Type-C contact row is
+// held on the recessed top edge, with the switch and output bulk capacitor
+// directly behind it.  This avoids the generic packer's left-edge congestion
+// that made the four VBUS contacts physically unroutable.
+const USB_FIXED_SOURCE_TOPOLOGY = {
+  // The contact row faces the board interior.  Its VBUS pads can then escape
+  // below the row without passing through the USB4105 alignment holes.
+  J2:{x:39.4,y:5.1,rotation:180,side:'front'}, U1:{x:26,y:10,rotation:0,side:'front'},
+  C_OUT:{x:34,y:15,rotation:0,side:'front'}, C_IN:{x:13,y:5,rotation:0,side:'front'},
+  J1:{x:3,y:10,rotation:0,side:'front'}, F1:{x:9,y:15,rotation:0,side:'front'},
+  D1:{x:17,y:15,rotation:0,side:'front'}, C_AUX:{x:23,y:15,rotation:0,side:'front'},
+  R_REF:{x:27,y:16,rotation:0,side:'front'}, R_FAULT:{x:24,y:18,rotation:0,side:'front'},
+}
+const INDUSTRIAL_IO_TOPOLOGY = {
+  // Keep the field-entry components left of the ISO1212 and the logic domain
+  // right of it. This preserves a usable routing corridor and makes the
+  // isolation review visible in placement before copper is generated.
+  J1:{nx:.10,ny:.50,rotations:[90,270]},F1:{nx:.22,ny:.18,rotations:[0,180]},D1:{nx:.22,ny:.80,rotations:[0,180]},
+  R1:{nx:.25,ny:.32,rotations:[0,180]},R2:{nx:.25,ny:.68,rotations:[0,180]},C1:{nx:.32,ny:.42,rotations:[0,90,180,270]},C2:{nx:.32,ny:.58,rotations:[0,90,180,270]},
+  R3:{nx:.39,ny:.32,rotations:[0,180]},R4:{nx:.39,ny:.68,rotations:[0,180]},U1:{nx:.47,ny:.50,rotations:[0,180]},
+  C3:{nx:.61,ny:.25,rotations:[0,90,180,270]},U2:{nx:.68,ny:.50,rotations:[0,90,180,270]},J2:{nx:.90,ny:.50,rotations:[0,180,90,270]},
+}
+const BOARD007_CAN_TOPOLOGY=board007PlacementPreferences()
+const BOARD008_CAN_GATEWAY_TOPOLOGY=board008PlacementPreferences()
+const ETHERNET_CONTROLLER_TOPOLOGY = {
+  // Board010's 1208 mm² notched envelope is only legal when every real
+  // courtyard is placed as a contract.  Generic packing scattered the PHY
+  // support and produced non-routable long Ethernet stubs.  These are a
+  // resolver-validated mechanical baseline, not a routing/acceptance claim.
+  U1:{x:12,y:16.5,rotation:0,side:'front'}, U2:{x:10.75,y:6.5,rotation:0,side:'front'},
+  Y1:{x:13.25,y:22.75,rotation:0,side:'front'}, J1:{x:23.5,y:14,rotation:0,side:'front'},
+  U3:{x:27,y:2.75,rotation:0,side:'front'}, U4:{x:20.75,y:5.25,rotation:0,side:'front'},
+  J_PWR:{x:27,y:6.5,rotation:90,side:'front'}, C_DEC:{x:13.25,y:26.5,rotation:0,side:'front'},
+  R_RST:{x:7,y:25.25,rotation:90,side:'front'}, C_RST:{x:18.25,y:1.5,rotation:0,side:'front'},
+  R_MODE0:{x:35.75,y:4,rotation:90,side:'front'}, R_MODE1:{x:37,y:6.5,rotation:0,side:'front'},
+  R_MODE2:{x:7,y:22.75,rotation:0,side:'front'}, R_EXRES:{x:35.75,y:1.5,rotation:0,side:'front'},
+  R_TXP:{x:5.75,y:17.75,rotation:0,side:'front'}, R_TXN:{x:5.75,y:15.25,rotation:0,side:'front'},
+  R_RXP:{x:5.75,y:12.75,rotation:0,side:'front'}, R_RXN:{x:38.25,y:2.75,rotation:90,side:'front'},
+  // WIZnet's connected-centre-tap reference network stays at the PHY/MagJack
+  // side of the board while retaining legal full-courtyard separation from
+  // the fixed RP2040/W5500 and connector packages.
+  R_TX_CT:{x:2.75,y:1.5,rotation:0,side:'front'}, C_RXP:{x:2.75,y:4,rotation:0,side:'front'},
+  C_RXN:{x:2.75,y:6.5,rotation:0,side:'front'}, C_RX_MATCH:{x:2.75,y:9,rotation:0,side:'front'},
+  C_AVDD_REF:{x:2.75,y:20.25,rotation:0,side:'front'},
+  C_XI:{x:33.25,y:5.25,rotation:0,side:'front'}, C_XO:{x:33.25,y:7.75,rotation:0,side:'front'},
+  D_ETH:{x:30.75,y:2.75,rotation:0,side:'front'}, FB_AVDD:{x:9.5,y:22.75,rotation:90,side:'front'},
+  C_AVDD:{x:9.5,y:26.5,rotation:0,side:'front'}, C_TOCAP:{x:22,y:1.5,rotation:0,side:'front'},
+  C_1V2:{x:33.25,y:2.75,rotation:90,side:'front'},
+}
+
+export const COMPACT_ESP32_S3_1U_PRODUCTION_TOPOLOGY = Object.freeze({
+  mpn: 'ESP32-S3-WROOM-1U-N8R8',
+  symbol: 'RF_Module:ESP32-S3-WROOM-1',
+  footprint: 'RF_Module:ESP32-S3-WROOM-1U',
+  outline: Object.freeze({ widthMm: 42, heightMm: 21, areaMm2: 882 }),
+  antenna: 'External 2.4 GHz antenna required at the module U.FL/IPEX connector; verify antenna/cable placement in enclosure review.',
+})
+
+/** Resolve exact installed KiCad packages and place them before routing.
+ * The returned pads are authoritative transformed package pads, never proof geometry.
+ */
+export function placeAuthoritativeProductionFootprints({
+  components = [], outline, holes = [], topology = 'esp32-usb-sensor',
+  courtyardClearanceMm = .25, edgeClearanceMm = .25, holeClearanceMm = .5,
+  resolver = resolveAuthoritativeKiCadFootprint,
+} = {}) {
+  if (!Array.isArray(outline) || outline.length < 3) throw new TypeError('A closed board outline polygon is required before production placement')
+  const bounds = polygonBounds(outline)
+  const resolved = components.map(component => {
+    const libId = component.footprint?.libId || component.footprint
+    const authoritative = resolver(libId)
+    return { ...component, libId, authoritative, localOccupancy: footprintOccupancy(authoritative) }
+  })
+  // Largest packages are committed first so small passives fill remaining legal sites.
+  // A topology contract reserves its exact local-support cluster before the
+  // generic packer fills the remaining envelope.  Otherwise a large generic
+  // package can consume a declared analog/clock site and make a valid
+  // contract appear mechanically impossible merely because of sort order.
+  resolved.sort((a, b) => Number(Boolean(b.fixedAt)) - Number(Boolean(a.fixedAt)) || area(b.localOccupancy) - area(a.localOccupancy) || a.ref.localeCompare(b.ref))
+  const placed = []
+  for (const component of resolved) {
+    const basePreference = topology === 'esp32-usb-sensor' ? ESP32_TOPOLOGY[component.ref] : topology === 'rp2040-instrument' ? RP2040_TOPOLOGY[component.ref] : topology === 'usb-c-pd-sink' ? USB_PD_SINK_TOPOLOGY[component.ref] : topology === 'usb-c-fixed-source' ? USB_FIXED_SOURCE_TOPOLOGY[component.ref] : topology === 'industrial-io-production' ? INDUSTRIAL_IO_TOPOLOGY[component.ref] : topology === 'can-controller-connector-ears' ? BOARD007_CAN_TOPOLOGY[component.ref] : topology === 'can-gateway-asymmetric-dual-port' ? BOARD008_CAN_GATEWAY_TOPOLOGY[component.ref] : topology === 'ethernet-controller' ? ETHERNET_CONTROLLER_TOPOLOGY[component.ref] : null
+    const preference = { ...(basePreference || {}), ...(component.preferredAt ? { nx: component.preferredAt.nx, ny: component.preferredAt.ny } : {}), ...(component.allowedRotations ? { rotations: component.allowedRotations } : {}) }
+    const candidates = component.fixedAt ? [{ ...component.fixedAt, side: component.fixedAt.side || 'front' }] : basePreference?.x !== undefined ? [basePreference] : candidateTransforms(preference, bounds)
+    let winner = null, lastFailure = null
+    for (const transform of candidates) {
+      const occupancy = transformRect(component.localOccupancy, transform)
+      const pads = transformAuthoritativePads(component.authoritative.pads, transform)
+      const bodyOccupancy = transformRect(footprintBodyOccupancy(component.authoritative), transform)
+      const rfPolicy = component.rfAntennaEdge ? { edge: component.rfAntennaEdge } : null
+      const legality=placementLegality(occupancy, bodyOccupancy, pads, outline, holes, placed, { edgeClearanceMm, holeClearanceMm, courtyardClearanceMm }, rfPolicy, bounds, transform.rotation)
+      if (!legality.ok) { lastFailure=legality; continue }
+      winner = {
+        ref: component.ref, value: component.value, mpn: component.mpn, libId: component.libId,
+        sourceFile: component.authoritative.sourceFile, at: transform, occupancy, bodyOccupancy, rfAntennaPolicy: rfPolicy, pads,
+        endpoints: pads.map(pad => ({ ref: component.ref, pad: pad.number, netName: component.pinMap?.[pad.number] || null, x: pad.x, y: pad.y, layers: pad.layers, drill: pad.drill })),
+      }
+      break
+    }
+    if (!winner) throw placementError(component.ref, component.libId,lastFailure)
+    placed.push(winner)
+  }
+  const byInputOrder = placed.sort((a, b) => components.findIndex(c => c.ref === a.ref) - components.findIndex(c => c.ref === b.ref))
+  return {
+    schema: 'boardforge.authoritative-production-placement.v1', topology, resolvedBeforeRouting: true,
+    placements: byInputOrder,
+    endpoints: byInputOrder.flatMap(item => item.endpoints),
+    occupancy: byInputOrder.map(({ ref, occupancy }) => ({ ref, ...occupancy })),
+  }
+}
+
+export function footprintOccupancy(footprint) {
+  const courtyard = primitivePoints(footprint.definition, 'F.CrtYd')
+  const points = courtyard.length ? courtyard : footprint.pads.flatMap(p => [
+    { x: p.x - p.widthMm / 2, y: p.y - p.heightMm / 2 }, { x: p.x + p.widthMm / 2, y: p.y + p.heightMm / 2 },
+  ])
+  if (!points.length) throw new Error(`Cannot derive occupancy for ${footprint.libId}`)
+  const bounds = polygonBounds(points)
+  return { minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY, width: bounds.maxX - bounds.minX, height: bounds.maxY - bounds.minY, source: courtyard.length ? 'F.CrtYd' : 'pads' }
+}
+
+export function footprintBodyOccupancy(footprint) {
+  const fab = primitivePoints(footprint.definition, 'F.Fab')
+  if (!fab.length) return padOccupancy(footprint.pads)
+  const b=polygonBounds(fab)
+  return { minX:b.minX,minY:b.minY,maxX:b.maxX,maxY:b.maxY,width:b.width,height:b.height,source:'F.Fab' }
+}
+
+function candidateTransforms(preference, bounds) {
+  const pref = { nx: .5, ny: .5, rotations: [0, 90, 180, 270], ...(preference || {}) }
+  const origin = { x: bounds.minX + pref.nx * bounds.width, y: bounds.minY + pref.ny * bounds.height }
+  const offsets = [{ x: 0, y: 0 }]
+  for (let radius = 1; radius <= 16; radius++) for (let dx = -radius; dx <= radius; dx++) for (const dy of [-radius, radius]) offsets.push({ x: dx * 1.25, y: dy * 1.25 })
+  for (let radius = 1; radius <= 16; radius++) for (let dy = -radius + 1; dy < radius; dy++) for (const dx of [-radius, radius]) offsets.push({ x: dx * 1.25, y: dy * 1.25 })
+  return offsets.flatMap(offset => pref.rotations.map(rotation => ({ x: origin.x + offset.x, y: origin.y + offset.y, rotation, side: 'front' })))
+}
+
+function legalPlacement(rect, body, pads, outline, holes, placed, rules, rfPolicy, boardBounds, rotation) { return placementLegality(rect,body,pads,outline,holes,placed,rules,rfPolicy,boardBounds,rotation).ok }
+export function placementLegality(rect, body, pads, outline, holes, placed, rules, rfPolicy, boardBounds, rotation) {
+  if (rfPolicy) {
+    if (!['top','right','bottom','left'].includes(rfPolicy.edge) || rotationEdge(rotation) !== rfPolicy.edge) return {ok:false,code:'RF_EDGE_OR_ROTATION',edge:rfPolicy.edge,rotation}
+    if (!singleEdgeRfCourtyard(rect, boardBounds, rfPolicy.edge, rules.edgeClearanceMm)) return {ok:false,code:'RF_EDGE_COURTYARD',rect}
+    if (rectCorners(expand(body, rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline))) return {ok:false,code:'OUTLINE_BODY',rect:body,clearance:rules.edgeClearanceMm}
+    if (pads.some(pad => rectCorners(expand(padRect(pad), rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline)))) return {ok:false,code:'OUTLINE_PAD',clearance:rules.edgeClearanceMm}
+  } else if (rectCorners(expand(rect, rules.edgeClearanceMm)).some(point => !pointInPolygon(point, outline))) return {ok:false,code:'OUTLINE_COURTYARD',rect,clearance:rules.edgeClearanceMm}
+  for (const hole of holes) {
+    const radius = Number(hole.radiusMm ?? hole.diameterMm / 2 ?? hole.drillMm / 2 ?? 0) + rules.holeClearanceMm
+    const distance=circleRectDistance({ x: hole.x, y: hole.y }, rfPolicy ? body : rect)
+    if (distance < radius) return {ok:false,code:'MOUNTING_HOLE_CLEARANCE',hole:{x:hole.x,y:hole.y},actualMm:distance,requiredMm:radius}
+  }
+  const other=placed.find(other => boundsOverlap(rect, other.occupancy, rules.courtyardClearanceMm))
+  if(other)return {ok:false,code:'COURTYARD_COLLISION',ref:other.ref,rect,otherRect:other.occupancy,clearance:rules.courtyardClearanceMm}
+  return {ok:true}
+}
+
+function transformRect(rect, { x, y, rotation }) {
+  // Match KiCad's Y-down board-coordinate rotation convention. This matters
+  // for asymmetric courtyards such as vertical pin headers.
+  const radians = -rotation * Math.PI / 180, c = Math.cos(radians), s = Math.sin(radians)
+  const points = rectCorners(rect).map(p => ({ x: x + p.x * c - p.y * s, y: y + p.x * s + p.y * c }))
+  const b = polygonBounds(points)
+  return { minX: b.minX, minY: b.minY, maxX: b.maxX, maxY: b.maxY, x: b.minX, y: b.minY, width: b.width, height: b.height, source: rect.source }
+}
+
+function primitivePoints(text, layer) {
+  const points = []
+  for (const kind of ['fp_rect', 'fp_line']) for (let start = text.indexOf(`(${kind}`); start >= 0; start = text.indexOf(`(${kind}`, start + kind.length + 1)) {
+    const block = balanced(text, start)
+    if (!block || !new RegExp(`\\(layer\\s+"?${escapeRegex(layer)}"?\\)`).test(block)) continue
+    for (const point of block.matchAll(/\((?:start|end)\s+(-?[\d.]+)\s+(-?[\d.]+)/g)) points.push({ x: Number(point[1]), y: Number(point[2]) })
+  }
+  return points
+}
+
+function polygonBounds(points) { const xs = points.map(p => p.x), ys = points.map(p => p.y); const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys); return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY } }
+function rectCorners(r) { return [{ x: r.minX ?? r.x, y: r.minY ?? r.y }, { x: r.maxX ?? r.x + r.width, y: r.minY ?? r.y }, { x: r.maxX ?? r.x + r.width, y: r.maxY ?? r.y + r.height }, { x: r.minX ?? r.x, y: r.maxY ?? r.y + r.height }] }
+function expand(r, n) { return { minX: r.minX - n, minY: r.minY - n, maxX: r.maxX + n, maxY: r.maxY + n } }
+function area(r) { return r.width * r.height }
+function boundsOverlap(a,b,c=0) { return !(a.maxX+c<=b.minX||b.maxX+c<=a.minX||a.maxY+c<=b.minY||b.maxY+c<=a.minY) }
+function padOccupancy(pads) { const points = pads.flatMap(p => [{ x:p.x-p.widthMm/2, y:p.y-p.heightMm/2 },{ x:p.x+p.widthMm/2, y:p.y+p.heightMm/2 }]); const b=polygonBounds(points); return { minX:b.minX,minY:b.minY,maxX:b.maxX,maxY:b.maxY,width:b.width,height:b.height,source:'pads' } }
+function padRect(p) { return { minX:p.x-p.widthMm/2,minY:p.y-p.heightMm/2,maxX:p.x+p.widthMm/2,maxY:p.y+p.heightMm/2 } }
+function rotationEdge(rotation) { return ['top','right','bottom','left'][((Math.round(rotation/90)%4)+4)%4] }
+function singleEdgeRfCourtyard(r,b,edge,c) { const outside={top:r.minY < b.minY+c,right:r.maxX > b.maxX-c,bottom:r.maxY > b.maxY-c,left:r.minX < b.minX+c}; return outside[edge] && Object.entries(outside).every(([name,value])=>name===edge||!value) }
+function circleRectDistance(p, r) { const dx = Math.max(r.minX - p.x, 0, p.x - r.maxX), dy = Math.max(r.minY - p.y, 0, p.y - r.maxY); return Math.hypot(dx, dy) }
+function placementError(ref, libId, detail=null) { const suffix=detail?`: ${detail.code}${detail.ref?` with ${detail.ref}`:''}`:''; const error = new Error(`No legal authoritative production placement for ${ref} (${libId})${suffix}`); error.code = 'AUTHORITATIVE_PRODUCTION_PLACEMENT_BLOCKED'; error.ref = ref; error.libId = libId; error.placementDetail=detail; return error }
+function escapeRegex(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+function balanced(text, start) { let depth = 0, quoted = false, escaped = false; for (let i = start; i < text.length; i++) { const ch = text[i]; if (quoted) { if (escaped) escaped = false; else if (ch === '\\') escaped = true; else if (ch === '"') quoted = false; continue } if (ch === '"') quoted = true; else if (ch === '(') depth++; else if (ch === ')' && --depth === 0) return text.slice(start, i + 1) } return null }

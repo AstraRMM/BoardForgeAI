@@ -1,0 +1,355 @@
+import { approvedAssetFor } from "../../components/approved-production-assets.mjs";
+export const MEASUREMENT_BOARD_PROPOSAL_SCHEMA =
+  "boardforge.phase2c.production-proposal.measurement-board.v1";
+const approved = (ref, role, mpn) => ({
+  ref,
+  role,
+  mpn,
+  status: approvedAssetFor(mpn)
+    ? "APPROVED_EXACT_ASSET"
+    : "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+});
+const blocked = (ref, role, requirement) => ({
+  ref,
+  role,
+  mpn: null,
+  status: "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+  requirement,
+});
+export const measurementBoardProductionProposal = Object.freeze({
+  schema: MEASUREMENT_BOARD_PROPOSAL_SCHEMA,
+  status: "BLOCKED_PENDING_RANGES_WIRING_UNCERTAINTY_AND_SAFETY",
+  boardId: "043_MEASUREMENT_BOARD",
+  maximumAreaMm2: 1600,
+  architecture:
+    "Guarded calibrated voltage and resistance instrument with interlocked modes, Kelvin terminals, reversible excitation, low-leakage AFE, precision ADC/reference and traceable calibration",
+  rangeEnvelope: null,
+  wiringEnvelope: null,
+  uncertaintyEnvelope: null,
+  safetyEnvelope: null,
+  environmentEnvelope: null,
+  calibrationEnvelope: null,
+  powerEnvelope: null,
+  hostEnvelope: null,
+  testEnvelope: null,
+  candidates: [
+    {
+      role: "PRECISION_ADC",
+      family: "TI ADS1262",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_RANGES_RATE_NOISE_INL_REJECTION_AND_PACKAGE",
+    },
+    {
+      role: "PRECISION_REFERENCE",
+      family: "TI REF70",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_VOLTAGE_NOISE_DRIFT_HYSTERESIS_LOAD_AND_PACKAGE",
+    },
+    {
+      role: "MEASUREMENT_CONTROLLER",
+      family: "ST STM32G0",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_MODES_TIMING_INTERLOCK_HOST_AND_LIFECYCLE",
+    },
+    {
+      role: "CALIBRATION_STORAGE",
+      family: "ST M24C",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_CALIBRATION_RECORD_ADDRESS_ENDURANCE_AND_RETENTION",
+    },
+    {
+      role: "RECORD_STORAGE",
+      family: "Winbond W25Q",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_RECORD_CAPACITY_ENDURANCE_UPDATE_AND_LIFECYCLE",
+    },
+    {
+      role: "DIGITAL_POWER",
+      family: "Microchip MCP1700",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_SOURCE_LOAD_NOISE_TRANSIENT_AND_THERMAL_BUDGET",
+    },
+  ],
+  outline: {
+    family: "guarded-kelvin-terminal-wing",
+    closed: true,
+    maximumAreaMm2: 1600,
+    points: [
+      [0, 0],
+      [48, 0],
+      [48, 5],
+      [53, 5],
+      [53, 25],
+      [48, 25],
+      [48, 30],
+      [0, 30],
+    ],
+    purposefulFeatures: {
+      guardedTerminalWing: {
+        edge: "right",
+        projectionMm: 5,
+        spanMm: 20,
+        terminalCount: 4,
+      },
+      guardRingRequired: true,
+      slotMoatRequired: true,
+      thermalSymmetryAxisRequired: true,
+    },
+  },
+  bom: [
+    blocked(
+      "U_CTRL",
+      "exact precision measurement controller",
+      "Freeze exact controller only after modes, timing, interlocks, acquisition interface, calibration, host, safety and lifecycle are declared.",
+    ),
+    blocked(
+      "U_CAL",
+      "exact serialized calibration storage",
+      "Freeze exact storage only after calibration record, serialization, address, update count, integrity, endurance and retention are declared.",
+    ),
+    blocked(
+      "U_LOG",
+      "exact measurement record storage",
+      "Freeze exact storage only after record model, capacity, bandwidth, endurance, retention, update/recovery and lifecycle are declared.",
+    ),
+    blocked(
+      "U_PWR",
+      "measurement digital regulator",
+      "Freeze exact regulator only after source, analog/digital loads, dropout, noise, transient, sequencing and thermal budgets are verified.",
+    ),
+    approved(
+      "C_DEC",
+      "measurement digital decoupling candidate",
+      "CL10B104KB8NNNC",
+    ),
+    blocked(
+      "J_V",
+      "exact guarded voltage input terminal",
+      "Freeze exact terminal/probe, voltage/current/category, chassis/common-mode and mechanics.",
+    ),
+    blocked(
+      "J_KELVIN",
+      "exact four-wire Kelvin resistance terminals",
+      "Freeze exact force+/force-/sense+/sense- terminals, probes, materials, contact resistance and guard arrangement.",
+    ),
+    blocked(
+      "P_ATT",
+      "precision voltage attenuation and compensation network",
+      "Freeze exact ratio-tracking resistors/capacitors/switches from ranges, power, pulse, drift and bandwidth.",
+    ),
+    blocked(
+      "P_PROTECT",
+      "low-leakage precision input overload protection",
+      "Freeze exact clamps/current limit/fuses from safety energy, leakage, capacitance and recovery uncertainty.",
+    ),
+    blocked(
+      "U_SOURCE",
+      "precision reversible resistance excitation source",
+      "Freeze exact source/DAC/reference/switches from currents, compliance, noise, drift, reversal and DUT self-heating.",
+    ),
+    blocked(
+      "U_AFE",
+      "guarded low-noise input buffer PGA multiplexer",
+      "Freeze exact AFE from common-mode, bias/leakage, source impedance, noise, linearity, settling and overload.",
+    ),
+    blocked(
+      "U_ADC",
+      "exact precision measurement ADC",
+      "Freeze exact converter/package/pin map from rates, noise-free resolution, INL, rejection, drift and interfaces.",
+    ),
+    blocked(
+      "U_REF",
+      "exact precision measurement voltage reference",
+      "Freeze exact voltage/reference/buffer/filter from noise, drift, hysteresis, load and thermal gradients.",
+    ),
+    blocked(
+      "P_RANGE",
+      "break-before-make range and mode switching interlock",
+      "Freeze exact relays/switches, leakage/contact EMF, energized-input detection, discharge and wrong-mode hardware lockout.",
+    ),
+    blocked(
+      "P_FILTER",
+      "measurement anti-alias and mains rejection filters",
+      "Freeze exact topology/values from rate, settling, source, 50/60 Hz rejection and noise.",
+    ),
+    blocked(
+      "P_GUARD",
+      "driven guard shield chassis and leakage-control system",
+      "Freeze exact guard driver/stability, ring/moat, shield/chassis bonds, cleaning/coating and humidity policy.",
+    ),
+    blocked(
+      "U_TEMP",
+      "measurement thermal-gradient compensation sensors",
+      "Freeze exact sensors and placement for reference/terminals/switches plus compensation model.",
+    ),
+    blocked(
+      "J_HOST",
+      "protected host USB data and grounding interface",
+      "Freeze exact connector/isolation/back-power and safe common-ground statement; no unsupported CAT/mains claim.",
+    ),
+    blocked(
+      "P_TEST",
+      "traceable voltage resistance calibration fixture",
+      "Freeze standards and fixture for zero, ranges, Kelvin modes, excitation, leakage, linearity/noise, overload and temperature.",
+    ),
+  ],
+  requiredTopology: [
+    "Freeze voltage/resistance ranges, uncertainty, wiring, probes, impedance/common-mode, update/settling and calibration.",
+    "Interlock voltage and resistance modes so excitation cannot reach an energized input; use break-before-make and discharge/detection.",
+    "The excitation source cannot be applied to an energized voltage input; enforce this independently in hardware, including reset and fault states.",
+    "Build compensated attenuation/protection with all leakage/capacitance/recovery included in uncertainty.",
+    "Use true four-wire force/sense paths and reversible calibrated excitation with compliance and self-heating proof.",
+    "Select AFE/ADC/reference/filter from complete error/noise/drift/linearity/settling budget for every range.",
+    "Create guarded clean analog island with quantified PCB/connector/relay/humidity leakage and thermal EMF control.",
+    "Declare maximum energy/category/grounding; prohibit mains/CAT use unless certified construction supports it.",
+    "Production-calibrate zero, every range/mode, excitation, leakage, linearity, noise, settling, overload, temperature and guard.",
+  ],
+  mandatoryUnresolved: [
+    "Freeze voltage and resistance ranges, wiring, accuracy, uncertainty and probes.",
+    "Freeze measurement category/isolation, input energy, grounding, miswire and overload.",
+    "Freeze traceability/environment/guard/thermal/host.",
+    "Select unresolved exact source/AFE/ADC/reference/switches/protection/terminals/test assets after uncertainty/safety analyses.",
+  ],
+  evidenceRequired: [
+    "exactAssetsApproved",
+    "rangeWiringRequirementsVerified",
+    "modeHardwareInterlockVerified",
+    "attenuatorRatioDriftVerified",
+    "inputProtectionLeakageRecoveryVerified",
+    "kelvinLeadContactCompensationVerified",
+    "sourceCurrentComplianceNoiseVerified",
+    "sourceReversalSelfHeatingVerified",
+    "afeBiasNoiseLinearityVerified",
+    "adcReferenceDriftVerified",
+    "fullRangeUncertaintyBudgetVerified",
+    "guardLeakageHumidityVerified",
+    "thermalEmfGradientVerified",
+    "measurementCategoryGroundingVerified",
+    "emcEsdVerified",
+    "productionTraceableRangeTemperatureCalibrationVerified",
+  ],
+});
+export function validateMeasurementBoardArchitecture(definition = {}) {
+  const roles = (definition.bom || []).map((x) =>
+      String(x.role || "").toLowerCase(),
+    ),
+    has = (p) => roles.some((x) => p.test(x)),
+    errors = [];
+  for (const [p, c] of [
+    [
+      /voltage input (?:terminal|connector)/,
+      "measurement-voltage-input-missing",
+    ],
+    [
+      /kelvin.*(?:resistance|four-wire)|four-wire.*resistance/,
+      "measurement-kelvin-terminals-missing",
+    ],
+    [
+      /input (?:overload )?protection|overvoltage.*input protection/,
+      "measurement-input-protection-missing",
+    ],
+    [/resistance excitation/, "measurement-resistance-excitation-missing"],
+    [/(?:measurement|precision) adc/, "measurement-precision-adc-missing"],
+    [
+      /(?:measurement voltage|precision) reference/,
+      "measurement-reference-missing",
+    ],
+    [/driven (?:analog )?guard/, "measurement-guarding-missing"],
+    [
+      /thermal-gradient|temperature sensor/,
+      "measurement-temperature-monitor-missing",
+    ],
+  ])
+    if (!has(p)) errors.push(c);
+  const e = definition.semanticEvidence?.measurementBoard || {};
+  for (const [k, c] of [
+    ["rangeWiringRequirementsVerified", "range-wiring-unverified"],
+    ["modeInterlockVerified", "mode-interlock-unverified"],
+    ["voltagePathVerified", "voltage-path-unverified"],
+    ["resistanceExcitationVerified", "resistance-path-unverified"],
+    ["uncertaintyBudgetVerified", "uncertainty-budget-unverified"],
+    ["leakageGuardVerified", "leakage-guard-unverified"],
+    ["thermalEmfVerified", "thermal-emf-unverified"],
+    ["measurementCategorySafetyVerified", "category-safety-unverified"],
+    ["calibrationTraceabilityVerified", "calibration-traceability-unverified"],
+    ["productionCalibrationVerified", "production-calibration-unverified"],
+  ])
+    if (!e[k]) errors.push(`measurement-${c}`);
+  return { ok: errors.length === 0, errors };
+}
+export function validateMeasurementBoardProductionProposal(proposal = {}) {
+  const errors = [],
+    bom = Array.isArray(proposal.bom) ? proposal.bom : [],
+    roles = bom.map((x) => String(x.role || "").toLowerCase()),
+    has = (p) => roles.some((x) => p.test(x));
+  for (const [key, code] of [
+    ["rangeEnvelope", "range-envelope-undeclared"],
+    ["wiringEnvelope", "wiring-envelope-undeclared"],
+    ["uncertaintyEnvelope", "uncertainty-envelope-undeclared"],
+    ["safetyEnvelope", "safety-envelope-undeclared"],
+    ["environmentEnvelope", "environment-envelope-undeclared"],
+    ["calibrationEnvelope", "calibration-envelope-undeclared"],
+    ["powerEnvelope", "power-envelope-undeclared"],
+    ["hostEnvelope", "host-envelope-undeclared"],
+    ["testEnvelope", "test-envelope-undeclared"],
+  ])
+    if (proposal[key] == null) errors.push(`measurement-board-${code}`);
+  for (const [p, c] of [
+    [/voltage input terminal/, "measurement-voltage-input-missing"],
+    [/kelvin resistance terminals/, "measurement-kelvin-terminals-missing"],
+    [/input overload protection/, "measurement-input-protection-missing"],
+    [/resistance excitation/, "measurement-resistance-excitation-missing"],
+    [/input buffer pga/, "measurement-analog-front-end-missing"],
+    [/measurement adc/, "measurement-precision-adc-missing"],
+    [/measurement voltage reference/, "measurement-reference-missing"],
+    [/range and mode switching/, "measurement-range-switching-missing"],
+    [/driven guard/, "measurement-guarding-missing"],
+    [/traceable voltage resistance/, "measurement-production-test-missing"],
+  ])
+    if (!has(p)) errors.push(c);
+  const blockedParts = bom.filter((x) => x.status !== "APPROVED_EXACT_ASSET");
+  if (blockedParts.length)
+    errors.push("measurement-board-exact-assets-unapproved");
+  const f = proposal.outline?.purposefulFeatures || {},
+    area = polygonArea(proposal.outline?.points);
+  if (
+    proposal.outline?.closed !== true ||
+    !Number.isFinite(area) ||
+    area > (proposal.maximumAreaMm2 || 0) ||
+    f.guardedTerminalWing?.terminalCount !== 4 ||
+    f.guardedTerminalWing?.projectionMm < 5 ||
+    f.guardRingRequired !== true ||
+    f.slotMoatRequired !== true ||
+    f.thermalSymmetryAxisRequired !== true
+  )
+    errors.push("measurement-board-purposeful-outline-invalid");
+  for (const key of proposal.evidenceRequired || [])
+    if (proposal.semanticEvidence?.[key] !== true)
+      errors.push(
+        `measurement-board-evidence-${key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}-missing`,
+      );
+  return {
+    schema: "boardforge.phase2c.measurement-board-remediation-gate.v1",
+    ok: errors.length === 0,
+    errors,
+    areaMm2: area,
+    maximumAreaMm2: proposal.maximumAreaMm2,
+    blockedRefs: blockedParts.map((x) => x.ref),
+  };
+}
+function polygonArea(points = []) {
+  if (points.length < 3) return NaN;
+  let s = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i],
+      b = points[(i + 1) % points.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}

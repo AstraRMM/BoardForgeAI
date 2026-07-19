@@ -1,0 +1,325 @@
+import { approvedAssetFor } from "../../components/approved-production-assets.mjs";
+
+export const ENVIRONMENTAL_LOGGER_PROPOSAL_SCHEMA =
+  "boardforge.phase2c.production-proposal.environmental-logger.v1";
+const approved = (ref, role, mpn) => ({
+  ref,
+  role,
+  mpn,
+  status: approvedAssetFor(mpn)
+    ? "APPROVED_EXACT_ASSET"
+    : "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+});
+const blocked = (ref, role, requirement) => ({
+  ref,
+  role,
+  mpn: null,
+  status: "BLOCKED_MISSING_APPROVED_EXACT_ASSET",
+  requirement,
+});
+
+export const environmentalLoggerProductionProposal = Object.freeze({
+  schema: ENVIRONMENTAL_LOGGER_PROPOSAL_SCHEMA,
+  status: "BLOCKED_PENDING_MEASURANDS_RUNTIME_STORAGE_AND_ENCLOSURE",
+  boardId: "023_ENVIRONMENTAL_LOGGER",
+  maximumAreaMm2: 3000,
+  architecture:
+    "Long-duration environmental data logger with calibrated sensing, traceable time, durable records, autonomous protected power, recoverable export, and controlled environmental exposure",
+  deploymentEnvelope: null,
+  measurementEnvelope: null,
+  timeEnvelope: null,
+  storageEnvelope: null,
+  powerEnvelope: null,
+  environmentEnvelope: null,
+  serviceEnvelope: null,
+  primarySources: {
+    environmentSensor:
+      "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf",
+    lowPowerRtc:
+      "https://www.microcrystal.com/fileadmin/Media/Products/RTC/App.Manual/RV-3028-C7_App-Manual.pdf",
+  },
+  candidates: [
+    {
+      role: "ENVIRONMENTAL_SENSOR",
+      family: "TI HDC302x",
+      exactMpn: null,
+      status: "CAPABILITY_REFERENCE_PENDING_MEASURANDS_ACCURACY_AND_EXPOSURE",
+    },
+    {
+      role: "PRESSURE_SENSOR",
+      family: "Bosch BMP390",
+      exactMpn: null,
+      status: "CAPABILITY_REFERENCE_PENDING_MEASURANDS_ACCURACY_AND_EXPOSURE",
+    },
+    {
+      role: "REAL_TIME_CLOCK",
+      family: "Micro Crystal RV-3028-C7",
+      exactMpn: null,
+      status: "CAPABILITY_REFERENCE_PENDING_DRIFT_SYNC_AND_RETENTION",
+    },
+    {
+      role: "LOGGING_CONTROLLER",
+      family: "Raspberry Pi RP2040",
+      exactMpn: null,
+      status: "CAPABILITY_REFERENCE_PENDING_ENERGY_FIRMWARE_AND_LIFECYCLE",
+    },
+    {
+      role: "LOG_STORAGE",
+      family: "Winbond W25Q",
+      exactMpn: null,
+      status: "CAPABILITY_REFERENCE_PENDING_CAPACITY_ENDURANCE_AND_RETENTION",
+    },
+    {
+      role: "METADATA_STORAGE",
+      family: "ST M24C",
+      exactMpn: null,
+      status: "CAPABILITY_REFERENCE_PENDING_RECORD_AND_ENDURANCE_MODEL",
+    },
+    {
+      role: "LOW_QUIESCENT_POWER",
+      family: "Microchip MCP1700",
+      exactMpn: null,
+      status:
+        "CAPABILITY_REFERENCE_PENDING_ENERGY_TRANSIENT_AND_THERMAL_BUDGET",
+    },
+  ],
+  outline: {
+    family: "thermally-isolated-exposure-nose",
+    closed: true,
+    maximumAreaMm2: 3000,
+    points: [
+      [0, 0],
+      [60, 0],
+      [60, 10],
+      [66, 10],
+      [66, 32],
+      [60, 32],
+      [60, 42],
+      [0, 42],
+    ],
+    purposefulFeatures: {
+      sensorExposureNose: { projectionMm: 6, spanMm: 22 },
+      membraneVentRequired: true,
+      thermalIsolationNeckRequired: true,
+      condensationDrainageRequired: true,
+      storageServiceEdge: "left",
+      batteryZone: "body",
+      mountingHoleCount: 4,
+    },
+  },
+  bom: [
+    blocked(
+      "U_ENV",
+      "exact environmental sensor",
+      "Freeze exact sensor only after measurands, range, accuracy, calibration, exposure, contamination and lifetime are declared.",
+    ),
+    blocked(
+      "U_CTRL",
+      "low-power logging controller",
+      "Freeze exact controller only after acquisition, processing, firmware, interface, energy and lifecycle requirements are declared.",
+    ),
+    blocked(
+      "U_FLASH",
+      "nonvolatile log storage",
+      "Freeze exact storage only after record size, duration, reserve, endurance, retention and interrupted-write model are calculated.",
+    ),
+    blocked(
+      "U_META",
+      "calibration metadata storage",
+      "Freeze exact metadata storage only after record format, update frequency, endurance, retention and recovery are declared.",
+    ),
+    blocked(
+      "U_PWR",
+      "logger 3.3 V regulator",
+      "Freeze exact regulator only after source, state currents, dropout, quiescent current, transient, noise and thermal budgets are verified.",
+    ),
+    approved("C_DEC", "logger decoupling", "CL10B104KB8NNNC"),
+    blocked(
+      "U_RTC",
+      "exact real-time clock and timestamp timebase",
+      "Freeze exact RTC, package, pin map, drift across temperature, synchronization and invalid-time behavior.",
+    ),
+    blocked(
+      "J_SD",
+      "exact removable storage and card-detect interface",
+      "Freeze exact socket/card, capacity, endurance, sealing, detect and ESD network if removable media is required.",
+    ),
+    blocked(
+      "P_BACKUP",
+      "RTC backup energy and switchover",
+      "Freeze exact cell or supercapacitor, holder, isolation, leakage and retention life.",
+    ),
+    blocked(
+      "P_BAT",
+      "protected primary deployment energy source",
+      "Freeze exact cell chemistry, capacity, holder, fuse/protection and temperature-derated runtime envelope.",
+    ),
+    blocked(
+      "U_FAIL",
+      "power-fail and brownout supervisor with hold-up",
+      "Freeze exact supervisor, thresholds, timing, hold-up capacitance and safe-write shutdown budget.",
+    ),
+    blocked(
+      "P_SENSOR",
+      "switched sensor power and discharge control",
+      "Freeze exact load switch, leakage, discharge and stabilization timing from the sampling duty cycle.",
+    ),
+    blocked(
+      "J_SERVICE",
+      "protected keyed data and service interface",
+      "Freeze exact connector, pin map, ESD, sealing, access policy and back-power behavior.",
+    ),
+    blocked(
+      "P_VENT",
+      "qualified sensor membrane vent and condensation treatment",
+      "Freeze exact membrane/vent, adhesive, enclosure stack, ingress rating, chemical compatibility and drainage.",
+    ),
+  ],
+  requiredTopology: [
+    "Declare measurands, ranges, accuracy, resolution, sample interval, deployment duration, calibration and traceability.",
+    "Thermally isolate the exposed sensor from controller, regulator and battery; qualify airflow, vent lag, sunlight, condensation and contaminants.",
+    "Provide monotonic timestamps with synchronization, temperature drift, backup retention, reset detection and invalid-time records.",
+    "Size storage from encoded records, metadata, deployment, reserve and overhead; prove endurance and retention.",
+    "Use versioned atomic records with sequence, timestamp, checksum and recovery after reset, brownout, full media or interrupted export.",
+    "Budget sleep, measurement, write, communications, regulator quiescent current, self-discharge and temperature derating.",
+    "Protect the energy source and service interface; define back-power and safe end-of-life behavior.",
+    "Production-test sensor identity/calibration, timebase, storage, state currents, power-fail recovery and serialized configuration.",
+  ],
+  mandatoryUnresolved: [
+    "Freeze measurands, ranges, accuracy, resolution, calibration, exposure and sampling requirements.",
+    "Freeze record format, storage capacity/endurance/retention, deployment duration, timing accuracy and export requirements.",
+    "Freeze source, runtime, temperature and maintenance requirements.",
+    "Select every unresolved exact asset only after its electrical, mechanical and lifecycle requirements are frozen.",
+  ],
+  evidenceRequired: [
+    "exactAssetsApproved",
+    "measurandsAccuracyCalibrationVerified",
+    "rtcDriftSyncBackupVerified",
+    "storageCapacityEnduranceRetentionVerified",
+    "atomicRecordChecksumRecoveryVerified",
+    "powerFailWriteHoldUpVerified",
+    "batteryEnergyBudgetTemperatureVerified",
+    "sleepMeasurementWriteCurrentVerified",
+    "sensorSelfHeatingThermalIsolationVerified",
+    "condensationVentEnclosureVerified",
+    "serviceInterfaceBackfeedVerified",
+    "watchdogBrownoutFullStorageVerified",
+    "productionCalibrationTimeStorageCurrentPowerFailTestVerified",
+  ],
+});
+
+export function validateEnvironmentalLoggerArchitecture(definition = {}) {
+  const roles = (definition.bom || []).map((x) =>
+      String(x.role || "").toLowerCase(),
+    ),
+    has = (p) => roles.some((x) => p.test(x)),
+    errors = [];
+  if (
+    !has(
+      /environmental.*sensor|humidity.*sensor|pressure.*sensor|air.*quality.*sensor/,
+    )
+  )
+    errors.push("logger-environmental-sensor-missing");
+  if (!has(/nonvolatile.*storage|log.*storage|memory.*storage/))
+    errors.push("logger-nonvolatile-storage-missing");
+  if (!has(/real.*time.*clock|\brtc\b|timestamp.*timebase/))
+    errors.push("logger-timebase-missing");
+  if (!has(/logging.*controller|data.*logger.*controller/))
+    errors.push("logger-controller-missing");
+  if (
+    !has(
+      /battery.*management|autonomous.*power|logger.*power.*management|protected.*energy/,
+    )
+  )
+    errors.push("logger-power-management-missing");
+  if (!has(/data.*export|service.*interface|removable.*storage/))
+    errors.push("logger-data-retrieval-missing");
+  if (!has(/watchdog|brownout.*supervisor/))
+    errors.push("logger-recovery-supervision-missing");
+  const e = definition.semanticEvidence?.environmentalLogger || {};
+  if (!e.measurementRequirementsVerified)
+    errors.push("logger-measurement-requirements-unverified");
+  if (!e.calibrationVerified) errors.push("logger-calibration-unverified");
+  if (!e.storageCapacityEnduranceVerified)
+    errors.push("logger-storage-capacity-endurance-unverified");
+  if (!e.timestampAccuracyVerified)
+    errors.push("logger-timestamp-accuracy-unverified");
+  if (!e.powerRuntimeVerified) errors.push("logger-runtime-unverified");
+  if (!e.enclosureExposureVerified)
+    errors.push("logger-enclosure-exposure-unverified");
+  if (!e.interruptedWriteRecoveryVerified)
+    errors.push("logger-write-recovery-unverified");
+  if (!e.productionTestVerified)
+    errors.push("logger-production-test-unverified");
+  return { ok: errors.length === 0, errors };
+}
+
+export function validateEnvironmentalLoggerProductionProposal(proposal = {}) {
+  const errors = [],
+    bom = Array.isArray(proposal.bom) ? proposal.bom : [],
+    roles = bom.map((x) => String(x.role || "").toLowerCase()),
+    has = (p) => roles.some((x) => p.test(x));
+  for (const [key, code] of [
+    ["deploymentEnvelope", "deployment-envelope-undeclared"],
+    ["measurementEnvelope", "measurement-envelope-undeclared"],
+    ["timeEnvelope", "time-envelope-undeclared"],
+    ["storageEnvelope", "storage-envelope-undeclared"],
+    ["powerEnvelope", "power-envelope-undeclared"],
+    ["environmentEnvelope", "environment-envelope-undeclared"],
+    ["serviceEnvelope", "service-envelope-undeclared"],
+  ])
+    if (proposal[key] == null) errors.push(`environmental-logger-${code}`);
+  for (const [p, c] of [
+    [/exact environmental sensor/, "environmental-sensors-missing"],
+    [/real-time clock.*timebase/, "logger-rtc-missing"],
+    [/nonvolatile log storage/, "logger-storage-missing"],
+    [/removable storage/, "logger-removable-storage-missing"],
+    [/low-power logging controller/, "logger-controller-missing"],
+    [/backup energy/, "logger-backup-power-missing"],
+    [/deployment energy source/, "logger-protected-power-missing"],
+    [/power-fail.*supervisor/, "logger-power-fail-supervisor-missing"],
+    [/switched sensor power/, "logger-sensor-power-control-missing"],
+    [/service interface/, "logger-service-interface-missing"],
+    [/membrane vent/, "logger-condensation-protection-missing"],
+  ])
+    if (!has(p)) errors.push(c);
+  const blockedParts = bom.filter((x) => x.status !== "APPROVED_EXACT_ASSET");
+  if (blockedParts.length)
+    errors.push("environmental-logger-exact-assets-unapproved");
+  const f = proposal.outline?.purposefulFeatures || {},
+    area = polygonArea(proposal.outline?.points);
+  if (
+    proposal.outline?.closed !== true ||
+    !Number.isFinite(area) ||
+    area > (proposal.maximumAreaMm2 || 0) ||
+    f.sensorExposureNose?.projectionMm < 6 ||
+    f.sensorExposureNose?.spanMm < 22 ||
+    f.membraneVentRequired !== true ||
+    f.thermalIsolationNeckRequired !== true ||
+    f.condensationDrainageRequired !== true
+  )
+    errors.push("environmental-logger-purposeful-outline-invalid");
+  for (const key of proposal.evidenceRequired || [])
+    if (proposal.semanticEvidence?.[key] !== true)
+      errors.push(
+        `environmental-logger-evidence-${key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}-missing`,
+      );
+  return {
+    schema: "boardforge.phase2c.environmental-logger-remediation-gate.v1",
+    ok: errors.length === 0,
+    errors,
+    areaMm2: area,
+    maximumAreaMm2: proposal.maximumAreaMm2,
+    blockedRefs: blockedParts.map((x) => x.ref),
+  };
+}
+function polygonArea(points = []) {
+  if (points.length < 3) return NaN;
+  let s = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i],
+      b = points[(i + 1) % points.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}

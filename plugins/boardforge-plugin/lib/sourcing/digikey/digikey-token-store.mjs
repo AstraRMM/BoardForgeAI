@@ -4,15 +4,14 @@ import path from 'node:path'
 export function createDigiKeyTokenStore({ filePath = path.join(process.cwd(), '.boardforge', 'digikey-token.json') } = {}) {
   return {
     filePath,
-    read() {
+    readRaw() {
       if (!existsSync(filePath)) return null
-      try {
-        const token = JSON.parse(readFileSync(filePath, 'utf8'))
-        if (token.expiresAt && Date.parse(token.expiresAt) <= Date.now()) return null
-        return token
-      } catch {
-        return null
-      }
+      try { return JSON.parse(readFileSync(filePath, 'utf8')) } catch { return null }
+    },
+    read() {
+      const token = this.readRaw()
+      if (token?.expiresAt && Date.parse(token.expiresAt) <= Date.now()) return null
+      return token
     },
     write(token) {
       mkdirSync(path.dirname(filePath), { recursive: true })

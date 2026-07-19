@@ -69,14 +69,50 @@ export function createDigiKeyAuthClient({ env = loadBoardForgeEnv().env, fetchIm
     getCachedToken() {
       return tokenStore.read()
     },
+    async getValidAccessToken() {
+      const cached = tokenStore.read()
+      if (cached?.accessToken) return cached
+      const expired = tokenStore.readRaw?.()
+      if (expired?.refreshToken) return this.refreshAccessToken({ refreshToken: expired.refreshToken })
+      // Client-credentials grants do not issue refresh tokens. Renew them by
+      // obtaining another short-lived token instead of turning a healthy
+      // machine-to-machine integration into DIGIKEY_AUTH_REQUIRED on expiry.
+      if (this.isConfigured()) {
+        await this.exchangeClientCredentialsForToken()
+        return tokenStore.read() || tokenStore.readRaw?.() || null
+      }
+      return null
+    },
+    async refreshAccessToken({ refreshToken } = {}) {
+      if (!this.isConfigured()) throw new DigiKeyError('DigiKey credentials are missing.', { status: 'DIGIKEY_NOT_CONFIGURED' })
+      if (!refreshToken) throw new DigiKeyError('DigiKey refresh token is missing.', { status: 'DIGIKEY_REFRESH_TOKEN_REQUIRED' })
+      const response = await fetchImpl(TOKEN_URL, {
+        method: 'POST',
+        headers: { authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`, 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }),
+      })
+      if (!response.ok) throw new DigiKeyError('DigiKey token refresh failed.', { status: 'DIGIKEY_TOKEN_REFRESH_FAILED', details: { status: response.status, body: await safeText(response) } })
+      const payload = await response.json()
+      const token = {
+        accessToken: payload.access_token,
+        refreshToken: payload.refresh_token || refreshToken,
+        tokenType: payload.token_type || 'Bearer',
+        expiresAt: new Date(Date.now() + Number(payload.expires_in || 1800) * 1000).toISOString(),
+      }
+      tokenStore.write(token)
+      return token
+    },
     async healthCheck() {
       try {
         const token = tokenStore.read()
+        const rawToken = tokenStore.readRaw?.() ?? token
+        const tokenExpired = Boolean(rawToken?.expiresAt && Date.parse(rawToken.expiresAt) <= Date.now())
         return {
           configured: this.isConfigured(),
           authenticated: Boolean(token?.accessToken),
-          tokenPresent: Boolean(token?.accessToken),
-          tokenExpired: false,
+          tokenPresent: Boolean(rawToken?.accessToken),
+          refreshAvailable: Boolean(rawToken?.refreshToken),
+          tokenExpired,
           enabledApis: providerConfig.enabledApis,
           callbackUrlConfigured: Boolean(callbackUrl),
           lastCheckTime: new Date().toISOString(),

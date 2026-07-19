@@ -1,0 +1,105 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import {
+  catalogDefinition,
+  validateCatalogSemanticTopology,
+} from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  ethernetGatewayProductionProposal,
+  validateEthernetGatewayProductionProposal,
+} from "../lib/phase2c/templates/ethernet-gateway.mjs";
+test("Board027 generic PD sink cannot pass as an Ethernet gateway", () => {
+  const g = validateCatalogSemanticTopology(
+    catalogDefinition(manifest.boards[26], 26),
+  );
+  assert.equal(g.ok, false);
+  for (const c of [
+    "ethernet-mac-controller-missing",
+    "ethernet-phy-missing",
+    "ethernet-rj45-connector-missing",
+    "ethernet-magnetics-missing",
+    "ethernet-reference-clock-missing",
+    "ethernet-line-protection-missing",
+    "ethernet-gateway-second-protocol-missing",
+    "ethernet-gateway-second-port-missing",
+    "ethernet-gateway-second-port-protection-missing",
+    "ethernet-gateway-throughput-evidence-missing",
+    "ethernet-gateway-buffering-backpressure-missing",
+    "ethernet-gateway-security-storage-missing",
+    "ethernet-gateway-recovery-update-missing",
+    "ethernet-gateway-category-mapped-to-pd-sink",
+  ])
+    assert.ok(g.errors.includes(c), c);
+});
+test("Board027 uses approved Ethernet CAN assets and blocks unresolved support", () => {
+  const p = ethernetGatewayProductionProposal,
+    g = validateEthernetGatewayProductionProposal(p);
+  assert.equal(g.ok, false);
+  assert.ok(g.errors.includes("ethernet-gateway-exact-assets-unapproved"));
+  assert.deepEqual(g.blockedRefs, [
+    "U_ETH",
+    "J_ETH",
+    "Y_ETH",
+    "D_ETH",
+    "R_BIAS",
+    "R_TERM",
+    "U_CTRL",
+    "U_CAN",
+    "R_CAN",
+    "D_CAN",
+    "F_IN",
+    "D_IN",
+    "U_KEYS",
+    "P_ETH",
+    "J_CAN",
+    "P_ISO",
+    "J_PWR",
+    "P_PWR",
+    "J_PROV",
+    "P_SEC",
+    "P_TEST",
+  ]);
+  assert.equal(
+    p.bom.find((x) => x.ref === "C_DEC").status,
+    "APPROVED_EXACT_ASSET",
+  );
+  for (const code of [
+    "ethernet-gateway-ethernet-envelope-undeclared",
+    "ethernet-gateway-field-interface-envelope-undeclared",
+    "ethernet-gateway-traffic-envelope-undeclared",
+    "ethernet-gateway-power-envelope-undeclared",
+    "ethernet-gateway-poe-envelope-undeclared",
+    "ethernet-gateway-security-envelope-undeclared",
+    "ethernet-gateway-installation-envelope-undeclared",
+    "ethernet-gateway-emc-envelope-undeclared",
+    "ethernet-gateway-thermal-envelope-undeclared",
+    "ethernet-gateway-service-envelope-undeclared",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board027 requires SI grounding throughput EMC security and failsafe evidence", () => {
+  for (const k of [
+    "pairImpedanceReturnLossVerified",
+    "magjackCenterTapChassisGroundingVerified",
+    "canIsolationGroundingDecisionVerified",
+    "throughputLatencyBackpressureVerified",
+    "malformedTrafficOutageFailsafeVerified",
+    "powerBrownoutThermalVerified",
+    "credentialProvisionSecureUpdateVerified",
+    "emcSurgeSafetyVerified",
+    "productionEthernetCanSecurityRecoveryTestVerified",
+  ])
+    assert.ok(
+      ethernetGatewayProductionProposal.evidenceRequired.includes(k),
+      k,
+    );
+});
+test("Board027 asymmetric opposed-port outline stays inside 1600 mm2", () => {
+  const p = ethernetGatewayProductionProposal,
+    g = validateEthernetGatewayProductionProposal(p);
+  assert.equal(g.areaMm2, 1370);
+  assert.ok(g.areaMm2 <= 1600);
+  assert.equal(p.outline.purposefulFeatures.portsOpposed, true);
+  assert.equal(p.outline.purposefulFeatures.asymmetric, true);
+});

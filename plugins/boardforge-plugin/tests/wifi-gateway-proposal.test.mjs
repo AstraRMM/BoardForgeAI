@@ -1,0 +1,82 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import { catalogDefinition } from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  wifiGatewayProductionProposal as p,
+  validateWifiGatewayArchitecture as validate,
+} from "../lib/phase2c/templates/wifi-gateway.mjs";
+test("Board026 requests a protocol gateway but catalog has no field-side physical layer", () => {
+  const b = manifest.boards[25],
+    d = catalogDefinition(b, 25),
+    g = validate(d);
+  assert.equal(b.id, "026_WIFI_GATEWAY");
+  assert.equal(b.purpose, "WiFi protocol gateway");
+  assert.equal(d.topologyId, "usb-c-esp32-sensor");
+  assert.equal(g.ok, false);
+  for (const code of [
+    "wifi-gateway-radio-missing",
+    "wifi-gateway-antenna-missing",
+    "wifi-gateway-field-transceiver-missing",
+    "wifi-gateway-field-connector-missing",
+    "wifi-gateway-power-protection-missing",
+    "wifi-gateway-io-protection-missing",
+    "wifi-gateway-protocols-unverified",
+    "wifi-gateway-traffic-envelope-unverified",
+    "wifi-gateway-field-interface-unverified",
+    "wifi-gateway-fault-recovery-unverified",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board026 proposal refuses to guess the field protocol or exact Wi-Fi assets", () => {
+  assert.match(p.status, /BLOCKED/);
+  assert.deepEqual(
+    p.candidates.map((x) => x.family),
+    [
+      "Espressif ESP32-S3",
+      "TI CC3235MOD",
+      "TI SN65HVD230",
+      "Microchip MCP1700",
+    ],
+  );
+  assert.ok(p.candidates.every((x) => x.exactMpn === null));
+  assert.ok(p.mandatoryUnresolved.some((x) => /non-Wi-Fi protocol/i.test(x)));
+  assert.ok(
+    p.mandatoryUnresolved.some((x) => /buffering\/backpressure/i.test(x)),
+  );
+  assert.ok(
+    p.requiredTopology.some((x) =>
+      /generic GPIO\/I2C\/UART header is not a protocol gateway/i.test(x),
+    ),
+  );
+});
+test("Wi-Fi gateway gate accepts explicit RF field security and recovery evidence", () => {
+  const roles = [
+    "Wi-Fi radio module",
+    "Wi-Fi antenna",
+    "field protocol transceiver",
+    "field connector",
+    "gateway power input protection",
+    "external IO field protection",
+    "secure provisioning interface",
+    "watchdog reset supervisor",
+  ];
+  const d = {
+    bom: roles.map((role, i) => ({ ref: `X${i}`, role })),
+    semanticEvidence: {
+      wifiGateway: {
+        gatewayProtocolsVerified: true,
+        trafficEnvelopeVerified: true,
+        wifiRegionBandVerified: true,
+        antennaAssemblyVerified: true,
+        fieldElectricalInterfaceVerified: true,
+        securityProvisioningVerified: true,
+        powerThermalVerified: true,
+        faultRecoveryVerified: true,
+        regulatoryVerified: true,
+        productionTestVerified: true,
+      },
+    },
+  };
+  assert.deepEqual(validate(d), { ok: true, errors: [] });
+});

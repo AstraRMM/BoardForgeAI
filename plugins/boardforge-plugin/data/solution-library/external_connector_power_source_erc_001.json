@@ -1,0 +1,10 @@
+{
+  "id": "external_connector_power_source_erc_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "POWER_INPUT_NOT_DRIVEN_WHEN_A_BOARD_RAIL_ENTERS_THROUGH_PASSIVE_CONNECTOR_PINS",
+  "detectionRule": "KiCad ERC reports power_pin_not_driven on a regulator input or downstream ground power-input while the topology declares an external power connector as the actual source.",
+  "rootCause": "KiCad connector pins are passive. A logical net name and live external-power intent do not establish a power-output source for ERC.",
+  "fixStrategy": "Generate explicit PWR_FLAG assertions for the externally supplied positive rail and its return, backed by the named connector and validated against its canonical symbol pin map. Do not flag regulator outputs that are already power-output pins.",
+  "regressionTest": "production-asset-pin-schema.test.mjs verifies the exact 5V/GND J1-backed plan; authoritative-stm32-schematic-erc.integration.test.mjs requires real KiCad ERC zero.",
+  "futureAutoApplyRule": "When a supported topology declares an external connector as its rail source, plan assertions from that connector's real pin map. Never infer them from rail-name regexes."
+}

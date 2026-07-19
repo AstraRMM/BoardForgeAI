@@ -1,0 +1,16 @@
+{
+  "schema": "boardforge.solution-library.lesson.v1",
+  "id": "stm32_authoritative_can_perimeter_routing_001",
+  "problem": "A compact authoritative STM32/CAN placement cannot reuse proof-era grid copper: dense LQFP/SOIC pad rows, regulator pads, headers, and explicit GND vias block direct Manhattan trunks.",
+  "rootCause": "Routing was attempted before authoritative placement and without treating accepted nets as immutable occupancy. Adjacent CAN_TX/CAN_RX escapes and the four-endpoint CANH/CANL trees require ordered, package-aware fanout.",
+  "solution": "Route transactionally in the order 5V, CAN_TX, I2C_SDA, explicit GND, CAN_RX, CANH, CANL. Use a B.Cu dogleg for CAN_RX, a B.Cu upper perimeter tree for CANH, and an In1.Cu y=35 outer tree for CANL. Escape CANL R1.2 at (20.8,26.925), D1.2 at (34.5,27.438), and route U2.6 around U3 to the via at (38,13.2).",
+  "evidence": {
+    "baseline": {"violations": 0, "unconnected": 8},
+    "afterCanRx": {"violations": 0, "unconnected": 7},
+    "afterCanH": {"violations": 0, "unconnected": 4},
+    "afterCanL": {"violations": 0, "unconnected": 1},
+    "candidate": ".tmp/stm32-authoritative/canl5-gated.kicad_pcb"
+  },
+  "manufacturing": {"trackWidthMm": 0.2, "viaDiameterMm": 0.5, "viaDrillMm": 0.3},
+  "reusable": true
+}

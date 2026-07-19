@@ -1,0 +1,11 @@
+{
+  "id": "board010_ethernet_multidrop_topology_blocker_001",
+  "schema": "boardforge.solution-library.lesson.v1",
+  "failureSignature": "W5500_PHY_PAIR_NETS_FAN_OUT_TO_MAGJACK_ESD_AND_TERMINATION_WITH_LONG_STUBS",
+  "boardId": "010_ETHERNET_CONTROLLER",
+  "detectionRule": "Reject an Ethernet fixed-corridor candidate when a TX or RX pair net has more than the source-backed PHY-to-transformer topology endpoints, or when its crystal/load network is not physically local to the PHY.",
+  "rootCause": "The generated pin map directly joined W5500 PHY-side pair nets to the MagJack, ESD device, and supposed termination parts without a source-backed cable-side versus PHY-side topology. The placement engine also separated the crystal/load network from the W5500.",
+  "fixStrategy": "Require a source-backed W5500-to-selected-MagJack schematic before routing: distinguish PHY-side and cable-side nets, attach ESD only at the approved cable-side location, remove unsupported termination topology, place crystal/load/EXRES/TOCAP/1V2/AVDD support beside the W5500, then derive pair geometry from a selected four-layer stackup.",
+  "regressionTest": "A Board010 topology gate must reject multi-drop Ethernet pair trees and remote PHY timing/analog support before the candidate router is allowed to create copper.",
+  "futureAutoApplyRule": "For Ethernet categories, run source-backed topology and local-support placement checks before pair routing, DRC, or manufacturing readiness."
+}

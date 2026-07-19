@@ -6,24 +6,20 @@ import { Pool } from 'pg'
 type AuthEnvironment = { ready: boolean; missing: string[] }
 
 let pool: Pool | undefined
+// Better Auth's return type carries the exact configured plugin/options generic.
+// Keeping the singleton opaque avoids widening it to the library's base options type.
+let authInstance: any
 
-function createAuth(database: Pool) {
-  const dashApiKey = process.env.BETTER_AUTH_API_KEY
-  return betterAuth({
-    database,
-    baseURL: process.env.BETTER_AUTH_URL,
-    secret: process.env.BETTER_AUTH_SECRET,
-    emailAndPassword: { enabled: true },
-    plugins: [
-      ...(dashApiKey ? [dash({ apiKey: dashApiKey })] : []),
-      nextCookies(),
-    ],
-    trustedOrigins: [process.env.BETTER_AUTH_URL!],
-  })
+function getTrustedOrigins() {
+  return [...new Set([
+    process.env.BETTER_AUTH_URL,
+    process.env.BOARDFORGE_AUTH_ORIGIN,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_BOARDFORGE_APP_URL,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ].filter((value): value is string => Boolean(value)))]
 }
-
-type BoardForgeAuth = ReturnType<typeof createAuth>
-let authInstance: BoardForgeAuth | undefined
 
 export function getAuthEnvironment(): AuthEnvironment {
   // Better Auth Dash is useful for account operations, but it must never make
@@ -41,7 +37,18 @@ export function getAuth() {
   if (!environment.ready) throw new Error(`BoardForge auth is not configured. Missing: ${environment.missing.join(', ')}`)
   if (!authInstance) {
     pool = new Pool({ connectionString: process.env.DATABASE_URL })
-    authInstance = createAuth(pool)
+    const dashApiKey = process.env.BETTER_AUTH_API_KEY
+    authInstance = betterAuth({
+      database: pool,
+      baseURL: process.env.BETTER_AUTH_URL,
+      secret: process.env.BETTER_AUTH_SECRET,
+      emailAndPassword: { enabled: true },
+      plugins: [
+        ...(dashApiKey ? [dash({ apiKey: dashApiKey })] : []),
+        nextCookies(),
+      ],
+      trustedOrigins: getTrustedOrigins(),
+    })
   }
   return authInstance!
 }

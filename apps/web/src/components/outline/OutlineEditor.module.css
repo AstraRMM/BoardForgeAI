@@ -31,7 +31,7 @@
   pointer-events: none;
 }
 
-.edgeHitbox { stroke: rgba(255,255,255,.01); stroke-width: 12; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: pointer; }
+.editorEdge { stroke: rgba(255,255,255,.01); stroke-width: 12; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: pointer; }
 
 .drawPreview { fill: rgba(72, 230, 190, .12); stroke: #65f5ce; stroke-width: 1.5; stroke-dasharray: 4 2; }
 .fillPreview { fill: rgba(255, 216, 77, .1); stroke: #ffd84d; stroke-width: 1.8; stroke-dasharray: 5 2; }

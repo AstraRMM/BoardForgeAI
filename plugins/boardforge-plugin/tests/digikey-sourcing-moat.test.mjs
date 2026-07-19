@@ -1,11 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { redactSecrets } from '../lib/config/secret-redactor.mjs'
 import { getProviderConfig } from '../lib/config/provider-config.mjs'
 import { createDigiKeyAuthClient } from '../lib/sourcing/digikey/digikey-auth-client.mjs'
+import { loadBoardForgeEnv } from '../lib/config/env-loader.mjs'
 import { lookupDigiKeyProductInfoV4 } from '../lib/sourcing/digikey/digikey-product-info-v4.mjs'
 import { normalizePartResult } from '../lib/sourcing/normalized-part-result.mjs'
 import { verifyBomSourcing } from '../lib/sourcing/bom-sourcing-verifier.mjs'
@@ -79,6 +80,55 @@ test('DigiKey client credentials token flow stores local token without exposing 
   assert.equal(result.authenticated, true)
   assert.equal(stored[0].accessToken, 'token-redacted-in-reports')
   assert.doesNotMatch(JSON.stringify(result), /secret/)
+})
+
+test('runtime environment overrides dotenv supplier defaults', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'boardforge-env-'))
+  await writeFile(path.join(cwd, '.env.local'), 'BOARD_FORGE_ENV_PRECEDENCE=local-default\n')
+  const before = process.env.BOARD_FORGE_ENV_PRECEDENCE
+  process.env.BOARD_FORGE_ENV_PRECEDENCE = 'runtime-value'
+  try { assert.equal(loadBoardForgeEnv({ cwd }).env.BOARD_FORGE_ENV_PRECEDENCE, 'runtime-value') }
+  finally {
+    if (before === undefined) delete process.env.BOARD_FORGE_ENV_PRECEDENCE
+    else process.env.BOARD_FORGE_ENV_PRECEDENCE = before
+  }
+})
+
+test('DigiKey auth refreshes an expired cached token and preserves rotated refresh state', async () => {
+  let stored = { accessToken: 'expired-access', refreshToken: 'refresh-value', expiresAt: new Date(0).toISOString() }
+  const tokenStore = { read: () => null, readRaw: () => stored, write: (value) => { stored = value } }
+  const fetchImpl = async (_url, request) => {
+    assert.equal(request.body.get('grant_type'), 'refresh_token')
+    assert.equal(request.body.get('refresh_token'), 'refresh-value')
+    return { ok: true, json: async () => ({ access_token: 'new-access', expires_in: 1800 }) }
+  }
+  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret' }, fetchImpl, tokenStore })
+  const token = await auth.getValidAccessToken()
+  assert.equal(token.accessToken, 'new-access')
+  assert.equal(stored.refreshToken, 'refresh-value')
+})
+
+test('DigiKey health distinguishes an expired refreshable token from authenticated state', async () => {
+  const expired = { accessToken: 'expired-access', refreshToken: 'refresh-value', expiresAt: new Date(0).toISOString() }
+  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret' }, tokenStore: { read: () => null, readRaw: () => expired, write: () => {} } })
+  const health = await auth.healthCheck()
+  assert.equal(health.authenticated, false)
+  assert.equal(health.tokenPresent, true)
+  assert.equal(health.tokenExpired, true)
+  assert.equal(health.refreshAvailable, true)
+})
+
+test('DigiKey renews an expired client-credentials token without a refresh token', async () => {
+  let stored = { accessToken: 'expired-access', expiresAt: new Date(0).toISOString() }
+  const tokenStore = { read: () => null, readRaw: () => stored, write: (value) => { stored = value } }
+  const fetchImpl = async (_url, request) => {
+    assert.equal(request.body.get('grant_type'), 'client_credentials')
+    return { ok: true, json: async () => ({ access_token: 'renewed-access', expires_in: 1800 }) }
+  }
+  const auth = createDigiKeyAuthClient({ env: { DIGIKEY_CLIENT_ID: 'id', DIGIKEY_CLIENT_SECRET: 'secret' }, fetchImpl, tokenStore })
+  const token = await auth.getValidAccessToken()
+  assert.equal(token.accessToken, 'renewed-access')
+  assert.equal(stored.accessToken, 'renewed-access')
 })
 
 test('DigiKey ProductInformation V4 lookup normalizes mocked exact MPN response', async () => {

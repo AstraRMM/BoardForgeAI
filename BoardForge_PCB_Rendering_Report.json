@@ -1,0 +1,32 @@
+{
+  "schema": "boardforge.phase2b.m4.report.v1",
+  "generatedAt": "2026-07-15T00:00:00.000Z",
+  "title": "PCB Rendering Report",
+  "status": "INTEGRATION_REQUIRED",
+  "implemented": [
+    "Rust returns stable route-preview geometry and immediate violation-marker coordinates.",
+    "Geometry results are serializable through serde-wasm-bindgen."
+  ],
+  "evidence": {
+    "command": "cargo test --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm",
+    "geometryTests": {
+      "passed": 13,
+      "failed": 0,
+      "suiteSeconds": 1.83
+    },
+    "scaleGate": {
+      "primitives": 100000,
+      "maximumSeconds": 10,
+      "result": "PASS"
+    },
+    "clippy": {
+      "command": "cargo clippy --manifest-path rust/Cargo.toml -p boardforge-geometry -p boardforge-wasm -- -D warnings",
+      "result": "PASS"
+    }
+  },
+  "limitations": [
+    "No claim of GPU rendering, dirty-region redraw or sustained 60 FPS is made by this report.",
+    "100k DRC throughput is not a rendering-frame benchmark.",
+    "Visual regression evidence is owned by browser QA."
+  ]
+}

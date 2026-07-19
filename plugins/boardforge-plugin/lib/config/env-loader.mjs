@@ -19,12 +19,15 @@ export function parseDotEnv(text = '') {
 export function loadBoardForgeEnv({ cwd = process.cwd(), includeProcess = true } = {}) {
   const files = ['.env', '.env.local']
   const loadedFiles = []
-  const values = includeProcess ? { ...process.env } : {}
+  const values = {}
   for (const file of files) {
     const filePath = path.join(cwd, file)
     if (!existsSync(filePath)) continue
     Object.assign(values, parseDotEnv(readFileSync(filePath, 'utf8')))
     loadedFiles.push(filePath)
   }
+  // Explicit runtime configuration must win over checked-out local defaults.
+  // This also lets CI and packaged launchers rotate supplier credentials safely.
+  if (includeProcess) Object.assign(values, process.env)
   return { env: values, loadedFiles }
 }

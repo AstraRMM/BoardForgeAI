@@ -1,0 +1,52 @@
+{
+  "id": "manufacturing_acceptance_requires_projected_assets_001",
+  "createdAt": "2026-07-16T02:20:00.000Z",
+  "updatedAt": "2026-07-16T02:20:00.000Z",
+  "sourceBoard": "phase2c-50-board-challenge",
+  "boardType": "all",
+  "problemType": "false_manufacturing_acceptance",
+  "problemSignature": {
+    "symptom": "A report claims verified production bindings while the actual KiCad schematic and PCB still contain BF_CONN and ReviewRequired proof assets."
+  },
+  "rootCause": "The manufacturing gate validated files, ERC/DRC, exports, sourcing, and hashes but did not prove that canonical symbol, footprint, and pin-map bindings were projected into the KiCad sources being validated.",
+  "fixSummary": "Fail closed unless every BOM reference has an exact MPN and verified production assets whose symbol, footprint, and pad-net map match the actual KiCad project.",
+  "implementation": {
+    "filesChanged": [
+      "plugins/boardforge-plugin/lib/challenge/board-acceptance-gate.mjs",
+      "plugins/boardforge-plugin/lib/phase2c/manufacturing-pipeline.mjs",
+      "scripts/phase2c-challenge-driver.mjs"
+    ],
+    "functionsAdded": [
+      "validateProductionAssets",
+      "indexedBlocks"
+    ],
+    "testsAdded": [
+      "verified report cannot smuggle BF_CONN review assets through manufacturing acceptance",
+      "valid projected production symbol, footprint, and pad-net map permits acceptance"
+    ]
+  },
+  "applicability": {
+    "boardTypes": ["all"],
+    "netRoles": [],
+    "conditions": ["Any manufacturing acceptance or autonomous board campaign"]
+  },
+  "recipe": [
+    "Require exact verified MPN, production symbol, production footprint, and verified pin map for every populated reference.",
+    "Parse the actual schematic and PCB used by KiCad validation and compare each reference against its binding.",
+    "Pass normalized productionAssetBindings into every board-class manufacturing pipeline invocation; never rely on a separate report that the gate cannot inspect.",
+    "Reject BF_CONN, ReviewRequired, proof, and placeholder assets regardless of optimistic report status.",
+    "Run adversarial mismatch and valid-projection regressions before accepting a board."
+  ],
+  "safetyRules": [
+    "A separate canonical binding report is not proof that a binding was projected into KiCad.",
+    "ERC/DRC zero on a review abstraction cannot establish manufacturing readiness.",
+    "Previously accepted checkpoints must be revalidated when acceptance semantics become stricter."
+  ],
+  "evidence": {
+    "before": {"status": "BF_CONN and ReviewRequired projects could be marked MANUFACTURING_ACCEPTED"},
+    "after": {"status": "actual per-reference symbol, footprint, and pad-net projection is mandatory"},
+    "tests": ["node --test plugins/boardforge-plugin/tests/phase2c-manufacturing-pipeline.test.mjs"]
+  },
+  "status": "active",
+  "confidence": "high"
+}

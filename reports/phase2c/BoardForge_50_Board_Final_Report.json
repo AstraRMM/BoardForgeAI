@@ -1,0 +1,100 @@
+{
+  "generatedAt": "2026-07-15T13:40:45.436Z",
+  "ledgerPath": "C:\\Users\\luifi\\Documents\\Codex\\2026-07-14\\ge\\work\\boardforge-m4\\reports\\phase2c\\BoardForge_50_Board_Attempt_Ledger.json",
+  "schema": "boardforge.phase2c.challenge-benchmark.v1",
+  "status": "CHALLENGE_IN_PROGRESS",
+  "targetCount": 50,
+  "attempts": 1,
+  "accepted": 0,
+  "rejected": 1,
+  "successRate": 0,
+  "customOutlineCount": 0,
+  "customOutlineRatio": 0,
+  "failureCategories": {
+    "erc": 1,
+    "manufacturing": 5,
+    "proof": 2,
+    "sourcing": 2,
+    "compactness": 2
+  },
+  "timing": {
+    "averageMeasuredAttemptMs": 20596,
+    "partialPipelineMeasured": 1,
+    "averageGenerationMs": null,
+    "supportedMeasured": 0,
+    "targetMet": 0,
+    "targetMissed": 0,
+    "classification": "NOT_MEASURED"
+  },
+  "metrics": {
+    "averageBoardAreaMm2": null,
+    "averageComponentDensityPer1000Mm2": null,
+    "averageAreaUtilization": null
+  },
+  "closureFailures": [
+    "ACCEPTED_0_OF_50"
+  ],
+  "evaluations": [
+    {
+      "id": "001_ESP32_SENSOR_HUB",
+      "accepted": false,
+      "failures": [
+        {
+          "category": "erc",
+          "code": "GATE_ERC_NOT_PROVEN"
+        },
+        {
+          "category": "manufacturing",
+          "code": "GATE_MANUFACTURING_NOT_PROVEN"
+        },
+        {
+          "category": "manufacturing",
+          "code": "GATE_GERBERS_NOT_PROVEN"
+        },
+        {
+          "category": "manufacturing",
+          "code": "GATE_DRILL_NOT_PROVEN"
+        },
+        {
+          "category": "manufacturing",
+          "code": "GATE_CPL_NOT_PROVEN"
+        },
+        {
+          "category": "manufacturing",
+          "code": "GATE_MANUFACTURINGZIP_NOT_PROVEN"
+        },
+        {
+          "category": "proof",
+          "code": "GATE_RUSTREPARSE_NOT_PROVEN"
+        },
+        {
+          "category": "proof",
+          "code": "GATE_SOURCEUNCHANGED_NOT_PROVEN"
+        },
+        {
+          "category": "sourcing",
+          "code": "DIGIKEY_LIVE_SOURCE_NOT_PROVEN"
+        },
+        {
+          "category": "sourcing",
+          "code": "MOUSER_LIVE_SOURCE_NOT_PROVEN"
+        },
+        {
+          "category": "compactness",
+          "code": "COMPONENT_AREA_NOT_MEASURED"
+        },
+        {
+          "category": "compactness",
+          "code": "COMPACTNESS_NOT_PROVEN"
+        }
+      ],
+      "target90": "NOT_MEASURED_FULL_PIPELINE",
+      "metrics": {
+        "boardAreaMm2": 2088,
+        "componentDensityPer1000Mm2": 1.916,
+        "areaUtilization": null,
+        "routingDensityMmPerCm2": null
+      }
+    }
+  ]
+}

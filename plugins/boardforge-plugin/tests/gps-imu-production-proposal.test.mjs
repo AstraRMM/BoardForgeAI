@@ -1,0 +1,91 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import {
+  catalogDefinition,
+  validateCatalogSemanticTopology,
+} from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  gpsImuProductionProposal,
+  validateGpsImuProductionProposal,
+} from "../lib/phase2c/templates/gps-imu.mjs";
+test("Board022 generic ESP32 shell cannot pass as GNSS IMU navigation hardware", () => {
+  const d = catalogDefinition(manifest.boards[21], 21),
+    g = validateCatalogSemanticTopology(d);
+  assert.equal(g.ok, false);
+  for (const c of [
+    "gnss-receiver-missing",
+    "imu-sensor-missing",
+    "gnss-antenna-path-missing",
+    "gnss-rf-protection-filter-missing",
+    "gnss-antenna-bias-evidence-missing",
+    "gnss-backup-supply-missing",
+    "gnss-pps-interface-missing",
+    "imu-low-noise-supply-missing",
+    "imu-interrupt-interface-missing",
+    "imu-orientation-evidence-missing",
+    "gps-imu-category-mapped-to-esp32-shell",
+  ])
+    assert.ok(g.errors.includes(c), c);
+});
+test("Board022 requires exact receiver RF antenna IMU backup and timing assets", () => {
+  const p = gpsImuProductionProposal,
+    g = validateGpsImuProductionProposal(p);
+  assert.equal(g.ok, false);
+  assert.ok(g.errors.includes("gps-imu-exact-assets-unapproved"));
+  assert.deepEqual(g.blockedRefs, [
+    "U_GNSS",
+    "J_RF",
+    "P_RF",
+    "D_RF",
+    "U_IMU",
+    "P_IMU",
+    "P_BACKUP",
+    "P_PPS",
+    "J_HOST",
+    "U_PWR",
+    "P_CAL",
+  ]);
+  assert.equal(
+    p.bom.find((x) => x.ref === "C_DEC").status,
+    "APPROVED_EXACT_ASSET",
+  );
+  for (const code of [
+    "gps-imu-navigation-envelope-undeclared",
+    "gps-imu-rf-envelope-undeclared",
+    "gps-imu-imu-envelope-undeclared",
+    "gps-imu-timing-envelope-undeclared",
+    "gps-imu-host-envelope-undeclared",
+    "gps-imu-power-envelope-undeclared",
+    "gps-imu-backup-envelope-undeclared",
+    "gps-imu-environment-envelope-undeclared",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board022 requires RF timing calibration power and environmental evidence", () => {
+  for (const k of [
+    "antennaRfLinkBudgetVerified",
+    "rfImpedanceMatchLossVerified",
+    "backupSupplyRetentionVerified",
+    "ppsTimingJitterVerified",
+    "imuOrientationCalibrationVerified",
+    "lowNoisePowerIntegrityVerified",
+    "vibrationShockThermalVerified",
+    "productionRfPpsImuCalibrationTestVerified",
+  ])
+    assert.ok(gpsImuProductionProposal.evidenceRequired.includes(k), k);
+});
+test("Board022 antenna-clearance outline stays inside 2650 mm2", () => {
+  const g = validateGpsImuProductionProposal(gpsImuProductionProposal);
+  assert.equal(g.areaMm2, 2460);
+  assert.ok(g.areaMm2 <= 2650);
+  assert.deepEqual(
+    gpsImuProductionProposal.outline.purposefulFeatures.antennaNose,
+    { projectionMm: 6, spanMm: 18 },
+  );
+  assert.equal(
+    gpsImuProductionProposal.outline.purposefulFeatures
+      .antennaCopperKeepoutRequired,
+    true,
+  );
+});

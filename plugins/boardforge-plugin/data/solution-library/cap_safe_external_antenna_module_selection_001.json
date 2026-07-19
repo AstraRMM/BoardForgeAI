@@ -1,0 +1,15 @@
+{
+  "id": "cap_safe_external_antenna_module_selection_001",
+  "problemType": "production_footprint_area_constraint",
+  "rootCause": "The installed ESP32-S3-WROOM-1 PCB-antenna footprint has a 48 x 41.2 mm RF courtyard, so the complete topology cannot legally fit the challenge's 900 mm2 maximum area without bypassing authoritative geometry.",
+  "fixSummary": "Select the pin-compatible ESP32-S3-WROOM-1U-N8R8 external-antenna module and its installed RF_Module:ESP32-S3-WROOM-1U footprint. Its 19.5 x 20.15 mm courtyard permits all six exact production packages on a 42 x 21 mm (882 mm2) outline.",
+  "productionBinding": {
+    "mpn": "ESP32-S3-WROOM-1U-N8R8",
+    "symbol": "RF_Module:ESP32-S3-WROOM-1",
+    "footprint": "RF_Module:ESP32-S3-WROOM-1U",
+    "externalAntennaRequired": true
+  },
+  "safetyRequirement": "Fit a compatible external 2.4 GHz antenna to the U.FL/IPEX connector and review antenna, cable, enclosure, and regulatory placement.",
+  "regressionTest": "authoritative-production-placement verifies the complete topology fits 42 x 21 mm, stays at or below 900 mm2, and returns installed-source authoritative pad endpoints.",
+  "futureAutoApplyRule": "When an integrated-antenna RF courtyard breaks a hard area cap, evaluate only exact pin-compatible approved external-antenna variants; never shrink or ignore the installed courtyard."
+}

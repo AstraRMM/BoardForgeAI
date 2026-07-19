@@ -1,0 +1,102 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import manifest from "../../../fixtures/phase2c/50-board-challenge-manifest.mjs";
+import {
+  catalogDefinition,
+  validateCatalogSemanticTopology,
+} from "../lib/phase2c/catalog-production-engine.mjs";
+import {
+  wifiGatewayProductionProposal,
+  validateWifiGatewayProductionProposal,
+} from "../lib/phase2c/templates/wifi-gateway.mjs";
+test("Board026 generic sensor shell cannot pass as a WiFi gateway", () => {
+  const g = validateCatalogSemanticTopology(
+    catalogDefinition(manifest.boards[25], 25),
+  );
+  assert.equal(g.ok, false);
+  for (const c of [
+    "wifi-gateway-radio-missing",
+    "wifi-gateway-antenna-network-missing",
+    "wifi-gateway-secondary-protocol-missing",
+    "wifi-gateway-field-connector-missing",
+    "wifi-gateway-interface-protection-missing",
+    "wifi-gateway-security-storage-missing",
+    "wifi-gateway-provisioning-recovery-missing",
+    "wifi-gateway-throughput-evidence-missing",
+    "wifi-gateway-burst-power-evidence-missing",
+    "wifi-gateway-category-mapped-to-sensor-shell",
+  ])
+    assert.ok(g.errors.includes(c), c);
+});
+test("Board026 uses exact WiFi and CAN assets and blocks unresolved interfaces", () => {
+  const p = wifiGatewayProductionProposal,
+    g = validateWifiGatewayProductionProposal(p);
+  assert.equal(g.ok, false);
+  assert.ok(g.errors.includes("wifi-gateway-exact-assets-unapproved"));
+  assert.deepEqual(g.blockedRefs, [
+    "U_WIFI",
+    "U_CAN",
+    "R_TERM",
+    "D_CAN",
+    "F_IN",
+    "D_IN",
+    "U_PWR",
+    "U_KEYS",
+    "J_CAN",
+    "J_PWR",
+    "P_PWR",
+    "P_ISO",
+    "J_PROV",
+    "P_SEC",
+    "P_RF",
+    "P_TEST",
+  ]);
+  assert.equal(
+    p.bom.find((x) => x.ref === "C_DEC").status,
+    "APPROVED_EXACT_ASSET",
+  );
+  for (const code of [
+    "wifi-gateway-gateway-envelope-undeclared",
+    "wifi-gateway-wifi-envelope-undeclared",
+    "wifi-gateway-field-interface-envelope-undeclared",
+    "wifi-gateway-traffic-envelope-undeclared",
+    "wifi-gateway-power-envelope-undeclared",
+    "wifi-gateway-security-envelope-undeclared",
+    "wifi-gateway-installation-envelope-undeclared",
+    "wifi-gateway-regulatory-envelope-undeclared",
+    "wifi-gateway-service-envelope-undeclared",
+  ])
+    assert.ok(g.errors.includes(code), code);
+});
+test("Board026 requires throughput power security thermal EMC and recovery evidence", () => {
+  for (const k of [
+    "canPhysicalLayerTerminationVerified",
+    "bothConnectorPinMapsProtectionVerified",
+    "isolationGroundingDecisionVerified",
+    "trafficThroughputLatencyBackpressureVerified",
+    "radioBurstPowerTransientVerified",
+    "regulatorEnclosureThermalVerified",
+    "emcEsdSurgeVerified",
+    "credentialProvisionSecureBootUpdateVerified",
+    "watchdogFailsafeRecoveryVerified",
+    "productionWifiCanPowerSecurityTestVerified",
+  ])
+    assert.ok(wifiGatewayProductionProposal.evidenceRequired.includes(k), k);
+});
+test("Board026 opposed connector-wing outline stays inside 1250 mm2", () => {
+  const p = wifiGatewayProductionProposal,
+    g = validateWifiGatewayProductionProposal(p);
+  assert.equal(g.areaMm2, 1180);
+  assert.ok(g.areaMm2 <= 1250);
+  assert.equal(p.outline.purposefulFeatures.connectorSidesOpposed, true);
+  assert.deepEqual(p.outline.purposefulFeatures.canConnectorWing, {
+    edge: "right",
+    projectionMm: 5,
+    spanMm: 22,
+  });
+  assert.deepEqual(p.outline.purposefulFeatures.powerServiceWing, {
+    edge: "left",
+    projectionMm: 5,
+    spanMm: 22,
+  });
+});

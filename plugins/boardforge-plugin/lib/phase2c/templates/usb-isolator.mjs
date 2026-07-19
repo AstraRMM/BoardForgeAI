@@ -1,0 +1,78 @@
+import {approvedAssetFor} from '../../components/approved-production-assets.mjs'
+
+export const USB_ISOLATOR_PROPOSAL_SCHEMA='boardforge.phase2c.production-proposal.usb-isolator.v1'
+
+export const USB_ISOLATOR_POWER_AUDIT=Object.freeze({
+  schema:'boardforge.phase2c.usb-isolator-power-audit.v1',
+  correctedMinimumIsolatedOutputMa:569,isolatedOutputV:5,requiredOutputPowerMw:2845,
+  defaultUsb2InputV:5,defaultUsb2InputMa:500,defaultInputPowerMw:2500,
+  idealPowerDeficitMw:345,minimumImpossibleEfficiencyPercent:113.8,
+  exactUpstreamTypeCCurrentContract:null,
+  providerEvidence:Object.freeze({digikeyExactMatches:0,mouserExactMatches:0,reportsChecked:Object.freeze(['BoardForge_DigiKey_Live_Lookup_Report.json','BoardForge_Mouser_Live_Lookup_Report.json'])}),
+  candidates:Object.freeze([
+    Object.freeze({mpn:'THI 3-0511',inputV:'4.5-5.5',outputV:5,outputMa:600,electricallyCapable:true,installedExactSymbol:false,installedExactFootprint:false,liveProviderEvidence:false,status:'BLOCKED_NO_AUTHORITATIVE_KICAD_ASSET_OR_LIVE_PROVIDER_EVIDENCE'}),
+    Object.freeze({family:'Murata NXE2S0505MC',outputV:5,outputMa:400,electricallyCapable:false,installedExactFootprint:true,status:'REJECTED_BELOW_569MA'}),
+  ]),
+  status:'BLOCKED_DEFAULT_USB2_INPUT_POWER_IS_LESS_THAN_REQUIRED_ISOLATED_OUTPUT_POWER',
+})
+
+// This is deliberately a proposal, not an approved production template. The
+// isolator is active but had zero live stock in the 2026-07-16 provider check.
+// The clock and USB-C DFP controller are now exact approved assets. Isolated
+// power remains fail-closed: a host-bus-powered 5 V input cannot truthfully
+// guarantee a 500 mA downstream budget after conversion and isolator losses.
+export const usbIsolatorProductionProposal=Object.freeze({
+  schema:USB_ISOLATOR_PROPOSAL_SCHEMA,boardId:'012_USB_ISOLATOR',status:'BLOCKED_PENDING_EXACT_ASSETS_AND_LIVE_STOCK',maximumAreaMm2:1950,
+  architecture:'USB 2.0 high-speed host-side isolator with upstream UFP USB-C and downstream DFP USB-C',
+  primarySources:{
+    isolator:'https://www.analog.com/media/en/technical-documentation/data-sheets/adum3165-adum3166.pdf',
+    referenceDesign:'https://www.analog.com/media/en/reference-design-documentation/reference-designs/cn0550.pdf',
+    isolatedPowerReference:'https://www.analog.com/media/en/reference-design-documentation/reference-designs/cn0550.pdf',
+    clock:'https://download.epsondevice.com/td/pdf/td_xtal_mhz/FA-238_Q22FA23801194_en.pdf',
+    typeCSource:'https://www.ti.com/lit/ds/symlink/tps25810.pdf',
+    esd:'https://www.st.com/content/st_com/en/technical-documents/DS4260.html',
+  },
+  requirements:{usbSpeedMbps:480,dataIsolationVrms:3750,isolatorPackageCreepageMm:5.3,isolatorPackageClearanceMm:5.3,boardKeepoutRequired:true,separateGroundDomains:true,downstreamPortCurrentMa:500,isolatorWorstCaseDownstreamMa:69,minimumIsolatedOutputMa:569,upstreamDefaultCurrentMa:500,upstreamTypeCCurrentContract:null},
+  domains:{upstream:{ground:'GND_UP',power:['VBUS_UP','VDD_UP_3V3']},downstream:{ground:'GND_ISO',power:['VBUS_ISO_5V','VDD_ISO_3V3']},directCopperCrossings:[]},
+  outline:{family:'isolation-waist-usb-isolator',closed:true,maximumAreaMm2:1950,points:[[0,0],[22,0],[22,4],[30,4],[30,0],[52,0],[52,34],[30,34],[30,30],[22,30],[22,34],[0,34]],purposefulFeatures:{opposedIsolationNotches:2,barrierCenterX:26,allLayerCopperKeepoutWidthMm:5,minimumCreepageMm:5.3,minimumClearanceMm:5.3,mountingHoleCount:4}},
+  bom:[
+    part('U1','USB_HIGH_SPEED_ISOLATOR','ADUM3165BRSZ','Package_SO:SSOP-20_5.3x7.2mm_P0.65mm',{1:'VBUS_UP',2:'GND_UP',3:'VDD_UP_3V3',4:'GND_UP',5:'XTAL_IN',6:'XTAL_OUT',7:'GND_UP',8:'USB_UP_DP',9:'USB_UP_DN',10:'GND_UP',11:'GND_ISO',12:'USB_DN_DP',13:'USB_DN_DN',14:'PGOOD',15:'GND_ISO',16:'GND_ISO',17:'GND_ISO',18:'VDD_ISO_3V3',19:'GND_ISO',20:'VBUS_ISO_5V'},'PRIMARY_SOURCE_PIN_MAP_VERIFIED_LIVE_ZERO_STOCK'),
+    part('U2','ISOLATED_5V_POWER',null,null,{},'BLOCKED_NO_EXACT_5V_569MA_BUS_POWERED_SOLUTION'),
+    part('U_DFP','DOWNSTREAM_USB_C_DFP_POLICY_AND_POWER_SWITCH','TPS25810RVCR','Package_DFN_QFN:Texas_RVC0020A_WQFN-20-1EP_3x4mm_P0.5mm_EP1.6x2.6mm',{1:'DFP_FAULT_N',2:'VBUS_ISO_5V',3:'VBUS_ISO_5V',4:'VBUS_ISO_5V',5:'VDD_ISO_3V3',6:'DFP_ENABLE',7:'GND_ISO',8:'GND_ISO',9:'GND_ISO',10:'DFP_REF',11:'USB_DN_CC1',12:'GND_ISO',13:'USB_DN_CC2',14:'USB_DN_VBUS',15:'USB_DN_VBUS',21:'GND_ISO'},approvedAssetFor('TPS25810RVCR')?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'),
+    part('Y1','24_MHZ_ISOLATOR_CLOCK','Q22FA2380119417','Crystal:Crystal_SMD_SeikoEpson_FA238-4Pin_3.2x2.5mm',{1:'XTAL_IN',2:'GND_UP',3:'XTAL_OUT',4:'GND_UP'},approvedAssetFor('Q22FA2380119417')?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'),
+    part('J_UP','UPSTREAM_USB_C_UFP','USB4105-GF-A','Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal',{},'APPROVED_ASSET_LIVE_STOCK'),
+    part('J_DN','DOWNSTREAM_USB_C_DFP','USB4105-GF-A','Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal',{},'APPROVED_ASSET_LIVE_STOCK'),
+    part('D_UP','UPSTREAM_USB_ESD','USBLC6-2SC6','Package_TO_SOT_SMD:SOT-23-6',{1:'USB_UP_DP_CONN',2:'GND_UP',3:'USB_UP_DN_CONN',4:'USB_UP_DN',5:'VBUS_UP',6:'USB_UP_DP'},'APPROVED_ASSET_LIVE_STOCK'),
+    part('D_DN','DOWNSTREAM_USB_ESD','USBLC6-2SC6','Package_TO_SOT_SMD:SOT-23-6',{1:'USB_DN_DP_CONN',2:'GND_ISO',3:'USB_DN_DN_CONN',4:'USB_DN_DN',5:'VBUS_ISO_5V',6:'USB_DN_DP'},'APPROVED_ASSET_LIVE_STOCK'),
+    part('C_VBUS1','UPSTREAM_VBUS_ISOLATOR_DECOUPLING','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric',{1:'VBUS_UP',2:'GND_UP'},approvedAssetFor('CL10B104KB8NNNC')?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'),
+    part('C_VDD1','UPSTREAM_VDD_ISOLATOR_DECOUPLING','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric',{1:'VDD_UP_3V3',2:'GND_UP'},approvedAssetFor('CL10B104KB8NNNC')?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'),
+    part('C_VBUS2','DOWNSTREAM_VBUS_ISOLATOR_DECOUPLING','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric',{1:'VBUS_ISO_5V',2:'GND_ISO'},approvedAssetFor('CL10B104KB8NNNC')?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'),
+    part('C_VDD2','DOWNSTREAM_VDD_ISOLATOR_DECOUPLING','CL10B104KB8NNNC','Capacitor_SMD:C_0603_1608Metric',{1:'VDD_ISO_3V3',2:'GND_ISO'},approvedAssetFor('CL10B104KB8NNNC')?'APPROVED_EXACT_ASSET':'BLOCKED_MISSING_APPROVED_EXACT_ASSET'),
+  ],
+  mandatoryUnresolved:[
+    'Close the 24 MHz crystal load network only after the routed PCB stray-capacitance budget is measured; the exact 18 pF-load Epson crystal alone does not determine two safe capacitor values.',
+    'Select and primary-source verify an exact isolated 5 V supply capable of at least 569 mA continuous output, including its transformer/module, rectifier, filtering, isolation rating, thermal derating, pin map, and land pattern.',
+    'Prove that the upstream Type-C default-current contract and converter efficiency can supply that isolated budget, or add a separately rated upstream power input; do not claim a bus-powered 500 mA port from nominal 5 V.',
+    'At the declared USB 2.0 default 5 V / 500 mA input, 2500 mW is available but the corrected isolated output requires 2845 mW; even an impossible 100% efficient converter is short by 345 mW. Freeze a source-backed Type-C 1.5 A/3 A attach contract or separate input before selecting power hardware.',
+    'Add exact converter input/output filtering only after the isolated-power architecture is selected.',
+  ],
+  evidenceRequired:['exactAssetsApproved','dataIsolationRatingVerified','isolatedPowerRatingVerified','separateGroundDomainsVerified','allLayerKeepoutVerified','creepageClearanceVerified','upstreamEsdDischargeVerified','downstreamEsdDischargeVerified','bothSideDecouplingVerified','typeCAttachAndPowerPolicyVerified','usbSignalIntegrityVerified','powerBudgetThermalVerified','mechanicalEnvelopeVerified','productionHipotAndFunctionalTestVerified'],
+})
+
+function part(ref,role,mpn,footprint,pinMap,status){return{ref,role,mpn,footprint,pinMap,status}}
+
+export function validateUsbIsolatorProductionProposal(proposal={}){
+  const errors=[],bom=Array.isArray(proposal.bom)?proposal.bom:[],roles=bom.map(x=>String(x.role||'').toLowerCase()),has=p=>roles.some(x=>p.test(x))
+  for(const [p,code] of [[/usb.*isolator/,'usb-isolator-device-missing'],[/isolated.*power/,'usb-isolator-isolated-power-missing'],[/upstream.*connector|upstream.*ufp/,'usb-isolator-upstream-connector-missing'],[/downstream.*connector|downstream.*dfp/,'usb-isolator-downstream-connector-missing'],[/upstream.*esd/,'usb-isolator-upstream-esd-missing'],[/downstream.*esd/,'usb-isolator-downstream-esd-missing'],[/upstream.*decoupling/,'usb-isolator-upstream-decoupling-missing'],[/downstream.*decoupling/,'usb-isolator-downstream-decoupling-missing']])if(!has(p))errors.push(code)
+  const refs=new Set(bom.map(x=>x.ref));if(refs.size!==bom.length)errors.push('usb-isolator-duplicate-reference')
+  const blocked=bom.filter(x=>!['APPROVED_EXACT_ASSET','APPROVED_ASSET_LIVE_STOCK'].includes(x.status));if(blocked.length)errors.push('usb-isolator-exact-assets-unapproved')
+  if(proposal.requirements?.separateGroundDomains!==true||proposal.domains?.upstream?.ground===proposal.domains?.downstream?.ground||(proposal.domains?.directCopperCrossings||[]).length)errors.push('usb-isolator-ground-domain-separation-invalid')
+  const requiredMw=(proposal.requirements?.minimumIsolatedOutputMa||0)*5,inputMw=(proposal.requirements?.upstreamDefaultCurrentMa||0)*5
+  if(!proposal.requirements?.upstreamTypeCCurrentContract&&inputMw<requiredMw)errors.push('usb-isolator-default-input-power-below-corrected-output-budget')
+  if(!proposal.requirements?.upstreamTypeCCurrentContract)errors.push('usb-isolator-upstream-type-c-current-contract-unverified')
+  const feature=proposal.outline?.purposefulFeatures||{},area=polygonArea(proposal.outline?.points)
+  if(proposal.outline?.closed!==true||!Number.isFinite(area)||area>(proposal.maximumAreaMm2||0)||feature.opposedIsolationNotches!==2||feature.allLayerCopperKeepoutWidthMm<5||feature.minimumCreepageMm<proposal.requirements?.isolatorPackageCreepageMm||feature.minimumClearanceMm<proposal.requirements?.isolatorPackageClearanceMm)errors.push('usb-isolator-purposeful-outline-invalid')
+  for(const key of proposal.evidenceRequired||[])if(proposal.semanticEvidence?.[key]!==true)errors.push(`usb-isolator-evidence-${key.replace(/[A-Z]/g,m=>`-${m.toLowerCase()}`)}-missing`)
+  return{schema:'boardforge.phase2c.usb-isolator-remediation-gate.v1',ok:errors.length===0,errors,areaMm2:area,maximumAreaMm2:proposal.maximumAreaMm2,blockedRefs:blocked.map(x=>x.ref)}
+}
+function polygonArea(points=[]){if(points.length<3)return NaN;let s=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2}

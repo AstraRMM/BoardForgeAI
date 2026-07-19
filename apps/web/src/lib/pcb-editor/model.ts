@@ -1,42 +1,34 @@
-export type Id = string
-export type Point = { x: number; y: number }
-export type Layer = 'F.Cu' | 'B.Cu' | 'Edge.Cuts' | 'F.SilkS' | 'Drill'
-export type Pad = Point & { id: Id; width: number; height: number; shape: 'circle' | 'rect'; net?: string }
-export type Footprint = Point & { id: Id; reference: string; value: string; rotation: number; pads: Pad[]; layer: 'F.Cu' | 'B.Cu' }
-export type Track = { id: Id; start: Point; end: Point; width: number; layer: 'F.Cu' | 'B.Cu'; net?: string }
-export type Via = Point & { id: Id; diameter: number; drill: number; net?: string }
-export type Hole = Point & { id: Id; diameter: number; plated: boolean }
-export type Issue = Point & { id: Id; severity: 'error' | 'warning'; message: string; objectId?: Id }
-export type BoardDocument = {
-  format: 'boardforge.kicad-intermediate'; version: 1; units: 'mm'; title: string
-  outline: Point[]; footprints: Footprint[]; tracks: Track[]; vias: Via[]; holes: Hole[]; issues: Issue[]
-  preservedKiCad?: unknown[]
-}
+/** Versioned wire DTOs emitted by boardforge-pcb. Never construct board geometry here. */
+export type PcbId = string
+export type PcbPoint = Readonly<{x:number;y:number}>
+export type PcbLayer = Readonly<{id:string;name:string;kind:'copper'|'silkscreen'|'mask'|'paste'|'edge'|'drawing'|'other';side?:'front'|'back'|'inner';color:string}>
+export type PcbPad = Readonly<{id:PcbId;at:PcbPoint;size:PcbPoint;shape:'circle'|'rect'|'oval'|'roundrect'|'custom';layers:string[];net?:string;number?:string}>
+export type PcbFootprint = Readonly<{id:PcbId;at:PcbPoint;rotation:number;layer:string;reference:string;value:string;pads:PcbPad[];courtyard?:PcbPoint[];modelStatus?:'available'|'missing'|'unknown'}>
+export type PcbTrack = Readonly<{id:PcbId;start:PcbPoint;end:PcbPoint;width:number;layer:string;net?:string}>
+export type PcbVia = Readonly<{id:PcbId;at:PcbPoint;diameter:number;drill:number;layers:[string,string];net?:string}>
+export type PcbGraphic = Readonly<{id:PcbId;kind:'line'|'arc'|'polygon'|'text';layer:string;points:PcbPoint[];width?:number;text?:string}>
+export type PcbViolation = Readonly<{id:PcbId;at:PcbPoint;severity:'error'|'warning';rule:string;message:string;objectIds:PcbId[]}>
+export type RustPcbViewV1 = Readonly<{
+ schema:'boardforge.pcb-view/v1';documentId:string;revision:number;sourceSha256:string;units:'mm';title:string
+ bounds:Readonly<{min:PcbPoint;max:PcbPoint}>;layers:PcbLayer[];footprints:PcbFootprint[];tracks:PcbTrack[];vias:PcbVia[];graphics:PcbGraphic[]
+ ratsnest:ReadonlyArray<Readonly<{id:PcbId;start:PcbPoint;end:PcbPoint;net:string}>>;unconnectedCount:number;violations:PcbViolation[];unsupportedCount:number
+}>
 
-export const sampleBoard: BoardDocument = {
-  format: 'boardforge.kicad-intermediate', version: 1, units: 'mm', title: 'USB Sensor Node',
-  outline: [{x:0,y:0},{x:80,y:0},{x:80,y:50},{x:0,y:50}],
-  holes: [{id:'h1',x:5,y:5,diameter:3.2,plated:false},{id:'h2',x:75,y:45,diameter:3.2,plated:false}],
-  footprints: [
-    {id:'fp1',reference:'J1',value:'USB-C',x:8,y:25,rotation:90,layer:'F.Cu',pads:[{id:'p1',x:-2,y:0,width:2,height:1,shape:'rect',net:'VBUS'},{id:'p2',x:2,y:0,width:2,height:1,shape:'rect',net:'GND'}]},
-    {id:'fp2',reference:'U1',value:'MCU',x:40,y:25,rotation:0,layer:'F.Cu',pads:[{id:'p3',x:-3,y:-3,width:1.5,height:1.5,shape:'rect',net:'VBUS'},{id:'p4',x:3,y:3,width:1.5,height:1.5,shape:'rect',net:'GND'}]},
-  ],
-  tracks:[{id:'t1',start:{x:6,y:25},end:{x:37,y:22},width:.6,layer:'F.Cu',net:'VBUS'},{id:'t2',start:{x:10,y:25},end:{x:43,y:28},width:.5,layer:'B.Cu',net:'GND'}],
-  vias:[{id:'v1',x:25,y:27,diameter:1.6,drill:.8,net:'GND'}],
-  issues:[{id:'i1',x:37,y:22,severity:'warning',message:'Copper clearance is close to the configured limit.',objectId:'t1'}],
-}
+export type PcbTransactionOperationV1 =
+ | Readonly<{kind:'transform';ids:PcbId[];translation:PcbPoint;rotationDegrees?:number;anchor?:PcbPoint;snapMm?:number}>
+ | Readonly<{kind:'delete';ids:PcbId[]}>
+ | Readonly<{kind:'duplicate';ids:PcbId[];translation:PcbPoint}>
+ | Readonly<{kind:'set-property';id:PcbId;property:string;value:string|number|boolean}>
+ | Readonly<{kind:'route-track';net:string;layer:string;width:number;points:PcbPoint[];via?:Readonly<{at:PcbPoint;diameter:number;drill:number;toLayer:string}>}>
+export type RustPcbTransactionV1 = Readonly<{schema:'boardforge.pcb-transaction/v1';id:string;baseRevision:number;baseSourceSha256:string;operation:PcbTransactionOperationV1}>
+export type RustPcbTransactionResultV1 = Readonly<{schema:'boardforge.pcb-transaction-result/v1';transactionId:string;document:RustPcbViewV1;inverse:RustPcbTransactionV1;diff:unknown}>
 
-export function boardBounds(board: BoardDocument) {
-  const xs=board.outline.map(p=>p.x), ys=board.outline.map(p=>p.y)
-  return {minX:Math.min(...xs),minY:Math.min(...ys),maxX:Math.max(...xs),maxY:Math.max(...ys)}
+export function assertRustPcbView(value:unknown):RustPcbViewV1 {
+ if(!value||typeof value!=='object')throw new Error('Rust PCB view is not an object')
+ const v=value as Partial<RustPcbViewV1>
+ if(v.schema!=='boardforge.pcb-view/v1'||!Number.isInteger(v.revision)||typeof v.sourceSha256!=='string')throw new Error('Unsupported Rust PCB view schema')
+ for(const key of ['layers','footprints','tracks','vias','graphics','ratsnest','violations'] as const)if(!Array.isArray(v[key]))throw new Error(`Rust PCB view is missing ${key}`)
+ return v as RustPcbViewV1
 }
-
-export function transformSelection(board: BoardDocument, ids: Set<Id>, delta: Point, rotation = 0): BoardDocument {
-  const move=<T extends Point & {id:Id}>(o:T):T => ids.has(o.id) ? {...o,x:o.x+delta.x,y:o.y+delta.y,...('rotation' in o && typeof o.rotation === 'number' ? {rotation:(o.rotation+rotation)%360}: {})} : o
-  return {...board, footprints:board.footprints.map(move), vias:board.vias.map(move), holes:board.holes.map(move)}
-}
-
-export function deleteSelection(board: BoardDocument, ids: Set<Id>): BoardDocument {
-  const keep=(o:{id:Id})=>!ids.has(o.id)
-  return {...board,footprints:board.footprints.filter(keep),tracks:board.tracks.filter(keep),vias:board.vias.filter(keep),holes:board.holes.filter(keep)}
-}
+export function pcbObject(view:RustPcbViewV1,id:PcbId){return view.footprints.find(x=>x.id===id)||view.footprints.flatMap(x=>x.pads).find(x=>x.id===id)||view.tracks.find(x=>x.id===id)||view.vias.find(x=>x.id===id)||view.graphics.find(x=>x.id===id)}
+export function newTransaction(view:RustPcbViewV1,operation:PcbTransactionOperationV1):RustPcbTransactionV1{return{schema:'boardforge.pcb-transaction/v1',id:crypto.randomUUID(),baseRevision:view.revision,baseSourceSha256:view.sourceSha256,operation}}
