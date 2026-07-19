@@ -47,6 +47,7 @@ test('browser PCB snapshots are retained as browser-only project data without va
   }
   const project = createBrowserProject({ projectId: 'browser-pcb', projectName: 'Saved PCB', prompt: 'Browser PCB draft.', kind: 'browser_pcb', browserDraft: { schema: 'boardforge.browser-draft.v1', kind: 'pcb', updatedAt: snapshot.savedAt, summary: 'Browser PCB snapshot. KiCad validation not run.', pcb: snapshot } })
   saveBrowserProject(project)
+  recordBrowserProjectActivity(project.projectId, 'pcb_snapshot_saved', '0 footprints, 0 tracks, 0 vias')
   const saved = readBrowserProjects().projects[0]
 
   assert.equal(saved.status, 'BROWSER_PCB_DRAFT')
@@ -55,6 +56,8 @@ test('browser PCB snapshots are retained as browser-only project data without va
   assert.equal(saved.browserDraft?.kind, 'pcb')
   assert.equal(saved.browserDraft?.pcb?.sandboxSource, snapshot.sandboxSource)
   assert.equal(saved.browserDraft?.pcb?.document.sourceSha256, snapshot.document.sourceSha256)
+  assert.deepEqual(readBrowserProjectActivity(project.projectId).map((event) => event.action).sort(), ['created', 'pcb_snapshot_saved'])
+  assert.equal(readBrowserProjectActivity(project.projectId).find((event) => event.action === 'pcb_snapshot_saved')?.detail, '0 footprints, 0 tracks, 0 vias')
 }))
 
 test('saving a browser record upserts it and removal only changes browser storage', () => inBrowser((storage) => {
@@ -119,4 +122,16 @@ test('browser schematic plans persist as browser-only intent without KiCad evide
   assert.equal(saved?.schematicPath, null)
   assert.equal(saved?.validation.ercViolations, null)
   assert.equal(readBrowserProjectActivity(project.projectId).some((event) => event.action === 'schematic_plan_saved'), true)
+}))
+
+test('browser outline saves are retained as local editor activity without manufacturing claims', () => inBrowser(() => {
+  const project = createBrowserProject({ projectId: 'browser-outline', projectName: 'Hook outline', prompt: 'Browser outline.', kind: 'browser_outline' })
+  saveBrowserProject(project)
+  recordBrowserProjectActivity(project.projectId, 'outline_saved', '8 outline vertices, 4 mounting holes')
+
+  const activity = readBrowserProjectActivity(project.projectId)
+  assert.deepEqual(activity.map((event) => event.action).sort(), ['created', 'outline_saved'])
+  assert.equal(activity.find((event) => event.action === 'outline_saved')?.detail, '8 outline vertices, 4 mounting holes')
+  assert.equal(readBrowserProjects().projects[0]?.manufacturing.ready, false)
+  assert.equal(readBrowserProjects().projects[0]?.validation.drcViolations, null)
 }))

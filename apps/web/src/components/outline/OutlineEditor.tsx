@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, ClipboardCopy, Copy, Cpu, Download, Grid2X2, Hand, Layers3, MousePointer2, Pencil, Plus, Redo2, RotateCcw, Ruler, ShieldCheck, Sparkles, Trash2, Undo2, Wand2, ZoomIn, ZoomOut } from 'lucide-react'
 import { outlinePresets } from '../../lib/outline-export'
 import { callBoardForgeLocalEngine } from '../../lib/boardforge-local-artifact-client'
-import { createBrowserProject, readBrowserProjects, saveBrowserProject } from '../../lib/browser-project-registry'
+import { createBrowserProject, readBrowserProjects, recordBrowserProjectActivity, saveBrowserProject } from '../../lib/browser-project-registry'
 import type { BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
@@ -692,6 +692,7 @@ export function OutlineEditor() {
       },
     })
     saveBrowserProject(project)
+    recordBrowserProjectActivity(projectId, 'outline_saved', `${outline.outlinePointsMm.length} outline vertices, ${outline.mountingHolesMm.length} mounting holes`)
     refreshSavedOutlineDrafts()
     setSelectedSavedOutlineId(projectId)
     window.history.replaceState(null, '', `${window.location.pathname}?project=${encodeURIComponent(projectId)}`)

@@ -59,3 +59,28 @@ test('typing in routing controls does not invoke destructive canvas shortcuts', 
   await expect(page.getByText(/Rust revision 0/)).toBeVisible()
   await expect(page.getByText(/1 selected/)).toBeVisible()
 })
+
+test('a project handoff without a PCB snapshot saves into that same browser project', async ({ page }) => {
+  const projectId = 'browser-pcb-first-save'
+  await page.addInitScript((id) => {
+    window.localStorage.setItem('boardforge.browser-projects.v1', JSON.stringify([{
+      schema: 'boardforge.project-dashboard-card.v1', projectId: id, projectName: 'First PCB snapshot', status: 'BROWSER_BOARD_DRAFT',
+      boardPath: null, schematicPath: null, readiness: 'review', routingCompletionPercent: 0,
+      validation: { shorts: null, unconnected: null, forbiddenVias: null, drcViolations: null, ercViolations: null },
+      manufacturing: { ready: false, zip: null, blockedReason: 'Validation not run.' }, reports: { browserDraft: 'Browser-only request.' },
+      replayCommand: null, criticalBlockers: [], nextAction: 'Continue browser planning.', sourceManifest: null,
+      honestyBadges: ['Browser draft', 'Validation not run'], projectState: 'local_draft', publishApproved: false,
+      dashboardVisible: true, syncStatus: 'browser_saved', localOnly: true,
+    }]))
+  }, projectId)
+
+  await page.goto(`/pcb-workspace?project=${projectId}`)
+  await expect(page.getByRole('application', { name: /Rust-backed interactive PCB editor/i })).toBeVisible()
+  await expect(page.getByLabel('Browser PCB project')).toHaveValue(projectId)
+  await page.getByRole('button', { name: 'Save browser PCB draft' }).click()
+
+  await expect.poll(() => page.evaluate((id) => {
+    const projects = JSON.parse(window.localStorage.getItem('boardforge.browser-projects.v1') || '[]')
+    return projects.find((project: { projectId: string }) => project.projectId === id)?.browserDraft?.kind
+  }, projectId)).toBe('pcb')
+})

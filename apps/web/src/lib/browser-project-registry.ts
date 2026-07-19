@@ -20,7 +20,7 @@ export type BrowserProjectLibraryMetadata = Record<string, {
  */
 export type BrowserProjectActivity = {
   id: string
-  action: 'created' | 'renamed' | 'schematic_plan_saved'
+  action: 'created' | 'renamed' | 'pcb_snapshot_saved' | 'outline_saved' | 'schematic_plan_saved'
   at: string
   detail?: string
 }
@@ -123,5 +123,11 @@ function toMetadata(changes: { favorite?: boolean; archived?: boolean }) {
 function isActivity(value: unknown): value is BrowserProjectActivity {
   if (!value || typeof value !== 'object') return false
   const event = value as Partial<BrowserProjectActivity>
-  return typeof event.id === 'string' && (event.action === 'created' || event.action === 'renamed' || event.action === 'schematic_plan_saved') && typeof event.at === 'string' && (!event.detail || typeof event.detail === 'string')
+  return typeof event.id === 'string' && (
+    event.action === 'created' ||
+    event.action === 'renamed' ||
+    event.action === 'pcb_snapshot_saved' ||
+    event.action === 'outline_saved' ||
+    event.action === 'schematic_plan_saved'
+  ) && typeof event.at === 'string' && (!event.detail || typeof event.detail === 'string')
 }

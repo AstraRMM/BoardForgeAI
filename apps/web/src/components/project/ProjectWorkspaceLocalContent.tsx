@@ -40,7 +40,10 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
   const [browserActivity, setBrowserActivity] = useState<BrowserProjectActivity[]>([])
   const [helperArtifacts, setHelperArtifacts] = useState<HelperArtifacts | null>(null)
   const [artifactState, setArtifactState] = useState<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
-  const isBrowserDraft = Boolean(project?.status.startsWith('BROWSER_'))
+  // Early browser drafts used a human-readable status. `localOnly` is the
+  // durable ownership boundary, while the prefix keeps older stored records
+  // compatible.
+  const isBrowserDraft = Boolean(project?.localOnly) || Boolean(project?.status.startsWith('BROWSER_'))
   useEffect(() => { setDraftName(project?.projectName || '') }, [project?.projectName])
   useEffect(() => { setBrowserActivity(isBrowserDraft && project ? readBrowserProjectActivity(project.projectId) : []) }, [isBrowserDraft, project?.projectId])
   const state = registryState === 'empty' && !project ? 'missing' : registryState
@@ -87,9 +90,10 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
 
   const validation = project.validation
   const reports = Object.entries(project.reports || {}).filter(([label]) => label !== 'browserDraft')
-  // Tool launchers are deliberately evidence-driven. A browser project may be
-  // a brief, import record, or outline, so never send it into an editor unless
-  // that editor has an exact persisted browser record to reopen.
+  // Browser workspaces intentionally accept any browser-local project ID.
+  // Existing saved work reopens; otherwise the workspace starts a new
+  // browser-only draft attached to this project record. Helper projects never
+  // receive these launch controls.
   const savedPcbDraft = isBrowserDraft && project.browserDraft?.kind === 'pcb' && Boolean(project.browserDraft.pcb)
   const savedSchematicPlan = isBrowserDraft && Boolean(project.browserDraft?.schematicPlan)
   const savedOutlineDraft = isBrowserDraft && project.browserDraft?.kind === 'outline' && Boolean(project.browserDraft.outline)
@@ -125,11 +129,11 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
         <div className="bf-panel-title"><div><p>Browser project controls</p><h2>Organize this local draft</h2></div><FileText size={20} /></div>
         <p className="bf-project-workspace-note">These controls change only the project record saved in this browser. They never rename, edit, or delete KiCad files.</p>
         <label className="bf-browser-project-name"><span>Project name</span><input value={draftName} onChange={(event) => setDraftName(event.target.value)} maxLength={120} /></label>
-        {(savedPcbDraft || savedSchematicPlan || savedOutlineDraft) && <div className="bf-browser-project-actions" aria-label="Reopen saved browser work">
-          {savedPcbDraft && <Link href={`/pcb-workspace?project=${encodeURIComponent(project.projectId)}`}>Open saved browser PCB</Link>}
-          {savedSchematicPlan && <Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>Open saved schematic plan</Link>}
+        <div className="bf-browser-project-actions" aria-label="Start or reopen browser engineering work">
+          <Link href={`/pcb-workspace?project=${encodeURIComponent(project.projectId)}`}>{savedPcbDraft ? 'Open saved browser PCB' : 'Start browser PCB draft'}</Link>
+          <Link href={`/schematic-workspace?project=${encodeURIComponent(project.projectId)}`}>{savedSchematicPlan ? 'Open saved schematic plan' : 'Start browser schematic plan'}</Link>
           {savedOutlineDraft && <Link href={`/custom-board-generator?project=${encodeURIComponent(project.projectId)}`}>Open saved board outline</Link>}
-        </div>}
+        </div>
         <div className="bf-browser-project-actions"><button type="button" onClick={saveBrowserName}>Save browser name</button><button type="button" className="is-danger" onClick={deleteBrowserDraft}>Remove browser draft</button></div>
         {browserNotice && <p className="bf-project-workspace-note" aria-live="polite">{browserNotice}</p>}
       </section>}
@@ -152,7 +156,7 @@ export function ProjectWorkspaceLocalContent({ projectId }: { projectId: string 
       {isBrowserDraft ? <section className="bf-workspace-panel bf-project-workspace-reports">
         <div className="bf-panel-title"><div><p>Browser activity</p><h2>Local project record history</h2></div><History size={20} /></div>
         <p className="bf-project-workspace-note">This history records only changes saved in this browser. It is not KiCad, validation, manufacturing, or helper activity.</p>
-        {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{event.action === 'created' ? 'Saved in this browser' : event.action === 'renamed' ? 'Browser project renamed' : 'Browser schematic plan saved'}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
+        {browserActivity.length ? <dl className="bf-project-reports-list">{browserActivity.map((event) => <div key={event.id}><dt>{activityLabel(event.action)}</dt><dd>{new Date(event.at).toLocaleString()}{event.detail ? ` — ${event.detail}` : ''}</dd></div>)}</dl> : <p className="bf-project-workspace-note">No browser-record activity has been retained for this project.</p>}
       </section> : <section className="bf-workspace-panel bf-project-workspace-reports"><div className="bf-panel-title"><div><p>Helper activity</p><h2>No project activity feed recorded</h2></div><History size={20} /></div><p className="bf-project-workspace-note">The paired helper currently exposes project evidence and artifact availability, not an auditable per-project activity timeline. This workspace does not infer one from file timestamps.</p></section>}
     </section>
   </>
@@ -180,3 +184,10 @@ function ProjectArtifactAvailability({ state, artifacts }: { state: 'idle' | 'lo
 
 function Datum({ label, value }: { label: string; value: string | number | null }) { return <div><dt>{label}</dt><dd>{value ?? 'Not run'}</dd></div> }
 function humanize(value: string) { return value.replace(/[A-Z]:\\[^ ]+/g, 'local project workspace').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b\w/g, (letter) => letter.toUpperCase()) }
+function activityLabel(action: BrowserProjectActivity['action']) {
+  if (action === 'created') return 'Saved in this browser'
+  if (action === 'renamed') return 'Browser project renamed'
+  if (action === 'pcb_snapshot_saved') return 'Browser PCB snapshot saved'
+  if (action === 'outline_saved') return 'Browser board outline saved'
+  return 'Browser schematic plan saved'
+}
