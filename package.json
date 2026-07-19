@@ -4,8 +4,8 @@
     "version": "0.1.0-alpha.1",
     "type": "module",
     "scripts": {
-        "dev": "next dev",
-        "dev:web": "next dev",
+        "dev": "next dev --webpack",
+        "dev:web": "next dev --webpack",
         "build": "next build --webpack",
         "build:web": "next build --webpack",
         "lint": "eslint .",

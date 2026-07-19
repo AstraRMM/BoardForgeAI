@@ -2,14 +2,15 @@
 import { spawnSync } from 'node:child_process'
 
 loadLocalEnv('.env.local')
-const command = 'npx auth@latest migrate --config ./apps/web/src/lib/auth.ts'
+const configPath = './apps/web/src/lib/auth-migrate.ts'
+const command = `npx auth@latest migrate --config ${configPath} --yes`
 if (!process.env.DATABASE_URL || !process.env.BETTER_AUTH_SECRET || !process.env.BETTER_AUTH_URL) {
   console.log(JSON.stringify({ status: 'AUTH_MIGRATION_BLOCKED', reason: 'DATABASE_URL, BETTER_AUTH_SECRET, and BETTER_AUTH_URL must be present.', command }, null, 2))
   process.exitCode = 2
 } else if (!process.argv.includes('--apply')) {
   console.log(JSON.stringify({ status: 'AUTH_MIGRATION_READY', command, apply: 'npm run boardforge:auth-migrate -- --apply' }, null, 2))
 } else {
-  const result = spawnSync('npx', ['auth@latest', 'migrate', '--config', './apps/web/src/lib/auth.ts'], { stdio: 'inherit', shell: process.platform === 'win32' })
+  const result = spawnSync('npx', ['auth@latest', 'migrate', '--config', configPath, '--yes'], { stdio: 'inherit', shell: process.platform === 'win32' })
   process.exitCode = result.status ?? 1
 }
 

@@ -7,7 +7,8 @@ loadLocalEnv('.env.local')
 const required = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL', 'BETTER_AUTH_API_KEY', 'BOARDFORGE_AUTH_ORIGIN', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_BOARDFORGE_APP_URL']
 const configured = Object.fromEntries(required.map((key) => [key, Boolean(process.env[key])]))
 const report = { status: 'BOARD_FORGE_AUTH_DOCTOR_COMPLETED', configured, dash: { installed: await exists('node_modules/@better-auth/infra/package.json'), configured: false }, database: { reachable: false, authTables: false, boardforgeTables: false }, endpoints: { auth: 'not_checked', localEngine: 'not_checked', pairing: 'not_checked' }, nextAction: null }
-report.dash.configured = (await readFile('apps/web/src/lib/auth.ts', 'utf8')).includes('dash({ apiKey: process.env.BETTER_AUTH_API_KEY! })')
+const authSource = await readFile('apps/web/src/lib/auth.ts', 'utf8')
+report.dash.configured = authSource.includes("@better-auth/infra") && authSource.includes('dash(')
 
 if (configured.DATABASE_URL) {
   try {
