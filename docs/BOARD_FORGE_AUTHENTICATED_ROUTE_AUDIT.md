@@ -1,7 +1,7 @@
 # BoardForge Authenticated Application Audit
 
-Audit date: 2026-07-19  
-Baseline branch: `boardforge-platform-productization`  
+Audit date: 2026-07-19
+Baseline branch: `boardforge-platform-productization`
 Scope: route purpose, current UI architecture, auth boundary, functional evidence, and V3 migration priority.
 
 ## Executive findings
