@@ -22,8 +22,8 @@ import { writeVariantComparisonReport } from '../../variants/variant-report.mjs'
 import { runMakeManufacturableWorkflow } from '../../workflows/make-manufacturable-workflow.mjs'
 import { writeProjectTimeline } from '../../timeline/project-timeline.mjs'
 import { runImportWizard } from '../../import/import-wizard.mjs'
-import { writeEvidenceIndex } from '../../evidence/evidence-index.mjs'
-import { writeAlphaLaunchReport } from '../../launch/alpha-launch-report.mjs'
+import { readEvidenceIndex } from '../../evidence/evidence-index.mjs'
+import { readAlphaLaunchReport } from '../../launch/alpha-launch-report.mjs'
 import { publicProviderConfig } from '../../config/provider-config.mjs'
 import { createDigiKeyAuthClient } from '../../sourcing/digikey/digikey-auth-client.mjs'
 import { createPartLookupService } from '../../sourcing/part-lookup-service.mjs'
@@ -48,7 +48,7 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
       if (jobResponse) return jobResponse
 
       if (method === 'GET' && pathname === '/health') {
-        return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_HEALTHY', data: { service: 'BoardForge Local Engine Service', rootDir, localhostOnly: true } })
+        return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_HEALTHY', data: { service: 'BoardForge Local Engine Service', available: true, localhostOnly: true } })
       }
       if (method === 'POST' && pathname === '/v2/kicad/candidates') return okResponse({ status: 'KICAD_CANDIDATE_READY', data: await kicadCandidates.apply(payload) })
       if (method === 'POST' && pathname === '/kicad/v2/candidate/write') return okResponse({ status: 'KICAD_CANDIDATE_READY', data: await kicadCandidates.apply({ ...payload, id: payload.id || payload.candidateId, sourceHash: payload.sourceHash || payload.baseDocumentHash }) })
@@ -71,7 +71,8 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
         if (method === 'POST' && action === 'discard') return okResponse({ status: 'KICAD_CANDIDATE_DISCARDED', data: await kicadCandidates.discard(id) })
       }
       if (method === 'GET' && pathname === '/status') {
-        return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_STATUS', data: { ...(await api.status()), port: 38991, logDir, version: 'local-alpha', workspace: rootDir, entitlement: canRunPremiumAction('create_project') } })
+        const status = await api.status()
+        return okResponse({ status: 'BOARD_FORGE_LOCAL_SERVER_STATUS', data: { status: status.status, mode: status.mode, noFakeCloudExecution: status.noFakeCloudExecution, port: 38991, version: 'local-alpha', localhostOnly: true, entitlement: canRunPremiumAction('create_project') } })
       }
       if (method === 'GET' && pathname === '/projects/dashboard') {
         const result = await api.projectDashboard()
@@ -94,11 +95,10 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
             reason: 'BoardForge does not calculate a release score unless a dedicated readiness artifact has been generated locally.',
           },
           warnings: result.warnings,
-          artifactPaths: result.artifactPaths,
         })
       }
       if (method === 'GET' && pathname === '/fixtures') {
-        return okResponse({ status: 'BOARD_FORGE_FIXTURE_STATUS', data: { fixtureRoot: rootDir, fixturesCommand: 'npm run fixtures:run', reportCommand: 'npm run report:90:quick -- --fresh' } })
+        return okResponse({ status: 'BOARD_FORGE_FIXTURE_STATUS', data: { fixturesAvailable: true, fixturesCommand: 'npm run fixtures:run', reportCommand: 'npm run report:90:quick -- --fresh' } })
       }
       if (method === 'GET' && pathname === '/sourcing/status') {
         return okResponse({ status: 'BOARD_FORGE_SOURCING_STATUS', data: { ...publicProviderConfig(), sourcingStatus: 'NOT_CHECKED', stockStatus: 'UNKNOWN', assemblyAvailability: 'UNKNOWN', noFakeStock: true } })
@@ -149,12 +149,12 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
         if (method === 'GET' && action === 'reports') return okResponse({ status: 'BOARD_FORGE_OUTLINE_REPORTS', data: await readOutlineReports(projectDir) })
       }
       if (method === 'GET' && pathname === '/evidence') {
-        const result = await writeEvidenceIndex({ rootDir })
-        return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        const result = await readEvidenceIndex({ rootDir })
+        return okResponse({ status: result.status, data: result.report })
       }
       if (method === 'GET' && pathname === '/alpha/launch-gate') {
-        const result = await writeAlphaLaunchReport({ rootDir })
-        return okResponse({ status: result.status, data: result.report, artifactPaths: result.artifactPaths })
+        const result = await readAlphaLaunchReport({ rootDir })
+        return okResponse({ status: result.status, data: result.report })
       }
       if (method === 'POST' && pathname === '/import/wizard') {
         const result = await runImportWizard({ sourceDir: payload.sourceDir, sandboxDir: payload.sandboxDir })

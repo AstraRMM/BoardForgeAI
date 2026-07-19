@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, mkdir, readdir, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { writeReadinessGapAudit } from '../lib/readiness/readiness-gap-auditor.mjs'
@@ -114,6 +114,67 @@ test('project copilot route returns artifact-backed actions without workspace pa
   assert.ok(response.data.actions.length > 0)
   assert.deepEqual(response.artifactPaths, [])
   assert.doesNotMatch(JSON.stringify(response.data), new RegExp(rootDir.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')))
+})
+
+test('evidence discovery is read-only and never exposes local artifact paths', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'bf-evidence-discovery-'))
+  const route = createLocalServerRouter({ rootDir })
+
+  const absent = await route({ method: 'GET', pathname: '/evidence' })
+  assert.equal(absent.ok, true)
+  assert.equal(absent.status, 'BOARD_FORGE_EVIDENCE_INDEX_NOT_RECORDED')
+  assert.deepEqual(absent.data.cards, [])
+  assert.deepEqual(absent.artifactPaths, [])
+  assert.deepEqual(await readdir(rootDir), [])
+
+  const evidenceFile = path.join(rootDir, 'BoardForge_Evidence_Dashboard.json')
+  await writeFile(evidenceFile, JSON.stringify({
+    status: 'BOARD_FORGE_EVIDENCE_INDEX_WRITTEN',
+    generatedAt: '2026-07-19T00:00:00.000Z',
+    cards: [{
+      name: 'recorded local validation',
+      fixture: 'BF-001',
+      pass: true,
+      date: '2026-07-19',
+      artifactPath: path.join(rootDir, 'protected', 'report.json'),
+      whatItProves: 'A local result was recorded.',
+      limitation: 'Not a certification.',
+    }],
+  }))
+  const before = await stat(evidenceFile)
+  const recorded = await route({ method: 'GET', pathname: '/evidence' })
+  const after = await stat(evidenceFile)
+
+  assert.equal(recorded.ok, true)
+  assert.equal(recorded.status, 'BOARD_FORGE_EVIDENCE_INDEX_RECORDED')
+  assert.equal(recorded.data.cards[0].recordedLocally, true)
+  assert.equal(Object.hasOwn(recorded.data.cards[0], 'artifactPath'), false)
+  assert.doesNotMatch(JSON.stringify(recorded), /protected|report\.json/)
+  assert.equal(after.mtimeMs, before.mtimeMs)
+  assert.deepEqual(recorded.artifactPaths, [])
+})
+
+test('launch-gate discovery is read-only and only reports previously recorded evidence', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'bf-launch-discovery-'))
+  const route = createLocalServerRouter({ rootDir })
+  const response = await route({ method: 'GET', pathname: '/alpha/launch-gate' })
+
+  assert.equal(response.ok, true)
+  assert.equal(response.status, 'BOARD_FORGE_PUBLIC_ALPHA_LAUNCH_REPORT_NOT_RECORDED')
+  assert.deepEqual(response.artifactPaths, [])
+  assert.deepEqual(await readdir(rootDir), [])
+})
+
+test('helper discovery endpoints do not disclose workspace paths', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'bf-helper-discovery-'))
+  const route = createLocalServerRouter({ rootDir })
+
+  for (const pathname of ['/health', '/status', '/fixtures', '/readiness']) {
+    const response = await route({ method: 'GET', pathname })
+    assert.equal(response.ok, true, pathname)
+    assert.deepEqual(response.artifactPaths, [], pathname)
+    assert.doesNotMatch(JSON.stringify(response), new RegExp(rootDir.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')), pathname)
+  }
 })
 
 test('local engine supports new 91-to-99 job types', async () => {

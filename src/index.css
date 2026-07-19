@@ -3328,28 +3328,36 @@ text.bf-silk.small {
   min-height: 72px;
 }
 
+.bf-action,
 .bf-new-board-primary,
 .bf-new-board-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
   padding: 0 15px;
   border-radius: 8px;
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+  text-decoration: none;
 }
 
+.bf-action-primary,
 .bf-new-board-primary {
   border: 1px solid rgba(94, 224, 255, .48);
   color: #ecfbff;
   background: linear-gradient(135deg, rgba(10, 159, 193, .78), rgba(38, 121, 255, .82));
 }
 
+.bf-action-secondary,
 .bf-new-board-secondary {
   border: 1px solid rgba(100, 214, 255, .24);
   color: #d8edf2;
   background: rgba(5, 17, 25, .72);
 }
 
+.bf-action:disabled,
 .bf-new-board-primary:disabled,
 .bf-new-board-secondary:disabled {
   cursor: not-allowed;

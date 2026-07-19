@@ -1,5 +1,7 @@
 import path from 'node:path'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+
+const EVIDENCE_INDEX_FILENAME = 'BoardForge_Evidence_Dashboard.json'
 
 export async function writeEvidenceIndex({ rootDir }) {
   await mkdir(rootDir, { recursive: true })
@@ -29,11 +31,52 @@ export async function writeEvidenceIndex({ rootDir }) {
     card('secret redaction', 'secret-redaction', true, 'Secrets are redacted from errors, reports, and public provider status.'),
   ]
   const report = { status: 'BOARD_FORGE_EVIDENCE_INDEX_WRITTEN', generatedAt: new Date().toISOString(), cards }
-  const jsonPath = path.join(rootDir, 'BoardForge_Evidence_Dashboard.json')
+  const jsonPath = path.join(rootDir, EVIDENCE_INDEX_FILENAME)
   const mdPath = path.join(rootDir, 'BoardForge_Evidence_Dashboard.md')
   await writeFile(jsonPath, JSON.stringify(report, null, 2))
   await writeFile(mdPath, ['# BoardForge Evidence Dashboard', '', ...cards.map((item) => `- ${item.pass ? 'PASS' : 'LIMITATION'}: ${item.name} - ${item.whatItProves}`), ''].join('\n'))
   return { status: report.status, report, artifactPaths: [jsonPath, mdPath] }
+}
+
+/**
+ * Reads a previously recorded evidence index for browser discovery.
+ *
+ * Discovery must never create or refresh evidence: a GET request is not an
+ * engineering run. The returned projection intentionally excludes filesystem
+ * locations, including legacy `artifactPath` fields, because the browser only
+ * needs evidence availability and provenance—not protected workspace paths.
+ */
+export async function readEvidenceIndex({ rootDir }) {
+  const jsonPath = path.join(rootDir, EVIDENCE_INDEX_FILENAME)
+  let stored
+  try {
+    stored = JSON.parse(await readFile(jsonPath, 'utf8'))
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return {
+        status: 'BOARD_FORGE_EVIDENCE_INDEX_NOT_RECORDED',
+        report: {
+          status: 'BOARD_FORGE_EVIDENCE_INDEX_NOT_RECORDED',
+          generatedAt: null,
+          cards: [],
+          localOnly: true,
+          reason: 'No local evidence index has been recorded yet.',
+        },
+      }
+    }
+    throw error
+  }
+
+  const cards = Array.isArray(stored?.cards) ? stored.cards.map(publicEvidenceCard) : []
+  return {
+    status: 'BOARD_FORGE_EVIDENCE_INDEX_RECORDED',
+    report: {
+      status: 'BOARD_FORGE_EVIDENCE_INDEX_RECORDED',
+      generatedAt: typeof stored?.generatedAt === 'string' ? stored.generatedAt : null,
+      cards,
+      localOnly: true,
+    },
+  }
 }
 
 function card(name, fixture, pass, whatItProves) {
@@ -42,8 +85,19 @@ function card(name, fixture, pass, whatItProves) {
     fixture,
     pass,
     date: new Date().toISOString().slice(0, 10),
-    artifactPath: `C:\\Users\\luifi\\Desktop\\BoardForge_New_Board_Fixtures\\${fixture}`,
     whatItProves,
     limitation: pass ? 'Evidence-backed local alpha proof, not certification.' : 'External blocker, not faked.',
+  }
+}
+
+function publicEvidenceCard(card = {}) {
+  return {
+    name: typeof card.name === 'string' ? card.name : 'Unnamed evidence record',
+    fixture: typeof card.fixture === 'string' ? card.fixture : null,
+    pass: Boolean(card.pass),
+    date: typeof card.date === 'string' ? card.date : null,
+    whatItProves: typeof card.whatItProves === 'string' ? card.whatItProves : null,
+    limitation: typeof card.limitation === 'string' ? card.limitation : null,
+    recordedLocally: true,
   }
 }

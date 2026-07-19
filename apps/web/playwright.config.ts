@@ -9,15 +9,18 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['html', { outputFolder: '../../tmp/playwright-report', open: 'never' }]],
   use: {
-    baseURL: process.env.BOARDFORGE_E2E_BASE_URL || 'http://127.0.0.1:3210',
+    baseURL: process.env.BOARDFORGE_E2E_BASE_URL || 'http://127.0.0.1:3212',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npm run start -- --hostname 127.0.0.1 --port 3210',
-    url: 'http://127.0.0.1:3210',
+    command: 'npm run dev -- --hostname 127.0.0.1 --port 3212',
+    url: 'http://127.0.0.1:3212',
     reuseExistingServer: true,
     timeout: 120_000,
+    env: {
+      BOARDFORGE_E2E_AUTH_BYPASS: '1',
+    },
   },
   projects: [
     {

@@ -21,6 +21,10 @@ const protectedPrefixes = [
 ]
 
 export function proxy(request: NextRequest) {
+  // Browser E2E needs to exercise the protected workspace itself, but must
+  // never create an authentication bypass in a production deployment. The
+  // Playwright dev server is the only caller that sets this opt-in flag.
+  if (process.env.NODE_ENV === 'development' && process.env.BOARDFORGE_E2E_AUTH_BYPASS === '1') return NextResponse.next()
   // Before production auth is configured, setup/status pages must remain accessible.
   if (!process.env.DATABASE_URL || !process.env.BETTER_AUTH_SECRET || !process.env.BETTER_AUTH_URL) return NextResponse.next()
   if (!protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))) return NextResponse.next()
