@@ -10,6 +10,17 @@ let pool: Pool | undefined
 // Keeping the singleton opaque avoids widening it to the library's base options type.
 let authInstance: any
 
+function getTrustedOrigins() {
+  return [...new Set([
+    process.env.BETTER_AUTH_URL,
+    process.env.BOARDFORGE_AUTH_ORIGIN,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_BOARDFORGE_APP_URL,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ].filter((value): value is string => Boolean(value)))]
+}
+
 export function getAuthEnvironment(): AuthEnvironment {
   // Better Auth Dash is useful for account operations, but it must never make
   // the core email/password sign-in path unavailable.
@@ -36,7 +47,7 @@ export function getAuth() {
         ...(dashApiKey ? [dash({ apiKey: dashApiKey })] : []),
         nextCookies(),
       ],
-      trustedOrigins: [process.env.BETTER_AUTH_URL!],
+      trustedOrigins: getTrustedOrigins(),
     })
   }
   return authInstance!

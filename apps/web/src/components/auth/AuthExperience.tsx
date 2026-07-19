@@ -47,7 +47,7 @@ function Logo() { return <span className={styles.logo} aria-hidden="true"><b>B</
 function TraceBackground() {
   return <div className={styles.traces} aria-hidden="true"><svg viewBox="0 0 1600 1000" preserveAspectRatio="none">
     <g className={styles.traceBase}><path d="M0 156H190l48 48h188l48 48v140l88 88h225"/><path d="M0 380h248l64-64h137l62 62v212l100 100h192l68-68h330"/><path d="M120 1000V792l100-100h176l66-66h210l76-76V324l102-102h328"/><path d="M1600 160h-226l-86 86h-176l-70 70v146l-120 120H670"/><path d="M1600 654h-194l-60-60h-234l-80-80V364l-84-84H732"/><path d="M1600 872h-208l-76-76h-170l-104-104H848l-78-78H610"/></g>
-    <g className={styles.traceAccent}><path d="M0 156H190l48 48h188l48 48"/><path d="M0 380h248l64-64h137l62 62"/><path d="M1600 160h-226l-86 86h-176l-70 70"/><path className={styles.copper} d="M1600 872h-208l-76-76h-170l-104-104"/></g>
+    <g className={styles.traceAccent}><path d="M0 156H190l48 48h188l48 48"/><path d="M0 380h248l64-64h137l62 62"/><path d="M1600 160h-226l-86 86h-176l-70 70"/><path d="M120 1000V792l100-100h176l66-66"/><path d="M1600 654h-194l-60-60h-234l-80-80"/><path d="M610 280h122l84 84v100l96 96"/><path d="M0 708h164l72-72h186l64-64"/><path d="M1600 408h-178l-58 58h-154l-72 72"/><path className={styles.copper} d="M1600 872h-208l-76-76h-170l-104-104"/></g>
     <g className={styles.vias}><circle cx="238" cy="204" r="5"/><circle cx="502" cy="392" r="5"/><circle cx="612" cy="590" r="5"/><circle cx="1288" cy="246" r="5"/><circle cx="1042" cy="462" r="5"/><circle cx="1146" cy="796" r="5"/></g>
   </svg><span className={styles.pulse + ' ' + styles.pulseOne} /><span className={styles.pulse + ' ' + styles.pulseTwo} /><span className={styles.pulse + ' ' + styles.pulseThree} /></div>
 }
