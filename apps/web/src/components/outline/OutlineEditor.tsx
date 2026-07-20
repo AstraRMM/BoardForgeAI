@@ -17,7 +17,7 @@ type Point = { id?: string; x: number; y: number }
 type Hole = { ref: string; x: number; y: number; diameterMm: number; keepoutMm?: number; plating?: 'plated' | 'non-plated'; locked?: boolean }
 type Mode = 'select' | 'add-point' | 'draw' | 'pan' | 'fill'
 type Viewport = { zoom: number; panX: number; panY: number; minZoom: number; maxZoom: number }
-type GeometrySnapshot = { points: Point[]; holes: Hole[]; preset: string; closed: boolean }
+type GeometrySnapshot = { points: Point[]; holes: Hole[]; preset: string; closed: boolean; drawRaw: Point[]; drawCloseRequested: boolean }
 type SelectedObject = { type: 'point'; id: string } | { type: 'hole'; ref: string } | { type: 'edge'; startId: string; endId: string } | null
 type AutoFixProposal = {
   points: Point[]
@@ -118,6 +118,8 @@ export function OutlineEditor() {
   } : null
   const selectedAnchor = selectedObject?.type === 'point' ? points.find((point) => point.id === selectedObject.id) : selectedObject?.type === 'edge' && selectedEdge?.start && selectedEdge.end ? { x: (selectedEdge.start.x + selectedEdge.end.x) / 2, y: (selectedEdge.start.y + selectedEdge.end.y) / 2 } : selectedHole
   const drawDraft = useMemo(() => drawRaw.length ? createDrawDraft(drawRaw, { simplificationTolerance: drawTolerance, smoothingIterations: drawSmoothing, closeRequested: drawCloseRequested }) : null, [drawRaw, drawTolerance, drawSmoothing, drawCloseRequested])
+  const drawMerge = useMemo(() => drawDraft ? mergeDrawIntoOutline(points, drawDraft.points, closed) : null, [points, drawDraft, closed])
+  const drawAcceptReady = Boolean(drawDraft && (points.length ? drawMerge?.acceptReady : drawDraft.acceptReady))
 
   useEffect(() => {
     let current = true
@@ -154,7 +156,7 @@ export function OutlineEditor() {
   }, [searchParams])
 
   function snapshot(): GeometrySnapshot {
-    return { points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), preset, closed }
+    return { points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), preset, closed, drawRaw: clonePoints(drawRaw), drawCloseRequested }
   }
 
   function checkpoint() {
@@ -164,7 +166,7 @@ export function OutlineEditor() {
 
   function restoreSnapshot(value: GeometrySnapshot) {
     setPoints(clonePoints(value.points)); setHoles(value.holes.map((hole) => ({ ...hole })))
-    setPreset(value.preset); setClosed(value.closed); setSelectedObject(null); setAutoFixProposal(null)
+    setPreset(value.preset); setClosed(value.closed); setDrawRaw(clonePoints(value.drawRaw)); setDrawCloseRequested(value.drawCloseRequested); setSelectedObject(null); setAutoFixProposal(null)
   }
 
   function undo() {
@@ -277,13 +279,26 @@ export function OutlineEditor() {
     setHoles(nextPreset === 'blank-custom' ? [] : buildHoles(nextPoints, nextPreset, 4))
     setSelectedObject(null)
     setAutoFixProposal(null)
+    setDrawRaw([])
+    setDrawCloseRequested(false)
     setMode('select')
     setClosed(nextPreset !== 'blank-custom')
     setStatus(nextPreset === 'blank-custom' ? 'Blank canvas ready. Add points or draw a custom outline.' : `Loaded ${labelForPreset(nextPreset)}. Outline is ready for edit and validation.`)
   }
 
   function resetCanvas() {
-    choosePreset(preset)
+    checkpoint()
+    setPreset('blank-custom')
+    setPoints([])
+    setHoles([])
+    setClosed(false)
+    setDrawRaw([])
+    setDrawCloseRequested(false)
+    setSelectedObject(null)
+    setSelectedPointIds([])
+    setAutoFixProposal(null)
+    setMode('select')
+    setStatus('Canvas reset. The complete outline and any in-progress draw were cleared; Undo restores them as one geometry state.')
   }
 
   function resetView() { setViewport((current) => ({ ...current, zoom: 1, panX: -10, panY: -10 })); setStatus('View reset. Geometry unchanged.') }
@@ -325,6 +340,13 @@ export function OutlineEditor() {
       return
     }
     if (mode === 'add-point') {
+      if (drawRaw.length) {
+        checkpoint()
+        setDrawRaw((current) => insertPoint(current, p, drawCloseRequested))
+        setAutoFixProposal(null)
+        setStatus('Point inserted into the current draw preview. Draw and Add point now edit the same outline.')
+        return
+      }
       if (points.some((point) => distance(point, p) < .25)) { setStatus('Point not added: duplicate or zero-length edge.'); return }
       checkpoint()
       const nextPoints = insertPoint(points, p, closed)
@@ -334,8 +356,18 @@ export function OutlineEditor() {
         : 'Point appended to the open outline path. Use Fill Whole Board or Auto-Fix Geometry to close it.'); return
     }
     if (mode === 'draw') {
-      drawingRef.current = true; setSelectedObject(null); setDrawRaw([{ ...p, id: newGeometryId('point') }]); setDrawCloseRequested(false)
-      setStatus('Drawing outline. Release to preview and simplify.'); return
+      drawingRef.current = true
+      setSelectedObject(null)
+      if (drawRaw.length) {
+        setDrawRaw((current) => appendDrawPoint(current, p, snap ? 2 : 1.2))
+        setStatus('Continuing the current draw preview. Release to review, smooth, or accept the same outline.')
+      } else {
+        checkpoint()
+        setDrawRaw([{ ...p, id: newGeometryId('point') }])
+        setDrawCloseRequested(false)
+        setStatus(points.length ? 'Drawing an extension for the current outline. Finish the stroke on its boundary to merge it.' : 'Drawing outline. Release to preview and simplify.')
+      }
+      return
     }
     if (mode === 'fill') { setStatus('Choose Fill Whole Board or select endpoints for Fill Section.'); return }
     const hit = nearestPoint(points, p)
@@ -396,9 +428,13 @@ export function OutlineEditor() {
   }
 
   function acceptDrawDraft() {
-    if (!drawDraft?.acceptReady) { setStatus(drawDraft?.preview.warnings[0] || 'Draw preview is not ready.'); return }
-    checkpoint(); setPoints(drawDraft.points.map((point) => ({ ...point }))); setClosed(drawDraft.preview.closed); setDrawRaw([]); setMode('select')
-    setStatus(`Draw accepted: ${drawDraft.preview.rawPointCount} samples simplified to ${drawDraft.preview.previewPointCount} points.`)
+    if (!drawDraft || !drawAcceptReady) { setStatus(drawMerge?.reason || drawDraft?.preview.warnings[0] || 'Draw preview is not ready.'); return }
+    const accepted = points.length ? drawMerge : { points: drawDraft.points, closed: drawDraft.preview.closed }
+    if (!accepted) { setStatus('Draw preview could not be merged into the existing outline.'); return }
+    setPoints(accepted.points.map((point) => ({ ...point }))); setClosed(accepted.closed); setDrawRaw([]); setDrawCloseRequested(false); setMode('select')
+    setStatus(points.length
+      ? `Draw extension merged into the existing outline as one contour with ${accepted.points.length} points.`
+      : `Draw accepted: ${drawDraft.preview.rawPointCount} samples simplified to ${drawDraft.preview.previewPointCount} points.`)
   }
 
   function cancelDrawDraft() { setDrawRaw([]); setDrawCloseRequested(false); setStatus('Draw preview canceled. Geometry unchanged.') }
@@ -734,8 +770,13 @@ export function OutlineEditor() {
   }
 
   async function downloadSeed() {
+    if (!validation.valid) {
+      setStatus(`KiCad export is blocked: ${validation.blockers[0] || 'repair the outline before export.'}`)
+      return
+    }
     const { default: JSZip } = await import('jszip')
     const outlinePackage = buildOutlinePackage({ preset, points, holes, validation, metrics, prompt })
+    const kicadBoard = serializeKiCadOutlineBoard(points, holes, outlinePackage.packageId)
     const zip = new JSZip()
     zip.file('manifest.json', JSON.stringify({
       schema: 'boardforge.custom-outline.package-manifest.v1',
@@ -747,6 +788,8 @@ export function OutlineEditor() {
         'boardforge-outline-package.json',
         'codex-prompt.txt',
         'edge-cuts-outline.json',
+        'boardforge-outline.kicad_pcb',
+        'boardforge-outline.kicad_pro',
         'validation-report.json',
         'README.txt',
       ],
@@ -761,6 +804,8 @@ export function OutlineEditor() {
       boardDimensionsMm: metrics.dimensionsMm,
       boundingBoxMm: metrics.boundingBoxMm,
     }, null, 2))
+    zip.file('boardforge-outline.kicad_pcb', kicadBoard)
+    zip.file('boardforge-outline.kicad_pro', JSON.stringify({ board: {}, cvpcb: {}, meta: { filename: 'boardforge-outline.kicad_pro', version: 1 }, net_settings: {}, pcbnew: {}, text_variables: {} }, null, 2))
     zip.file('validation-report.json', JSON.stringify({
       schema: 'boardforge.browser-outline-validation.v1',
       validation,
@@ -773,12 +818,12 @@ export function OutlineEditor() {
       'BoardForge Custom Outline Package',
       '',
       'This ZIP was generated in-browser from the custom board generator.',
-      'It contains exact outline points in millimeters, mounting hole definitions, browser validation evidence, and the Codex prompt.',
+      'It contains an openable KiCad .kicad_pcb with the exact Edge.Cuts contour and mounting holes, plus the exact points, validation evidence, and Codex prompt.',
       '',
       'Important:',
-      '- This is an outline handoff package, not a fake manufacturing-ready package.',
-      '- KiCad DRC/ERC and real Edge.Cuts project generation require the BoardForge local engine or Codex plugin.',
-      '- If validationStatus is blocked_browser_outline, repair the geometry before generating KiCad files.',
+      '- The browser verified the outline is closed, non-self-intersecting, has valid edge lengths, and has valid mounting-hole clearance before writing this KiCad file.',
+      '- This remains an outline-only board: component placement, copper, DRC/ERC, and fabrication release require a real engineering workflow.',
+      '- Open boardforge-outline.kicad_pcb directly in KiCad PCB Editor, then Save As to continue the project.',
     ].join('\n'))
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
     const url = URL.createObjectURL(blob)
@@ -792,7 +837,7 @@ export function OutlineEditor() {
       URL.revokeObjectURL(url)
       link.remove()
     }, 3000)
-    setStatus(`Downloaded ${outlinePackage.packageId}.zip with exact outline, validation report, and Codex prompt.`)
+    setStatus(`Downloaded ${outlinePackage.packageId}.zip with an openable KiCad Edge.Cuts board, exact geometry, validation report, and Codex prompt.`)
   }
 
   async function copyPrompt() {
@@ -962,7 +1007,7 @@ export function OutlineEditor() {
             <span>{drawDraft.preview.rawPointCount} points simplified to {drawDraft.preview.previewPointCount} points · {drawDraft.preview.closed ? 'Closed' : 'Open'}</span>
             {drawDraft.preview.warnings.map((warning) => <span key={warning} className={styles.warning}>{warning}</span>)}
             <div>
-              <button type="button" disabled={!drawDraft.acceptReady} onClick={acceptDrawDraft}>Accept</button>
+              <button type="button" disabled={!drawAcceptReady} onClick={acceptDrawDraft}>Accept</button>
               <button type="button" onClick={() => setDrawTolerance((value) => Math.min(5, value + .35))}>Simplify More</button>
               <button type="button" onClick={() => setDrawSmoothing((value) => Math.min(3, value + 1))}>Smooth</button>
               <button type="button" onClick={() => setDrawCloseRequested(true)}>Close Shape</button>
@@ -1264,6 +1309,8 @@ function buildOutlinePackage({
       'boardforge-outline-package.json',
       'codex-prompt.txt',
       'edge-cuts-outline.json',
+      'boardforge-outline.kicad_pcb',
+      'boardforge-outline.kicad_pro',
       'validation-report.json',
       'README.txt',
     ],
@@ -1271,6 +1318,41 @@ function buildOutlinePackage({
     codexPrompt: prompt,
   }
 }
+
+function serializeKiCadOutlineBoard(points: Point[], holes: Hole[], title: string) {
+  const edgeCuts = points.map((point, index) => {
+    const next = points[(index + 1) % points.length]
+    return `  (gr_line (start ${kicadNumber(point.x)} ${kicadNumber(point.y)}) (end ${kicadNumber(next.x)} ${kicadNumber(next.y)}) (stroke (width 0.05) (type solid)) (fill none) (layer "Edge.Cuts"))`
+  })
+  const mountingHoles = holes.map((hole) => {
+    const drill = kicadNumber(hole.diameterMm)
+    const clearance = kicadNumber(hole.diameterMm + 1.2)
+    return [
+      `  (footprint "MountingHole_${drill}mm" (layer "F.Cu")`,
+      `    (at ${kicadNumber(hole.x)} ${kicadNumber(hole.y)})`,
+      '    (attr through_hole)',
+      `    (fp_text reference "${escapeKiCadText(hole.ref)}" (at 0 ${kicadNumber(-(hole.diameterMm / 2 + 1.5))}) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))`,
+      '    (fp_text value "MountingHole" (at 0 0) (layer "F.Fab") hide (effects (font (size 1 1) (thickness 0.15))))',
+      `    (pad "" np_thru_hole circle (at 0 0) (size ${clearance} ${clearance}) (drill ${drill}) (layers "*.Cu" "*.Mask"))`,
+      '  )',
+    ].join('\n')
+  })
+  return [
+    '(kicad_pcb (version 20240108) (generator pcbnew)',
+    '  (general (thickness 1.6))',
+    '  (paper "A4")',
+    '  (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (36 "B.SilkS" user "b.Silkscreen") (37 "F.SilkS" user "f.Silkscreen") (44 "Edge.Cuts" user))',
+    '  (setup (pad_to_mask_clearance 0))',
+    `  (gr_text "${escapeKiCadText(title)}" (at ${kicadNumber(bounds(points).minX)} ${kicadNumber(bounds(points).minY - 3)}) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15)) (justify left)))`,
+    ...edgeCuts,
+    ...mountingHoles,
+    ')',
+    '',
+  ].join('\n')
+}
+
+function kicadNumber(value: number) { return Number(value.toFixed(4)).toString() }
+function escapeKiCadText(value: string) { return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"') }
 
 function isBrowserOutlineProject(project: BoardForgeDashboardCard): boolean {
   const outline = project.browserDraft?.outline
@@ -1385,6 +1467,53 @@ function buildHoles(points: Point[], preset: string, count: number): Hole[] {
   return candidates.slice(0, count).map((point, index) => ({ ref: `H${index + 1}`, ...point, diameterMm: 2.4, keepoutMm: 1, plating: 'plated' as const }))
 }
 
+/**
+ * A freehand extension is not a second shape.  When its two endpoints reach an
+ * existing closed boundary, replace one boundary arc with that stroke and keep
+ * the valid, larger-area contour.  This preserves the user's original contour
+ * wherever possible instead of throwing it away or sorting vertices by angle.
+ */
+function mergeDrawIntoOutline(existing: Point[], stroke: readonly Point[], wasClosed: boolean): { points: Point[]; closed: boolean; acceptReady: boolean; reason?: string } {
+  if (stroke.length < 2) return { points: existing, closed: wasClosed, acceptReady: false, reason: 'Draw a longer stroke before accepting it.' }
+  if (!existing.length) return { points: stroke.map((point) => ({ ...point })), closed: false, acceptReady: false, reason: 'Close the drawn shape before accepting it.' }
+  if (!wasClosed) {
+    const extension = stroke.slice(distance(existing[existing.length - 1], stroke[0]) < .35 ? 1 : 0)
+    return { points: [...existing.map((point) => ({ ...point })), ...extension.map((point) => ({ ...point }))], closed: false, acceptReady: false, reason: 'Continue the open path or close it before accepting.' }
+  }
+
+  const attachmentLimit = Math.max(5, Math.min(16, Math.max(bounds(existing).width, bounds(existing).height) * .18))
+  const startEdge = nearestEdge(existing, stroke[0], true)
+  const endEdge = nearestEdge(existing, stroke[stroke.length - 1], true)
+  if (!startEdge || !endEdge || startEdge.distance > attachmentLimit || endEdge.distance > attachmentLimit) {
+    return { points: existing, closed: true, acceptReady: false, reason: 'Finish the extension on the existing board edge at both ends, then accept it as one outline.' }
+  }
+
+  const withStart = insertPoint(existing, { ...stroke[0], id: newGeometryId('point') }, true)
+  const startIndex = withStart.findIndex((point) => distance(point, stroke[0]) < .001)
+  const withAnchors = insertPoint(withStart, { ...stroke[stroke.length - 1], id: newGeometryId('point') }, true)
+  const endIndex = withAnchors.findIndex((point, index) => index !== startIndex && distance(point, stroke[stroke.length - 1]) < .001)
+  if (startIndex < 0 || endIndex < 0 || startIndex === endIndex) return { points: existing, closed: true, acceptReady: false, reason: 'The extension endpoints need two distinct board-edge attachments.' }
+
+  const start = withAnchors.findIndex((point) => distance(point, stroke[0]) < .001)
+  const end = withAnchors.findIndex((point, index) => index !== start && distance(point, stroke[stroke.length - 1]) < .001)
+  const forward = contourArc(withAnchors, end, start)
+  const backward = contourArc(withAnchors, start, end).reverse()
+  const cleanStroke = stroke.map((point) => ({ ...point, id: point.id || newGeometryId('point') }))
+  const candidates = [forward, backward].map((arc) => [...cleanStroke, ...arc.slice(1, -1)])
+    .filter((candidate) => candidate.length >= 3 && countIntersections(candidate, true) === 0 && Math.min(...candidate.map((point, index) => distance(point, candidate[(index + 1) % candidate.length]))) >= .25)
+  if (!candidates.length) return { points: existing, closed: true, acceptReady: false, reason: 'That extension would cross the outline. Draw it back to a different board edge or use Add point on an edge.' }
+  const points = candidates.sort((a, b) => Math.abs(polygonArea(b)) - Math.abs(polygonArea(a)))[0]
+  return { points, closed: true, acceptReady: validateOutline(points, [], true).checks.slice(0, 4).every((check) => check.pass) }
+}
+
+function contourArc(points: Point[], from: number, to: number) {
+  const arc: Point[] = []
+  for (let index = from; ; index = (index + 1) % points.length) {
+    arc.push(points[index])
+    if (index === to) return arc
+  }
+}
+
 function validateOutline(points: Point[], holes: Hole[], closed = true): ValidationResult {
   const box = bounds(points)
   const area = closed ? Math.abs(polygonArea(points)) : 0
@@ -1427,8 +1556,8 @@ function buildAutoFixProposal(points: Point[], holes: Hole[], wasClosed: boolean
   let nextPoints = removeDuplicateTinyAndRedundantEdges(points, changes)
 
   if (countIntersections(nextPoints) > 0) {
-    nextPoints = sortOutlineByAngle(nextPoints)
-    changes.push('Reordered crossing outline vertices around the board centroid to remove self-intersections.')
+    nextPoints = untangleOutlinePreservingStroke(nextPoints, changes)
+    changes.push('Uncrossed intersecting boundary segments while retaining the drawn point order wherever possible.')
     nextPoints = removeDuplicateTinyAndRedundantEdges(nextPoints, changes)
   }
 
@@ -1453,18 +1582,12 @@ function buildAutoFixProposal(points: Point[], holes: Hole[], wasClosed: boolean
     if (repaired.x !== hole.x || repaired.y !== hole.y) changes.push(`Moved ${hole.ref} inward to satisfy board outline and edge-clearance checks.`)
     return repaired
   })
-  let nextHoles = repairedHoles.filter((hole) => {
+  const nextHoles = repairedHoles.map((hole) => {
     const minClearance = Math.max(2.2, hole.diameterMm / 2 + (hole.keepoutMm ?? 1))
     const safe = pointInPolygon(hole, nextPoints) && distanceToPolygonEdges(hole, nextPoints) >= minClearance
-    if (!safe) changes.push(`Removed ${hole.ref} because it could not be repaired inside the outline with required edge clearance.`)
-    return safe
+    if (!safe) changes.push(`${hole.ref} still needs manual placement because it cannot satisfy the required edge clearance without changing its intended location.`)
+    return hole
   })
-
-  if (holes.length > 0 && nextHoles.length === 0 && nextPoints.length >= 3) {
-    const replacement = chooseNewHolePosition(nextPoints, [])
-    nextHoles = [{ ref: 'H1', ...replacement, diameterMm: 2.4, keepoutMm: 1, plating: 'plated' }]
-    changes.push('Created one safe replacement mounting hole because every original hole was outside the usable board area.')
-  }
 
   let nextClosed = wasClosed
   if (!wasClosed) {
@@ -1477,6 +1600,27 @@ function buildAutoFixProposal(points: Point[], holes: Hole[], wasClosed: boolean
   }
   const after = validateOutline(nextPoints, nextHoles, nextClosed)
   return { points: nextPoints, holes: nextHoles, closed: nextClosed, changes, before, after }
+}
+
+function untangleOutlinePreservingStroke(points: Point[], changes: string[]) {
+  const next = points.map((point) => ({ ...point }))
+  const limit = Math.max(1, next.length * next.length)
+  for (let attempt = 0; attempt < limit; attempt += 1) {
+    let repaired = false
+    for (let first = 0; first < next.length; first += 1) for (let second = first + 2; second < next.length; second += 1) {
+      if (first === 0 && second === next.length - 1) continue
+      const firstEnd = next[(first + 1) % next.length]
+      const secondEnd = next[(second + 1) % next.length]
+      if (!segmentsIntersect(next[first], firstEnd, next[second], secondEnd)) continue
+      const section = next.slice(first + 1, second + 1).reverse()
+      next.splice(first + 1, section.length, ...section)
+      changes.push(`Uncrossed boundary segments near points ${first + 1} and ${second + 1}.`)
+      repaired = true
+      break
+    }
+    if (!repaired) break
+  }
+  return next
 }
 
 function canCloseOutlineSafely(points: Point[]) {
