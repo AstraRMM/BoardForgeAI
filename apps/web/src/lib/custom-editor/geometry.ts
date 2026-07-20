@@ -50,6 +50,30 @@ export function insertPointIntoEdge(points: readonly Point[], edgeStartIndex: nu
   return [...points.slice(0, nextIndex), inserted, ...points.slice(nextIndex)]
 }
 
+/**
+ * Adds a vertex without changing the path's topology.  An open outline is an
+ * ordered stroke, so a new click extends its final endpoint.  Once the outline
+ * is closed, the same action inserts into the nearest real boundary edge.
+ * Keeping those two behaviours separate prevents the last-to-first "phantom"
+ * edge from scrambling a user-drawn contour.
+ */
+export function addOutlineVertex(points: readonly Point[], point: XY, closed: boolean, minimumSpacing = EPSILON): Point[] {
+  const vertex: Point = { id: stableId('point', point, points.length), ...point }
+  if (!points.length) return [vertex]
+  if (points.some(existing => distance(existing, point) <= minimumSpacing)) return [...points]
+  if (!closed || points.length < 3) return [...points, vertex]
+
+  let bestIndex = 0
+  let bestDistance = Infinity
+  for (let index = 0; index < points.length; index += 1) {
+    const start = points[index]
+    const end = points[(index + 1) % points.length]
+    const edgeDistance = perpendicularDistance(point, start, end)
+    if (edgeDistance < bestDistance) { bestDistance = edgeDistance; bestIndex = index }
+  }
+  return insertPointIntoEdge(points, bestIndex, point, true, minimumSpacing)
+}
+
 function perpendicularDistance(point: XY, start: XY, end: XY): number {
   const length2 = (end.x - start.x) ** 2 + (end.y - start.y) ** 2
   if (length2 <= EPSILON) return distance(point, start)

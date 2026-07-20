@@ -4605,8 +4605,21 @@ text.bf-silk.small {
 }
 
 .bf-autofix-proposal {
-  top: auto;
-  bottom: 92px;
+  /* Keep the proposal below the viewport controls and above the floating
+     toolbar. Long repair reports scroll inside the card instead of covering
+     controls or extending beyond the CAD canvas. */
+  top: 68px;
+  bottom: auto;
+  max-height: calc(100% - 154px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.bf-autofix-proposal::-webkit-scrollbar { width: 8px; }
+.bf-autofix-proposal::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(4, 14, 20, 0.96);
+  border-radius: 999px;
+  background: rgba(105, 218, 255, 0.42);
 }
 
 .bf-autofix-proposal strong {
@@ -4625,10 +4638,32 @@ text.bf-silk.small {
   font-size: 13px;
 }
 
+.bf-autofix-warning {
+  margin: 8px 0 0;
+  color: #ffcc72;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.bf-autofix-proposal .bf-autofix-details {
+  align-self: flex-start;
+  min-height: 28px;
+  margin: -4px 0 10px;
+  padding: 4px 7px;
+  color: #9feeff;
+  font-size: 11px;
+}
+
 .bf-autofix-proposal div {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  position: sticky;
+  bottom: -14px;
+  margin: 0 -14px -14px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid rgba(97, 222, 255, 0.14);
+  background: rgba(3, 12, 19, 0.96);
 }
 
 .bf-outline-workbench.premium .bf-outline-status {
@@ -4752,6 +4787,16 @@ text.bf-silk.small {
     position: static;
     width: auto;
     margin: 10px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .bf-autofix-proposal div {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+    background: transparent;
   }
 
   .bf-selection-fields {

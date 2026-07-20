@@ -7,6 +7,7 @@ async function capture(page: Page, testInfo: TestInfo, name: string) {
 }
 
 async function drawStroke(page: Page, editor: Locator) {
+  await editor.scrollIntoViewIfNeeded()
   const box = await editor.boundingBox()
   if (!box) throw new Error('custom outline editor bounds missing')
   const samples = [
@@ -22,6 +23,7 @@ async function drawStroke(page: Page, editor: Locator) {
 
 async function addOpenRectangle(page: Page, editor: Locator) {
   await page.getByRole('button', { name: /Add point/i }).first().click()
+  await editor.scrollIntoViewIfNeeded()
   const box = await editor.boundingBox()
   if (!box) throw new Error('custom outline editor bounds missing')
   for (const [x, y] of [[.18, .32], [.38, .32], [.38, .58], [.18, .58]] as const) {
@@ -90,9 +92,11 @@ test.describe('custom editor CAD completion and visual QA', () => {
     const pointsBefore = await editor.locator('.bf-editor-point').count()
 
     await page.getByRole('button', { name: /^Select$/i }).first().click()
+    await editor.scrollIntoViewIfNeeded()
     await editor.locator('.bf-editor-point').first().click({ force: true })
     await editor.locator('.bf-editor-point').last().click({ force: true, modifiers: ['Shift'] })
     await page.getByRole('button', { name: /Fill Section/i }).click()
+    await editor.scrollIntoViewIfNeeded()
     await page.getByRole('button', { name: /Straight Fill/i }).click()
 
     await expect(page.getByText('Fill Section preview', { exact: true })).toBeVisible()

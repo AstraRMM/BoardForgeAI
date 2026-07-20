@@ -10,7 +10,7 @@ import { createBrowserProject, hasBrowserDraftArtifact, readBrowserProjects, rec
 import type { BoardForgeBrowserDraft, BoardForgeDashboardCard } from '../../lib/boardforge-manifest'
 import styles from './OutlineEditor.module.css'
 import { createDrawDraft } from '../../lib/custom-editor/draw'
-import { proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
+import { addOutlineVertex, proposeFillSection, type FillSectionProposal, type FillSectionStyle } from '../../lib/custom-editor/geometry'
 import { rustPolygonMetrics } from '../../lib/custom-editor/geometry-wasm'
 
 type Point = { id?: string; x: number; y: number }
@@ -22,6 +22,7 @@ type SelectedObject = { type: 'point'; id: string } | { type: 'hole'; ref: strin
 type AutoFixProposal = {
   points: Point[]
   holes: Hole[]
+  closed: boolean
   changes: string[]
   before: ValidationResult
   after: ValidationResult
@@ -91,6 +92,7 @@ export function OutlineEditor() {
   const [copied, setCopied] = useState(false)
   const [showPromptPanel, setShowPromptPanel] = useState(false)
   const [autoFixProposal, setAutoFixProposal] = useState<AutoFixProposal | null>(null)
+  const [showAllAutoFixChanges, setShowAllAutoFixChanges] = useState(false)
   const [browserDraftSaved, setBrowserDraftSaved] = useState(false)
   const browserDraftId = useRef<string | null>(null)
   const [savedOutlineDrafts, setSavedOutlineDrafts] = useState<BoardForgeDashboardCard[]>([])
@@ -100,17 +102,14 @@ export function OutlineEditor() {
   const box = useMemo(() => bounds(points), [points])
   const viewBox = `${viewport.panX} ${viewport.panY} ${100 / viewport.zoom} ${70 / viewport.zoom}`
   const validation = useMemo(() => {
-    const result = validateOutline(points, holes)
-    if (closed || points.length < 3) return result
-    const checks = result.checks.map((check) => check.label === 'Closed outline' ? { ...check, pass: false, reason: 'The path is open. Use Fill Whole Board or Auto-Fix Geometry.' } : check)
-    return { ...result, valid: false, risk: 'Blocked' as const, routeability: Math.min(result.routeability, 45), checks, blockers: ['Geometry incomplete - use Fill or Auto-Fix Geometry.', ...result.blockers] }
+    return validateOutline(points, holes, closed)
   }, [points, holes, closed])
   const metrics = useMemo(() => buildBoardMetrics(points, holes), [points, holes])
   const prompt = useMemo(() => buildCodexPrompt({ preset, points, holes, validation, metrics }), [preset, points, holes, validation, metrics])
   const statusTone = validation.valid ? 'valid' : 'blocked'
   const areaMm2 = useMemo(() => Math.abs(polygonArea(points)), [points])
-  const edgeLength = rustMetrics?.perimeter ?? totalEdgeLength(points)
-  const holesInside = useMemo(() => holes.filter((hole) => pointInPolygon(hole, points)).length, [holes, points])
+  const edgeLength = closed ? (rustMetrics?.perimeter ?? totalEdgeLength(points, true)) : totalEdgeLength(points, false)
+  const holesInside = useMemo(() => closed ? holes.filter((hole) => pointInPolygon(hole, points)).length : 0, [holes, points, closed])
   const areaText = closed && points.length >= 3 ? `${((rustMetrics?.area ?? areaMm2) / 100).toFixed(1)} cm2` : 'Area unavailable - close or fill the outline.'
   const selectedPoint = selectedObject?.type === 'point' ? points.findIndex((point) => point.id === selectedObject.id) : null
   const selectedHole = selectedObject?.type === 'hole' ? holes.find((hole) => hole.ref === selectedObject.ref) || null : null
@@ -122,7 +121,10 @@ export function OutlineEditor() {
 
   useEffect(() => {
     let current = true
-    if (!closed || points.length < 3) return () => { current = false }
+    if (!closed || points.length < 3) {
+      setRustMetrics(null)
+      return () => { current = false }
+    }
     void Promise.resolve().then(() => {
       if (current) setRustGeometryStatus('loading')
       return rustPolygonMetrics(points)
@@ -325,9 +327,11 @@ export function OutlineEditor() {
     if (mode === 'add-point') {
       if (points.some((point) => distance(point, p) < .25)) { setStatus('Point not added: duplicate or zero-length edge.'); return }
       checkpoint()
-      const nextPoints = insertPoint(points, p)
+      const nextPoints = insertPoint(points, p, closed)
       setPoints(nextPoints); setSelectedObject(null); setAutoFixProposal(null)
-      setStatus('Point added without changing zoom or pan.'); return
+      setStatus(closed
+        ? 'Point inserted into the nearest outline edge without changing zoom or pan.'
+        : 'Point appended to the open outline path. Use Fill Whole Board or Auto-Fix Geometry to close it.'); return
     }
     if (mode === 'draw') {
       drawingRef.current = true; setSelectedObject(null); setDrawRaw([{ ...p, id: newGeometryId('point') }]); setDrawCloseRequested(false)
@@ -416,7 +420,9 @@ export function OutlineEditor() {
 
   function fillWholeBoard() {
     if (points.length < 3) { setStatus('Fill blocked: add at least three boundary points.'); return }
-    setMode('fill'); setAutoFixProposal({ points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), changes: ['Close the open path with the minimal edge from the last endpoint to the first. Existing concavity and holes are preserved.'], before: validation, after: validateOutline(points, holes) })
+    const after = validateOutline(points, holes, true)
+    setMode('fill'); setAutoFixProposal({ points: clonePoints(points), holes: holes.map((hole) => ({ ...hole })), closed: true, changes: ['Close the open path with the minimal edge from the last endpoint to the first. Existing concavity and holes are preserved.'], before: validation, after })
+    setShowAllAutoFixChanges(false)
     setStatus('Fill Whole Board preview ready. Accept repair to apply the proposed closure.')
   }
 
@@ -574,8 +580,9 @@ export function OutlineEditor() {
   }
 
   function runAutoFixGeometry() {
-    const proposal = buildAutoFixProposal(points, holes, validation)
+    const proposal = buildAutoFixProposal(points, holes, closed, validation)
     setAutoFixProposal(proposal)
+    setShowAllAutoFixChanges(false)
     setStatus(proposal.changes.length ? `Auto-Fix proposal ready: ${proposal.changes[0]}` : 'Auto-Fix found no safe geometry changes to propose.')
   }
 
@@ -584,10 +591,13 @@ export function OutlineEditor() {
     checkpoint()
     setPoints(autoFixProposal.points)
     setHoles(autoFixProposal.holes)
-    if (autoFixProposal.changes.some((change) => change.startsWith('Close the open path'))) setClosed(true)
+    setClosed(autoFixProposal.closed)
     setSelectedObject(null)
     setAutoFixProposal(null)
-    setStatus(`Auto-Fix accepted. ${autoFixProposal.changes.join(' ') || 'No geometry changes were needed.'}`)
+    const actual = validateOutline(autoFixProposal.points, autoFixProposal.holes, autoFixProposal.closed)
+    setStatus(actual.valid
+      ? `Auto-Fix accepted. Browser geometry checks now pass at ${actual.routeability}%.`
+      : `Auto-Fix accepted, but ${actual.blockers.length} geometry blocker${actual.blockers.length === 1 ? '' : 's'} remain. ${actual.blockers[0] || 'Review the outline before KiCad handoff.'}`)
   }
 
   function downloadAutoFixReport() {
@@ -600,6 +610,7 @@ export function OutlineEditor() {
       after: autoFixProposal.after,
       repairedOutlinePointsMm: autoFixProposal.points,
       repairedMountingHolesMm: autoFixProposal.holes,
+      repairedOutlineClosed: autoFixProposal.closed,
     }
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -625,6 +636,18 @@ export function OutlineEditor() {
       const message = error instanceof Error ? error.message : ''
       setStatus(action === 'generate' ? `Local KiCad creation was not started. ${message || 'Pair a desktop helper before creating a candidate.'}` : `Browser geometry checks remain available. ${message || 'Pair a desktop helper to request local KiCad validation.'}`)
     }
+  }
+
+  function selectOutlinePoint(event: ReactPointerEvent<SVGGElement>, point: Point, index: number) {
+    if (mode !== 'select' || !point.id) return
+    // Point handles sit above the wide edge hit targets. Handle them directly
+    // so an endpoint click cannot be interpreted as a nearby edge selection.
+    event.stopPropagation()
+    try { svgRef.current?.setPointerCapture(event.pointerId) } catch { /* Pointer capture is optional for selection. */ }
+    if (event.shiftKey || multiSelect) setSelectedPointIds((current) => current.includes(point.id!) ? current.filter((value) => value !== point.id) : [...current, point.id!].slice(-2))
+    else setSelectedPointIds([point.id])
+    setSelectedObject({ type: 'point', id: point.id })
+    setStatus(`Selected point ${index + 1}. Drag to move it or use the object menu for exact edits.`)
   }
 
   function loadBrowserOutlineDraft(project: BoardForgeDashboardCard) {
@@ -883,7 +906,7 @@ export function OutlineEditor() {
             </g>
           ))}
           {points.map((point, index) => (
-            <g key={point.id} data-point-id={point.id} className={selectedPoint === index ? 'bf-editor-point selected' : 'bf-editor-point'}>
+            <g key={point.id} data-point-id={point.id} className={selectedPoint === index ? 'bf-editor-point selected' : 'bf-editor-point'} onPointerDown={(event) => selectOutlinePoint(event, point, index)}>
               <circle cx={point.x} cy={point.y} r={selectedPoint === index ? 2.35 : 1.65} />
               <text x={point.x + 2.4} y={point.y - 2.2}>{index + 1}</text>
             </g>
@@ -922,9 +945,11 @@ export function OutlineEditor() {
             <div className="bf-autofix-proposal">
               <span>Auto-Fix Geometry proposal</span>
               <strong>{autoFixProposal.before.routeability}% to {autoFixProposal.after.routeability}% geometry score</strong>
+              {!autoFixProposal.after.valid && <p className="bf-autofix-warning">This repair still leaves {autoFixProposal.after.blockers.length} blocker{autoFixProposal.after.blockers.length === 1 ? '' : 's'}; the score is not a release claim.</p>}
               <ul>
-                {(autoFixProposal.changes.length ? autoFixProposal.changes : ['No safe changes are needed for this outline.']).map((change) => <li key={change}>{change}</li>)}
+                {(autoFixProposal.changes.length ? autoFixProposal.changes : ['No safe changes are needed for this outline.']).slice(0, showAllAutoFixChanges ? undefined : 5).map((change) => <li key={change}>{change}</li>)}
               </ul>
+              {autoFixProposal.changes.length > 5 && <button type="button" className="bf-autofix-details" onClick={() => setShowAllAutoFixChanges((value) => !value)}>{showAllAutoFixChanges ? 'Show less' : `Show ${autoFixProposal.changes.length - 5} more`}</button>}
               <div>
                 <button type="button" onClick={acceptAutoFixGeometry}>Accept repair</button>
                 <button type="button" onClick={() => setAutoFixProposal(null)}>Reject</button>
@@ -1357,25 +1382,26 @@ function buildHoles(points: Point[], preset: string, count: number): Hole[] {
   return candidates.slice(0, count).map((point, index) => ({ ref: `H${index + 1}`, ...point, diameterMm: 2.4, keepoutMm: 1, plating: 'plated' as const }))
 }
 
-function validateOutline(points: Point[], holes: Hole[]): ValidationResult {
+function validateOutline(points: Point[], holes: Hole[], closed = true): ValidationResult {
   const box = bounds(points)
-  const area = Math.abs(polygonArea(points))
-  const intersections = countIntersections(points)
-  const minEdge = points.length > 1 ? Math.min(...points.map((point, index) => distance(point, points[(index + 1) % points.length]))) : 0
+  const area = closed ? Math.abs(polygonArea(points)) : 0
+  const intersections = countIntersections(points, closed)
+  const edgeCount = closed ? points.length : Math.max(0, points.length - 1)
+  const minEdge = edgeCount ? Math.min(...Array.from({ length: edgeCount }, (_, index) => distance(points[index], points[(index + 1) % points.length]))) : 0
   const duplicateCount = countDuplicatePoints(points)
-  const redundantPointCount = countRedundantPoints(points)
+  const redundantPointCount = closed ? countRedundantPoints(points) : 0
   const minUsefulDimension = Math.min(box.width, box.height)
   const aspectRatio = Math.max(box.width / Math.max(1, box.height), box.height / Math.max(1, box.width))
-  const holesInside = holes.every((hole) => pointInPolygon(hole, points))
-  const closestHoleClearance = holes.length ? Math.min(...holes.map((hole) => distanceToPolygonEdges(hole, points) - hole.diameterMm / 2)) : Number.POSITIVE_INFINITY
-  const holesClear = holes.every((hole) => distanceToPolygonEdges(hole, points) >= Math.max(2.2, hole.diameterMm / 2 + (hole.keepoutMm ?? 1)))
+  const holesInside = closed && holes.every((hole) => pointInPolygon(hole, points))
+  const closestHoleClearance = closed && holes.length ? Math.min(...holes.map((hole) => distanceToPolygonEdges(hole, points) - hole.diameterMm / 2)) : Number.POSITIVE_INFINITY
+  const holesClear = closed && holes.every((hole) => distanceToPolygonEdges(hole, points) >= Math.max(2.2, hole.diameterMm / 2 + (hole.keepoutMm ?? 1)))
   const checks = [
-    { label: 'Closed outline', pass: points.length >= 3, reason: points.length >= 3 ? 'Three or more Edge.Cuts vertices are present.' : 'Add at least three outline points.' },
+    { label: 'Closed outline', pass: closed && points.length >= 3, reason: points.length < 3 ? 'Add at least three outline points.' : closed ? 'The Edge.Cuts path is closed.' : 'The path is still open. Close it before KiCad handoff.' },
     { label: 'No self-intersections', pass: intersections === 0, reason: intersections === 0 ? 'No crossing outline segments detected.' : `${intersections} crossing segment pair(s) detected.` },
     { label: 'No duplicate points', pass: duplicateCount === 0, reason: duplicateCount === 0 ? 'No duplicate or stacked outline points detected.' : `${duplicateCount} duplicate or stacked point(s) detected.` },
     { label: 'Minimum edge length', pass: minEdge >= 2, reason: minEdge >= 2 ? 'No tiny zero-length or near-zero Edge.Cuts segments.' : 'One or more outline edges are too short for reliable fabrication.' },
-    { label: 'Board area', pass: area >= 280, reason: area >= 280 ? 'Mechanical area is large enough for a real outline seed.' : 'Board area is too small for reliable connector, hole, and route planning.' },
-    { label: 'Hole clearance OK', pass: holesInside && holesClear, reason: holesInside && holesClear ? `Closest finished hole-to-edge clearance is ${Number.isFinite(closestHoleClearance) ? closestHoleClearance.toFixed(2) : 'n/a'} mm.` : 'One or more mounting holes are outside the board or too close to Edge.Cuts.' },
+    { label: 'Board area', pass: closed && area >= 280, reason: !closed ? 'Close the path before its board area can be measured.' : area >= 280 ? 'Mechanical area is large enough for a real outline seed.' : 'Board area is too small for reliable connector, hole, and route planning.' },
+    { label: 'Hole clearance OK', pass: holesInside && holesClear, reason: !closed ? 'Close the path before mounting-hole clearance can be verified.' : holesInside && holesClear ? `Closest finished hole-to-edge clearance is ${Number.isFinite(closestHoleClearance) ? closestHoleClearance.toFixed(2) : 'n/a'} mm.` : 'One or more mounting holes are outside the board or too close to Edge.Cuts.' },
     { label: 'Redundant points OK', pass: redundantPointCount === 0, reason: redundantPointCount === 0 ? 'No unnecessary collinear or clustered outline vertices detected.' : `${redundantPointCount} redundant point(s) should be removed or smoothed.` },
     { label: 'Aspect ratio OK', pass: aspectRatio < 5, reason: 'Outline aspect ratio is checked for routeability.' },
   ]
@@ -1393,7 +1419,7 @@ function validateOutline(points: Point[], holes: Hole[]): ValidationResult {
   return { valid: blockers.length === 0, routeability, risk, checks, blockers }
 }
 
-function buildAutoFixProposal(points: Point[], holes: Hole[], before: ValidationResult): AutoFixProposal {
+function buildAutoFixProposal(points: Point[], holes: Hole[], wasClosed: boolean, before: ValidationResult): AutoFixProposal {
   const changes: string[] = []
   let nextPoints = removeDuplicateTinyAndRedundantEdges(points, changes)
 
@@ -1437,8 +1463,22 @@ function buildAutoFixProposal(points: Point[], holes: Hole[], before: Validation
     changes.push('Created one safe replacement mounting hole because every original hole was outside the usable board area.')
   }
 
-  const after = validateOutline(nextPoints, nextHoles)
-  return { points: nextPoints, holes: nextHoles, changes, before, after }
+  let nextClosed = wasClosed
+  if (!wasClosed) {
+    if (canCloseOutlineSafely(nextPoints)) {
+      nextClosed = true
+      changes.push('Closed the open path with the direct final edge after confirming it does not create a crossing or tiny segment.')
+    } else {
+      changes.push('Left the path open because a safe closing edge could not be confirmed; finish the outline manually or use Fill Section.')
+    }
+  }
+  const after = validateOutline(nextPoints, nextHoles, nextClosed)
+  return { points: nextPoints, holes: nextHoles, closed: nextClosed, changes, before, after }
+}
+
+function canCloseOutlineSafely(points: Point[]) {
+  if (points.length < 3) return false
+  return distance(points[0], points[points.length - 1]) >= 2 && countIntersections(points, true) === 0
 }
 
 function removeDuplicateTinyAndRedundantEdges(points: Point[], changes: string[]) {
@@ -1573,22 +1613,12 @@ function chooseNewHolePosition(points: Point[], holes: Hole[]) {
   return candidates.find((candidate) => pointInPolygon(candidate, points) && holes.every((hole) => distance(hole, candidate) > 6)) || centroid
 }
 
-function insertPoint(points: Point[], point: Point) {
-  const identified = { ...point, id: point.id || newGeometryId('point') }
-  if (points.length < 3) return [...points, identified]
-  let bestIndex = points.length
-  let bestDistance = Number.POSITIVE_INFINITY
-  points.forEach((start, index) => {
-    const end = points[(index + 1) % points.length]
-    const segmentDistance = distanceToSegment(point, start, end)
-    if (segmentDistance < bestDistance) {
-      bestDistance = segmentDistance
-      bestIndex = index + 1
-    }
-  })
-  const next = [...points]
-  next.splice(bestIndex, 0, identified)
-  return next
+function insertPoint(points: Point[], point: Point, closed: boolean) {
+  // The canvas holds optional IDs while the reusable geometry model requires
+  // stable IDs. Normalize once here, then let the model preserve ordered path
+  // topology: open paths extend at their endpoint; closed paths split an edge.
+  const normalized = points.map((existing) => ({ ...existing, id: existing.id || newGeometryId('point') }))
+  return addOutlineVertex(normalized, point, closed, .25).map((vertex) => ({ ...vertex }))
 }
 
 function appendDrawPoint(points: Point[], point: Point, threshold: number) {
@@ -1597,14 +1627,15 @@ function appendDrawPoint(points: Point[], point: Point, threshold: number) {
   return [...points, { ...point, id: point.id || newGeometryId('point') }]
 }
 
-function countIntersections(points: Point[]) {
+function countIntersections(points: Point[], closed = true) {
   if (points.length < 4) return 0
   let intersections = 0
-  for (let i = 0; i < points.length; i += 1) {
+  const edgeCount = closed ? points.length : points.length - 1
+  for (let i = 0; i < edgeCount; i += 1) {
     const a1 = points[i]
     const a2 = points[(i + 1) % points.length]
-    for (let j = i + 1; j < points.length; j += 1) {
-      const adjacent = Math.abs(i - j) <= 1 || (i === 0 && j === points.length - 1)
+    for (let j = i + 1; j < edgeCount; j += 1) {
+      const adjacent = Math.abs(i - j) <= 1 || (closed && i === 0 && j === edgeCount - 1)
       if (adjacent) continue
       const b1 = points[j]
       const b2 = points[(j + 1) % points.length]
@@ -1657,9 +1688,10 @@ function distance(a: Point, b: Point) {
   return Math.hypot(a.x - b.x, a.y - b.y)
 }
 
-function totalEdgeLength(points: Point[]) {
+function totalEdgeLength(points: Point[], closed = true) {
   if (points.length < 2) return 0
-  return points.reduce((sum, point, index) => sum + distance(point, points[(index + 1) % points.length]), 0)
+  const edgeCount = closed ? points.length : points.length - 1
+  return points.slice(0, edgeCount).reduce((sum, point, index) => sum + distance(point, points[(index + 1) % points.length]), 0)
 }
 
 function distanceToSegment(point: Point, start: Point, end: Point) {
