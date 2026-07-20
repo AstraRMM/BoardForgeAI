@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { readFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import { createLocalArtifactApi } from '../local-artifact-api.mjs'
 import { runOddShapeWebFlowProof } from '../../engine/odd-shape-web-flow-proof.mjs'
 import { canRunPremiumAction } from '../../auth/entitlement-gate.mjs'
@@ -78,7 +78,7 @@ export function createLocalServerRouter({ rootDir, logDir, auth, kicadValidator 
         const result = await api.projectDashboard()
         return okResponse({
           status: 'BOARD_FORGE_PROJECT_DASHBOARD_DATA',
-          data: publicProjectDashboard(result.dashboard),
+          data: await publicProjectDashboard(result.dashboard),
           warnings: result.warnings,
         })
       }
@@ -369,12 +369,10 @@ function publicProjectCreateResponse(result = {}, projectId = '', entitlement = 
 }
 
 /** The browser may list helper projects but never receives protected workspace paths. */
-function publicProjectDashboard(dashboard = {}) {
-  return {
-    schema: dashboard.schema,
-    generatedAt: dashboard.generatedAt,
-    summary: dashboard.summary,
-    projects: (dashboard.projects || []).map((project) => ({
+async function publicProjectDashboard(dashboard = {}) {
+  const projects = await Promise.all((dashboard.projects || []).map(async (project) => {
+    const preview3d = await public3dPreviewArtifact(project)
+    return {
       ...project,
       boardPath: null,
       schematicPath: null,
@@ -382,9 +380,33 @@ function publicProjectDashboard(dashboard = {}) {
       reports: Object.fromEntries(Object.keys(project.reports || {}).map((key) => [key, 'recorded locally'])),
       replayCommand: null,
       importSandbox: project.importSandbox ? { ...project.importSandbox, report: 'Recorded locally' } : undefined,
-      localOnly: true,
-    })),
+      ...(preview3d ? { artifacts: { preview3d } } : {}),
+      // This is a helper-owned manifest, even though its filesystem paths are
+      // redacted. `localOnly` is reserved for browser localStorage drafts.
+      localOnly: false,
+    }
+  }))
+  return {
+    schema: dashboard.schema,
+    generatedAt: dashboard.generatedAt,
+    summary: dashboard.summary,
+    projects,
   }
+}
+
+/**
+ * A 3D preview is only announced when a helper manifest already references an
+ * existing raster render.  Paths are never sent to the browser and this route
+ * never renders or synthesizes an image.
+ */
+async function public3dPreviewArtifact(project = {}) {
+  const entries = Object.entries(project.reports || {})
+  const candidate = entries.find(([key, value]) => /(?:3d|three.?d|render)/i.test(key) && typeof value === 'string' && /\.(png|webp)$/i.test(value))?.[1]
+  if (!candidate) return null
+  try {
+    if (!(await stat(candidate)).isFile()) return null
+    return { available: true, mimeType: candidate.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/png' }
+  } catch { return null }
 }
 
 /** Browser views need artifact availability and engineering state, not local paths. */

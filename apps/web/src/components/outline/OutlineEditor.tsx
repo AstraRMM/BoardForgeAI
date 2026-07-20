@@ -1038,6 +1038,7 @@ export function OutlineEditor() {
         </div>
         <div className="bf-outline-hotkeys" aria-label="Custom board generator keyboard shortcuts">
           <b>Keyboard shortcuts</b>
+          <span><kbd>Space</kbd> hold to pan</span>
           <span><kbd>M</kbd> move selected</span>
           <span><kbd>D</kbd> duplicate selected</span>
           <span><kbd>Del</kbd> delete selected</span>
@@ -1049,6 +1050,8 @@ export function OutlineEditor() {
           <span><kbd>C</kbd> copy prompt</span>
           <span><kbd>V</kbd> validate local</span>
           <span><kbd>G</kbd> download package</span>
+          <span><kbd>Ctrl</kbd><kbd>Z</kbd> undo</span>
+          <span><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> redo</span>
           <span><kbd>Esc</kbd> clear selection</span>
         </div>
         {showPromptPanel && (

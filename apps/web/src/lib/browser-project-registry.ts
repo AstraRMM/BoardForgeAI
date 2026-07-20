@@ -122,7 +122,15 @@ export function saveBrowserProjectLibraryMetadata(projectId: string, changes: { 
 }
 export function readBrowserProjects(): BoardForgeDashboardData {
   if (typeof window === 'undefined') return empty()
-  try { const projects = JSON.parse(window.localStorage.getItem(key) || '[]') as BoardForgeDashboardCard[]; return { ...empty(), projects, summary: summary(projects) } } catch { return empty() }
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(key) || '[]')
+    if (!Array.isArray(raw)) return empty()
+    // Local storage is user controlled. Rebuild every entry through the same
+    // safe browser-import boundary so this registry can never surface seeded
+    // helper cards, fixtures, or unsupported historical data as browser work.
+    const projects = raw.map(normalizeImportedBrowserProject).filter((project): project is BoardForgeDashboardCard => project !== null)
+    return { ...empty(), projects, summary: summary(projects) }
+  } catch { return empty() }
 }
 
 /** Produces a portable snapshot of browser-owned projects only. */

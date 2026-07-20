@@ -1,16 +1,13 @@
 import { AppShell } from '../app/AppShell'
 import { OutlineEditor } from '../outline/OutlineEditor'
-import { OutlinePresetPicker } from '../outline/OutlinePresetPicker'
-import { OutlineValidationPanel } from '../outline/OutlineValidationPanel'
-import { LocalEngineStatusBar } from '../project/LocalEngineStatusBar'
-import { BoxSelect, FileCog, Info, Keyboard, Ruler } from 'lucide-react'
+import { BoxSelect, FileCog, Info, Ruler } from 'lucide-react'
 import { Suspense } from 'react'
 import styles from './GeneratorWorkspace.module.css'
 
 /**
- * Presentation-only integration for the protected outline editor.  The
- * actual geometry, Rust/WASM bridge, local-engine requests, and candidate
- * save contracts stay in their existing feature modules.
+ * The outline editor owns its tools, browser-draft export, and optional local
+ * KiCad handoff. Keeping this wrapper intentionally small avoids duplicating
+ * controls or validation reference panels beside the actual work surface.
  */
 export function GeneratorWorkspace() {
   return (
@@ -33,33 +30,17 @@ export function GeneratorWorkspace() {
           <span>Geometry checks run here. A local engine is only needed when you request KiCad creation or KiCad evidence.</span>
         </div>
 
-        <div className={styles.editorGrid}>
-          <section className={styles.canvasRegion} aria-label="Board outline editor">
-            <Suspense fallback={<div className="bf-workspace-panel" role="status">Loading outline workspace…</div>}>
-              <OutlineEditor />
-            </Suspense>
-          </section>
-          <aside className={styles.inspector} aria-label="Board generator inspector">
-            <LocalEngineStatusBar />
-            <OutlinePresetPicker />
-            <OutlineValidationPanel />
-            <section className={styles.shortcuts} aria-labelledby="generator-shortcuts">
-              <div><Keyboard size={16} /><h2 id="generator-shortcuts">Editor shortcuts</h2></div>
-              <dl>
-                <div><dt><kbd>A</kbd></dt><dd>Add point</dd></div>
-                <div><dt><kbd>F</kbd></dt><dd>Auto-fix outline</dd></div>
-                <div><dt><kbd>Space</kbd></dt><dd>Pan canvas</dd></div>
-                <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Undo geometry</dd></div>
-              </dl>
-            </section>
-          </aside>
-        </div>
+        <section className={styles.canvasRegion} aria-label="Board outline editor">
+          <Suspense fallback={<div className="bf-workspace-panel" role="status">Loading outline workspace...</div>}>
+            <OutlineEditor />
+          </Suspense>
+        </section>
 
-        <section className={styles.workflow} aria-label="Local engineering workflow">
+        <section className={styles.workflow} aria-label="Export and handoff boundary">
           <div className="bf-workspace-panel">
-            <p className="bf-panel-kicker">Handoff boundary</p>
+            <p className="bf-panel-kicker">Export boundary</p>
             <h2>Browser drafts and KiCad candidates are distinct.</h2>
-            <p className="bf-project-workspace-note">The editor can save a browser outline draft and package exact geometry. A paired local engine must create Edge.Cuts files and later run KiCad validation; neither action is implied by browser geometry checks.</p>
+            <p className="bf-project-workspace-note">Save or download exact geometry from the editor. A paired local engine is required only to create Edge.Cuts files or later run KiCad validation.</p>
           </div>
         </section>
       </div>
