@@ -1,6 +1,6 @@
 'use client'
 
-import { Command, FolderKanban, Search } from 'lucide-react'
+import { ArrowDown, ArrowUp, Command, CornerDownLeft, FolderKanban, Search, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useLocalProjectDashboard } from '../project/LocalProjectDashboard'
@@ -90,11 +90,14 @@ export function WorkspaceCommandPalette() {
     </button>
     {open && <div className={styles.backdrop} onMouseDown={close}>
       <section className={styles.palette} role="dialog" aria-modal="true" aria-label="Workspace commands" onMouseDown={(event) => event.stopPropagation()}>
-        <label><Search size={17}/><span className="sr-only">Search commands and saved projects</span><input ref={input} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={onInputKeyDown} aria-controls="workspace-command-results" aria-activedescendant={results[activeIndex] ? `workspace-command-${results[activeIndex].id}` : undefined} placeholder="Search commands and saved projects"/></label>
+        <div className={styles.searchRow}>
+          <label><Search size={18}/><span className="sr-only">Search commands and saved projects</span><input ref={input} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={onInputKeyDown} aria-controls="workspace-command-results" aria-activedescendant={results[activeIndex] ? `workspace-command-${results[activeIndex].id}` : undefined} placeholder="Search commands and saved projects"/></label>
+          <button className={styles.closeButton} type="button" onClick={close} aria-label="Close search"><X size={17}/></button>
+        </div>
         <div id="workspace-command-results" role="listbox">
           {results.length ? results.map((item, index) => <button id={`workspace-command-${item.id}`} key={item.id} role="option" aria-selected={index === activeIndex} className={index === activeIndex ? styles.active : undefined} type="button" onMouseMove={() => setActiveIndex(index)} onClick={() => choose(item)}><span>{item.project ? <FolderKanban size={15}/> : <Search size={15}/>}</span><div><strong>{item.label}</strong><small>{item.detail}</small></div></button>) : <p>No matching command or merged project.</p>}
         </div>
-        <footer>↑↓ navigate · Enter opens · Esc closes</footer>
+        <footer><span><ArrowUp size={12}/><ArrowDown size={12}/> Navigate</span><span><CornerDownLeft size={12}/> Open</span><span><kbd>Esc</kbd> Close</span></footer>
       </section>
     </div>}
   </>

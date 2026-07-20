@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { CheckCircle2, Copy, KeyRound, LoaderCircle, PlugZap, Unplug } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { CheckCircle2, CircleAlert, CircleCheck, CircleX, Copy, Globe2, KeyRound, LoaderCircle, MonitorCog, PlugZap, Unplug, X } from 'lucide-react'
 import { checkLocalEnginePairingConnection, clearLocalEngineBrowserSession, hasLocalEngineBrowserSession, requestLocalEnginePairingCode, verifyLocalEngineBrowserSession, type BrowserPairingCode, type LocalEnginePairingDiagnostic } from '../../lib/boardforge-local-engine-pairing-client'
 
 type Phase = 'idle' | 'creating' | 'ready' | 'verifying' | 'paired' | 'error'
@@ -12,6 +12,8 @@ export function BrowserLocalEnginePairing() {
   const [code, setCode] = useState('')
   const [message, setMessage] = useState('')
   const [diagnostic, setDiagnostic] = useState<LocalEnginePairingDiagnostic | null>(null)
+  const [connectionPanelOpen, setConnectionPanelOpen] = useState(false)
+  const closeConnectionPanel = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -21,10 +23,25 @@ export function BrowserLocalEnginePairing() {
     return () => window.clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    if (!connectionPanelOpen) return
+    closeConnectionPanel.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setConnectionPanelOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [connectionPanelOpen])
+
   async function checkConnection() {
     const next = await checkLocalEnginePairingConnection()
     setDiagnostic(next)
     return next
+  }
+
+  async function openConnectionPanel() {
+    setConnectionPanelOpen(true)
+    await checkConnection()
   }
 
   async function createCode() {
@@ -71,18 +88,19 @@ export function BrowserLocalEnginePairing() {
 
   const busy = phase === 'creating' || phase === 'verifying'
   const paired = phase === 'paired'
+  const helperReachable = diagnostic?.reachable === true
   return <article className="bf-workspace-panel bf-plugin-command">
     <div className="bf-panel-title"><div><p>Browser session</p><h2>{paired ? 'Helper paired for this browser' : 'Pair for helper-backed actions'}</h2></div>{paired ? <CheckCircle2 size={20} /> : <KeyRound size={20} />}</div>
-    <p className="bf-project-workspace-note">{paired ? 'Supported browser-origin helper POST actions use a session-only token until you disconnect or close this browser.' : 'Pairing is optional for browser-only drafts and review. Create a one-time code from the local helper only when you need a supported local-engine action.'}</p>
-    <div className={`bf-plugin-connection${diagnostic?.reachable ? ' is-ready' : diagnostic ? ' is-error' : ''}`} role="status">
+    <p className="bf-project-workspace-note">{paired ? 'Supported browser-origin helper POST actions use a session-only token until you disconnect or close this browser.' : 'Pairing is optional for browser-only drafts and review. Connect the local helper only when you need KiCad creation, validation, import, or export.'}</p>
+    <div className={`bf-plugin-connection${helperReachable ? ' is-ready' : diagnostic ? ' is-error' : ''}`} role="status">
       <PlugZap size={15} /><span>{diagnostic ? diagnostic.message : 'Checking whether the desktop helper is reachable…'}</span>
-      <button type="button" onClick={() => void checkConnection()} disabled={busy}>Check connection</button>
+      <button type="button" onClick={() => void openConnectionPanel()} aria-haspopup="dialog">Check connection</button>
     </div>
     {!paired && <div className="bf-plugin-pairing-controls">
-      <button type="button" className="bf-panel-action" onClick={createCode} disabled={busy || diagnostic?.reachable === false}>{phase === 'creating' ? <LoaderCircle className="bf-spin" size={15} /> : <KeyRound size={15} />}{pairing ? 'Refresh code' : 'Get one-time code'}</button>
+      <button type="button" className="bf-plugin-action" onClick={createCode} disabled={busy || diagnostic?.reachable === false}>{phase === 'creating' ? <LoaderCircle className="bf-spin" size={15} /> : <KeyRound size={15} />}{pairing ? 'Refresh code' : 'Get one-time code'}</button>
       {pairing && <>
         <label className="bf-plugin-pairing-code"><span>One-time code{pairing.expiresAt ? ` · expires ${new Date(pairing.expiresAt).toLocaleTimeString()}` : ''}</span><div><input aria-label="Local engine pairing code" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} autoComplete="one-time-code" /><button type="button" aria-label="Copy pairing code" onClick={copyCode}><Copy size={15} /></button></div></label>
-        <button type="button" className="bf-panel-action" onClick={verify} disabled={busy || !code.trim()}>{phase === 'verifying' ? <LoaderCircle className="bf-spin" size={15} /> : <CheckCircle2 size={15} />}Pair browser</button>
+        <button type="button" className="bf-plugin-action is-primary" onClick={verify} disabled={busy || !code.trim()}>{phase === 'verifying' ? <LoaderCircle className="bf-spin" size={15} /> : <CheckCircle2 size={15} />}Pair browser</button>
       </>}
     </div>}
     {diagnostic && !diagnostic.reachable && <section className="bf-plugin-recovery" aria-labelledby="helper-recovery-title">
@@ -93,9 +111,35 @@ export function BrowserLocalEnginePairing() {
       <div className="bf-plugin-recovery-command"><code>npm run boardforge:start</code><button type="button" onClick={copyLaunchCommand}><Copy size={15} />Copy command</button></div>
       <ol><li>Run the command from the BoardForge folder on this same computer.</li><li>Keep that terminal running while you use helper-backed actions.</li><li>Return here and select <b>Check connection</b>. Only then can you request a one-time code.</li></ol>
     </section>}
-    {paired && <button type="button" className="bf-panel-action" onClick={disconnect}><Unplug size={15} />Disconnect this browser</button>}
+    {paired && <button type="button" className="bf-plugin-action" onClick={disconnect}><Unplug size={15} />Disconnect this browser</button>}
     {message && <p className={phase === 'error' ? 'bf-plugin-pairing-message is-error' : 'bf-plugin-pairing-message'} role={phase === 'error' ? 'alert' : 'status'}>{message}</p>}
+
+    {connectionPanelOpen && <div className="bf-plugin-modal-backdrop" role="presentation" onMouseDown={() => setConnectionPanelOpen(false)}>
+      <section className="bf-plugin-modal" role="dialog" aria-modal="true" aria-labelledby="connection-status-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="bf-plugin-modal-heading">
+          <div><p>Connection check</p><h3 id="connection-status-title">Your BoardForge connections</h3></div>
+          <button ref={closeConnectionPanel} type="button" className="bf-plugin-modal-close" onClick={() => setConnectionPanelOpen(false)} aria-label="Close connection status"><X size={18} /></button>
+        </div>
+        <p className="bf-plugin-modal-copy">This check only reports signals this browser can verify. It never exposes project files, credentials, or plugin data to the website.</p>
+        <div className="bf-plugin-status-list">
+          <ConnectionStatus icon={<Globe2 size={17} />} label="BoardForge website" state="Connected" detail="This engineering workspace is active in your browser." ready />
+          <ConnectionStatus icon={<MonitorCog size={17} />} label="KiCad plugin bridge" state={helperReachable ? 'Connected' : 'Not connected'} detail={helperReachable ? 'The local helper is reachable and can receive supported KiCad actions.' : 'Start BoardForge Desktop Helper on this device, then run this check again.'} ready={helperReachable} />
+          <ConnectionStatus icon={<PlugZap size={17} />} label="Codex plugin handoff" state={paired ? 'Authorized' : 'Not authorized'} detail={paired ? 'This browser has a session-only token for approved Codex-to-helper actions.' : 'Pair this browser with a one-time code before approved Codex-to-helper actions can run.'} ready={paired} />
+        </div>
+        {!helperReachable && <div className="bf-plugin-modal-help"><CircleAlert size={16} /><span>Open a terminal in your local BoardForge workspace and run <code>npm run boardforge:start</code>. Keep it running, then select <b>Check again</b>.</span></div>}
+        <div className="bf-plugin-modal-actions">
+          <button type="button" className="bf-plugin-action" onClick={() => void checkConnection()}><PlugZap size={15} />Check again</button>
+          <button type="button" className="bf-plugin-action is-primary" onClick={() => setConnectionPanelOpen(false)}>Done</button>
+        </div>
+      </section>
+    </div>}
   </article>
+}
+
+function ConnectionStatus({ icon, label, state, detail, ready }: { icon: ReactNode; label: string; state: string; detail: string; ready: boolean }) {
+  return <div className={`bf-plugin-status${ready ? ' is-ready' : ' is-error'}`}>
+    <span className="bf-plugin-status-icon">{icon}</span><div><strong>{label}</strong><small>{detail}</small></div><span className="bf-plugin-status-label">{ready ? <CircleCheck size={14} /> : <CircleX size={14} />}{state}</span>
+  </div>
 }
 
 function pairingFailureMessage(error: unknown, action: string) {
