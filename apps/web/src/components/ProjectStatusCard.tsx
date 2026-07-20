@@ -34,6 +34,7 @@ export function ProjectStatusCard({ project }: { project: BoardForgeDashboardCar
         <p>Publish: {publishStatus}</p>
         <p>Sync: {syncStatus}</p>
         <p>Next: {nextAction}</p>
+        {project.artifacts?.preview3d?.available && <p>3D render: helper artifact recorded ({project.artifacts.preview3d.mimeType})</p>}
         {project.criticalBlockers.length > 0 && (
           <ul className="bf-project-blockers">
             {project.criticalBlockers.map((blocker) => (

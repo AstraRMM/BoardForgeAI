@@ -94,6 +94,10 @@ export type BoardForgeDashboardCard = {
   publishApproved?: boolean
   dashboardVisible?: boolean
   syncStatus?: string
+  /** Helper-confirmed raster render; no local path or image bytes are exposed. */
+  artifacts?: {
+    preview3d?: { available: true; mimeType: 'image/png' | 'image/webp' }
+  }
   localOnly?: boolean
   /** Browser-only working data, never local-engine KiCad evidence. */
   browserDraft?: BoardForgeBrowserDraft
