@@ -56,6 +56,15 @@ export function BrowserLocalEnginePairing() {
     setMessage('Pairing code copied to the clipboard.')
   }
 
+  async function copyLaunchCommand() {
+    try {
+      await navigator.clipboard.writeText('npm run boardforge:start')
+      setMessage('Helper launch command copied. Run it from your local BoardForge workspace, then check the connection again.')
+    } catch {
+      setMessage('Copy is unavailable in this browser. From your local BoardForge workspace, run: npm run boardforge:start')
+    }
+  }
+
   function disconnect() {
     clearLocalEngineBrowserSession(); setPairing(null); setCode(''); setMessage('This browser session is disconnected. Browser-only work remains available.'); setPhase('idle')
   }
@@ -70,12 +79,20 @@ export function BrowserLocalEnginePairing() {
       <button type="button" onClick={() => void checkConnection()} disabled={busy}>Check connection</button>
     </div>
     {!paired && <div className="bf-plugin-pairing-controls">
-      <button type="button" className="bf-panel-action" onClick={createCode} disabled={busy}>{phase === 'creating' ? <LoaderCircle className="bf-spin" size={15} /> : <KeyRound size={15} />}{pairing ? 'Refresh code' : 'Get one-time code'}</button>
+      <button type="button" className="bf-panel-action" onClick={createCode} disabled={busy || diagnostic?.reachable === false}>{phase === 'creating' ? <LoaderCircle className="bf-spin" size={15} /> : <KeyRound size={15} />}{pairing ? 'Refresh code' : 'Get one-time code'}</button>
       {pairing && <>
         <label className="bf-plugin-pairing-code"><span>One-time code{pairing.expiresAt ? ` · expires ${new Date(pairing.expiresAt).toLocaleTimeString()}` : ''}</span><div><input aria-label="Local engine pairing code" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} autoComplete="one-time-code" /><button type="button" aria-label="Copy pairing code" onClick={copyCode}><Copy size={15} /></button></div></label>
         <button type="button" className="bf-panel-action" onClick={verify} disabled={busy || !code.trim()}>{phase === 'verifying' ? <LoaderCircle className="bf-spin" size={15} /> : <CheckCircle2 size={15} />}Pair browser</button>
       </>}
     </div>}
+    {diagnostic && !diagnostic.reachable && <section className="bf-plugin-recovery" aria-labelledby="helper-recovery-title">
+      <div>
+        <strong id="helper-recovery-title">Start the helper on this device</strong>
+        <p>The website cannot start desktop software itself. In a terminal opened in your local BoardForge workspace, run this command. It starts the localhost-only helper at 127.0.0.1:38991.</p>
+      </div>
+      <div className="bf-plugin-recovery-command"><code>npm run boardforge:start</code><button type="button" onClick={copyLaunchCommand}><Copy size={15} />Copy command</button></div>
+      <ol><li>Run the command from the BoardForge folder on this same computer.</li><li>Keep that terminal running while you use helper-backed actions.</li><li>Return here and select <b>Check connection</b>. Only then can you request a one-time code.</li></ol>
+    </section>}
     {paired && <button type="button" className="bf-panel-action" onClick={disconnect}><Unplug size={15} />Disconnect this browser</button>}
     {message && <p className={phase === 'error' ? 'bf-plugin-pairing-message is-error' : 'bf-plugin-pairing-message'} role={phase === 'error' ? 'alert' : 'status'}>{message}</p>}
   </article>
